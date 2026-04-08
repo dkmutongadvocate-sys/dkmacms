@@ -461,6 +461,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
     <div class="topbar-right">
       <button class="topbar-btn sec" onclick="openModal('matter')">+ New Matter</button>
       <button class="topbar-btn" onclick="openModal('client')">+ New Client</button>
+      <button id="gcal-global-btn" onclick="handleGCalAuth()" title="Google Calendar" style="display:flex;align-items:center;gap:5px;font-size:11px;padding:5px 11px;border-radius:20px;border:1px solid var(--brd);background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--txt2);transition:all 0.15s"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg><span id="gcal-global-label">GCal</span></button>
       <div class="notify-wrap">
         <svg width="20" height="20" viewBox="0 0 16 16" fill="none" style="color:var(--txt2)"><path d="M8 1a5 5 0 015 5c0 2.5.5 4 1.5 5H1.5C2.5 10 3 8.5 3 6a5 5 0 015-5zM6 12a2 2 0 004 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         <div class="notify-dot" id="notify-dot" style="display:none"></div>
@@ -1237,7 +1238,7 @@ function renderDashboard(){
   else evEl.innerHTML=upcoming.map(e=>{
     const d=new Date(e.event_date);
     const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';
-    return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')}</div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}</span></div></div>`;
+    return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}</span>${gcalAddBtnHtml(e.id)}</div></div>`;
   }).join('');
   // Clients
   const cEl=document.getElementById('dash-clients-list');
@@ -1535,7 +1536,7 @@ function renderCalendar(){
   const listEl=document.getElementById('cal-events-list');
   if(!meList.length){listEl.innerHTML=emptyState('No events this month.');return;}
   const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal','adr':'tag-client'};
-  listEl.innerHTML=meList.map(e=>{const d=new Date(e.event_date);const gcalBtn=`<button onclick="addEventToGCalById('${e.id}',this)" style="margin-top:5px;display:inline-flex;align-items:center;gap:4px;font-size:9px;padding:2px 8px;border-radius:8px;border:1px solid #D9D4CB;background:#fff;cursor:pointer;color:#185FA5;font-family:'DM Sans',sans-serif" title="Add to Google Calendar"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Add to GCal</button>`;return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span>${gcalBtn}</div><button class="op-del" title="Delete event" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('');
+  listEl.innerHTML=meList.map(e=>{const d=new Date(e.event_date);return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span>${gcalAddBtnHtml(e.id)}</div><button class="op-del" title="Delete event" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('');
 }
 
 // ─── FINANCE ──────────────────────────────────────────────────────
@@ -2011,7 +2012,7 @@ function renderMatterDetailTab(){
     el.innerHTML=`<div class="card">
       <div class="card-header"><span class="card-title">Events (${me.length})</span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openEventModalForMatter('${m.id}')">+ Add Event</button></div>
       ${!me.length?emptyStateSm('No events linked to this matter.')
-        :me.map(e=>{const d=new Date(e.event_date);const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')}</div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}</span></div><button class="op-del" title="Delete" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('')}
+        :me.map(e=>{const d=new Date(e.event_date);const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}</span>${gcalAddBtnHtml(e.id)}</div><button class="op-del" title="Delete" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('')}
     </div>`;
   } else if(activeMatterTab==='time'){
     const mt=timeEntries.filter(t=>t.matter_id===m.id);
@@ -2187,6 +2188,12 @@ function openEventModalForMatter(matterId){
 
 
 // ─── GOOGLE CALENDAR INTEGRATION ─────────────────────────────────
+// ── GCal helper: returns HTML for an "Add to GCal" button for use in any view
+function gcalAddBtnHtml(eventId) {
+  const vis = gcalConnected ? 'inline-flex' : 'none';
+  return `<button class="gcal-add-btn" onclick="addEventToGCalById('${eventId}',this)" style="display:${vis};margin-top:5px;align-items:center;gap:4px;font-size:9px;padding:2px 8px;border-radius:8px;border:1px solid #D9D4CB;background:#fff;cursor:pointer;color:#185FA5;font-family:'DM Sans',sans-serif" title="Add to Google Calendar"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>GCal</button>`;
+}
+
 const GCAL_CLIENT_ID = '774958331957-1pijlefqf9a3mmjd2s1le0s26mq8vrlf.apps.googleusercontent.com';
 const GCAL_SCOPES = 'https://www.googleapis.com/auth/calendar';
 let gcalTokenClient = null;
@@ -2228,16 +2235,37 @@ function handleGCalAuth() {
 function updateGCalBtn() {
   const lbl = document.getElementById('gcal-btn-label');
   const btn = document.getElementById('gcal-sync-btn');
-  if (!lbl || !btn) return;
-  if (gcalConnected) {
-    lbl.textContent = 'Sync from Google Cal';
-    btn.style.borderColor = '#34A853';
-    btn.style.color = '#34A853';
-  } else {
-    lbl.textContent = 'Connect Google Cal';
-    btn.style.borderColor = '';
-    btn.style.color = '';
+  if (lbl && btn) {
+    if (gcalConnected) {
+      lbl.textContent = 'Sync from Google Cal';
+      btn.style.borderColor = '#34A853';
+      btn.style.color = '#34A853';
+    } else {
+      lbl.textContent = 'Connect Google Cal';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }
   }
+  // Update global topbar GCal pill
+  const globalBtn = document.getElementById('gcal-global-btn');
+  const globalLbl = document.getElementById('gcal-global-label');
+  if (globalBtn && globalLbl) {
+    if (gcalConnected) {
+      globalLbl.textContent = 'GCal ✓';
+      globalBtn.style.borderColor = '#34A853';
+      globalBtn.style.color = '#34A853';
+      globalBtn.title = 'Google Calendar connected — click to sync';
+    } else {
+      globalLbl.textContent = 'GCal';
+      globalBtn.style.borderColor = '';
+      globalBtn.style.color = '';
+      globalBtn.title = 'Connect Google Calendar';
+    }
+  }
+  // Show/hide all inline "Add to GCal" buttons based on connection status
+  document.querySelectorAll('.gcal-add-btn').forEach(b => {
+    b.style.display = gcalConnected ? 'inline-flex' : 'none';
+  });
 }
 
 // Build a Google Calendar datetime string
