@@ -1993,7 +1993,7 @@ function renderDocumentsCard(){
     docs.forEach(doc=>{
       const{icon,cls}=docFileIcon(doc.name);
       let displayName=doc.name,category='',description='';
-      if(doc.name.includes('|||')){const parts=doc.name.split('|||');category=parts[0]||'';description=parts[1]||'';displayName=parts[2]||doc.name;}
+      if(doc.name.includes('__')){const parts=doc.name.split('__');category=parts[0]||'';description=parts[1]||'';displayName=parts.slice(2).join('__')||doc.name;}
       const meta=doc.metadata||{};
       const dateStr=doc.created_at?new Date(doc.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):'';
       html+=`<div class="doc-card">
@@ -2072,8 +2072,9 @@ async function uploadDocument(){
 
 async function uploadSingleFile(file,category,description){
   const safeName=file.name.replace(/[^a-zA-Z0-9.\-_]/g,'_');
+  const safeDesc=(description||'').replace(/[^a-zA-Z0-9.\-_]/g,'_').slice(0,40);
   const timestamp=Date.now();
-  const storagePath=`${activeMatterId}/${category}|||${description}|||${timestamp}_${safeName}`;
+  const storagePath=`${activeMatterId}/${category}__${safeDesc}__${timestamp}_${safeName}`;
   return await sb.storage.from(STORAGE_BUCKET).upload(storagePath,file,{upsert:false,contentType:file.type||'application/octet-stream'});
 }
 
@@ -2082,7 +2083,7 @@ async function downloadDocument(storageName){
   const{data,error}=await sb.storage.from(STORAGE_BUCKET).createSignedUrl(path,300);
   if(error){toast('Could not generate download link.',true);return;}
   let displayName=storageName;
-  if(storageName.includes('|||')){const parts=storageName.split('|||');displayName=parts[2]||storageName;}
+  if(storageName.includes('__')){const parts=storageName.split('__');displayName=parts.slice(2).join('__')||storageName;}
   const a=document.createElement('a');a.href=data.signedUrl;a.download=displayName;a.target='_blank';document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
