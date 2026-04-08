@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -594,7 +595,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
           <div class="cal-grid" id="cal-grid"></div>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Events This Month</span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('event')">+ Add Event</button></div>
+          <div class="card-header"><span class="card-title">Events This Month</span><div style="display:flex;gap:6px;align-items:center"><button id="gcal-sync-btn" class="topbar-btn sec" style="font-size:11px;padding:5px 12px;display:flex;align-items:center;gap:5px" onclick="handleGCalAuth()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg><span id="gcal-btn-label">Connect Google Cal</span></button><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('event')">+ Add Event</button></div></div>
           <div id="cal-events-list"><div class="empty-state"><p>No events this month.</p></div></div>
         </div>
       </div>
@@ -1534,7 +1535,7 @@ function renderCalendar(){
   const listEl=document.getElementById('cal-events-list');
   if(!meList.length){listEl.innerHTML=emptyState('No events this month.');return;}
   const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal','adr':'tag-client'};
-  listEl.innerHTML=meList.map(e=>{const d=new Date(e.event_date);return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span></div><button class="op-del" title="Delete event" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('');
+  listEl.innerHTML=meList.map(e=>{const d=new Date(e.event_date);const gcalBtn=`<button onclick="addEventToGCalById('${e.id}',this)" style="margin-top:5px;display:inline-flex;align-items:center;gap:4px;font-size:9px;padding:2px 8px;border-radius:8px;border:1px solid #D9D4CB;background:#fff;cursor:pointer;color:#185FA5;font-family:'DM Sans',sans-serif" title="Add to Google Calendar"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Add to GCal</button>`;return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span>${gcalBtn}</div><button class="op-del" title="Delete event" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('');
 }
 
 // ─── FINANCE ──────────────────────────────────────────────────────
@@ -2183,6 +2184,229 @@ function openEventModalForMatter(matterId){
   openModal('event');
   setTimeout(()=>{const sel=document.getElementById('ev-matter');if(sel)sel.value=matterId;},50);
 }
+
+
+// ─── GOOGLE CALENDAR INTEGRATION ─────────────────────────────────
+const GCAL_CLIENT_ID = '774958331957-1pijlefqf9a3mmjd2s1le0s26mq8vrlf.apps.googleusercontent.com';
+const GCAL_SCOPES = 'https://www.googleapis.com/auth/calendar';
+let gcalTokenClient = null;
+let gcalAccessToken = null;
+let gcalConnected = false;
+
+function initGCalClient() {
+  if (!window.google || !window.google.accounts) {
+    setTimeout(initGCalClient, 500);
+    return;
+  }
+  gcalTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GCAL_CLIENT_ID,
+    scope: GCAL_SCOPES,
+    callback: async (tokenResponse) => {
+      if (tokenResponse.error) {
+        toast('Google Calendar auth failed: ' + tokenResponse.error, true);
+        return;
+      }
+      gcalAccessToken = tokenResponse.access_token;
+      gcalConnected = true;
+      updateGCalBtn();
+      toast('Google Calendar connected! Syncing events…');
+      await syncFromGCal();
+    },
+  });
+}
+
+function handleGCalAuth() {
+  if (!gcalConnected) {
+    if (!gcalTokenClient) { toast('Google auth not ready yet. Please wait a moment.', true); return; }
+    gcalTokenClient.requestAccessToken();
+  } else {
+    // Already connected — re-sync from Google Calendar
+    syncFromGCal();
+  }
+}
+
+function updateGCalBtn() {
+  const lbl = document.getElementById('gcal-btn-label');
+  const btn = document.getElementById('gcal-sync-btn');
+  if (!lbl || !btn) return;
+  if (gcalConnected) {
+    lbl.textContent = 'Sync from Google Cal';
+    btn.style.borderColor = '#34A853';
+    btn.style.color = '#34A853';
+  } else {
+    lbl.textContent = 'Connect Google Cal';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }
+}
+
+// Build a Google Calendar datetime string
+function toGCalDate(dateStr, timeStr) {
+  if (timeStr) {
+    return { dateTime: dateStr + 'T' + timeStr + ':00', timeZone: 'Africa/Nairobi' };
+  }
+  return { date: dateStr };
+}
+
+// Push a DKMA event to Google Calendar
+async function addEventToGCal(btn, ev) {
+  if (!gcalConnected) {
+    toast('Please connect Google Calendar first (click the button at the top).', true);
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '⏳ Adding…';
+  const start = toGCalDate(ev.event_date, ev.event_time);
+  let end;
+  if (ev.event_time) {
+    // default 1 hour duration
+    const [h, m] = ev.event_time.split(':').map(Number);
+    const endH = String(h + 1).padStart(2, '0');
+    end = { dateTime: ev.event_date + 'T' + endH + ':' + String(m).padStart(2, '0') + ':00', timeZone: 'Africa/Nairobi' };
+  } else {
+    end = { date: ev.event_date };
+  }
+  const body = {
+    summary: ev.title,
+    location: ev.location || '',
+    description: (ev.notes || '') + (ev.type ? '\nType: ' + ev.type : '') + '\n[DKMA-ID:' + ev.id + ']',
+    start,
+    end,
+  };
+  try {
+    const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + gcalAccessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    btn.textContent = '✓ Added!';
+    btn.style.color = '#2D6A4F';
+    btn.style.borderColor = '#2D6A4F';
+    toast('Event added to Google Calendar!');
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Add to GCal';
+    btn.style.color = '';
+    toast('Failed to add to Google Calendar: ' + err.message, true);
+  }
+}
+
+// Pull events from Google Calendar into DKMA (avoids duplicates by DKMA-ID tag)
+async function syncFromGCal() {
+  if (!gcalAccessToken) return;
+  const btn = document.getElementById('gcal-sync-btn');
+  const lbl = document.getElementById('gcal-btn-label');
+  if (lbl) lbl.textContent = 'Syncing…';
+  if (btn) btn.disabled = true;
+  try {
+    const now = new Date();
+    const timeMin = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const timeMax = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString();
+    const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=100`;
+    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + gcalAccessToken } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const gcalItems = data.items || [];
+
+    // Get existing DKMA event titles & dates to detect duplicates
+    const existingKeys = new Set(events.map(e => e.title + '_' + e.event_date));
+
+    let added = 0;
+    for (const item of gcalItems) {
+      // Skip items that were originally pushed from DKMA (they have [DKMA-ID:...] tag)
+      if (item.description && item.description.includes('[DKMA-ID:')) continue;
+      const title = item.summary || 'Untitled';
+      const dateStr = item.start.date || (item.start.dateTime ? item.start.dateTime.split('T')[0] : null);
+      if (!dateStr) continue;
+      const key = title + '_' + dateStr;
+      if (existingKeys.has(key)) continue;
+      // Determine time
+      let timeStr = null;
+      if (item.start.dateTime) {
+        const t = new Date(item.start.dateTime);
+        timeStr = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+      }
+      // Insert into Supabase
+      const payload = {
+        title,
+        event_date: dateStr,
+        event_time: timeStr,
+        type: 'internal',
+        location: item.location || null,
+        notes: item.description ? item.description.slice(0, 500) : null,
+      };
+      const { data: newEv, error } = await sb.from('events').insert([payload]).select();
+      if (!error && newEv && newEv[0]) {
+        events.push(newEv[0]);
+        events.sort((a,b) => new Date(a.event_date) - new Date(b.event_date));
+        existingKeys.add(key);
+        added++;
+      }
+    }
+    toast(added > 0 ? added + ' new event(s) imported from Google Calendar!' : 'Google Calendar synced — no new events found.');
+    renderCalendar();
+    renderDashboard();
+    updateBadges();
+  } catch (err) {
+    toast('Sync failed: ' + err.message, true);
+  } finally {
+    if (btn) btn.disabled = false;
+    updateGCalBtn();
+  }
+}
+
+// Also auto-push to Google Calendar when a new event is saved
+const _origSaveEvent = saveEvent;
+async function saveEvent() {
+  await _origSaveEvent();
+  // After saving, auto-push to Google Cal if connected
+  if (gcalConnected && events.length) {
+    const latest = events[events.length - 1];
+    // Small delay to ensure it's in the array
+    setTimeout(() => {
+      if (gcalConnected && latest) {
+        addEventToGCalSilent(latest);
+      }
+    }, 600);
+  }
+}
+
+async function addEventToGCalSilent(ev) {
+  if (!gcalAccessToken) return;
+  const start = toGCalDate(ev.event_date, ev.event_time);
+  let end;
+  if (ev.event_time) {
+    const [h, m] = ev.event_time.split(':').map(Number);
+    const endH = String(h + 1).padStart(2, '0');
+    end = { dateTime: ev.event_date + 'T' + endH + ':' + String(m).padStart(2, '0') + ':00', timeZone: 'Africa/Nairobi' };
+  } else {
+    end = { date: ev.event_date };
+  }
+  const body = {
+    summary: ev.title,
+    location: ev.location || '',
+    description: (ev.notes || '') + (ev.type ? '\nType: ' + ev.type : '') + '\n[DKMA-ID:' + ev.id + ']',
+    start, end,
+  };
+  try {
+    await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + gcalAccessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    toast('Event also saved to Google Calendar ✓');
+  } catch (e) { /* silent fail */ }
+}
+
+function addEventToGCalById(id, btn) {
+  const ev = events.find(e => e.id === id);
+  if (!ev) { toast('Event not found.', true); return; }
+  addEventToGCal(btn, ev);
+}
+
+// Init GCal once GIS script loads
+window.addEventListener('load', () => { setTimeout(initGCalClient, 800); });
 
 // ─── INIT ─────────────────────────────────────────────────────────
 initAuth();
