@@ -815,7 +815,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <div class="form-row"><label>Location / Court</label><input id="ev-location" placeholder="e.g. ELC Nairobi, Room 4"/></div>
       <div class="form-row"><label>Notes</label><textarea id="ev-notes" placeholder="Any additional details…" style="min-height:60px"></textarea></div>
     </div>
-    <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" id="save-event-btn" onclick="saveEvent()">Save Event</button></div>
+    <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" id="save-event-btn" onclick="saveEventWithGCal()">Save Event</button></div>
   </div>
 
   <!-- ALERT MODAL -->
@@ -2357,9 +2357,9 @@ async function syncFromGCal() {
 }
 
 // Also auto-push to Google Calendar when a new event is saved
-const _origSaveEvent = saveEvent;
-async function saveEvent() {
-  await _origSaveEvent();
+// Patch saveEvent via override on the button click instead of re-declaring the function
+async function saveEventWithGCal() {
+  await saveEvent();
   // After saving, auto-push to Google Cal if connected
   if (gcalConnected && events.length) {
     const latest = events[events.length - 1];
