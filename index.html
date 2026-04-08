@@ -1107,8 +1107,8 @@ async function signOut(){
 async function loadAll(){
   await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties()]);
   renderDashboard();updateBadges();
+  setupRealtime();
 }
-// RLS handles data scoping automatically based on authenticated user
 async function loadClients(){const{data,error}=await sb.from('clients').select('*').order('created_at',{ascending:false});if(!error)clients=data||[];}
 async function loadMatters(){const{data,error}=await sb.from('matters').select('*').order('created_at',{ascending:false});if(!error)matters=data||[];}
 async function loadEvents(){const{data,error}=await sb.from('events').select('*').order('event_date',{ascending:true});if(!error)events=data||[];}
@@ -1116,6 +1116,87 @@ async function loadInvoices(){const{data,error}=await sb.from('invoices').select
 async function loadTimeEntries(){const{data,error}=await sb.from('time_entries').select('*').order('entry_date',{ascending:false});if(!error)timeEntries=data||[];}
 async function loadAlerts(){const{data,error}=await sb.from('alerts').select('*').order('created_at',{ascending:false});if(!error)alerts=data||[];}
 async function loadParties(){const{data,error}=await sb.from('parties').select('*').order('created_at',{ascending:false});if(!error)parties=data||[];}
+
+// ─── REALTIME ─────────────────────────────────────────────────────
+function setupRealtime(){
+  const refresh=async(table)=>{
+    if(table==='clients'){await loadClients();renderClients();renderDashboard();}
+    if(table==='matters'){await loadMatters();renderMatters();renderDashboard();updateBadges();if(activeMatterId)renderMatterDetail();}
+    if(table==='events'){await loadEvents();renderCalendar();renderDashboard();updateBadges();if(activeMatterId)renderMatterDetailTab();}
+    if(table==='invoices'){await loadInvoices();renderFinance();renderDashboard();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
+    if(table==='time_entries'){await loadTimeEntries();renderTimesheet();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
+    if(table==='alerts'){await loadAlerts();renderAlerts();renderDashboard();updateBadges();}
+    if(table==='parties'){await loadParties();if(activeClientId)renderProfileTab();}
+  };
+  ['clients','matters','events','invoices','time_entries','alerts','parties'].forEach(table=>{
+    sb.channel('rt-'+table)
+      .on('postgres_changes',{event:'*',schema:'public',table},(payload)=>{refresh(table);})
+      .subscribe();
+  });
+}
+
+// ─── DELETE FUNCTIONS ─────────────────────────────────────────────
+async function deleteMatter(id,title,e){
+  e&&e.stopPropagation();
+  if(!confirm('Delete matter "'+title+'"? This cannot be undone.'))return;
+  const{error}=await sb.from('matters').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,true);return;}
+  matters=matters.filter(m=>m.id!==id);
+  toast('Matter deleted.');
+  renderMatters();renderDashboard();updateBadges();
+  if(activeMatterId===id){activeMatterId=null;showView('matters',document.querySelector('[onclick*=matters]'));}
+}
+async function deleteClient(id,name,e){
+  e&&e.stopPropagation();
+  if(!confirm('Delete client "'+name+'"? This cannot be undone.'))return;
+  const{error}=await sb.from('clients').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,true);return;}
+  clients=clients.filter(c=>c.id!==id);
+  toast('Client deleted.');
+  renderClients();renderDashboard();
+  if(activeClientId===id){activeClientId=null;showView('clients',document.querySelector('[onclick*=clients]'));}
+}
+async function deleteEvent(id,title,e){
+  e&&e.stopPropagation();
+  if(!confirm('Delete event "'+title+'"?'))return;
+  const{error}=await sb.from('events').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,true);return;}
+  events=events.filter(ev=>ev.id!==id);
+  toast('Event deleted.');
+  renderCalendar();renderDashboard();updateBadges();
+  if(activeMatterId)renderMatterDetailTab();
+}
+async function deleteInvoice(id,no,e){
+  e&&e.stopPropagation();
+  if(!confirm('Delete invoice "'+no+'"?'))return;
+  const{error}=await sb.from('invoices').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,true);return;}
+  invoices=invoices.filter(i=>i.id!==id);
+  toast('Invoice deleted.');
+  renderFinance();renderDashboard();
+  if(activeClientId)renderProfileTab();
+  if(activeMatterId)renderMatterDetailTab();
+}
+async function deleteTimeEntry(id,e){
+  e&&e.stopPropagation();
+  if(!confirm('Delete this time entry?'))return;
+  const{error}=await sb.from('time_entries').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,true);return;}
+  timeEntries=timeEntries.filter(t=>t.id!==id);
+  toast('Time entry deleted.');
+  renderTimesheet();
+  if(activeClientId)renderProfileTab();
+  if(activeMatterId)renderMatterDetailTab();
+}
+async function deleteAlert(id,e){
+  e&&e.stopPropagation();
+  if(!confirm('Delete this alert?'))return;
+  const{error}=await sb.from('alerts').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,true);return;}
+  alerts=alerts.filter(a=>a.id!==id);
+  toast('Alert deleted.');
+  renderAlerts();renderDashboard();updateBadges();
+}
 
 // ─── BADGES ───────────────────────────────────────────────────────
 function updateBadges(){
@@ -1202,7 +1283,7 @@ function renderMatters(){
       <div class="mt-cell muted">${esc(m.type||'')}</div>
       <div class="mt-cell"><span class="status-pill ${statusClass(m.status)}">${statusLabel(m.status)}</span></div>
       <div class="mt-cell muted">${m.next_date?fmtDate(m.next_date):'—'}</div>
-      <div class="mt-cell bold">${m.fee?fmtMoney(m.fee):'—'}</div>
+      <div class="mt-cell bold" style="display:flex;align-items:center;justify-content:space-between">${m.fee?fmtMoney(m.fee):'—'}<button class="op-del" title="Delete matter" onclick="deleteMatter('${m.id}','${esc(m.title)}',event)">×</button></div>
     </div>`;
   }).join('');
 }
@@ -1227,7 +1308,10 @@ function renderClients(){
         <div class="cc-meta-item"><div class="cc-meta-label">Practice</div><div class="cc-meta-val" style="font-size:10px">${esc(c.practice_area||'—')}</div></div>
       </div>
       <div class="cc-tags"><span class="cc-tag">${esc(c.practice_area||'—')}</span></div>
-      <button class="cc-view-btn" onclick="openClientProfile('${c.id}')">View Full Profile →</button>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="cc-view-btn" style="flex:1;margin-top:0" onclick="openClientProfile('${c.id}')">View Full Profile →</button>
+        <button class="op-del" style="padding:7px 10px;border-radius:6px;border:1px solid var(--brd)" title="Delete client" onclick="deleteClient('${c.id}','${esc(c.name)}',event)">×</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1450,7 +1534,7 @@ function renderCalendar(){
   const listEl=document.getElementById('cal-events-list');
   if(!meList.length){listEl.innerHTML=emptyState('No events this month.');return;}
   const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal','adr':'tag-client'};
-  listEl.innerHTML=meList.map(e=>{const d=new Date(e.event_date);return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span></div></div>`;}).join('');
+  listEl.innerHTML=meList.map(e=>{const d=new Date(e.event_date);return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span></div><button class="op-del" title="Delete event" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('');
 }
 
 // ─── FINANCE ──────────────────────────────────────────────────────
@@ -1468,7 +1552,7 @@ function renderFinance(){
   if(!invoices.length){rows.innerHTML=emptyState('No invoices yet.');return;}
   rows.innerHTML=invoices.map(i=>{
     const c=clients.find(x=>x.id===i.client_id);const m=matters.find(x=>x.id===i.matter_id);
-    return`<div class="invoice-row"><span style="font-weight:500">${esc(i.invoice_no||'—')}</span><span style="color:var(--txt2)">${c?esc(c.name):'—'}${m?' — '+esc(m.title):''}</span><span style="font-weight:500">${fmtMoney(i.amount)}</span><span><span class="status-pill ${statusClass(i.status)}">${statusLabel(i.status)}</span></span><span style="color:var(--txt3)">${fmtDate(i.due_date)}</span></div>`;
+    return`<div class="invoice-row"><span style="font-weight:500">${esc(i.invoice_no||'—')}</span><span style="color:var(--txt2)">${c?esc(c.name):'—'}${m?' — '+esc(m.title):''}</span><span style="font-weight:500">${fmtMoney(i.amount)}</span><span><span class="status-pill ${statusClass(i.status)}">${statusLabel(i.status)}</span></span><span style="color:var(--txt3);display:flex;align-items:center;justify-content:space-between">${fmtDate(i.due_date)}<button class="op-del" title="Delete" onclick="deleteInvoice('${i.id}','${esc(i.invoice_no||'—')}',event)">×</button></span></div>`;
   }).join('');
 }
 
@@ -1487,7 +1571,7 @@ function renderTimesheet(){
   rows.innerHTML=timeEntries.map(e=>{
     const m=matters.find(x=>x.id===e.matter_id);
     const fee=e.billable?(parseFloat(e.hours)||0)*(parseFloat(e.rate)||0):0;
-    return`<div class="time-entry"><div class="time-hours">${parseFloat(e.hours||0).toFixed(1)}h</div><div style="flex:1"><div class="time-matter">${m?esc(m.title):esc(e.matter_name||'—')}</div><div class="time-desc">${esc(e.activity||'')} ${e.description?'— '+esc(e.description):''}</div></div><div class="time-fee" style="${e.billable?'':'color:var(--txt3)'}">${e.billable?fmtMoney(fee):'Non-billable'}</div></div>`;
+    return`<div class="time-entry"><div class="time-hours">${parseFloat(e.hours||0).toFixed(1)}h</div><div style="flex:1"><div class="time-matter">${m?esc(m.title):esc(e.matter_name||'—')}</div><div class="time-desc">${esc(e.activity||'')} ${e.description?'— '+esc(e.description):''}</div></div><div class="time-fee" style="${e.billable?'':'color:var(--txt3)'}">${e.billable?fmtMoney(fee):'Non-billable'}</div><button class="op-del" title="Delete" onclick="deleteTimeEntry('${e.id}',event)" style="margin-left:8px">×</button></div>`;
   }).join('');
 }
 
@@ -1497,8 +1581,8 @@ function renderAlerts(){
   const other=alerts.filter(a=>a.priority!=='critical');
   const uEl=document.getElementById('urgent-alerts-list');
   const rEl=document.getElementById('reminders-list');
-  uEl.innerHTML=urgent.length?urgent.map(a=>`<div class="alert-item"><div class="alert-dot red"></div><div><div class="alert-text">${esc(a.text)}</div><div class="alert-time">Critical · ${fmtDate(a.alert_date)}</div></div></div>`).join(''):emptyState('No urgent alerts.');
-  rEl.innerHTML=other.length?other.map(a=>{const dc={reminder:'gold',info:'navy'}[a.priority]||'navy';return`<div class="alert-item"><div class="alert-dot ${dc}"></div><div><div class="alert-text">${esc(a.text)}</div><div class="alert-time">${statusLabel(a.priority)} · ${fmtDate(a.alert_date)}</div></div></div>`;}).join(''):emptyState('No reminders or notices.');
+  uEl.innerHTML=urgent.length?urgent.map(a=>`<div class="alert-item"><div class="alert-dot red"></div><div style="flex:1"><div class="alert-text">${esc(a.text)}</div><div class="alert-time">Critical · ${fmtDate(a.alert_date)}</div></div><button class="op-del" title="Delete" onclick="deleteAlert('${a.id}',event)">×</button></div>`).join(''):emptyState('No urgent alerts.');
+  rEl.innerHTML=other.length?other.map(a=>{const dc={reminder:'gold',info:'navy'}[a.priority]||'navy';return`<div class="alert-item"><div class="alert-dot ${dc}"></div><div style="flex:1"><div class="alert-text">${esc(a.text)}</div><div class="alert-time">${statusLabel(a.priority)} · ${fmtDate(a.alert_date)}</div></div><button class="op-del" title="Delete" onclick="deleteAlert('${a.id}',event)">×</button></div>`;}).join(''):emptyState('No reminders or notices.');
 }
 
 // ─── TEAM ─────────────────────────────────────────────────────────
@@ -1926,7 +2010,7 @@ function renderMatterDetailTab(){
     el.innerHTML=`<div class="card">
       <div class="card-header"><span class="card-title">Events (${me.length})</span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openEventModalForMatter('${m.id}')">+ Add Event</button></div>
       ${!me.length?emptyStateSm('No events linked to this matter.')
-        :me.map(e=>{const d=new Date(e.event_date);const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')}</div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}</span></div></div>`;}).join('')}
+        :me.map(e=>{const d=new Date(e.event_date);const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')}</div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}</span></div><button class="op-del" title="Delete" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('')}
     </div>`;
   } else if(activeMatterTab==='time'){
     const mt=timeEntries.filter(t=>t.matter_id===m.id);
@@ -1934,7 +2018,7 @@ function renderMatterDetailTab(){
     el.innerHTML=`<div class="card">
       <div class="card-header"><span class="card-title">Time Entries (${mt.length})</span><div style="display:flex;align-items:center;gap:12px"><span style="font-size:12px;color:var(--txt3)">${totalH.toFixed(1)} hrs total</span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('time')">+ Log Time</button></div></div>
       ${!mt.length?emptyStateSm('No time logged for this matter.')
-        :mt.map(t=>`<div class="time-entry"><div class="time-hours">${(Number(t.hours)||0).toFixed(1)}h</div><div style="flex:1"><div class="time-matter">${esc(t.activity||'—')}</div><div class="time-desc">${esc(t.description||'')} ${t.entry_date?'· '+fmtDate(t.entry_date):''}</div></div><div class="time-fee">${t.billable&&t.rate?fmtMoney(Number(t.hours)*Number(t.rate)):t.billable?'Billable':'—'}</div></div>`).join('')}
+        :mt.map(t=>`<div class="time-entry"><div class="time-hours">${(Number(t.hours)||0).toFixed(1)}h</div><div style="flex:1"><div class="time-matter">${esc(t.activity||'—')}</div><div class="time-desc">${esc(t.description||'')} ${t.entry_date?'· '+fmtDate(t.entry_date):''}</div></div><div class="time-fee">${t.billable&&t.rate?fmtMoney(Number(t.hours)*Number(t.rate)):t.billable?'Billable':'—'}</div><button class="op-del" title="Delete" onclick="deleteTimeEntry('${t.id}',event)" style="margin-left:8px">×</button></div>`).join('')}
     </div>`;
   } else if(activeMatterTab==='invoices'){
     const mi=invoices.filter(i=>i.matter_id===m.id);
@@ -1942,7 +2026,7 @@ function renderMatterDetailTab(){
       <div class="card-header"><span class="card-title">Invoices (${mi.length})</span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('invoice')">+ New Invoice</button></div>
       ${!mi.length?emptyStateSm('No invoices for this matter.')
         :`<div class="invoice-row header"><span>Invoice</span><span>Amount</span><span>Status</span><span>Date</span><span>Due</span></div>`+
-        mi.map(i=>`<div class="invoice-row"><span style="font-weight:500">${esc(i.invoice_no||'—')}</span><span style="font-weight:500">${fmtMoney(i.amount)}</span><span><span class="status-pill ${statusClass(i.status)}">${statusLabel(i.status)}</span></span><span style="color:var(--txt3)">${fmtDate(i.invoice_date)}</span><span style="color:var(--txt3)">${fmtDate(i.due_date)}</span></div>`).join('')}
+        mi.map(i=>`<div class="invoice-row"><span style="font-weight:500">${esc(i.invoice_no||'—')}</span><span style="font-weight:500">${fmtMoney(i.amount)}</span><span><span class="status-pill ${statusClass(i.status)}">${statusLabel(i.status)}</span></span><span style="color:var(--txt3)">${fmtDate(i.invoice_date)}</span><span style="color:var(--txt3);display:flex;align-items:center;justify-content:space-between">${fmtDate(i.due_date)}<button class="op-del" title="Delete" onclick="deleteInvoice('${i.id}','${esc(i.invoice_no||'—')}',event)">×</button></span></div>`).join('')}
     </div>`;
   }
 }
