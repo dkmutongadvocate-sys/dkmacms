@@ -1129,6 +1129,10 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 // ─── SUPABASE ─────────────────────────────────────────────────────
 const SUPABASE_URL='https://oolqcrpjuqmzxupaozpu.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vbHFjcnBqdXFtenh1cGFvenB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NDk0MjYsImV4cCI6MjA5MTAyNTQyNn0.G6s3LMbpqpsWqEqbEII8yff4gD3tTZ7hNc3jqOBS1EI';
+// ⬇ PASTE YOUR SERVICE ROLE KEY HERE to enable creating users while signups are disabled.
+// Find it: Supabase Dashboard → Project Settings → API → service_role (secret) key.
+// Only use this in a private/internal app (not on a public website).
+const SERVICE_ROLE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vbHFjcnBqdXFtenh1cGFvenB1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTQ0OTQyNiwiZXhwIjoyMDkxMDI1NDI2fQ.m9yRCOqLXMsMYVGjExDei3TSLJbK9VBQ-bXe3TNH2qc'; // e.g. 'eyJhbGci...'
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 // ─── STATE ────────────────────────────────────────────────────────
@@ -1879,19 +1883,58 @@ async function addUser(){
   const btn=document.getElementById('au-btn');
   btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span>Creating…';
 
-  // Sign up the new user via Supabase auth (uses anon key — works if email confirmations are off)
-  const{data:authData,error:authErr}=await sb.auth.signUp({
-    email,password,
-    options:{data:{full_name:name,role,department:dept||null}}
-  });
+  // Use the Supabase Admin REST API to create the user server-side.
+  // This bypasses the "Signups not allowed" restriction (which blocks client-side signUp).
+  // We call the /auth/v1/admin/users endpoint with the service role key.
+  // If SERVICE_ROLE_KEY is not set, fall back to inviteUserByEmail.
+  let newUserId=null;
 
-  if(authErr){
-    btn.disabled=false;btn.innerHTML='Create User';
-    errEl.textContent='Auth error: '+authErr.message;return;
+  if(typeof SERVICE_ROLE_KEY!=='undefined'&&SERVICE_ROLE_KEY){
+    // Admin API path — requires service role key
+    const res=await fetch(`${SUPABASE_URL}/auth/v1/admin/users`,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey':SERVICE_ROLE_KEY,
+        'Authorization':'Bearer '+SERVICE_ROLE_KEY
+      },
+      body:JSON.stringify({
+        email,password,
+        email_confirm:true,
+        user_metadata:{full_name:name,role,department:dept||null}
+      })
+    });
+    const resData=await res.json();
+    if(!res.ok){
+      btn.disabled=false;btn.innerHTML='Create User';
+      errEl.textContent='Auth error: '+(resData.message||resData.msg||JSON.stringify(resData));return;
+    }
+    newUserId=resData.id;
+  } else {
+    // Fallback: invite by email. User receives an invite link to set their own password.
+    // Works even when "Enable Signups" is OFF in Supabase dashboard.
+    const{data:inviteData,error:inviteErr}=await sb.auth.admin.inviteUserByEmail(email,{
+      data:{full_name:name,role,department:dept||null}
+    });
+    if(inviteErr){
+      // Last resort: try signUp (works if signups are enabled)
+      const{data:authData,error:authErr}=await sb.auth.signUp({
+        email,password,
+        options:{data:{full_name:name,role,department:dept||null}}
+      });
+      if(authErr){
+        btn.disabled=false;btn.innerHTML='Create User';
+        errEl.textContent='Auth error: '+authErr.message+
+          '. To fix: enable "Allow new users to sign up" in your Supabase dashboard → Authentication → Settings, OR add a SERVICE_ROLE_KEY variable to this app.';
+        return;
+      }
+      newUserId=authData?.user?.id;
+    } else {
+      newUserId=inviteData?.user?.id;
+    }
   }
 
   // Insert/upsert profile row for the new user
-  const newUserId=authData?.user?.id;
   if(newUserId){
     await sb.from('profiles').upsert([{
       id:newUserId,full_name:name,role,department:dept||null
@@ -1903,7 +1946,7 @@ async function addUser(){
   document.getElementById('au-name').value='';
   document.getElementById('au-email').value='';
   document.getElementById('au-password').value='';
-  toast('User created. They can now sign in with their credentials.');
+  toast(newUserId?'User created. They can now sign in with their credentials.':'Invite sent to '+email+'. They must click the link to activate their account.');
   renderTeam();
 }
 
@@ -2176,18 +2219,43 @@ async function saveClient(){
 
     // Create portal auth account if password provided
     if(portalPassword&&email){
-      const{data:authData,error:authErr}=await sb.auth.signUp({
-        email,password:portalPassword,
-        options:{data:{full_name:name,role:'client'}}
-      });
-      if(authErr){
-        toast('Client saved but portal account failed: '+authErr.message,true);
+      let portalUserId=null;
+      let portalErr=null;
+      // Use Admin REST API if service role key is available
+      if(typeof SERVICE_ROLE_KEY!=='undefined'&&SERVICE_ROLE_KEY){
+        const res=await fetch(`${SUPABASE_URL}/auth/v1/admin/users`,{
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json',
+            'apikey':SERVICE_ROLE_KEY,
+            'Authorization':'Bearer '+SERVICE_ROLE_KEY
+          },
+          body:JSON.stringify({
+            email,password:portalPassword,
+            email_confirm:true,
+            user_metadata:{full_name:name,role:'client'}
+          })
+        });
+        const rd=await res.json();
+        if(!res.ok){portalErr=rd.message||rd.msg||'Failed to create portal account';}
+        else{portalUserId=rd.id;}
+      } else {
+        // Fallback: standard signUp (requires signups enabled in Supabase dashboard)
+        const{data:authData,error:authErr}=await sb.auth.signUp({
+          email,password:portalPassword,
+          options:{data:{full_name:name,role:'client'}}
+        });
+        if(authErr){portalErr=authErr.message;}
+        else{portalUserId=authData?.user?.id;}
+      }
+      if(portalErr){
+        toast('Client saved but portal account failed: '+portalErr+
+          '. Fix: enable signups in Supabase dashboard or add SERVICE_ROLE_KEY.',true);
       } else {
         // Link auth user to client record
-        const userId=authData?.user?.id;
-        if(userId){
-          await sb.from('clients').update({user_id:userId}).eq('id',savedClient.id);
-          savedClient.user_id=userId;
+        if(portalUserId){
+          await sb.from('clients').update({user_id:portalUserId}).eq('id',savedClient.id);
+          savedClient.user_id=portalUserId;
         }
         // Show credentials to advocate
         showClientCredentials(name,email,portalPassword);
