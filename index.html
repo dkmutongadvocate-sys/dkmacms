@@ -442,22 +442,58 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <div style="font-family:'Playfair Display',serif;font-size:22px;color:var(--navy);font-weight:500">DKMA</div>
       <div style="font-size:11px;color:var(--txt3);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px">Law Firm Management</div>
     </div>
-    <div style="margin-bottom:16px">
-      <label style="display:block;font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:500">Email</label>
-      <input id="auth-email" type="email" placeholder="you@dkma.co.ke" onkeydown="if(event.key==='Enter')signIn()"
-        style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:10px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none"/>
+    <!-- SIGN IN -->
+    <div id="firm-mode-signin">
+      <div style="margin-bottom:16px">
+        <label style="display:block;font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:500">Email</label>
+        <input id="auth-email" type="email" placeholder="you@dkma.co.ke" onkeydown="if(event.key==='Enter')signIn()"
+          style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:10px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none"/>
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="display:block;font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:500">Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')signIn()"
+          style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:10px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none"/>
+      </div>
+      <div id="auth-error" style="font-size:12px;color:var(--red);min-height:18px;margin-bottom:14px;text-align:center"></div>
+      <button id="auth-btn" onclick="signIn()"
+        style="width:100%;background:var(--navy);color:#fff;border:none;padding:11px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">
+        Sign In
+      </button>
+      <div style="text-align:center;font-size:11px;color:var(--txt3);margin-top:18px">
+        <a onclick="showFirmMode('reset')" style="color:var(--navy);cursor:pointer;text-decoration:underline">Forgot password?</a>
+        &nbsp;·&nbsp; Contact your administrator to create an account.
+      </div>
     </div>
-    <div style="margin-bottom:8px">
-      <label style="display:block;font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:500">Password</label>
-      <input id="auth-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')signIn()"
-        style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:10px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none"/>
+    <!-- FORGOT PASSWORD -->
+    <div id="firm-mode-reset" style="display:none">
+      <p style="font-size:12px;color:var(--txt3);text-align:center;margin-bottom:20px;line-height:1.6">Enter your work email to receive a password reset link.</p>
+      <label style="display:block;font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:500">Email Address</label>
+      <input id="firm-reset-email" type="email" placeholder="you@dkma.co.ke" onkeydown="if(event.key==='Enter')firmSendReset()"
+        style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:10px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none;margin-bottom:14px"/>
+      <div id="firm-reset-error" style="font-size:12px;color:var(--red);min-height:18px;margin-bottom:12px;text-align:center"></div>
+      <button id="firm-reset-btn" onclick="firmSendReset()"
+        style="width:100%;background:var(--navy);color:#fff;border:none;padding:11px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">
+        Send Reset Link
+      </button>
+      <div style="text-align:center;font-size:12px;color:var(--txt3);margin-top:16px">
+        <a onclick="showFirmMode('signin')" style="color:var(--navy);cursor:pointer;text-decoration:underline">← Back to Sign In</a>
+      </div>
     </div>
-    <div id="auth-error" style="font-size:12px;color:var(--red);min-height:18px;margin-bottom:14px;text-align:center"></div>
-    <button id="auth-btn" onclick="signIn()"
-      style="width:100%;background:var(--navy);color:#fff;border:none;padding:11px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">
-      Sign In
-    </button>
-    <div style="text-align:center;font-size:11px;color:var(--txt3);margin-top:18px">Contact your administrator to create an account.</div>
+    <!-- SET NEW PASSWORD -->
+    <div id="firm-mode-newpassword" style="display:none">
+      <p style="font-size:12px;color:var(--txt3);text-align:center;margin-bottom:20px;line-height:1.6">Choose a new password for your account.</p>
+      <label style="display:block;font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:500">New Password</label>
+      <input id="firm-newpw-password" type="password" placeholder="Min. 8 characters"
+        style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:10px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none;margin-bottom:14px"/>
+      <label style="display:block;font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:500">Confirm New Password</label>
+      <input id="firm-newpw-confirm" type="password" placeholder="Repeat your new password" onkeydown="if(event.key==='Enter')firmSetNewPassword()"
+        style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:10px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none;margin-bottom:14px"/>
+      <div id="firm-newpw-error" style="font-size:12px;color:var(--red);min-height:18px;margin-bottom:12px;text-align:center"></div>
+      <button id="firm-newpw-btn" onclick="firmSetNewPassword()"
+        style="width:100%;background:var(--navy);color:#fff;border:none;padding:11px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">
+        Set New Password
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1179,7 +1215,15 @@ async function initAuth(){
     showAuthScreen();
   }
   sb.auth.onAuthStateChange(async(event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      window._firmPasswordRecoveryMode=true;
+      document.getElementById('auth-screen').style.display='flex';
+      document.getElementById('app-shell').style.display='none';
+      showFirmMode('newpassword');
+      return;
+    }
     if(event==='SIGNED_IN'&&session){
+      if(window._firmPasswordRecoveryMode){return;}
       currentUser=session.user;
       await loadProfile();
       showApp();
@@ -1187,6 +1231,7 @@ async function initAuth(){
     }
     if(event==='SIGNED_OUT'){
       currentUser=null;currentProfile=null;
+      window._firmPasswordRecoveryMode=false;
       clients=[];matters=[];events=[];invoices=[];timeEntries=[];alerts=[];parties=[];
       showAuthScreen();
     }
@@ -1244,6 +1289,7 @@ function showApp(){
 function showAuthScreen(){
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('app-shell').style.display='none';
+  showFirmMode('signin');
 }
 
 async function signIn(){
@@ -1259,6 +1305,57 @@ async function signIn(){
 
 async function signOut(){
   await sb.auth.signOut();
+}
+
+function showFirmMode(mode){
+  ['signin','reset','newpassword'].forEach(m=>{
+    const el=document.getElementById('firm-mode-'+m);
+    if(el)el.style.display=m===mode?'block':'none';
+  });
+  // Clear any stale error messages when switching modes
+  ['firm-reset-error','firm-newpw-error','auth-error'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.textContent='';
+  });
+}
+
+async function firmSendReset(){
+  const email=(document.getElementById('firm-reset-email').value||'').trim();
+  const errEl=document.getElementById('firm-reset-error');
+  errEl.style.color='var(--red)';
+  errEl.textContent='';
+  if(!email){errEl.textContent='Please enter your email address.';return;}
+  const btn=document.getElementById('firm-reset-btn');
+  btn.disabled=true;btn.textContent='Sending…';
+  const redirectTo='https://dkmutongadvocate-sys.github.io/dkmacms/';
+  const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});
+  btn.disabled=false;btn.textContent='Send Reset Link';
+  if(error){errEl.textContent=error.message;return;}
+  errEl.style.color='var(--green)';
+  errEl.textContent='Reset link sent! Check your email.';
+}
+
+async function firmSetNewPassword(){
+  const pw=(document.getElementById('firm-newpw-password').value||'');
+  const pw2=(document.getElementById('firm-newpw-confirm').value||'');
+  const errEl=document.getElementById('firm-newpw-error');
+  errEl.style.color='var(--red)';
+  errEl.textContent='';
+  if(!pw||pw.length<8){errEl.textContent='Password must be at least 8 characters.';return;}
+  if(pw!==pw2){errEl.textContent='Passwords do not match.';return;}
+  const btn=document.getElementById('firm-newpw-btn');
+  btn.disabled=true;btn.textContent='Updating…';
+  const{error}=await sb.auth.updateUser({password:pw});
+  btn.disabled=false;btn.textContent='Set New Password';
+  if(error){errEl.textContent=error.message;return;}
+  errEl.style.color='var(--green)';
+  errEl.textContent='Password updated! Signing you in…';
+  window._firmPasswordRecoveryMode=false;
+  setTimeout(async()=>{
+    const{data:{session}}=await sb.auth.getSession();
+    if(session){currentUser=session.user;await loadProfile();showApp();loadAll();}
+    else{showFirmMode('signin');}
+  },1500);
 }
 
 // ─── LOAD ALL ─────────────────────────────────────────────────────
@@ -1890,7 +1987,7 @@ async function resetClientPortalPassword(clientId){
   // Generate new password and update via admin — since we only have anon key,
   // we send a reset email to the client's email instead
   const{error}=await sb.auth.resetPasswordForEmail(client.email,{
-    redirectTo:window.location.origin+'/DKMA_ClientPortal.html?reset=1'
+    redirectTo:'https://dkmutongadvocate-sys.github.io/dkmaclient/'
   });
   if(error){toast('Error: '+error.message,true);return;}
   toast('Password reset email sent to '+client.email+' ✓');
