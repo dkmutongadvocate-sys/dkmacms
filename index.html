@@ -309,16 +309,20 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .matter-detail-tab.active{background:var(--navy);color:#fff}
 
 /* DOCUMENT STORAGE */
-.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:20px}
-.doc-card{border:1px solid var(--brd);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--cream);transition:all 0.15s;position:relative}
-.doc-card:hover{border-color:var(--gold);box-shadow:0 2px 8px rgba(184,149,58,0.1)}
-.doc-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:#fff;border:1px solid var(--brd)}
-.doc-name{font-size:12px;font-weight:500;color:var(--txt);word-break:break-word;line-height:1.3}
-.doc-meta{font-size:10px;color:var(--txt3)}
-.doc-actions{display:flex;gap:6px;margin-top:4px}
-.doc-btn{font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--brd);background:#fff;cursor:pointer;color:var(--txt2);font-family:'DM Sans',sans-serif;transition:all 0.12s}
+.doc-list{display:flex;flex-direction:column}
+.doc-row{display:flex;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--brd);transition:background 0.12s}
+.doc-row:last-child{border-bottom:none}
+.doc-row:hover{background:var(--cream)}
+.doc-icon{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;border:1px solid var(--brd)}
+.doc-info{flex:1;min-width:0}
+.doc-name{font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-meta{font-size:10px;color:var(--txt3);margin-top:2px}
+.doc-actions{display:flex;gap:5px;flex-shrink:0}
+.doc-btn{font-size:11px;padding:4px 11px;border-radius:5px;border:1px solid var(--brd);background:#fff;cursor:pointer;color:var(--txt2);font-family:'DM Sans',sans-serif;transition:all 0.12s;white-space:nowrap}
 .doc-btn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
-.doc-btn.del{color:var(--red)}
+.doc-btn.view-btn{color:var(--navy);border-color:var(--navy)}
+.doc-btn.view-btn:hover{background:var(--navy);color:#fff}
+.doc-btn.del{color:var(--red);border-color:var(--brd)}
 .doc-btn.del:hover{background:#FCEBEB;border-color:#f5c6c6;color:var(--red)}
 .upload-zone{border:2px dashed var(--brd2);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:all 0.15s;background:#fff;margin:20px}
 .upload-zone:hover,.upload-zone.drag{border-color:var(--gold);background:rgba(184,149,58,0.04)}
@@ -330,8 +334,16 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .doc-type-xls{background:#FAEEDA}.doc-type-other{background:#EEEDFE}
 .doc-upload-progress{height:3px;background:var(--cream2);border-radius:2px;overflow:hidden;margin-top:6px}
 .doc-upload-bar{height:100%;background:var(--gold);border-radius:2px;transition:width 0.3s}
-.docs-toolbar{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--brd)}
+.docs-toolbar{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--brd)}
 .doc-count-badge{background:var(--cream2);color:var(--txt2);font-size:11px;padding:2px 8px;border-radius:8px;font-weight:500}
+.doc-viewer-overlay{position:fixed;inset:0;background:rgba(13,27,42,0.75);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.doc-viewer-overlay.hidden{display:none}
+.doc-viewer-bar{background:#fff;border-radius:10px 10px 0 0;width:100%;max-width:920px;padding:12px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--brd);flex-shrink:0}
+.doc-viewer-title{font-size:13px;font-weight:500;color:var(--txt);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-viewer-body{background:#fff;border-radius:0 0 10px 10px;width:100%;max-width:920px;height:78vh;overflow:auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+.doc-viewer-body iframe{width:100%;height:100%;border:none;display:block}
+.doc-viewer-body img{max-width:100%;max-height:100%;object-fit:contain;display:block;margin:auto;padding:20px}
+.doc-viewer-nopreview{padding:48px 20px;text-align:center;color:var(--txt3);font-size:13px;line-height:1.7}
 
 /* AUTH */
 #auth-screen input:focus{border-color:var(--navy)!important;outline:none}
@@ -2086,30 +2098,44 @@ function renderDocumentsCard(){
       <div class="upload-zone-sub">Click to upload files, or drag &amp; drop here</div>
     </div>`;
   } else {
-    html+=`<div class="doc-grid">`;
+    // List header
+    html+=`<div style="display:grid;grid-template-columns:34px 1fr 90px 70px 130px;gap:14px;padding:7px 20px;background:var(--cream);border-bottom:1px solid var(--brd)">
+      <span></span>
+      <span style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500">Name</span>
+      <span style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500">Category</span>
+      <span style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500">Size</span>
+      <span style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;text-align:right">Actions</span>
+    </div>`;
+    html+=`<div class="doc-list">`;
     docs.forEach(doc=>{
       const{icon,cls}=docFileIcon(doc.name);
       let displayName=doc.name,category='',description='';
       if(doc.name.includes('__')){const parts=doc.name.split('__');category=parts[0]||'';description=parts[1]||'';displayName=parts.slice(2).join('__')||doc.name;}
+      // Strip timestamp prefix from displayName if present (timestamp_filename)
+      const tsMatch=displayName.match(/^\d+_(.+)$/);
+      if(tsMatch)displayName=tsMatch[1];
       const meta=doc.metadata||{};
       const dateStr=doc.created_at?new Date(doc.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):'';
-      html+=`<div class="doc-card">
-        <div style="display:flex;gap:10px;align-items:flex-start">
-          <div class="doc-icon ${cls}">${icon}</div>
-          <div style="flex:1;min-width:0">
-            <div class="doc-name" title="${esc(displayName)}">${esc(displayName.length>42?displayName.slice(0,42)+'…':displayName)}</div>
-            ${category?`<div class="doc-meta" style="margin-top:3px;font-weight:500">${esc(categoryLabel(category))}</div>`:''}
-            ${description?`<div class="doc-meta">${esc(description)}</div>`:''}
-            <div class="doc-meta" style="margin-top:3px">${fmtFileSize(meta.size)}${dateStr?' · '+dateStr:''}</div>
-          </div>
+      const safeName=esc(doc.name);
+      const safeDisplay=esc(displayName);
+      html+=`<div class="doc-row">
+        <div class="doc-icon ${cls}">${icon}</div>
+        <div class="doc-info">
+          <div class="doc-name" title="${safeDisplay}">${safeDisplay}</div>
+          <div class="doc-meta">${dateStr}${description?' · '+esc(description):''}</div>
         </div>
+        <div style="flex-shrink:0;min-width:90px">
+          ${category?`<span class="status-pill" style="background:var(--cream2);color:var(--txt2);font-size:9px">${esc(categoryLabel(category))}</span>`:'<span style="font-size:11px;color:var(--txt3)">—</span>'}
+        </div>
+        <div style="flex-shrink:0;min-width:60px;font-size:11px;color:var(--txt3)">${fmtFileSize(meta.size)}</div>
         <div class="doc-actions">
-          <button class="doc-btn" onclick="downloadDocument('${esc(doc.name)}')">⬇ Download</button>
-          <button class="doc-btn del" onclick="deleteDocument('${esc(doc.name)}','${esc(displayName)}')">✕ Delete</button>
+          <button class="doc-btn view-btn" onclick="viewDocument('${safeName}','${safeDisplay}')">👁 View</button>
+          <button class="doc-btn" onclick="downloadDocument('${safeName}')">⬇</button>
+          <button class="doc-btn del" onclick="deleteDocument('${safeName}','${safeDisplay}')">✕</button>
         </div>
       </div>`;
     });
-    html+=`</div><div style="padding:0 20px 16px;text-align:right"><button class="filter-btn" style="font-size:11px" onclick="openDocumentUploadModal()">+ Upload More</button></div>`;
+    html+=`</div><div style="padding:10px 20px;border-top:1px solid var(--brd);text-align:right"><button class="filter-btn" style="font-size:11px" onclick="openDocumentUploadModal()">+ Upload More</button></div>`;
   }
   card.innerHTML=html;
   // Setup drop zone interactions
@@ -2443,8 +2469,54 @@ function addEventToGCalById(id, btn) {
 // Init GCal once GIS script loads
 window.addEventListener('load', () => { setTimeout(initGCalClient, 800); });
 
+// ─── DOCUMENT VIEWER ──────────────────────────────────────────────
+async function viewDocument(storageName, displayName) {
+  const path = `${activeMatterId}/${storageName}`;
+  const { data, error } = await sb.storage.from(STORAGE_BUCKET).createSignedUrl(path, 600);
+  if (error) { toast('Could not open document.', true); return; }
+  const url = data.signedUrl;
+  const ext = (storageName.split('.').pop() || '').toLowerCase();
+  const overlay = document.getElementById('doc-viewer-overlay');
+  document.getElementById('doc-viewer-filename').textContent = displayName;
+  const body = document.getElementById('doc-viewer-body');
+  // Store url on download btn
+  document.getElementById('doc-viewer-dl-btn').onclick = () => {
+    const a = document.createElement('a'); a.href = url; a.download = displayName; a.target = '_blank';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+  if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+    body.innerHTML = `<img src="${url}" alt="${esc(displayName)}" style="max-width:100%;max-height:76vh;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
+  } else if (ext === 'pdf') {
+    body.innerHTML = `<iframe src="${url}" style="width:100%;height:76vh;border:none;display:block"></iframe>`;
+  } else {
+    body.innerHTML = `<div class="doc-viewer-nopreview">
+      <div style="font-size:36px;margin-bottom:16px">📄</div>
+      <div style="font-weight:500;color:var(--txt);margin-bottom:8px">${esc(displayName)}</div>
+      <div>Preview not available for this file type.<br>Use the Download button to open it.</div>
+    </div>`;
+  }
+  overlay.classList.remove('hidden');
+}
+function closeDocViewer() {
+  const overlay = document.getElementById('doc-viewer-overlay');
+  overlay.classList.add('hidden');
+  document.getElementById('doc-viewer-body').innerHTML = '';
+}
+
 // ─── INIT ─────────────────────────────────────────────────────────
 initAuth();
 </script>
+
+<!-- DOCUMENT VIEWER OVERLAY -->
+<div class="doc-viewer-overlay hidden" id="doc-viewer-overlay" onclick="if(event.target===this)closeDocViewer()">
+  <div class="doc-viewer-bar">
+    <span style="font-size:16px">📄</span>
+    <span class="doc-viewer-title" id="doc-viewer-filename">Document</span>
+    <button id="doc-viewer-dl-btn" class="doc-btn" style="font-size:11px;padding:4px 12px">⬇ Download</button>
+    <button onclick="closeDocViewer()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--txt3);line-height:1;padding:0 4px;margin-left:4px">×</button>
+  </div>
+  <div class="doc-viewer-body" id="doc-viewer-body"></div>
+</div>
+
 </body>
 </html>
