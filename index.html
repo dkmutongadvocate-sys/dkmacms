@@ -2131,6 +2131,7 @@ function renderDocumentsCard(){
         <div class="doc-actions">
           <button class="doc-btn view-btn" onclick="viewDocument('${safeName}','${safeDisplay}')">👁 View</button>
           <button class="doc-btn" onclick="downloadDocument('${safeName}')">⬇</button>
+          <button class="doc-btn ${doc.name.startsWith('shared__')?'share-active':'share-off'}" title="${doc.name.startsWith('shared__')?'Visible to client — click to hide':'Hidden from client — click to share'}" onclick="toggleShareWithClient('${safeName}','${safeDisplay}',this)" style="${doc.name.startsWith('shared__')?'color:var(--green);border-color:var(--green)':'color:var(--txt3)'}">${doc.name.startsWith('shared__')?'👁 Client':'🔒 Hidden'}</button>
           <button class="doc-btn del" onclick="deleteDocument('${safeName}','${safeDisplay}')">✕</button>
         </div>
       </div>`;
@@ -2216,6 +2217,27 @@ async function deleteDocument(storageName,displayName){
   if(error){toast('Delete failed: '+error.message,true);return;}
   toast('Document deleted.');
   await loadMatterDocuments();
+}
+
+// Toggle client portal visibility: rename file with/without shared__ prefix
+async function toggleShareWithClient(storageName,displayName,btn){
+  const isShared=storageName.startsWith('shared__');
+  const newName=isShared?storageName.slice('shared__'.length):'shared__'+storageName;
+  const oldPath=`${activeMatterId}/${storageName}`;
+  const newPath=`${activeMatterId}/${newName}`;
+  btn.disabled=true;btn.textContent='…';
+  // Download then re-upload with new name, then delete old
+  const{data:urlData,error:urlErr}=await sb.storage.from(STORAGE_BUCKET).createSignedUrl(oldPath,120);
+  if(urlErr){toast('Could not access file.',true);btn.disabled=false;return;}
+  try{
+    const res=await fetch(urlData.signedUrl);
+    const blob=await res.blob();
+    const{error:upErr}=await sb.storage.from(STORAGE_BUCKET).upload(newPath,blob,{upsert:false,contentType:blob.type||'application/octet-stream'});
+    if(upErr){toast('Could not rename file: '+upErr.message,true);btn.disabled=false;btn.textContent=isShared?'👁 Client':'🔒 Hidden';return;}
+    await sb.storage.from(STORAGE_BUCKET).remove([oldPath]);
+    toast(isShared?'Document hidden from client portal.':'Document is now visible in client portal ✓');
+    await loadMatterDocuments();
+  }catch(e){toast('Error: '+e.message,true);btn.disabled=false;btn.textContent=isShared?'👁 Client':'🔒 Hidden';}
 }
 
 function openEventModalForMatter(matterId){
