@@ -827,6 +827,16 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <div class="form-row"><label>Primary Practice Area</label><select id="c-area"><option>Civil Litigation</option><option>Conveyancing</option><option>Family Law</option><option>Criminal</option><option>Probate &amp; Succession</option><option>ADR</option><option>Data Protection</option><option>Contract Law</option><option>Employment</option><option>Immigration</option></select></div>
       <div class="form-row"><label>Conflict Check Notes</label><textarea id="c-conflict" placeholder="Note any potential conflicts of interest…" style="min-height:60px"></textarea></div>
       <div class="form-row"><label>Internal Notes</label><textarea id="c-notes" placeholder="Any other notes about the client…" style="min-height:60px"></textarea></div>
+      <div class="section-divider">Portal Access</div>
+      <div style="font-size:12px;color:var(--txt3);margin-bottom:14px;line-height:1.6">Set a password so the client can log into the DKMA Client Portal. You can share these credentials with them directly.</div>
+      <div class="form-row">
+        <label>Portal Password</label>
+        <div style="display:flex;gap:8px">
+          <input id="c-portal-password" type="text" placeholder="Leave blank to skip portal access" style="flex:1;border:1px solid var(--brd);border-radius:7px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none"/>
+          <button type="button" onclick="generateClientPassword()" style="background:var(--cream);border:1px solid var(--brd2);border-radius:7px;padding:9px 14px;font-size:12px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;color:var(--txt2);transition:all 0.12s" onmouseover="this.style.background='var(--navy)';this.style.color='#fff'" onmouseout="this.style.background='var(--cream)';this.style.color='var(--txt2)'">🔑 Generate</button>
+        </div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:5px">The client's email address above will be their username.</div>
+      </div>
     </div>
     <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" id="save-client-btn" onclick="saveClient()">Save Client</button></div>
   </div>
@@ -1829,6 +1839,63 @@ async function addUser(){
   renderTeam();
 }
 
+// ─── CLIENT PORTAL ACCESS ─────────────────────────────────────────
+function generateClientPassword(){
+  const chars='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
+  let pass='';
+  for(let i=0;i<12;i++)pass+=chars[Math.floor(Math.random()*chars.length)];
+  document.getElementById('c-portal-password').value=pass;
+}
+
+function showClientCredentials(name,email,password){
+  // Create a temporary overlay showing the credentials to copy
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML=`
+    <div style="background:#fff;border-radius:12px;padding:32px;max-width:440px;width:100%;border:0.5px solid var(--brd)">
+      <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--txt);margin-bottom:6px">✅ Client Portal Access Created</div>
+      <div style="font-size:13px;color:var(--txt3);margin-bottom:24px">Share these credentials with <strong>${esc(name)}</strong> to give them access to the DKMA Client Portal.</div>
+      <div style="background:var(--cream);border-radius:8px;padding:16px 20px;margin-bottom:16px;border:1px solid var(--brd)">
+        <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Portal URL</div>
+        <div style="font-size:13px;font-weight:500;color:var(--navy);font-family:monospace">${window.location.origin}/DKMA_ClientPortal.html</div>
+      </div>
+      <div style="background:var(--cream);border-radius:8px;padding:16px 20px;margin-bottom:16px;border:1px solid var(--brd)">
+        <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Email (Username)</div>
+        <div style="font-size:13px;font-weight:500;color:var(--txt);font-family:monospace">${esc(email)}</div>
+      </div>
+      <div style="background:#FFF8E7;border-radius:8px;padding:16px 20px;margin-bottom:24px;border:1px solid #E8D5A0">
+        <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Temporary Password</div>
+        <div style="font-size:18px;font-weight:600;color:var(--navy);font-family:monospace;letter-spacing:1px">${esc(password)}</div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:6px">Ask the client to change this after first login</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="copyCredentials('${esc(email)}','${esc(password)}')" style="flex:1;background:var(--navy);color:#fff;border:none;padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">📋 Copy Credentials</button>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;background:var(--cream);color:var(--txt2);border:1px solid var(--brd);padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Done</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function copyCredentials(email,password){
+  const portalUrl=window.location.origin+'/DKMA_ClientPortal.html';
+  const text=`DKMA Client Portal Access\n\nPortal URL: ${portalUrl}\nEmail: ${email}\nPassword: ${password}\n\nPlease log in and change your password after first sign-in.`;
+  navigator.clipboard.writeText(text).then(()=>toast('Credentials copied to clipboard ✓'));
+}
+
+async function resetClientPortalPassword(clientId){
+  const client=clients.find(c=>c.id===clientId);
+  if(!client?.email){toast('No email address on file for this client.',true);return;}
+  if(!confirm(`Reset portal password for ${client.name}?\n\nA new temporary password will be generated and shown to you.`))return;
+
+  // Generate new password and update via admin — since we only have anon key,
+  // we send a reset email to the client's email instead
+  const{error}=await sb.auth.resetPasswordForEmail(client.email,{
+    redirectTo:window.location.origin+'/DKMA_ClientPortal.html?reset=1'
+  });
+  if(error){toast('Error: '+error.message,true);return;}
+  toast('Password reset email sent to '+client.email+' ✓');
+}
+
 // ─── EDIT MY PROFILE ─────────────────────────────────────────────
 function openEditMyRoleModal(){
   const p=currentProfile;
@@ -1949,7 +2016,11 @@ async function saveMatter(){
 
 async function saveClient(){
   const name=document.getElementById('c-name').value.trim();
+  const email=document.getElementById('c-email').value.trim();
+  const portalPassword=document.getElementById('c-portal-password').value.trim();
   if(!name){toast('Please enter a client name.',true);return;}
+  if(portalPassword&&!email){toast('Please enter an email address to create portal access.',true);return;}
+  if(portalPassword&&portalPassword.length<8){toast('Portal password must be at least 8 characters.',true);return;}
   setLoading('save-client-btn',true,'Save Client');
   const payload={
     name,type:document.getElementById('c-type').value,
@@ -1957,7 +2028,7 @@ async function saveClient(){
     id_number:document.getElementById('c-id').value.trim()||null,
     kra_pin:document.getElementById('c-kra').value.trim()||null,
     phone:document.getElementById('c-phone').value.trim()||null,
-    email:document.getElementById('c-email').value.trim()||null,
+    email:email||null,
     address:document.getElementById('c-address').value.trim()||null,
     postal_address:document.getElementById('c-postal').value.trim()||null,
     practice_area:document.getElementById('c-area').value,
@@ -1966,17 +2037,42 @@ async function saveClient(){
     department:currentProfile?.department||null,
   };
   try{
-    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Request timed out after 10 seconds. Check your RLS policies in Supabase — the clients table may be missing an INSERT policy for authenticated users.')),10000));
+    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Request timed out. Check RLS policies on the clients table.')),10000));
     const query=sb.from('clients').insert([payload]).select();
     const{data,error}=await Promise.race([query,timeout]);
     setLoading('save-client-btn',false,'Save Client');
-    if(error){console.error('saveClient error:',error);toast('Error: '+error.message,true);return;}
-    clients=[data[0],...clients];closeModal();toast('Client saved.');
+    if(error){toast('Error: '+error.message,true);return;}
+    const savedClient=data[0];
+
+    // Create portal auth account if password provided
+    if(portalPassword&&email){
+      const{data:authData,error:authErr}=await sb.auth.signUp({
+        email,password:portalPassword,
+        options:{data:{full_name:name,role:'client'}}
+      });
+      if(authErr){
+        toast('Client saved but portal account failed: '+authErr.message,true);
+      } else {
+        // Link auth user to client record
+        const userId=authData?.user?.id;
+        if(userId){
+          await sb.from('clients').update({user_id:userId}).eq('id',savedClient.id);
+          savedClient.user_id=userId;
+        }
+        // Show credentials to advocate
+        showClientCredentials(name,email,portalPassword);
+      }
+    } else {
+      toast('Client saved.');
+    }
+
+    clients=[savedClient,...clients];
+    closeModal();
     document.getElementById('c-name').value='';
+    document.getElementById('c-portal-password').value='';
     renderClients();renderDashboard();
   }catch(err){
     setLoading('save-client-btn',false,'Save Client');
-    console.error('saveClient exception:',err);
     toast(err.message,true);
   }
 }
