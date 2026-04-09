@@ -349,6 +349,66 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 #auth-screen input:focus{border-color:var(--navy)!important;outline:none}
 .admin-only{display:none}
 
+/* ── CLIENT INBOX ────────────────────────────────────────────── */
+.inbox-layout{display:grid;grid-template-columns:300px 1fr;gap:0;height:calc(100vh - 56px - 48px);min-height:400px;background:#fff;border-radius:10px;border:0.5px solid var(--brd);overflow:hidden}
+.inbox-sidebar{border-right:1px solid var(--brd);display:flex;flex-direction:column;overflow:hidden}
+.inbox-sidebar-head{padding:14px 16px;border-bottom:1px solid var(--brd);flex-shrink:0}
+.inbox-sidebar-search{display:flex;align-items:center;gap:7px;background:var(--cream);border:1px solid var(--brd);border-radius:7px;padding:7px 11px;margin-top:10px}
+.inbox-sidebar-search input{border:none;outline:none;font-size:12px;font-family:'DM Sans',sans-serif;background:transparent;flex:1;color:var(--txt)}
+.inbox-thread-list{flex:1;overflow-y:auto}
+.inbox-thread{padding:12px 16px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background 0.12s;display:flex;gap:10px;align-items:flex-start}
+.inbox-thread:hover{background:var(--cream)}
+.inbox-thread.active{background:rgba(184,149,58,0.08);border-left:3px solid var(--gold)}
+.inbox-thread-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;margin-top:1px}
+.inbox-thread-body{flex:1;min-width:0}
+.inbox-thread-name{font-size:12px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inbox-thread-preview{font-size:11px;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.inbox-thread-time{font-size:10px;color:var(--txt3);white-space:nowrap;flex-shrink:0}
+.inbox-unread-badge{background:var(--gold);color:var(--navy);font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;flex-shrink:0;align-self:center}
+.inbox-main{display:flex;flex-direction:column;overflow:hidden}
+.inbox-main-head{padding:13px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:12px;flex-shrink:0;background:#fff}
+.inbox-main-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.inbox-main-name{font-size:14px;font-weight:600;color:var(--txt);font-family:'Playfair Display',serif}
+.inbox-main-sub{font-size:11px;color:var(--txt3);margin-top:1px}
+.inbox-tab-bar{display:flex;border-bottom:1px solid var(--brd);flex-shrink:0;background:#fff}
+.inbox-tab{padding:9px 18px;font-size:11px;font-weight:500;color:var(--txt3);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.12s;white-space:nowrap}
+.inbox-tab:hover{color:var(--txt)}
+.inbox-tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+.inbox-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:10px;background:var(--cream)}
+.inbox-msg{display:flex;gap:9px;max-width:80%}
+.inbox-msg.from-client{align-self:flex-start}
+.inbox-msg.from-firm{align-self:flex-end;flex-direction:row-reverse}
+.inbox-msg-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0;margin-top:2px}
+.inbox-msg-content{display:flex;flex-direction:column}
+.inbox-msg-bubble{padding:9px 13px;border-radius:10px;font-size:12px;line-height:1.6;color:var(--txt)}
+.from-client .inbox-msg-bubble{background:#fff;border:1px solid var(--brd);border-top-left-radius:3px}
+.from-firm .inbox-msg-bubble{background:var(--navy);color:#fff;border-top-right-radius:3px}
+.inbox-msg-time{font-size:9px;color:var(--txt3);margin-top:3px}
+.from-firm .inbox-msg-time{text-align:right}
+.inbox-msg-file{display:flex;align-items:center;gap:9px;padding:9px 12px;background:#fff;border:1px solid var(--brd);border-radius:8px;cursor:pointer;transition:border-color 0.12s;margin-top:4px;max-width:260px}
+.inbox-msg-file:hover{border-color:var(--gold)}
+.inbox-msg-file-icon{font-size:18px;flex-shrink:0}
+.inbox-msg-file-name{font-size:11px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.inbox-msg-file-meta{font-size:10px;color:var(--txt3);margin-top:1px}
+.inbox-compose{padding:12px 16px;border-top:1px solid var(--brd);flex-shrink:0;background:#fff}
+.inbox-compose-box{display:flex;gap:10px;align-items:flex-end}
+.inbox-compose-input{flex:1;border:1px solid var(--brd);border-radius:8px;padding:9px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none;resize:none;min-height:40px;max-height:100px;transition:border-color 0.15s;line-height:1.5}
+.inbox-compose-input:focus{border-color:var(--navy)}
+.inbox-compose-send{background:var(--navy);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;white-space:nowrap;transition:background 0.15s;flex-shrink:0;height:40px}
+.inbox-compose-send:hover{background:var(--navy2)}
+.inbox-compose-send:disabled{opacity:0.6;cursor:not-allowed}
+.inbox-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--txt3);font-size:13px;gap:10px;padding:40px;text-align:center}
+.inbox-empty-state-icon{font-size:36px}
+.inbox-files-list{flex:1;overflow-y:auto}
+.inbox-file-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--brd);transition:background 0.12s;background:#fff}
+.inbox-file-row:hover{background:var(--cream)}
+.inbox-file-row:last-child{border-bottom:none}
+.inbox-file-icon{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:1px solid var(--brd)}
+.inbox-file-info{flex:1;min-width:0}
+.inbox-file-name{font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inbox-file-meta{font-size:10px;color:var(--txt3);margin-top:2px}
+.inbox-file-actions{display:flex;gap:6px;flex-shrink:0}
+
 @media(max-width:960px){
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .two-col,.three-col{grid-template-columns:1fr}
@@ -442,6 +502,11 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <span>Timesheets</span>
     </div>
     <div class="nav-label">Firm</div>
+    <div class="nav-item" onclick="showView('inbox',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.4"/><path d="M1 4l7 5 7-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <span>Client Inbox</span>
+      <span class="nav-badge" id="inbox-badge" style="background:#E2443A;color:#fff;display:none">0</span>
+    </div>
     <div class="nav-item" onclick="showView('alerts',this)">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1a5 5 0 015 5c0 2.5.5 4 1.5 5H1.5C2.5 10 3 8.5 3 6a5 5 0 015-5zM6 12a2 2 0 004 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       <span>Alerts</span>
@@ -676,6 +741,34 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       </div>
     </div>
 
+    <!-- CLIENT INBOX -->
+    <div class="view" id="view-inbox">
+      <div class="inbox-layout">
+        <!-- LEFT: Thread list -->
+        <div class="inbox-sidebar">
+          <div class="inbox-sidebar-head">
+            <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:500;color:var(--txt)">Client Inbox</div>
+            <div style="font-size:11px;color:var(--txt3);margin-top:2px" id="inbox-client-count">Loading…</div>
+            <div class="inbox-sidebar-search">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="color:var(--txt3);flex-shrink:0"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input placeholder="Search clients…" id="inbox-search" oninput="renderInboxThreadList()"/>
+            </div>
+          </div>
+          <div class="inbox-thread-list" id="inbox-thread-list">
+            <div class="empty-state-sm">Loading…</div>
+          </div>
+        </div>
+        <!-- RIGHT: Conversation -->
+        <div class="inbox-main" id="inbox-main">
+          <div class="inbox-empty-state" id="inbox-placeholder">
+            <div class="inbox-empty-state-icon">💬</div>
+            <div style="font-weight:500;color:var(--txt2);font-family:'Playfair Display',serif;font-size:15px">Select a client</div>
+            <div>Choose a client from the left to view their messages and uploaded files.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -885,6 +978,44 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
     </div>
   </div>
 
+  <!-- EMAIL DOCUMENT MODAL -->
+  <div class="modal" id="modal-email-doc" style="display:none;max-width:500px">
+    <div class="modal-head">
+      <span class="modal-title">📧 Email Document to Client</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--cream);border-radius:8px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px" id="email-doc-icon">📄</span>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--txt)" id="email-doc-filename">—</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:2px">Will be sent as a real email attachment</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Recipient Email</label>
+        <input id="email-doc-to" type="email" placeholder="client@email.com"/>
+      </div>
+      <div class="form-row">
+        <label>Recipient Name</label>
+        <input id="email-doc-toname" placeholder="e.g. John Otieno"/>
+      </div>
+      <div class="form-row">
+        <label>Subject</label>
+        <input id="email-doc-subject" placeholder="e.g. Your Court Documents — Kamau v. Njoroge"/>
+      </div>
+      <div class="form-row">
+        <label>Personal Message (optional)</label>
+        <textarea id="email-doc-message" placeholder="e.g. Please find attached the pleadings filed on your behalf today…" style="min-height:80px"></textarea>
+      </div>
+      <div id="email-doc-status" style="font-size:12px;min-height:18px;margin-top:-8px;text-align:center"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" id="email-doc-btn" onclick="sendDocumentEmail()">📧 Send Document</button>
+    </div>
+  </div>
+
 </div><!-- /modal-overlay -->
 
 <!-- ADD USER MODAL (Admin only) -->
@@ -976,6 +1107,8 @@ let currentFilter='all',clientFilter='all';
 let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 let activeClientId=null,activeProfileTab='overview';
 let currentUser=null,currentProfile=null;
+// Inbox state
+let inboxMessages=[],inboxFiles=[],activeInboxClientId=null,activeInboxTab='messages';
 
 // ─── TOAST ────────────────────────────────────────────────────────
 function toast(msg,isError=false){
@@ -1006,7 +1139,7 @@ function partyTypePill(role){
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────
-const viewTitles={dashboard:'Dashboard',matters:'Matters',clients:'Clients','client-profile':'Client Profile',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles'};
+const viewTitles={dashboard:'Dashboard',matters:'Matters',clients:'Clients','client-profile':'Client Profile',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox'};
 function showView(id,el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
@@ -1021,6 +1154,7 @@ function showView(id,el){
   if(id==='alerts')renderAlerts();
   if(id==='dashboard')renderDashboard();
   if(id==='team')renderTeam();
+  if(id==='inbox'){renderInboxThreadList();}
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────
@@ -1119,7 +1253,7 @@ async function signOut(){
 
 // ─── LOAD ALL ─────────────────────────────────────────────────────
 async function loadAll(){
-  await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties()]);
+  await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties(),loadInboxMessages()]);
   renderDashboard();updateBadges();
   setupRealtime();
 }
@@ -1141,8 +1275,9 @@ function setupRealtime(){
     if(table==='time_entries'){await loadTimeEntries();renderTimesheet();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
     if(table==='alerts'){await loadAlerts();renderAlerts();renderDashboard();updateBadges();}
     if(table==='parties'){await loadParties();if(activeClientId)renderProfileTab();}
+    if(table==='client_messages'){await loadInboxMessages();renderInboxThreadList();if(activeInboxClientId)renderInboxConversation(activeInboxClientId);}
   };
-  ['clients','matters','events','invoices','time_entries','alerts','parties'].forEach(table=>{
+  ['clients','matters','events','invoices','time_entries','alerts','parties','client_messages'].forEach(table=>{
     sb.channel('rt-'+table)
       .on('postgres_changes',{event:'*',schema:'public',table},(payload)=>{refresh(table);})
       .subscribe();
@@ -2131,6 +2266,7 @@ function renderDocumentsCard(){
         <div class="doc-actions">
           <button class="doc-btn view-btn" onclick="viewDocument('${safeName}','${safeDisplay}')">👁 View</button>
           <button class="doc-btn" onclick="downloadDocument('${safeName}')">⬇</button>
+          <button class="doc-btn" onclick="openEmailDocModal('${safeName}','${safeDisplay}')" title="Email to client" style="color:#185FA5;border-color:#185FA5">📧</button>
           <button class="doc-btn ${doc.name.startsWith('shared__')?'share-active':'share-off'}" title="${doc.name.startsWith('shared__')?'Visible to client — click to hide':'Hidden from client — click to share'}" onclick="toggleShareWithClient('${safeName}','${safeDisplay}',this)" style="${doc.name.startsWith('shared__')?'color:var(--green);border-color:var(--green)':'color:var(--txt3)'}">${doc.name.startsWith('shared__')?'👁 Client':'🔒 Hidden'}</button>
           <button class="doc-btn del" onclick="deleteDocument('${safeName}','${safeDisplay}')">✕</button>
         </div>
@@ -2523,6 +2659,318 @@ function closeDocViewer() {
   const overlay = document.getElementById('doc-viewer-overlay');
   overlay.classList.add('hidden');
   document.getElementById('doc-viewer-body').innerHTML = '';
+}
+
+// ─── EMAIL DOCUMENT ───────────────────────────────────────────────
+const SUPABASE_URL_EDGE='https://oolqcrpjuqmzxupaozpu.supabase.co';
+
+function openEmailDocModal(storageName, displayName){
+  // Pre-fill client email/name from current matter
+  const matter=matters.find(m=>m.id===activeMatterId);
+  const client=matter?clients.find(c=>c.id===matter.client_id):null;
+  document.getElementById('email-doc-filename').textContent=displayName;
+  // Set icon based on extension
+  const ext=(displayName.split('.').pop()||'').toLowerCase();
+  const iconMap={pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',jpg:'🖼️',jpeg:'🖼️',png:'🖼️'};
+  document.getElementById('email-doc-icon').textContent=iconMap[ext]||'📎';
+  document.getElementById('email-doc-to').value=client?.email||'';
+  document.getElementById('email-doc-toname').value=client?.name||'';
+  const matterTitle=matter?matter.title:'Document';
+  document.getElementById('email-doc-subject').value=`Document from Dennis Kimani Mutonga Advocate — ${matterTitle}`;
+  document.getElementById('email-doc-message').value='';
+  document.getElementById('email-doc-status').textContent='';
+  document.getElementById('email-doc-status').style.color='var(--txt3)';
+  // Store storage name for sending
+  document.getElementById('modal-email-doc').dataset.storageName=storageName;
+  document.getElementById('modal-email-doc').dataset.displayName=displayName;
+  openModal('email-doc');
+}
+
+async function sendDocumentEmail(){
+  const modal=document.getElementById('modal-email-doc');
+  const storageName=modal.dataset.storageName;
+  const displayName=modal.dataset.displayName;
+  const toEmail=document.getElementById('email-doc-to').value.trim();
+  const toName=document.getElementById('email-doc-toname').value.trim();
+  const subject=document.getElementById('email-doc-subject').value.trim();
+  const message=document.getElementById('email-doc-message').value.trim();
+  const statusEl=document.getElementById('email-doc-status');
+
+  if(!toEmail){toast('Please enter a recipient email.',true);return;}
+  if(!toName){toast('Please enter the recipient name.',true);return;}
+
+  const btn=document.getElementById('email-doc-btn');
+  btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span>Sending…';
+  statusEl.style.color='var(--txt3)';
+  statusEl.textContent='Fetching document and sending…';
+
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    const res=await fetch(`${SUPABASE_URL_EDGE}/functions/v1/send-document`,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':`Bearer ${session?.access_token}`
+      },
+      body:JSON.stringify({
+        bucket:'matter-documents',
+        storagePath:`${activeMatterId}/${storageName}`,
+        displayName,
+        toEmail,
+        toName,
+        subject:subject||`Document from Dennis Kimani Mutonga Advocate`,
+        message
+      })
+    });
+    const data=await res.json();
+    btn.disabled=false;btn.textContent='📧 Send Document';
+    if(!res.ok||data.error){
+      statusEl.style.color='var(--red)';
+      statusEl.textContent='Failed: '+(data.error||'Unknown error');
+      return;
+    }
+    statusEl.style.color='var(--green)';
+    statusEl.textContent='✓ Document emailed successfully to '+toEmail;
+    toast('Document sent to '+toName+' ✓');
+    setTimeout(()=>closeModal(),2000);
+  }catch(e){
+    btn.disabled=false;btn.textContent='📧 Send Document';
+    statusEl.style.color='var(--red)';
+    statusEl.textContent='Error: '+e.message;
+  }
+}
+
+// ─── CLIENT INBOX ─────────────────────────────────────────────────
+const CLIENT_BUCKET='client-uploads';
+
+async function loadInboxMessages(){
+  const{data,error}=await sb.from('client_messages').select('*').order('created_at',{ascending:true});
+  if(!error)inboxMessages=data||[];
+  updateInboxBadge();
+}
+
+function updateInboxBadge(){
+  const unread=inboxMessages.filter(m=>m.sender==='client'&&!m.read_by_firm).length;
+  const badge=document.getElementById('inbox-badge');
+  if(badge){badge.textContent=unread;badge.style.display=unread>0?'inline-block':'none';}
+}
+
+function renderInboxThreadList(){
+  const q=(document.getElementById('inbox-search')||{}).value||'';
+  const filtered=clients.filter(c=>!q||c.name.toLowerCase().includes(q.toLowerCase()));
+  document.getElementById('inbox-client-count').textContent=filtered.length+' client'+(filtered.length!==1?'s':'');
+  const el=document.getElementById('inbox-thread-list');
+  if(!filtered.length){el.innerHTML='<div class="empty-state-sm">No clients found.</div>';return;}
+  el.innerHTML=filtered.map(c=>{
+    const msgs=inboxMessages.filter(m=>m.client_id===c.id);
+    const last=msgs[msgs.length-1];
+    const unread=msgs.filter(m=>m.sender==='client'&&!m.read_by_firm).length;
+    const preview=last?(last.sender==='firm'?'You: '+last.message:last.message):'No messages yet';
+    const time=last?fmtMsgTime(last.created_at):'';
+    const active=activeInboxClientId===c.id?'active':'';
+    return`<div class="inbox-thread ${active}" onclick="openInboxClient('${c.id}')">
+      <div class="inbox-thread-av ${avColor(c.name)}">${initials(c.name)}</div>
+      <div class="inbox-thread-body">
+        <div class="inbox-thread-name">${esc(c.name)}</div>
+        <div class="inbox-thread-preview">${esc(preview.slice(0,60))}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <div class="inbox-thread-time">${time}</div>
+        ${unread>0?`<span class="inbox-unread-badge">${unread}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fmtMsgTime(ts){
+  if(!ts)return'';
+  const d=new Date(ts),now=new Date();
+  const diffDays=Math.floor((now-d)/86400000);
+  if(diffDays===0)return d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
+  if(diffDays===1)return'Yesterday';
+  if(diffDays<7)return d.toLocaleDateString('en-KE',{weekday:'short'});
+  return d.toLocaleDateString('en-KE',{day:'numeric',month:'short'});
+}
+
+async function openInboxClient(clientId){
+  activeInboxClientId=clientId;
+  activeInboxTab='messages';
+  renderInboxThreadList();
+  await markMessagesRead(clientId);
+  await renderInboxConversation(clientId);
+}
+
+async function markMessagesRead(clientId){
+  const unreadIds=inboxMessages.filter(m=>m.client_id===clientId&&m.sender==='client'&&!m.read_by_firm).map(m=>m.id);
+  if(!unreadIds.length)return;
+  await sb.from('client_messages').update({read_by_firm:true}).in('id',unreadIds);
+  inboxMessages=inboxMessages.map(m=>unreadIds.includes(m.id)?{...m,read_by_firm:true}:m);
+  updateInboxBadge();
+}
+
+async function renderInboxConversation(clientId){
+  const c=clients.find(x=>x.id===clientId);
+  if(!c)return;
+  const main=document.getElementById('inbox-main');
+  const msgs=inboxMessages.filter(m=>m.client_id===clientId);
+
+  // Fetch files from storage
+  let files=[];
+  const{data:fileData}=await sb.storage.from(CLIENT_BUCKET).list(clientId,{limit:100,sortBy:{column:'created_at',order:'desc'}});
+  if(fileData)files=fileData.filter(f=>f.name!=='');
+
+  main.innerHTML=`
+    <div class="inbox-main-head">
+      <div class="inbox-main-av ${avColor(c.name)}">${initials(c.name)}</div>
+      <div>
+        <div class="inbox-main-name">${esc(c.name)}</div>
+        <div class="inbox-main-sub">${esc(c.email||'—')} · ${matters.filter(m=>m.client_id===clientId).length} matter(s)</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="topbar-btn sec" style="font-size:11px;padding:5px 12px" onclick="showView('client-profile',null);openClientProfile('${clientId}')">View Profile</button>
+      </div>
+    </div>
+    <div class="inbox-tab-bar">
+      <div class="inbox-tab ${activeInboxTab==='messages'?'active':''}" onclick="switchInboxTab('messages','${clientId}')">💬 Messages</div>
+      <div class="inbox-tab ${activeInboxTab==='files'?'active':''}" onclick="switchInboxTab('files','${clientId}')">📁 Uploaded Files <span style="background:var(--cream2);color:var(--txt3);font-size:9px;padding:1px 5px;border-radius:8px;margin-left:3px">${files.length}</span></div>
+    </div>
+    ${activeInboxTab==='messages'?renderMessagesPane(msgs,c,clientId):renderFilesPane(files,clientId)}
+  `;
+  if(activeInboxTab==='messages'){
+    const msgsEl=document.getElementById('inbox-messages-pane');
+    if(msgsEl)msgsEl.scrollTop=msgsEl.scrollHeight;
+    const inp=document.getElementById('inbox-compose-inp');
+    if(inp){
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendInboxMessage(clientId);}});
+    }
+  }
+}
+
+function renderMessagesPane(msgs,c,clientId){
+  const firmName=currentProfile?.full_name||'DKMA';
+  const msgsHtml=msgs.length?msgs.map(m=>{
+    const isClient=m.sender==='client';
+    const av=isClient?`<div class="inbox-msg-av ${avColor(c.name)}">${initials(c.name)}</div>`:`<div class="inbox-msg-av" style="background:var(--navy);color:#fff">${initials(firmName)}</div>`;
+    const fileHtml=m.file_name?`<div class="inbox-msg-file" onclick="viewClientFile('${clientId}','${esc(m.file_storage_name||m.file_name)}','${esc(m.file_name)}')">
+      <div class="inbox-msg-file-icon">${docIconEmoji(m.file_name)}</div>
+      <div><div class="inbox-msg-file-name">${esc(m.file_name)}</div><div class="inbox-msg-file-meta">Tap to view</div></div>
+    </div>`:'';
+    return`<div class="inbox-msg ${isClient?'from-client':'from-firm'}">
+      ${av}
+      <div class="inbox-msg-content">
+        ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
+        ${fileHtml}
+        <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
+      </div>
+    </div>`;
+  }).join(''):`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:13px;padding:40px;text-align:center"><div><div style="font-size:32px;margin-bottom:10px">💬</div>No messages yet.<br>Send a message to start the conversation.</div></div>`;
+  return`<div class="inbox-messages" id="inbox-messages-pane">${msgsHtml}</div>
+    <div class="inbox-compose">
+      <div style="font-size:10px;color:var(--txt3);margin-bottom:7px">Replying to ${esc(c.name)}</div>
+      <div class="inbox-compose-box">
+        <textarea class="inbox-compose-input" id="inbox-compose-inp" placeholder="Type a message…" rows="1"></textarea>
+        <button class="inbox-compose-send" id="inbox-send-btn" onclick="sendInboxMessage('${clientId}')">Send</button>
+      </div>
+    </div>`;
+}
+
+function renderFilesPane(files,clientId){
+  if(!files.length)return`<div class="inbox-empty-state"><div class="inbox-empty-state-icon">📁</div><div style="font-weight:500;color:var(--txt2)">No files uploaded yet</div><div>Files the client uploads via the portal will appear here.</div></div>`;
+  return`<div class="inbox-files-list">${files.map(f=>{
+    const parts=f.name.split('__');
+    const displayName=parts.length>=3?parts.slice(2).join('__'):f.name;
+    const category=parts[0]||'other';
+    const desc=parts[1]||'';
+    const size=f.metadata?.size?fmtFileSize(f.metadata.size):'—';
+    const date=f.created_at?fmtDate(f.created_at):'—';
+    return`<div class="inbox-file-row">
+      <div class="inbox-file-icon" style="background:var(--cream)">${docIconEmoji(displayName)}</div>
+      <div class="inbox-file-info">
+        <div class="inbox-file-name">${esc(displayName)}</div>
+        <div class="inbox-file-meta">${esc(categoryLabel(category))}${desc?' · '+esc(desc):''} · ${size} · ${date}</div>
+      </div>
+      <div class="inbox-file-actions">
+        <button class="filter-btn" style="font-size:11px;padding:4px 11px" onclick="viewClientFile('${clientId}','${esc(f.name)}','${esc(displayName)}')">View</button>
+        <button class="filter-btn" style="font-size:11px;padding:4px 11px" onclick="downloadClientFile('${clientId}','${esc(f.name)}','${esc(displayName)}')">⬇</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function switchInboxTab(tab,clientId){
+  activeInboxTab=tab;
+  renderInboxConversation(clientId);
+}
+
+async function sendInboxMessage(clientId){
+  const inp=document.getElementById('inbox-compose-inp');
+  const msg=(inp?.value||'').trim();
+  if(!msg)return;
+  const btn=document.getElementById('inbox-send-btn');
+  if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  const{error}=await sb.from('client_messages').insert([{
+    client_id:clientId,
+    sender:'firm',
+    message:msg,
+    read_by_firm:true,
+    read_by_client:false
+  }]);
+  if(btn){btn.disabled=false;btn.textContent='Send';}
+  if(error){toast('Failed to send: '+error.message,true);return;}
+  if(inp)inp.value='';
+  await loadInboxMessages();
+  await renderInboxConversation(clientId);
+}
+
+async function viewClientFile(clientId,storageName,displayName){
+  const path=`${clientId}/${storageName}`;
+  const{data,error}=await sb.storage.from(CLIENT_BUCKET).createSignedUrl(path,600);
+  if(error){toast('Could not open file.',true);return;}
+  const url=data.signedUrl;
+  const ext=(storageName.split('.').pop()||'').toLowerCase();
+  const overlay=document.getElementById('doc-viewer-overlay');
+  document.getElementById('doc-viewer-filename').textContent=displayName;
+  document.getElementById('doc-viewer-dl-btn').onclick=()=>{
+    const a=document.createElement('a');a.href=url;a.download=displayName;a.target='_blank';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+  };
+  const body=document.getElementById('doc-viewer-body');
+  if(['jpg','jpeg','png','gif','webp'].includes(ext)){
+    body.innerHTML=`<img src="${url}" style="max-width:100%;max-height:76vh;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
+  } else if(ext==='pdf'){
+    body.innerHTML=`<iframe src="${url}" style="width:100%;height:76vh;border:none;display:block"></iframe>`;
+  } else {
+    body.innerHTML=`<div class="doc-viewer-nopreview"><div style="font-size:36px;margin-bottom:16px">📄</div><div style="font-weight:500;color:var(--txt);margin-bottom:8px">${esc(displayName)}</div><div>Preview not available. Use Download to open.</div></div>`;
+  }
+  overlay.classList.remove('hidden');
+}
+
+async function downloadClientFile(clientId,storageName,displayName){
+  const path=`${clientId}/${storageName}`;
+  const{data,error}=await sb.storage.from(CLIENT_BUCKET).createSignedUrl(path,300);
+  if(error){toast('Could not download file.',true);return;}
+  const a=document.createElement('a');a.href=data.signedUrl;a.download=displayName;a.target='_blank';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+
+function docIconEmoji(name){
+  const ext=(name||'').split('.').pop().toLowerCase();
+  if(ext==='pdf')return'📄';
+  if(['doc','docx'].includes(ext))return'📝';
+  if(['xls','xlsx','csv'].includes(ext))return'📊';
+  if(['jpg','jpeg','png','gif','webp'].includes(ext))return'🖼️';
+  return'📎';
+}
+
+function categoryLabel(cat){
+  return{pleading:'Pleading',correspondence:'Correspondence',evidence:'Evidence',contract:'Contract',id:'ID / KYC',finance:'Finance',order:'Court Order',other:'Other'}[cat]||cat||'Document';
+}
+
+function fmtFileSize(b){
+  if(!b)return'—';
+  if(b<1024)return b+'B';
+  if(b<1048576)return(b/1024).toFixed(0)+'KB';
+  return(b/1048576).toFixed(1)+'MB';
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────
