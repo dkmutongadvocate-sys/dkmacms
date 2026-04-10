@@ -1,33 +1,64 @@
-dkmutongadvocate-sys
-dkmaclient
-Repository navigation
-Code
-Issues
-Pull requests
-Actions
-Projects
-Wiki
-Security and quality
-Insights
-Settings
-Build & Deploy DKMA Client Portal
-Build & Deploy DKMA Client Portal #6
-All jobs
-Run details
-Manually triggered now
-@dkmutongadvocate-sysdkmutongadvocate-sys
-⁠
- 7767f87
-main
-Status
-Success
-Total duration
-15s
-Artifacts
-1
+name: Build & Deploy DKMA App
 
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-Annotations
-1 warning
-build-and-deploy
-Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/configure-pages@v4, actions/deploy-pages@v4, actions/upload-artifact@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Debug — verify file and secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          echo "--- Files in root ---"
+          ls -la
+          echo "--- Placeholders in index.html ---"
+          grep -o '%%[^%]*%%' index.html | sort | uniq || echo "No placeholders found"
+          echo "--- SUPABASE_URL: $([ -z "$SUPABASE_URL" ] && echo MISSING || echo SET)"
+          echo "--- SUPABASE_ANON_KEY: $([ -z "$SUPABASE_ANON_KEY" ] && echo MISSING || echo SET)"
+          echo "--- SUPABASE_SERVICE_ROLE_KEY: $([ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && echo MISSING || echo SET)"
+
+      - name: Inject Supabase credentials
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          sed -i "s|%%SUPABASE_URL%%|${SUPABASE_URL}|g" index.html
+          sed -i "s|%%SUPABASE_ANON_KEY%%|${SUPABASE_ANON_KEY}|g" index.html
+          sed -i "s|%%SUPABASE_SERVICE_ROLE_KEY%%|${SUPABASE_SERVICE_ROLE_KEY}|g" index.html
+          echo "--- Post-injection check ---"
+          grep -o '%%[^%]*%%' index.html && echo "WARNING: placeholders still present!" || echo "OK — all replaced"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
