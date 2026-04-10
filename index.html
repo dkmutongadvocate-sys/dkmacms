@@ -842,6 +842,11 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       </div>
       <div class="form-row"><label>Court / Tribunal</label><input id="m-court" placeholder="e.g. ELC Nairobi, Kiambu Magistrate Court"/></div>
       <div class="form-row"><label>Notes</label><textarea id="m-notes" placeholder="Brief description of the matter…"></textarea></div>
+      <div class="form-row" id="m-assign-row" style="display:none">
+        <label>Assign To <span id="m-assign-badge" style="font-size:10px;background:var(--cream2);color:var(--txt2);padding:1px 6px;border-radius:3px;margin-left:4px"></span></label>
+        <select id="m-assigned-to" style="width:100%"><option value="">— Unassigned —</option></select>
+        <div style="font-size:10px;color:var(--txt3);margin-top:4px">Only your reportees and peers are shown.</div>
+      </div>
     </div>
     <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" id="save-matter-btn" onclick="saveMatter()">Open Matter</button></div>
   </div>
@@ -973,6 +978,14 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
         <div class="form-row"><label>Related Matter</label><select id="ev-matter"><option value="">None</option></select></div>
       </div>
       <div class="form-row"><label>Location / Court</label><input id="ev-location" placeholder="e.g. ELC Nairobi, Room 4"/></div>
+      <div class="form-row">
+        <label>Video Meeting Link <span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:3px;font-weight:500;margin-left:4px">Visible to Client</span></label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="ev-link-icon" style="font-size:18px;flex-shrink:0;width:28px;text-align:center">🔗</span>
+          <input id="ev-meeting-link" placeholder="https://zoom.us/j/... or teams.microsoft.com/..." style="flex:1;font-size:12px" oninput="updateMeetingLinkIcon(this.value)"/>
+        </div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:4px">Paste a Zoom, Teams, Google Meet or any video call link.</div>
+      </div>
       <div class="form-row"><label>Notes</label><textarea id="ev-notes" placeholder="Any additional details…" style="min-height:60px"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" id="save-event-btn" onclick="saveEventWithGCal()">Save Event</button></div>
@@ -1462,7 +1475,7 @@ async function forceChangePassword(){
 
 // ─── LOAD ALL ─────────────────────────────────────────────────────
 async function loadAll(){
-  await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties(),loadInboxMessages()]);
+  await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties(),loadInboxMessages(),loadAllProfiles()]);
   renderDashboard();updateBadges();
   setupRealtime();
 }
@@ -1472,6 +1485,7 @@ async function loadEvents(){const{data,error}=await sb.from('events').select('*'
 async function loadInvoices(){const{data,error}=await sb.from('invoices').select('*').order('created_at',{ascending:false});if(!error)invoices=data||[];}
 async function loadTimeEntries(){const{data,error}=await sb.from('time_entries').select('*').order('entry_date',{ascending:false});if(!error)timeEntries=data||[];}
 async function loadAlerts(){const{data,error}=await sb.from('alerts').select('*').order('created_at',{ascending:false});if(!error)alerts=data||[];}
+async function loadAllProfiles(){const{data}=await sb.from('profiles').select('*').order('full_name');window._allProfiles=data||[];}
 async function loadParties(){const{data,error}=await sb.from('parties').select('*').order('created_at',{ascending:false});if(!error)parties=data||[];}
 
 // ─── REALTIME ─────────────────────────────────────────────────────
@@ -1585,7 +1599,7 @@ function renderDashboard(){
   if(!matters.length){mEl.innerHTML=emptyState('No matters yet.');return;}
   mEl.innerHTML=matters.slice(0,6).map(m=>{
     const c=clients.find(x=>x.id===m.client_id);
-    return`<div class="matter-row" onclick="openMatterFromDash('${m.id}')"><div class="matter-icon civil">⚖️</div><div class="matter-info"><div class="matter-title">${esc(m.title)}</div><div class="matter-client">${c?esc(c.name):'—'} ${m.file_number?'· '+esc(m.file_number):''}</div></div><div class="matter-right"><span class="status-pill ${statusClass(m.status)}">${statusLabel(m.status)}</span><div class="matter-date">${m.next_date?fmtDate(m.next_date):''}</div></div></div>`;
+    return`<div class="matter-row" onclick="openMatterFromDash('${m.id}')"><div class="matter-icon civil">⚖️</div><div class="matter-info"><div class="matter-title">${esc(m.title)}</div><div class="matter-client">${c?esc(c.name):'—'} ${m.file_number?'· '+esc(m.file_number):''}</div></div><div class="matter-right"><span class="status-pill ${statusClass(m.status)}">${statusLabel(m.status)}</span>${(()=>{if(!m.assigned_to)return'';const ap=window._allProfiles?.find(p=>p.id===m.assigned_to);if(!ap)return'';return`<div title="Assigned: ${esc(ap.full_name||'')}" style="width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;font-size:8px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:4px">${initials(ap.full_name||'?')}</div>`;})()}<div class="matter-date">${m.next_date?fmtDate(m.next_date):''}</div></div></div>`; 
   }).join('');
   // Events
   const evEl=document.getElementById('dash-events-list');
@@ -2357,6 +2371,10 @@ function openModal(type){
   if(type==='event')popEventModal();
 }
 function closeModal(){
+  // Reset meeting link field
+  const ml=document.getElementById('ev-meeting-link');
+  if(ml){ml.value='';updateMeetingLinkIcon('');}
+
   document.getElementById('modal-overlay').classList.add('hidden');
   // Reset matter modal to create mode
   const matterTitle=document.getElementById('modal-matter')?.querySelector('.modal-title');
@@ -2374,6 +2392,8 @@ function bgClose(e){if(e.target.id==='modal-overlay')closeModal();}
 function popMatterModal(){
   const sel=document.getElementById('m-client');
   sel.innerHTML='<option value="">Select client…</option>'+clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  // Populate assignment dropdown
+  populateAssignSelect(null);
   // Reset file number field to auto mode and refresh preview
   const fn=document.getElementById('m-fileno');
   const btn=document.getElementById('fileno-override-btn');
@@ -2401,6 +2421,85 @@ function setLoading(btnId,loading,label='Save'){
 }
 
 // ─── SAVE FUNCTIONS ───────────────────────────────────────────────
+
+
+// ─── VIDEO MEETING LINK HELPERS ───────────────────────────────────
+function updateMeetingLinkIcon(url){
+  const el=document.getElementById('ev-link-icon');
+  if(!el)return;
+  if(!url){el.textContent='🔗';return;}
+  const u=url.toLowerCase();
+  if(u.includes('zoom.us'))el.textContent='📹';
+  else if(u.includes('teams.microsoft')||u.includes('teams.live'))el.textContent='💻';
+  else if(u.includes('meet.google'))el.textContent='🟢';
+  else if(u.includes('whereby'))el.textContent='🎥';
+  else if(u.includes('webex'))el.textContent='📞';
+  else el.textContent='🔗';
+}
+
+function detectMeetingPlatform(url){
+  if(!url)return'';
+  const u=url.toLowerCase();
+  if(u.includes('zoom.us'))return'Zoom';
+  if(u.includes('teams.microsoft')||u.includes('teams.live'))return'Microsoft Teams';
+  if(u.includes('meet.google'))return'Google Meet';
+  if(u.includes('whereby'))return'Whereby';
+  if(u.includes('webex'))return'Webex';
+  return'Video Meeting';
+}
+
+// ─── MATTER ASSIGNMENT ────────────────────────────────────────────
+// Roles that can assign: admin, head, senior
+// admin → can assign to anyone
+// head  → can assign within their department
+// senior → can assign to associates in their department
+function canAssign(){
+  const r=currentProfile?.role;
+  return r==='admin'||r==='head'||r==='senior';
+}
+
+function getAssignableProfiles(){
+  // Must load all profiles first (done in renderTeam / loadAllProfiles)
+  if(!window._allProfiles||!window._allProfiles.length)return[];
+  const me=currentProfile;
+  const r=me?.role;
+  if(r==='admin'){
+    // Can assign to anyone except themselves
+    return window._allProfiles.filter(p=>p.id!==currentUser.id);
+  }
+  if(r==='head'){
+    // Can assign to anyone in their department
+    return window._allProfiles.filter(p=>p.id!==currentUser.id&&p.department===me.department);
+  }
+  if(r==='senior'){
+    // Can assign to associates in their department
+    return window._allProfiles.filter(p=>p.id!==currentUser.id&&p.department===me.department&&p.role==='associate');
+  }
+  return[];
+}
+
+async function ensureProfilesLoaded(){
+  if(window._allProfiles&&window._allProfiles.length)return;
+  const{data}=await sb.from('profiles').select('*').order('full_name');
+  window._allProfiles=data||[];
+}
+
+async function populateAssignSelect(currentAssignedId){
+  await ensureProfilesLoaded();
+  const row=document.getElementById('m-assign-row');
+  const sel=document.getElementById('m-assigned-to');
+  const badge=document.getElementById('m-assign-badge');
+  if(!row||!sel)return;
+  if(!canAssign()){row.style.display='none';return;}
+  row.style.display='';
+  const profiles=getAssignableProfiles();
+  const roleMap={admin:'Administrator',head:'Head of Dept',senior:'Senior Associate',associate:'Associate'};
+  sel.innerHTML='<option value="">— Unassigned —</option>'+profiles.map(p=>`<option value="${p.id}" ${p.id===currentAssignedId?'selected':''}>${esc(p.full_name||p.email||'Unknown')} — ${roleMap[p.role]||p.role||''}${p.department?' ('+esc(p.department)+')':''}</option>`).join('');
+  if(badge){
+    const r=currentProfile?.role;
+    badge.textContent=r==='admin'?'Firm-wide':r==='head'?'Your Dept':r==='senior'?'Associates only':'';
+  }
+}
 
 // ─── AUTO FILE NUMBER ─────────────────────────────────────────────
 function typeToCode(type){
@@ -2486,6 +2585,7 @@ async function saveMatter(){
     fee:parseFloat(document.getElementById('m-fee').value)||null,
     court:document.getElementById('m-court').value.trim()||null,
     notes:document.getElementById('m-notes').value.trim()||null,
+    assigned_to:document.getElementById('m-assigned-to')?.value||null,
     department:currentProfile?.department||null,
   };
   const{data,error}=await sb.from('matters').insert([payload]).select();
@@ -2665,6 +2765,7 @@ async function saveEvent(){
     type:document.getElementById('ev-type').value,
     matter_id:document.getElementById('ev-matter').value||null,
     location:document.getElementById('ev-location').value.trim()||null,
+    meeting_link:document.getElementById('ev-meeting-link').value.trim()||null,
     notes:document.getElementById('ev-notes').value.trim()||null,
   };
   const{data,error}=await sb.from('events').insert([payload]).select();
@@ -2717,6 +2818,7 @@ function openEditMatter(matterId){
   document.getElementById('m-court').value=m.court||'';
   document.getElementById('m-notes').value=m.notes||'';
   if(m.client_id)document.getElementById('m-client').value=m.client_id;
+  populateAssignSelect(m.assigned_to||null);
 }
 
 async function updateMatter(matterId){
@@ -2735,6 +2837,7 @@ async function updateMatter(matterId){
     fee:parseFloat(document.getElementById('m-fee').value)||null,
     court:document.getElementById('m-court').value.trim()||null,
     notes:document.getElementById('m-notes').value.trim()||null,
+    assigned_to:document.getElementById('m-assigned-to')?.value||null,
   };
   const{data,error}=await sb.from('matters').update(payload).eq('id',matterId).select();
   setLoading('save-matter-btn',false,'Save Changes');
@@ -2956,6 +3059,7 @@ function renderMatterDetailTab(){
         <div class="detail-item"><div class="detail-label">Next Date</div><div class="detail-val" style="${m.next_date?'color:var(--red);font-weight:600':''}">${fmtDate(m.next_date)}</div></div>
         <div class="detail-item"><div class="detail-label">Fee Amount</div><div class="detail-val">${m.fee?fmtMoney(m.fee):'—'}</div></div>
         <div class="detail-item"><div class="detail-label">Fee Type</div><div class="detail-val">${esc(m.fee_type||'—')}</div></div>
+        <div class="detail-item"><div class="detail-label">Assigned To</div><div class="detail-val">${(()=>{if(!m.assigned_to)return'<span style="color:var(--txt3)">Unassigned</span>';const ap=window._allProfiles?.find(p=>p.id===m.assigned_to);return ap?`<div style="display:flex;align-items:center;gap:7px"><div style="width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${initials(ap.full_name||'?')}</div>${esc(ap.full_name||ap.email||'Unknown')}</div>`:'<span style="color:var(--txt3)">Unknown</span>';})()}</div></div>
       </div>
       ${m.notes?`<div class="card"><div class="card-header"><span class="card-title">Notes</span></div><div style="padding:16px 20px;font-size:13px;color:var(--txt2);line-height:1.7">${esc(m.notes)}</div></div>`:''}`;
   } else if(activeMatterTab==='events'){
@@ -3802,6 +3906,16 @@ function openEventDetail(eventId) {
   if (e.location) rows.push(row('📍', 'Location / Court', esc(e.location)));
   if (matter) rows.push(row('⚖️', 'Related Matter', esc(matter.title)));
   if (e.notes) rows.push(row('📝', 'Notes', esc(e.notes)));
+  if (e.meeting_link) {
+    const platform=detectMeetingPlatform(e.meeting_link);
+    const iconMap={'Zoom':'📹','Microsoft Teams':'💻','Google Meet':'🟢','Whereby':'🎥','Webex':'📞','Video Meeting':'🔗'};
+    const ic=iconMap[platform]||'🔗';
+    rows.push(`
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <div style="width:32px;height:32px;border-radius:8px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${ic}</div>
+      <div><div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">${platform}</div><a href="${esc(e.meeting_link)}" target="_blank" rel="noopener" style="font-size:13px;color:#185FA5;font-weight:500;word-break:break-all">Join Meeting →</a></div>
+    </div>`);
+  }
   document.getElementById('ev-detail-body').innerHTML = rows.join('') || '<div style="color:var(--txt3);font-size:13px">No additional details.</div>';
   document.getElementById('event-detail-overlay').classList.remove('hidden');
 }
@@ -3824,6 +3938,8 @@ function editEventFromDetail() {
     document.getElementById('ev-type').value = e.type || 'internal';
     document.getElementById('ev-location').value = e.location || '';
     document.getElementById('ev-notes').value = e.notes || '';
+    document.getElementById('ev-meeting-link').value = e.meeting_link || '';
+    updateMeetingLinkIcon(e.meeting_link||'');
     if (e.matter_id) document.getElementById('ev-matter').value = e.matter_id;
     // Mark as edit mode
     const btn = document.getElementById('save-event-btn');
@@ -3842,6 +3958,7 @@ async function updateEvent(eventId) {
     type: document.getElementById('ev-type').value,
     matter_id: document.getElementById('ev-matter').value || null,
     location: document.getElementById('ev-location').value.trim() || null,
+    meeting_link: document.getElementById('ev-meeting-link').value.trim() || null,
     notes: document.getElementById('ev-notes').value.trim() || null,
   };
   const { error } = await sb.from('events').update(payload).eq('id', eventId);
