@@ -6,7 +6,7 @@
 <title>DKMA — Law Firm Management</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1127,9 +1127,13 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 
 <script>
 // ─── SUPABASE ─────────────────────────────────────────────────────
-const SUPABASE_URL='https://oolqcrpjuqmzxupaozpu.supabase.co';
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vbHFjcnBqdXFtenh1cGFvenB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NDk0MjYsImV4cCI6MjA5MTAyNTQyNn0.G6s3LMbpqpsWqEqbEII8yff4gD3tTZ7hNc3jqOBS1EI';
+const SUPABASE_URL='%%SUPABASE_URL%%';
+const SUPABASE_KEY='%%SUPABASE_ANON_KEY%%';
 const SERVICE_ROLE_KEY='%%SUPABASE_SERVICE_ROLE_KEY%%';
+if(SUPABASE_URL.includes('%%')||SUPABASE_KEY.includes('%%')){
+  document.body.innerHTML='<div style="font-family:sans-serif;padding:40px;text-align:center;color:#a33"><h2>Configuration Error</h2><p style="margin-top:12px;font-size:14px">Supabase credentials were not injected.<br>Ensure GitHub Actions secrets are set and the workflow has run.</p></div>';
+  throw new Error('Supabase credentials not injected — placeholders still present.');
+}
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 // ─── STATE ────────────────────────────────────────────────────────
@@ -2953,7 +2957,7 @@ function closeDocViewer() {
 }
 
 // ─── EMAIL DOCUMENT ───────────────────────────────────────────────
-const SUPABASE_URL_EDGE='https://oolqcrpjuqmzxupaozpu.supabase.co';
+const SUPABASE_URL_EDGE=SUPABASE_URL; // reuse injected URL
 
 function openEmailDocModal(storageName, displayName){
   // Pre-fill client email/name from current matter
