@@ -2113,14 +2113,40 @@ async function sendClientNewPassword(clientId){
   const chars='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
   let newPw='';
   for(let i=0;i<12;i++)newPw+=chars[Math.floor(Math.random()*chars.length)];
-  if(!confirm(`Send a new temporary password to ${client.name}?\n\nEmail: ${client.email}\nNew password: ${newPw}\n\nNote this password — it will be shown once.`))return;
+  if(!confirm(`Set a new temporary password for ${client.name}?\n\nEmail: ${client.email}\nNew password: ${newPw}\n\nNote this password — it will be shown once.`))return;
 
-  // Use password reset flow: send reset email and show new password to the user
-  const redirectTo='https://dkmutongadvocate-sys.github.io/dkmaclient/';
-  const{error}=await sb.auth.resetPasswordForEmail(client.email,{redirectTo});
-  if(error){toast('Error sending reset: '+error.message,true);return;}
+  if(!SERVICE_ROLE_KEY||SERVICE_ROLE_KEY.includes('%%')){
+    toast('Service role key not configured — cannot reset password securely.',true);
+    return;
+  }
 
-  // Show new credentials overlay for the firm to share with the client
+  // Find the auth user by email to get their ID
+  const searchRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(client.email)}`,{
+    headers:{'apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY}
+  });
+  const searchData=await searchRes.json();
+  const authUser=searchData?.users?.[0];
+  if(!authUser){toast('No portal account found for this client. Grant access first.',true);return;}
+
+  // Update password + set must_change_password flag via Admin API
+  const updateRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${authUser.id}`,{
+    method:'PUT',
+    headers:{
+      'Content-Type':'application/json',
+      'apikey':SERVICE_ROLE_KEY,
+      'Authorization':'Bearer '+SERVICE_ROLE_KEY
+    },
+    body:JSON.stringify({
+      password:newPw,
+      user_metadata:{...authUser.user_metadata,must_change_password:true}
+    })
+  });
+  if(!updateRes.ok){
+    const err=await updateRes.json();
+    toast('Failed to reset password: '+(err.message||'Unknown error'),true);
+    return;
+  }
+
   showNewClientPasswordOverlay(client.name,client.email,newPw);
 }
 
@@ -2130,7 +2156,7 @@ function showNewClientPasswordOverlay(name,email,password){
   overlay.innerHTML=`
     <div style="background:#fff;border-radius:12px;padding:32px;max-width:460px;width:100%;border:0.5px solid var(--brd)">
       <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--txt);margin-bottom:6px">🔑 New Client Password</div>
-      <div style="font-size:13px;color:var(--txt3);margin-bottom:20px;line-height:1.6">A password reset link has been emailed to <strong>${esc(email)}</strong>. Share these new credentials with <strong>${esc(name)}</strong> so they can log into the client portal.</div>
+      <div style="font-size:13px;color:var(--txt3);margin-bottom:20px;line-height:1.6">Share these temporary credentials with <strong>${esc(name)}</strong>. They will be prompted to set a new password when they first log in.</div>
       <div style="background:var(--cream);border-radius:8px;padding:14px 18px;margin-bottom:12px;border:1px solid var(--brd)">
         <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Portal URL</div>
         <div style="font-size:12px;font-weight:500;color:var(--navy);font-family:monospace">https://dkmutongadvocate-sys.github.io/dkmaclient/</div>
@@ -2142,7 +2168,7 @@ function showNewClientPasswordOverlay(name,email,password){
       <div style="background:#FFF8E7;border-radius:8px;padding:14px 18px;margin-bottom:24px;border:1px solid #E8D5A0">
         <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">New Temporary Password</div>
         <div style="font-size:20px;font-weight:600;color:var(--navy);font-family:monospace;letter-spacing:1px">${esc(password)}</div>
-        <div style="font-size:10px;color:var(--txt3);margin-top:6px">Client must also click the reset link sent to their email to activate this password.</div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:6px">Client will be forced to set a new password on first login.</div>
       </div>
       <div style="display:flex;gap:10px">
         <button onclick="navigator.clipboard.writeText('Portal: https://dkmutongadvocate-sys.github.io/dkmaclient/\\nEmail: ${esc(email)}\\nPassword: ${esc(password)}').then(()=>toast('Copied ✓'))" style="flex:1;background:var(--navy);color:#fff;border:none;padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">📋 Copy Credentials</button>
@@ -2386,7 +2412,7 @@ async function saveClient(){
           body:JSON.stringify({
             email,password:portalPassword,
             email_confirm:true,
-            user_metadata:{full_name:name,role:'client'}
+            user_metadata:{full_name:name,role:'client',must_change_password:true}
           })
         });
         const rd=await res.json();
@@ -2396,7 +2422,7 @@ async function saveClient(){
         // Fallback: standard signUp (requires signups enabled in Supabase dashboard)
         const{data:authData,error:authErr}=await sb.auth.signUp({
           email,password:portalPassword,
-          options:{data:{full_name:name,role:'client'}}
+          options:{data:{full_name:name,role:'client',must_change_password:true}}
         });
         if(authErr){portalErr=authErr.message;}
         else{portalUserId=authData?.user?.id;}
