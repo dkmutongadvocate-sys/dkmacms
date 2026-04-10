@@ -1194,29 +1194,36 @@ function showView(id,el){
 
 // ─── AUTH ─────────────────────────────────────────────────────────
 async function initAuth(){
-  const{data:{session}}=await sb.auth.getSession();
-  if(session){
-    // Check if this session came from a password-reset link by decoding the JWT
-    let isRecoveryToken=false;
-    try{
-      const payload=JSON.parse(atob((session.access_token||'').split('.')[1]));
-      if(Array.isArray(payload.amr)&&payload.amr.some(a=>a?.method==='recovery')){
-        isRecoveryToken=true;
-      }
-    }catch(e){/* ignore */}
-    if(isRecoveryToken){
-      window._firmPasswordRecoveryMode=true;
-      document.getElementById('auth-screen').style.display='flex';
-      document.getElementById('app-shell').style.display='none';
-      showFirmMode('newpassword');
-    } else {
-      currentUser=session.user;
-      await loadProfile();
-      showApp();
-      loadAll();
-    }
+  // If the hash-check already detected a reset link, do NOT touch the UI —
+  // just wire up the listener and return. initAuth must never call showApp()
+  // while password recovery mode is active.
+  if(window._firmPasswordRecoveryMode){
+    // Still register the listener below so firmSetNewPassword works
   } else {
-    showAuthScreen();
+    const{data:{session}}=await sb.auth.getSession();
+    if(session){
+      // Check if this session came from a password-reset link by decoding the JWT
+      let isRecoveryToken=false;
+      try{
+        const payload=JSON.parse(atob((session.access_token||'').split('.')[1]));
+        if(Array.isArray(payload.amr)&&payload.amr.some(a=>a?.method==='recovery')){
+          isRecoveryToken=true;
+        }
+      }catch(e){/* ignore */}
+      if(isRecoveryToken){
+        window._firmPasswordRecoveryMode=true;
+        document.getElementById('auth-screen').style.display='flex';
+        document.getElementById('app-shell').style.display='none';
+        showFirmMode('newpassword');
+      } else {
+        currentUser=session.user;
+        await loadProfile();
+        showApp();
+        loadAll();
+      }
+    } else {
+      showAuthScreen();
+    }
   }
   sb.auth.onAuthStateChange(async(event,session)=>{
     if(event==='PASSWORD_RECOVERY'){
