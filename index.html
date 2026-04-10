@@ -2133,14 +2133,34 @@ async function sendClientNewPassword(clientId){
     return;
   }
 
-  // Find the auth user by portal-aliased email to get their ID
+  // Find the auth user — try portal-aliased email first, then raw email as fallback
   const portalEmail=toPortalEmail(client.email);
-  const searchRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(portalEmail)}`,{
-    headers:{'apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY}
-  });
-  const searchData=await searchRes.json();
-  const authUser=searchData?.users?.[0];
-  if(!authUser){toast('No portal account found for this client. Grant access first.',true);return;}
+  const rawEmail=client.email.trim().toLowerCase();
+
+  async function findAuthUser(emailToSearch){
+    const res=await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(emailToSearch)}`,{
+      headers:{'apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY}
+    });
+    if(!res.ok){
+      const e=await res.json().catch(()=>({}));
+      console.error('[findAuthUser] search failed:',e);
+      return null;
+    }
+    const d=await res.json();
+    return d?.users?.[0]||null;
+  }
+
+  let authUser=await findAuthUser(portalEmail);
+  // Fallback: if the account was provisioned on the raw email (no +portal alias)
+  if(!authUser&&rawEmail!==portalEmail){
+    console.warn('[sendClientNewPassword] +portal alias not found, trying raw email:',rawEmail);
+    authUser=await findAuthUser(rawEmail);
+  }
+
+  if(!authUser){
+    toast(`No portal account found for ${portalEmail}. Use "Grant Portal Access" first.`,true);
+    return;
+  }
 
   // Update password + set must_change_password flag via Admin API
   const updateRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${authUser.id}`,{
@@ -2152,12 +2172,14 @@ async function sendClientNewPassword(clientId){
     },
     body:JSON.stringify({
       password:newPw,
+      email_confirm:true,
       user_metadata:{...authUser.user_metadata,must_change_password:true}
     })
   });
   if(!updateRes.ok){
-    const err=await updateRes.json();
-    toast('Failed to reset password: '+(err.message||'Unknown error'),true);
+    const err=await updateRes.json().catch(()=>({}));
+    toast('Failed to reset password: '+(err.msg||err.message||err.error||JSON.stringify(err)),true);
+    console.error('[sendClientNewPassword] PUT failed:',err);
     return;
   }
 
@@ -2695,26 +2717,35 @@ async function updateClient(clientId){
       const c=clients.find(x=>x.id===clientId);
       const portalEmail=toPortalEmail(email);
       if(SERVICE_ROLE_KEY&&!SERVICE_ROLE_KEY.includes('%%')){
-        // Find existing auth user
-        const searchRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(portalEmail)}`,{
-          headers:{'apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY}
-        });
-        const searchData=await searchRes.json();
-        const authUser=searchData?.users?.[0];
+        // Find existing auth user — try +portal alias first, fallback to raw email
+        async function findAuthUserForUpdate(emailToSearch){
+          const r=await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(emailToSearch)}`,{
+            headers:{'apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY}
+          });
+          const d=await r.json();
+          return d?.users?.[0]||null;
+        }
+        let authUser=await findAuthUserForUpdate(portalEmail);
+        const rawEmailLc=email.trim().toLowerCase();
+        if(!authUser&&portalEmail!==rawEmailLc){
+          authUser=await findAuthUserForUpdate(rawEmailLc);
+        }
         if(authUser){
           // Update password on existing account
-          await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${authUser.id}`,{
+          const upRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${authUser.id}`,{
             method:'PUT',
             headers:{'Content-Type':'application/json','apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY},
-            body:JSON.stringify({password:portalPassword,user_metadata:{...authUser.user_metadata,must_change_password:true}})
+            body:JSON.stringify({password:portalPassword,email_confirm:true,user_metadata:{...authUser.user_metadata,must_change_password:true}})
           });
+          if(!upRes.ok){const e=await upRes.json().catch(()=>({}));toast('Portal password update failed: '+(e.msg||e.message||'Unknown error'),true);}
         } else {
           // Create new portal account
-          await fetch(`${SUPABASE_URL}/auth/v1/admin/users`,{
+          const crRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users`,{
             method:'POST',
             headers:{'Content-Type':'application/json','apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY},
             body:JSON.stringify({email:portalEmail,password:portalPassword,email_confirm:true,user_metadata:{full_name:name,role:'client',must_change_password:true}})
           });
+          if(!crRes.ok){const e=await crRes.json().catch(()=>({}));toast('Portal account creation failed: '+(e.msg||e.message||'Unknown error'),true);}
         }
         showClientCredentials(name,email,portalPassword);
       } else {
