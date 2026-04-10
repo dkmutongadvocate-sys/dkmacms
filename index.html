@@ -1153,6 +1153,16 @@ if(SUPABASE_URL.includes('%%')||SUPABASE_KEY.includes('%%')){
 }
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{storageKey:'dkma-cms-session'}});
 
+// ─── PORTAL EMAIL HELPER ──────────────────────────────────────────
+// Clients are stored in Supabase Auth with a +portal alias so their
+// auth identity never collides with a staff account on the same email.
+function toPortalEmail(email){
+  if(!email)return email;
+  email=email.trim().toLowerCase();
+  if(email.includes('+portal@'))return email; // already aliased
+  return email.replace('@','+portal@');
+}
+
 // ─── STATE ────────────────────────────────────────────────────────
 let clients=[],matters=[],events=[],invoices=[],timeEntries=[],alerts=[],parties=[];
 let currentFilter='all',clientFilter='all';
@@ -2071,7 +2081,8 @@ function generateClientPassword(){
 }
 
 function showClientCredentials(name,email,password){
-  // Create a temporary overlay showing the credentials to copy
+  // Show the real email to the advocate — the portal login uses the +portal alias
+  // but we display the clean email since the portal transforms it automatically.
   const overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px';
   overlay.innerHTML=`
@@ -2120,8 +2131,9 @@ async function sendClientNewPassword(clientId){
     return;
   }
 
-  // Find the auth user by email to get their ID
-  const searchRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(client.email)}`,{
+  // Find the auth user by portal-aliased email to get their ID
+  const portalEmail=toPortalEmail(client.email);
+  const searchRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(portalEmail)}`,{
     headers:{'apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY}
   });
   const searchData=await searchRes.json();
@@ -2185,8 +2197,9 @@ async function resetClientPortalPassword(clientId){
   if(!confirm(`Reset portal password for ${client.name}?\n\nA new temporary password will be generated and shown to you.`))return;
 
   // Generate new password and update via admin — since we only have anon key,
-  // we send a reset email to the client's email instead
-  const{error}=await sb.auth.resetPasswordForEmail(client.email,{
+  // we send a reset email to the client's portal-aliased email instead
+  const portalEmail=toPortalEmail(client.email);
+  const{error}=await sb.auth.resetPasswordForEmail(portalEmail,{
     redirectTo:'https://dkmutongadvocate-sys.github.io/dkmaclient/'
   });
   if(error){toast('Error: '+error.message,true);return;}
@@ -2398,6 +2411,7 @@ async function saveClient(){
 
     // Create portal auth account if password provided
     if(portalPassword&&email){
+      const portalEmail=toPortalEmail(email); // e.g. user@domain.com → user+portal@domain.com
       let portalUserId=null;
       let portalErr=null;
       // Use Admin REST API if service role key is available
@@ -2410,7 +2424,7 @@ async function saveClient(){
             'Authorization':'Bearer '+SERVICE_ROLE_KEY
           },
           body:JSON.stringify({
-            email,password:portalPassword,
+            email:portalEmail,password:portalPassword,
             email_confirm:true,
             user_metadata:{full_name:name,role:'client',must_change_password:true}
           })
@@ -2421,7 +2435,7 @@ async function saveClient(){
       } else {
         // Fallback: standard signUp (requires signups enabled in Supabase dashboard)
         const{data:authData,error:authErr}=await sb.auth.signUp({
-          email,password:portalPassword,
+          email:portalEmail,password:portalPassword,
           options:{data:{full_name:name,role:'client',must_change_password:true}}
         });
         if(authErr){portalErr=authErr.message;}
