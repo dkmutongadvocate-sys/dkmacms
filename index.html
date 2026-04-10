@@ -463,7 +463,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
         Contact your administrator to create an account or reset your password.
       </div>
     </div>
-    <!-- SET NEW PASSWORD -->
+    <!-- SET NEW PASSWORD (via reset link) -->
     <div id="firm-mode-newpassword" style="display:none">
       <p style="font-size:12px;color:var(--txt3);text-align:center;margin-bottom:20px;line-height:1.6">Choose a new password for your account.</p>
       <label style="display:block;font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:500">New Password</label>
@@ -476,6 +476,23 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <button id="firm-newpw-btn" onclick="firmSetNewPassword()"
         style="width:100%;background:var(--navy);color:#fff;border:none;padding:11px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">
         Set New Password
+      </button>
+    </div>
+    <!-- FORCE CHANGE PASSWORD (after logging in with a temporary password) -->
+    <div id="firm-mode-forcechange" style="display:none">
+      <div style="background:#FAEEDA;border-radius:8px;padding:12px 14px;margin-bottom:20px;font-size:12px;color:#854F0B;line-height:1.6">
+        🔑 Your administrator has set a temporary password. Please choose a new password to continue.
+      </div>
+      <label style="display:block;font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:500">New Password</label>
+      <input id="force-newpw-password" type="password" placeholder="Min. 8 characters"
+        style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:10px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none;margin-bottom:14px"/>
+      <label style="display:block;font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:500">Confirm New Password</label>
+      <input id="force-newpw-confirm" type="password" placeholder="Repeat your new password" onkeydown="if(event.key==='Enter')forceChangePassword()"
+        style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:10px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none;margin-bottom:14px"/>
+      <div id="force-newpw-error" style="font-size:12px;color:var(--red);min-height:18px;margin-bottom:12px;text-align:center"></div>
+      <button id="force-newpw-btn" onclick="forceChangePassword()"
+        style="width:100%;background:var(--navy);color:#fff;border:none;padding:11px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">
+        Set New Password & Continue
       </button>
     </div>
   </div>
@@ -1322,6 +1339,13 @@ function updateUserUI(){
 function roleLabel(r){return{admin:'Administrator',head:'Head of Department',senior:'Senior Associate',associate:'Associate'}[r]||r||'—';}
 
 function showApp(){
+  // If the profile requires a password change, show that screen instead of the app
+  if(currentProfile&&currentProfile.force_password_change){
+    document.getElementById('auth-screen').style.display='flex';
+    document.getElementById('app-shell').style.display='none';
+    showFirmMode('forcechange');
+    return;
+  }
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-shell').style.display='flex';
 }
@@ -1353,12 +1377,12 @@ async function signOut(){
 }
 
 function showFirmMode(mode){
-  ['signin','reset','newpassword'].forEach(m=>{
+  ['signin','reset','newpassword','forcechange'].forEach(m=>{
     const el=document.getElementById('firm-mode-'+m);
     if(el)el.style.display=m===mode?'block':'none';
   });
   // Clear any stale error messages when switching modes
-  ['firm-reset-error','firm-newpw-error','auth-error'].forEach(id=>{
+  ['firm-reset-error','firm-newpw-error','force-newpw-error','auth-error'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.textContent='';
   });
@@ -1387,6 +1411,36 @@ async function firmSetNewPassword(){
     if(session){currentUser=session.user;await loadProfile();showApp();loadAll();}
     else{showFirmMode('signin');}
   },1500);
+}
+
+// ─── FORCE CHANGE PASSWORD (temporary password flow) ──────────────
+async function forceChangePassword(){
+  const pw=(document.getElementById('force-newpw-password').value||'');
+  const pw2=(document.getElementById('force-newpw-confirm').value||'');
+  const errEl=document.getElementById('force-newpw-error');
+  errEl.style.color='var(--red)';
+  errEl.textContent='';
+  if(!pw||pw.length<8){errEl.textContent='Password must be at least 8 characters.';return;}
+  if(pw!==pw2){errEl.textContent='Passwords do not match.';return;}
+  const btn=document.getElementById('force-newpw-btn');
+  btn.disabled=true;btn.textContent='Updating…';
+  // Update the password in Supabase auth
+  const{error}=await sb.auth.updateUser({password:pw});
+  if(error){
+    btn.disabled=false;btn.textContent='Set New Password & Continue';
+    errEl.textContent=error.message;return;
+  }
+  // Clear the force_password_change flag in the profiles table
+  await sb.from('profiles').update({force_password_change:false}).eq('id',currentUser.id);
+  if(currentProfile)currentProfile.force_password_change=false;
+  btn.disabled=false;btn.textContent='Set New Password & Continue';
+  errEl.style.color='var(--green)';
+  errEl.textContent='Password updated! Loading your workspace…';
+  setTimeout(()=>{
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app-shell').style.display='flex';
+    loadAll();
+  },1200);
 }
 
 // ─── LOAD ALL ─────────────────────────────────────────────────────
@@ -2193,6 +2247,8 @@ async function resetTeamMemberPassword(userId,name,e){
     toast('Error resetting password: '+(data.message||data.msg||JSON.stringify(data)),true);
     return;
   }
+  // Flag this user's profile so they are forced to change password on next login
+  await sb.from('profiles').update({force_password_change:true}).eq('id',userId);
   // Show the temporary password to the admin so they can share it
   const overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px';
