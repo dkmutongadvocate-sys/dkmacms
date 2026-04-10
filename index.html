@@ -2163,15 +2163,54 @@ async function updateMemberRole(userId,newRole,name){
 // ─── RESET TEAM MEMBER PASSWORD (Admin/Head) ──────────────────────
 async function resetTeamMemberPassword(userId,name,e){
   e&&e.stopPropagation();
-  // We can only reset by sending a reset email via Supabase
-  // First look up the user's email from auth (we need the profiles table which may have it, or we use the admin API)
-  // Since we only have anon key, we use a workaround: prompt admin to enter the user's email
-  const email=prompt(`Enter the email address for ${name||'this user'} to send them a password reset link:`);
-  if(!email||!email.trim())return;
-  const redirectTo='https://dkmutongadvocate-sys.github.io/dkmacms/#reset-password';
-  const{error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo});
-  if(error){toast('Error: '+error.message,true);return;}
-  toast(`Password reset email sent to ${email.trim()} ✓`);
+  // IMPORTANT: We never send a reset email here because clicking a reset link
+  // creates a recovery session that overwrites whoever is currently logged in
+  // on that browser — which would let the team member accidentally change the
+  // admin's password instead of their own.
+  //
+  // Instead, we use the Supabase Admin API (service role key) to set a new
+  // temporary password directly. The admin shares it with the user, who can
+  // then change it themselves after logging in normally.
+  if(!SERVICE_ROLE_KEY||SERVICE_ROLE_KEY.includes('%%')){
+    toast('Service role key not configured — cannot reset password securely.',true);
+    return;
+  }
+  const newPw=prompt(`Set a new temporary password for ${name||'this user'}:\n\nMust be at least 8 characters. You will share this with them directly.`);
+  if(!newPw||!newPw.trim()){return;}
+  if(newPw.trim().length<8){toast('Password must be at least 8 characters.',true);return;}
+  e&&e.stopPropagation();
+  const res=await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`,{
+    method:'PUT',
+    headers:{
+      'Content-Type':'application/json',
+      'apikey':SERVICE_ROLE_KEY,
+      'Authorization':'Bearer '+SERVICE_ROLE_KEY
+    },
+    body:JSON.stringify({password:newPw.trim()})
+  });
+  const data=await res.json();
+  if(!res.ok){
+    toast('Error resetting password: '+(data.message||data.msg||JSON.stringify(data)),true);
+    return;
+  }
+  // Show the temporary password to the admin so they can share it
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML=`
+    <div style="background:#fff;border-radius:12px;padding:32px;max-width:420px;width:100%;border:0.5px solid var(--brd)">
+      <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--txt);margin-bottom:6px">🔑 Password Reset</div>
+      <div style="font-size:13px;color:var(--txt3);margin-bottom:20px;line-height:1.6">Password for <strong>${esc(name)}</strong> has been updated. Share these credentials with them directly — do not send via email link.</div>
+      <div style="background:#FFF8E7;border-radius:8px;padding:16px 20px;margin-bottom:24px;border:1px solid #E8D5A0">
+        <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Temporary Password</div>
+        <div style="font-size:22px;font-weight:600;color:var(--navy);font-family:monospace;letter-spacing:1px">${esc(newPw.trim())}</div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:6px">Ask them to change this after their next login.</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="navigator.clipboard.writeText('${esc(newPw.trim())}').then(()=>toast('Copied ✓'))" style="flex:1;background:var(--navy);color:#fff;border:none;padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">📋 Copy Password</button>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;background:var(--cream);color:var(--txt2);border:1px solid var(--brd);padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Done</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
 }
 
 // ─── MODAL HELPERS ────────────────────────────────────────────────
