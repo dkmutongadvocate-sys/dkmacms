@@ -1151,7 +1151,7 @@ if(SUPABASE_URL.includes('%%')||SUPABASE_KEY.includes('%%')){
   document.body.innerHTML='<div style="font-family:sans-serif;padding:40px;text-align:center;color:#a33"><h2>Configuration Error</h2><p style="margin-top:12px;font-size:14px">Supabase credentials were not injected.<br>Ensure GitHub Actions secrets are set and the workflow has run.</p></div>';
   throw new Error('Supabase credentials not injected — placeholders still present.');
 }
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{storageKey:'dkma-cms-session'}});
 
 // ─── STATE ────────────────────────────────────────────────────────
 let clients=[],matters=[],events=[],invoices=[],timeEntries=[],alerts=[],parties=[];
