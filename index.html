@@ -1129,10 +1129,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 // ─── SUPABASE ─────────────────────────────────────────────────────
 const SUPABASE_URL='https://oolqcrpjuqmzxupaozpu.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vbHFjcnBqdXFtenh1cGFvenB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NDk0MjYsImV4cCI6MjA5MTAyNTQyNn0.G6s3LMbpqpsWqEqbEII8yff4gD3tTZ7hNc3jqOBS1EI';
-// ⬇ PASTE YOUR SERVICE ROLE KEY HERE to enable creating users while signups are disabled.
-// Find it: Supabase Dashboard → Project Settings → API → service_role (secret) key.
-// Only use this in a private/internal app (not on a public website).
-const SERVICE_ROLE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vbHFjcnBqdXFtenh1cGFvenB1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTQ0OTQyNiwiZXhwIjoyMDkxMDI1NDI2fQ.m9yRCOqLXMsMYVGjExDei3TSLJbK9VBQ-bXe3TNH2qc'; // e.g. 'eyJhbGci...'
+const SERVICE_ROLE_KEY='%%SUPABASE_SERVICE_ROLE_KEY%%';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 // ─── STATE ────────────────────────────────────────────────────────
