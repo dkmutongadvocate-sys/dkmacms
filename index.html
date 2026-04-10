@@ -1196,10 +1196,25 @@ function showView(id,el){
 async function initAuth(){
   const{data:{session}}=await sb.auth.getSession();
   if(session){
-    currentUser=session.user;
-    await loadProfile();
-    showApp();
-    loadAll();
+    // Check if this session came from a password-reset link by decoding the JWT
+    let isRecoveryToken=false;
+    try{
+      const payload=JSON.parse(atob((session.access_token||'').split('.')[1]));
+      if(Array.isArray(payload.amr)&&payload.amr.some(a=>a?.method==='recovery')){
+        isRecoveryToken=true;
+      }
+    }catch(e){/* ignore */}
+    if(isRecoveryToken){
+      window._firmPasswordRecoveryMode=true;
+      document.getElementById('auth-screen').style.display='flex';
+      document.getElementById('app-shell').style.display='none';
+      showFirmMode('newpassword');
+    } else {
+      currentUser=session.user;
+      await loadProfile();
+      showApp();
+      loadAll();
+    }
   } else {
     showAuthScreen();
   }
@@ -1212,7 +1227,35 @@ async function initAuth(){
       return;
     }
     if(event==='SIGNED_IN'&&session){
+      // Block auto-login if we are in password recovery mode
       if(window._firmPasswordRecoveryMode){return;}
+      // Also detect recovery sessions by checking the AMR claim — Supabase sets
+      // authenticator method reference to 'recovery' when the user clicked a
+      // password-reset link. This catches the race where SIGNED_IN fires before
+      // PASSWORD_RECOVERY has had a chance to set the flag.
+      const amr=session?.user?.amr||session?.amr;
+      const isRecovery=Array.isArray(amr)
+        ?amr.some(a=>a?.method==='recovery'||a?.method==='otp')
+        :false;
+      // Also check the user_metadata for recovery indicator
+      const accessToken=session?.access_token||'';
+      let isRecoveryToken=false;
+      try{
+        // JWT payload is the second segment, base64-decoded
+        const payload=JSON.parse(atob(accessToken.split('.')[1]));
+        // Supabase sets aal to 'aal1' and includes session_id; for recovery
+        // tokens the 'amr' array contains {method:'recovery'}
+        if(Array.isArray(payload.amr)&&payload.amr.some(a=>a?.method==='recovery')){
+          isRecoveryToken=true;
+        }
+      }catch(e){/* ignore decode errors */}
+      if(isRecovery||isRecoveryToken){
+        window._firmPasswordRecoveryMode=true;
+        document.getElementById('auth-screen').style.display='flex';
+        document.getElementById('app-shell').style.display='none';
+        showFirmMode('newpassword');
+        return;
+      }
       currentUser=session.user;
       await loadProfile();
       showApp();
