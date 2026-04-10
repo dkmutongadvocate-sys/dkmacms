@@ -1293,7 +1293,13 @@ async function signIn(){
 }
 
 async function signOut(){
-  await sb.auth.signOut();
+  try{
+    await sb.auth.signOut();
+  }catch(e){
+    console.warn('signOut error:',e);
+  }finally{
+    window.location.reload();
+  }
 }
 
 function showFirmMode(mode){
