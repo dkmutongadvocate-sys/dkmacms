@@ -2161,7 +2161,7 @@ async function resetTeamMemberPassword(userId,name,e){
   // Since we only have anon key, we use a workaround: prompt admin to enter the user's email
   const email=prompt(`Enter the email address for ${name||'this user'} to send them a password reset link:`);
   if(!email||!email.trim())return;
-  const redirectTo='https://dkmutongadvocate-sys.github.io/dkmacms/';
+  const redirectTo='https://dkmutongadvocate-sys.github.io/dkmacms/#reset-password';
   const{error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo});
   if(error){toast('Error: '+error.message,true);return;}
   toast(`Password reset email sent to ${email.trim()} ✓`);
@@ -3414,6 +3414,26 @@ async function deleteEventFromDetail() {
   closeEventDetail();
   await deleteEvent(e.id, e.title, { stopPropagation: () => {} });
 }
+
+// ─── FORCED PASSWORD RESET VIA URL HASH ───────────────────────────
+// If the redirect URL contains #reset-password, show the new password
+// form immediately — before any auth events fire. This is the most
+// reliable way to intercept a password-reset link.
+(function checkResetHash(){
+  const hash=window.location.hash||'';
+  const params=new URLSearchParams(window.location.search);
+  // Supabase also appends type=recovery as a query param in some flows
+  const isReset=hash.includes('reset-password')||params.get('type')==='recovery';
+  if(isReset){
+    window._firmPasswordRecoveryMode=true;
+    // Show auth screen in new-password mode immediately
+    document.getElementById('auth-screen').style.display='flex';
+    document.getElementById('app-shell').style.display='none';
+    showFirmMode('newpassword');
+    // Clean the hash from the URL bar so a refresh doesn't re-trigger
+    history.replaceState(null,'',window.location.pathname+window.location.search);
+  }
+})();
 
 initAuth();
 </script>
