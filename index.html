@@ -817,7 +817,14 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
     <div class="modal-head"><span class="modal-title">Open New Matter</span><button class="modal-close" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <div class="form-two">
-        <div class="form-row"><label>File Number</label><input id="m-fileno" placeholder="e.g. DKMA/CV/2025/001"/></div>
+        <div class="form-row">
+          <label>File Number <span id="fileno-auto-badge" style="font-size:10px;background:var(--gold);color:var(--navy);padding:1px 6px;border-radius:3px;margin-left:6px;font-weight:500">AUTO</span></label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="m-fileno" placeholder="Auto-generated on save" style="flex:1;font-family:monospace" readonly/>
+            <button type="button" id="fileno-override-btn" onclick="toggleFileNoOverride()" style="font-size:11px;padding:5px 10px;border:1px solid var(--brd2);border-radius:6px;background:#fff;cursor:pointer;color:var(--txt2);white-space:nowrap;font-family:'DM Sans',sans-serif">✏️ Override</button>
+          </div>
+          <div style="font-size:10px;color:var(--txt3);margin-top:4px" id="fileno-preview"></div>
+        </div>
         <div class="form-row"><label>Open Date</label><input type="date" id="m-date"/></div>
       </div>
       <div class="form-row"><label>Matter Title</label><input id="m-title" placeholder="e.g. Kamau v. Njoroge — Land Dispute"/></div>
@@ -2367,6 +2374,14 @@ function bgClose(e){if(e.target.id==='modal-overlay')closeModal();}
 function popMatterModal(){
   const sel=document.getElementById('m-client');
   sel.innerHTML='<option value="">Select client…</option>'+clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  // Reset file number field to auto mode and refresh preview
+  const fn=document.getElementById('m-fileno');
+  const btn=document.getElementById('fileno-override-btn');
+  const badge=document.getElementById('fileno-auto-badge');
+  if(fn){fn.readOnly=true;fn.value='';}
+  if(btn)btn.textContent='✏️ Override';
+  if(badge)badge.style.display='inline';
+  setTimeout(initFileNoField,0);
 }
 function popTimeModal(){
   document.getElementById('t-matter').innerHTML='<option value="">Select matter…</option>'+matters.map(m=>`<option value="${m.id}">${m.file_number?'['+esc(m.file_number)+'] ':''} ${esc(m.title)}</option>`).join('');
@@ -2386,12 +2401,81 @@ function setLoading(btnId,loading,label='Save'){
 }
 
 // ─── SAVE FUNCTIONS ───────────────────────────────────────────────
+
+// ─── AUTO FILE NUMBER ─────────────────────────────────────────────
+function typeToCode(type){
+  const map={
+    'Civil Litigation':'CV','Conveyancing':'CN','Family Law':'FL',
+    'Criminal':'CR','Probate & Succession':'PR','ADR':'AD',
+    'Data Protection':'DP','Contract Law':'CT','Employment':'EM','Immigration':'IM'
+  };
+  return map[type]||'GN';
+}
+
+function generateFileNumber(){
+  const type=document.getElementById('m-type')?.value||'Civil Litigation';
+  const code=typeToCode(type);
+  const year=new Date().getFullYear();
+  const prefix='DKMA/'+code+'/'+year+'/';
+  const existing=matters.filter(m=>(m.file_number||'').startsWith(prefix));
+  const seq=(existing.length+1).toString().padStart(3,'0');
+  return prefix+seq;
+}
+
+function updateFileNoPreview(){
+  const inp=document.getElementById('m-fileno');
+  const preview=document.getElementById('fileno-preview');
+  const badge=document.getElementById('fileno-auto-badge');
+  if(inp&&inp.readOnly){
+    const generated=generateFileNumber();
+    inp.placeholder=generated;
+    if(preview)preview.textContent='Will be saved as: '+generated;
+    if(badge)badge.style.display='inline';
+  }
+}
+
+function toggleFileNoOverride(){
+  const inp=document.getElementById('m-fileno');
+  const btn=document.getElementById('fileno-override-btn');
+  const preview=document.getElementById('fileno-preview');
+  const badge=document.getElementById('fileno-auto-badge');
+  if(!inp)return;
+  if(inp.readOnly){
+    inp.readOnly=false;
+    inp.placeholder='e.g. DKMA/CV/2025/001';
+    inp.value='';
+    inp.focus();
+    if(btn)btn.textContent='↩ Auto';
+    if(preview)preview.textContent='Type your own file number above.';
+    if(badge)badge.style.display='none';
+  } else {
+    inp.readOnly=true;
+    inp.value='';
+    if(btn)btn.textContent='✏️ Override';
+    if(badge)badge.style.display='inline';
+    updateFileNoPreview();
+  }
+}
+
+function initFileNoField(){
+  const typeEl=document.getElementById('m-type');
+  if(typeEl){
+    typeEl.addEventListener('change',()=>{
+      const inp=document.getElementById('m-fileno');
+      if(inp&&inp.readOnly)updateFileNoPreview();
+    });
+  }
+  updateFileNoPreview();
+}
+
 async function saveMatter(){
   const title=document.getElementById('m-title').value.trim();
   if(!title){toast('Please enter a matter title.',true);return;}
   setLoading('save-matter-btn',true,'Open Matter');
+  const fileNoInp=document.getElementById('m-fileno');
+  const fileNumber=fileNoInp.value.trim()||(fileNoInp.readOnly?generateFileNumber():null);
   const payload={
-    file_number:document.getElementById('m-fileno').value.trim()||null,
+    file_number:fileNumber||null,
     title,
     client_id:document.getElementById('m-client').value||null,
     type:document.getElementById('m-type').value,
@@ -2410,6 +2494,7 @@ async function saveMatter(){
   matters=[data[0],...matters];
   closeModal();toast('Matter opened.');
   ['m-fileno','m-title','m-fee','m-court','m-notes'].forEach(id=>document.getElementById(id).value='');
+  const _fn=document.getElementById('m-fileno');if(_fn){_fn.readOnly=true;document.getElementById('fileno-auto-badge').style.display='inline';document.getElementById('fileno-override-btn').textContent='✏️ Override';}
   document.getElementById('m-client').value='';
   updateBadges();renderMatters();renderDashboard();
   if(activeClientId&&data[0].client_id===activeClientId)renderProfile();
@@ -2611,6 +2696,15 @@ function openEditMatter(matterId){
   const btn=document.getElementById('save-matter-btn');
   btn.textContent='Save Changes';
   btn.onclick=()=>updateMatter(matterId);
+  // In edit mode: file number field is always editable, hide AUTO badge
+  const fnEdit=document.getElementById('m-fileno');
+  const fnBadge=document.getElementById('fileno-auto-badge');
+  const fnOvrBtn=document.getElementById('fileno-override-btn');
+  const fnPreview=document.getElementById('fileno-preview');
+  if(fnEdit){fnEdit.readOnly=false;}
+  if(fnBadge)fnBadge.style.display='none';
+  if(fnOvrBtn)fnOvrBtn.style.display='none';
+  if(fnPreview)fnPreview.textContent='';
   // Pre-fill fields
   document.getElementById('m-fileno').value=m.file_number||'';
   document.getElementById('m-title').value=m.title||'';
@@ -2652,6 +2746,13 @@ async function updateMatter(matterId){
   btn.textContent='Open Matter';
   btn.onclick=saveMatter;
   document.getElementById('modal-matter').querySelector('.modal-title').textContent='Open New Matter';
+  // Restore file number field to auto mode
+  const fnReset=document.getElementById('m-fileno');
+  const fnBadgeR=document.getElementById('fileno-auto-badge');
+  const fnOvrBtnR=document.getElementById('fileno-override-btn');
+  if(fnReset){fnReset.readOnly=true;fnReset.value='';}
+  if(fnBadgeR)fnBadgeR.style.display='inline';
+  if(fnOvrBtnR){fnOvrBtnR.style.display='';fnOvrBtnR.textContent='✏️ Override';}
   closeModal();
   toast('Matter updated.');
   updateBadges();renderMatters();renderDashboard();
