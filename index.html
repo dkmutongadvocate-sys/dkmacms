@@ -1635,7 +1635,7 @@ function renderMatters(){
       <div class="mt-cell muted">${esc(m.type||'')}</div>
       <div class="mt-cell"><span class="status-pill ${statusClass(m.status)}">${statusLabel(m.status)}</span></div>
       <div class="mt-cell muted">${m.next_date?fmtDate(m.next_date):'—'}</div>
-      <div class="mt-cell bold" style="display:flex;align-items:center;justify-content:space-between">${m.fee?fmtMoney(m.fee):'—'}<button class="op-del" title="Delete matter" onclick="deleteMatter('${m.id}','${esc(m.title)}',event)">×</button></div>
+      <div class="mt-cell bold" style="display:flex;align-items:center;justify-content:space-between;gap:4px">${m.fee?fmtMoney(m.fee):'—'}<div style="display:flex;gap:4px"><button class="op-del" title="Edit matter" onclick="openEditMatter('${m.id}');event.stopPropagation()" style="color:var(--navy);font-size:13px" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️</button><button class="op-del" title="Delete matter" onclick="deleteMatter('${m.id}','${esc(m.title)}',event)">×</button></div></div>
     </div>`;
   }).join('');
 }
@@ -1662,6 +1662,7 @@ function renderClients(){
       <div class="cc-tags"><span class="cc-tag">${esc(c.practice_area||'—')}</span></div>
       <div style="display:flex;gap:8px;margin-top:12px">
         <button class="cc-view-btn" style="flex:1;margin-top:0" onclick="openClientProfile('${c.id}')">View Full Profile →</button>
+        <button class="op-del" style="padding:7px 10px;border-radius:6px;border:1px solid var(--brd);color:var(--navy);font-size:13px" title="Edit client" onclick="openEditClient('${c.id}');event.stopPropagation()" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️</button>
         <button class="op-del" style="padding:7px 10px;border-radius:6px;border:1px solid var(--brd)" title="Delete client" onclick="deleteClient('${c.id}','${esc(c.name)}',event)">×</button>
       </div>
     </div>`;
@@ -1699,6 +1700,7 @@ function renderProfile(){
         </div>
       </div>
       <div class="profile-actions">
+        <button class="topbar-btn sec" onclick="openEditClient('${c.id}')">✏️ Edit</button>
         <button class="topbar-btn sec" onclick="openMatterModalForClient('${c.id}')">+ New Matter</button>
         <button class="topbar-btn gold" onclick="openPartyModalForClient('${c.id}')">+ Other Party</button>
         ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="topbar-btn" style="background:#185FA5" onclick="sendClientNewPassword('${c.id}')">🔑 Send Client Password</button>`:''}
@@ -2325,7 +2327,19 @@ function openModal(type){
   if(type==='invoice')popInvoiceModal();
   if(type==='event')popEventModal();
 }
-function closeModal(){document.getElementById('modal-overlay').classList.add('hidden');}
+function closeModal(){
+  document.getElementById('modal-overlay').classList.add('hidden');
+  // Reset matter modal to create mode
+  const matterTitle=document.getElementById('modal-matter')?.querySelector('.modal-title');
+  if(matterTitle)matterTitle.textContent='Open New Matter';
+  const matterBtn=document.getElementById('save-matter-btn');
+  if(matterBtn){matterBtn.textContent='Open Matter';matterBtn.onclick=saveMatter;}
+  // Reset client modal to create mode
+  const clientTitle=document.getElementById('modal-client')?.querySelector('.modal-title');
+  if(clientTitle)clientTitle.textContent='Add New Client';
+  const clientBtn=document.getElementById('save-client-btn');
+  if(clientBtn){clientBtn.textContent='Save Client';clientBtn.onclick=saveClient;}
+}
 function bgClose(e){if(e.target.id==='modal-overlay')closeModal();}
 
 function popMatterModal(){
@@ -2565,7 +2579,166 @@ async function saveAlert(){
   alerts=[data[0],...alerts];closeModal();toast('Alert saved.');updateBadges();renderAlerts();renderDashboard();
 }
 
-// ─── MATTER DETAIL ────────────────────────────────────────────────
+// ─── EDIT MATTER ──────────────────────────────────────────────────
+function openEditMatter(matterId){
+  const m=matters.find(x=>x.id===matterId);
+  if(!m){toast('Matter not found.',true);return;}
+  openModal('matter');
+  // Switch modal to edit mode
+  document.getElementById('modal-matter').querySelector('.modal-title').textContent='Edit Matter';
+  const btn=document.getElementById('save-matter-btn');
+  btn.textContent='Save Changes';
+  btn.onclick=()=>updateMatter(matterId);
+  // Pre-fill fields
+  document.getElementById('m-fileno').value=m.file_number||'';
+  document.getElementById('m-title').value=m.title||'';
+  document.getElementById('m-date').value=m.open_date||'';
+  document.getElementById('m-next-date').value=m.next_date||'';
+  document.getElementById('m-type').value=m.type||'Civil Litigation';
+  document.getElementById('m-status').value=m.status||'active';
+  document.getElementById('m-fee-type').value=m.fee_type||'Hourly';
+  document.getElementById('m-fee').value=m.fee||'';
+  document.getElementById('m-court').value=m.court||'';
+  document.getElementById('m-notes').value=m.notes||'';
+  if(m.client_id)document.getElementById('m-client').value=m.client_id;
+}
+
+async function updateMatter(matterId){
+  const title=document.getElementById('m-title').value.trim();
+  if(!title){toast('Please enter a matter title.',true);return;}
+  setLoading('save-matter-btn',true,'Save Changes');
+  const payload={
+    file_number:document.getElementById('m-fileno').value.trim()||null,
+    title,
+    client_id:document.getElementById('m-client').value||null,
+    type:document.getElementById('m-type').value,
+    open_date:document.getElementById('m-date').value||null,
+    next_date:document.getElementById('m-next-date').value||null,
+    status:document.getElementById('m-status').value,
+    fee_type:document.getElementById('m-fee-type').value,
+    fee:parseFloat(document.getElementById('m-fee').value)||null,
+    court:document.getElementById('m-court').value.trim()||null,
+    notes:document.getElementById('m-notes').value.trim()||null,
+  };
+  const{data,error}=await sb.from('matters').update(payload).eq('id',matterId).select();
+  setLoading('save-matter-btn',false,'Save Changes');
+  if(error){toast('Error: '+error.message,true);return;}
+  // Update local state
+  matters=matters.map(m=>m.id===matterId?data[0]:m);
+  // Reset modal button back to create mode
+  const btn=document.getElementById('save-matter-btn');
+  btn.textContent='Open Matter';
+  btn.onclick=saveMatter;
+  document.getElementById('modal-matter').querySelector('.modal-title').textContent='Open New Matter';
+  closeModal();
+  toast('Matter updated.');
+  updateBadges();renderMatters();renderDashboard();
+  if(activeMatterId===matterId)renderMatterDetail();
+  if(activeClientId&&data[0].client_id===activeClientId)renderProfile();
+}
+
+// ─── EDIT CLIENT ───────────────────────────────────────────────────
+function openEditClient(clientId){
+  const c=clients.find(x=>x.id===clientId);
+  if(!c){toast('Client not found.',true);return;}
+  openModal('client');
+  // Switch modal to edit mode
+  document.getElementById('modal-client').querySelector('.modal-title').textContent='Edit Client';
+  const btn=document.getElementById('save-client-btn');
+  btn.textContent='Save Changes';
+  btn.onclick=()=>updateClient(clientId);
+  // Pre-fill fields
+  document.getElementById('c-type').value=c.type||'Individual';
+  document.getElementById('c-since').value=c.client_since||'';
+  document.getElementById('c-name').value=c.name||'';
+  document.getElementById('c-id').value=c.id_number||'';
+  document.getElementById('c-kra').value=c.kra_pin||'';
+  document.getElementById('c-phone').value=c.phone||'';
+  document.getElementById('c-email').value=c.email||'';
+  document.getElementById('c-address').value=c.address||'';
+  document.getElementById('c-postal').value=c.postal_address||'';
+  document.getElementById('c-area').value=c.practice_area||'Civil Litigation';
+  document.getElementById('c-conflict').value=c.conflict_notes||'';
+  document.getElementById('c-notes').value=c.notes||'';
+  document.getElementById('c-portal-password').value='';
+}
+
+async function updateClient(clientId){
+  const name=document.getElementById('c-name').value.trim();
+  const email=document.getElementById('c-email').value.trim();
+  const portalPassword=document.getElementById('c-portal-password').value.trim();
+  if(!name){toast('Please enter a client name.',true);return;}
+  if(portalPassword&&!email){toast('Please enter an email address to update portal access.',true);return;}
+  if(portalPassword&&portalPassword.length<8){toast('Portal password must be at least 8 characters.',true);return;}
+  setLoading('save-client-btn',true,'Save Changes');
+  const payload={
+    name,type:document.getElementById('c-type').value,
+    client_since:document.getElementById('c-since').value||null,
+    id_number:document.getElementById('c-id').value.trim()||null,
+    kra_pin:document.getElementById('c-kra').value.trim()||null,
+    phone:document.getElementById('c-phone').value.trim()||null,
+    email:email||null,
+    address:document.getElementById('c-address').value.trim()||null,
+    postal_address:document.getElementById('c-postal').value.trim()||null,
+    practice_area:document.getElementById('c-area').value,
+    conflict_notes:document.getElementById('c-conflict').value.trim()||null,
+    notes:document.getElementById('c-notes').value.trim()||null,
+  };
+  try{
+    const{data,error}=await sb.from('clients').update(payload).eq('id',clientId).select();
+    setLoading('save-client-btn',false,'Save Changes');
+    if(error){toast('Error: '+error.message,true);return;}
+    const updatedClient=data[0];
+
+    // If a new portal password was provided, update it via Admin API
+    if(portalPassword&&email){
+      const c=clients.find(x=>x.id===clientId);
+      const portalEmail=toPortalEmail(email);
+      if(SERVICE_ROLE_KEY&&!SERVICE_ROLE_KEY.includes('%%')){
+        // Find existing auth user
+        const searchRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(portalEmail)}`,{
+          headers:{'apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY}
+        });
+        const searchData=await searchRes.json();
+        const authUser=searchData?.users?.[0];
+        if(authUser){
+          // Update password on existing account
+          await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${authUser.id}`,{
+            method:'PUT',
+            headers:{'Content-Type':'application/json','apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY},
+            body:JSON.stringify({password:portalPassword,user_metadata:{...authUser.user_metadata,must_change_password:true}})
+          });
+        } else {
+          // Create new portal account
+          await fetch(`${SUPABASE_URL}/auth/v1/admin/users`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json','apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY},
+            body:JSON.stringify({email:portalEmail,password:portalPassword,email_confirm:true,user_metadata:{full_name:name,role:'client',must_change_password:true}})
+          });
+        }
+        showClientCredentials(name,email,portalPassword);
+      } else {
+        toast('Client updated. To change portal password, a SERVICE_ROLE_KEY is required.',true);
+      }
+    }
+
+    clients=clients.map(cl=>cl.id===clientId?updatedClient:cl);
+    // Reset modal back to create mode
+    const btn=document.getElementById('save-client-btn');
+    btn.textContent='Save Client';
+    btn.onclick=saveClient;
+    document.getElementById('modal-client').querySelector('.modal-title').textContent='Add New Client';
+    closeModal();
+    if(!portalPassword)toast('Client updated.');
+    renderClients();renderDashboard();
+    if(activeClientId===clientId)renderProfile();
+  }catch(err){
+    setLoading('save-client-btn',false,'Save Changes');
+    toast(err.message,true);
+  }
+}
+
+
 let activeMatterId=null,activeMatterTab='overview';
 let matterDocuments=[];
 const STORAGE_BUCKET='matter-documents';
@@ -2622,6 +2795,7 @@ function renderMatterDetail(){
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;align-items:flex-start">
           <button class="topbar-btn sec" onclick="openDocumentUploadModal()">📎 Upload Doc</button>
+          <button class="topbar-btn sec" onclick="openEditMatter('${m.id}')">✏️ Edit</button>
           ${c?`<button class="topbar-btn gold" onclick="openClientProfile('${c.id}')">View Client →</button>`:''}
         </div>
       </div>
