@@ -25,9 +25,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Inject Supabase service role key
+      - name: Inject Supabase credentials
         run: |
-          sed -i "s|%%SUPABASE_SERVICE_ROLE_KEY%%|${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}|g" DKMA_LawFirm_App_v13.html
+          sed -i "s|%%SUPABASE_URL%%|${{ secrets.SUPABASE_URL }}|g" index.html
+          sed -i "s|%%SUPABASE_ANON_KEY%%|${{ secrets.SUPABASE_ANON_KEY }}|g" index.html
+          sed -i "s|%%SUPABASE_SERVICE_ROLE_KEY%%|${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}|g" index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
