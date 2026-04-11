@@ -4,6 +4,14 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>DKMA — Law Firm Management</title>
+<meta name="theme-color" content="#0D1B2A"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="DKMA CMS"/>
+<meta name="description" content="Law firm management system — DKMA Advocates"/>
+<link rel="manifest" href="manifest-cms.json"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%230D1B2A'/><text y='320' x='256' font-size='280' text-anchor='middle' font-family='Georgia,serif' fill='%23B8953A'>⚖</text></svg>"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
@@ -432,6 +440,22 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
   .profile-tabs{flex-wrap:wrap}
   .detail-grid{grid-template-columns:1fr}
 }
+
+/* ── PWA INSTALL BANNER ──────────────────────────────────────────── */
+#pwa-install-banner{
+  position:fixed;bottom:0;left:0;right:0;background:var(--navy2);z-index:8000;
+  padding:12px 24px;display:flex;align-items:center;gap:14px;
+  box-shadow:0 -4px 20px rgba(0,0,0,0.35);transform:translateY(100%);
+  transition:transform 0.35s cubic-bezier(0.34,1.2,0.64,1);
+  border-top:1px solid rgba(184,149,58,0.3);
+}
+#pwa-install-banner.show{transform:translateY(0)}
+.pwa-banner-icon{font-size:26px;flex-shrink:0}
+.pwa-banner-text{flex:1}
+.pwa-banner-title{font-size:13px;color:#fff;font-weight:500}
+.pwa-banner-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px}
+.pwa-install-btn{background:var(--gold);color:var(--navy);border:none;padding:7px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0}
+.pwa-dismiss-btn{background:none;border:none;color:rgba(255,255,255,0.35);font-size:20px;cursor:pointer;padding:4px;line-height:1;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -555,6 +579,9 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
     </div>
   </div>
   <div class="sidebar-footer">
+    <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08)">
+      <button id="notif-toggle-btn" onclick="requestNotifPermission()" style="background:none;border:none;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;padding:4px 0;display:block;width:100%;text-align:left;color:var(--gold);transition:opacity 0.15s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">🔔 Enable Notifications</button>
+    </div>
     <div class="user-card">
       <div class="user-avatar" id="sidebar-user-av">—</div>
       <div style="flex:1;min-width:0">
@@ -689,6 +716,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
         <div class="profile-tab" onclick="switchProfileTab('invoices',this)">Invoices</div>
         <div class="profile-tab" onclick="switchProfileTab('time',this)">Time</div>
         <div class="profile-tab" onclick="switchProfileTab('notes',this)">Notes</div>
+        <div class="profile-tab" onclick="switchProfileTab('documents',this)">Documents <span id="client-doc-badge" style="display:none;background:var(--gold);color:var(--navy);font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:3px;vertical-align:middle">0</span></div>
       </div>
       <div id="profile-tab-content"></div>
     </div>
@@ -1478,6 +1506,8 @@ async function loadAll(){
   await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties(),loadInboxMessages(),loadAllProfiles()]);
   renderDashboard();updateBadges();
   setupRealtime();
+  initBrowserNotifications();
+  renderNotifToggle();
 }
 async function loadClients(){const{data,error}=await sb.from('clients').select('*').order('created_at',{ascending:false});if(!error)clients=data||[];}
 async function loadMatters(){const{data,error}=await sb.from('matters').select('*').order('created_at',{ascending:false});if(!error)matters=data||[];}
@@ -1730,7 +1760,7 @@ function renderProfile(){
 
   // Reset tabs
   document.querySelectorAll('.profile-tab').forEach((t,i)=>{
-    t.classList.toggle('active',['overview','matters','parties','invoices','time','notes'][i]===activeProfileTab);
+    t.classList.toggle('active',['overview','matters','parties','invoices','time','notes','documents'][i]===activeProfileTab);
   });
   renderProfileTab();
 }
@@ -1849,6 +1879,11 @@ function renderProfileTab(){
       </div>`;
   }
 
+  else if(activeProfileTab==='documents'){
+    el.innerHTML=`<div class="card" id="client-docs-unified"><div style="padding:32px;text-align:center;color:var(--txt3);font-size:13px"><div class="big-spinner" style="width:24px;height:24px;border-width:2px;margin:0 auto 12px"></div>Loading documents…</div></div>`;
+    loadClientDocumentsUnified(c.id,c.name);
+  }
+
   else if(activeProfileTab==='notes'){
     el.innerHTML=`
       <div class="card">
@@ -1860,6 +1895,324 @@ function renderProfileTab(){
           `:`<div style="text-align:center;color:var(--txt3);padding:32px 0;font-size:13px">No notes recorded for this client.</div>`}
         </div>
       </div>`;
+  }
+}
+
+
+// ─── UNIFIED DOCUMENTS VIEW (Client Profile) ──────────────────────
+// Shows firm-uploaded docs (matter-documents bucket, shared__ prefix)
+// AND client-uploaded docs (client-uploads bucket) in one merged view.
+
+async function loadClientDocumentsUnified(clientId, clientName){
+  const card = document.getElementById('client-docs-unified');
+  if(!card) return;
+
+  // 1. Get client matters
+  const clientMatters = matters.filter(m => m.client_id === clientId);
+
+  // 2. Fetch firm docs from all client matters in parallel
+  const firmDocsRaw = [];
+  await Promise.all(clientMatters.map(async m => {
+    const{data} = await sb.storage.from(STORAGE_BUCKET).list(m.id, {limit:200, sortBy:{column:'created_at',order:'desc'}});
+    if(data) data.forEach(f => {
+      if(f.name==='.emptyFolderPlaceholder') return;
+      firmDocsRaw.push({...f, _matter: m, _source:'firm'});
+    });
+  }));
+
+  // 3. Fetch client-uploaded docs
+  const clientDocsRaw = [];
+  const{data:clientFiles} = await sb.storage.from(CLIENT_BUCKET).list(clientId, {limit:200, sortBy:{column:'created_at',order:'desc'}});
+  if(clientFiles) clientFiles.forEach(f => {
+    if(f.name==='.emptyFolderPlaceholder') return;
+    clientDocsRaw.push({...f, _source:'client'});
+  });
+
+  // Update badge
+  const badge = document.getElementById('client-doc-badge');
+  const total = firmDocsRaw.length + clientDocsRaw.length;
+  if(badge){ badge.textContent=total; badge.style.display = total>0?'inline':'none'; }
+
+  // 4. Render
+  renderUnifiedDocsCard(card, clientId, clientMatters, firmDocsRaw, clientDocsRaw);
+}
+
+function renderUnifiedDocsCard(card, clientId, clientMatters, firmDocs, clientDocs){
+  const fmtDocDate = d => d ? new Date(d).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : '';
+
+  function docRow(name, displayName, size, dateStr, category, description, matterTitle, source, actions){
+    const{icon,cls} = docFileIcon(name);
+    const srcBadge = source==='client'
+      ? `<span style="font-size:9px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:8px;font-weight:600;white-space:nowrap">Client Upload</span>`
+      : `<span style="font-size:9px;background:#EAF3DE;color:#2D6A4F;padding:1px 6px;border-radius:8px;font-weight:600;white-space:nowrap">Firm</span>`;
+    const sharedBadge = source==='firm' && name.startsWith('shared__')
+      ? `<span style="font-size:9px;background:var(--cream2);color:var(--txt2);padding:1px 6px;border-radius:8px;margin-left:3px;white-space:nowrap">Visible to client</span>` : '';
+    return `<div class="doc-row" style="display:flex;gap:12px;align-items:center;padding:10px 20px;border-bottom:1px solid var(--brd)">
+      <div class="doc-icon ${cls}" style="flex-shrink:0">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(displayName)}">${esc(displayName)}</div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${srcBadge}${sharedBadge}
+          ${matterTitle?`<span>📁 ${esc(matterTitle)}</span>`:''}
+          ${category?`<span>${esc(categoryLabel(category))}</span>`:''}
+          ${size?`<span>${size}</span>`:''}
+          ${dateStr?`<span>${dateStr}</span>`:''}
+          ${description?`<span>· ${esc(description)}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">${actions}</div>
+    </div>`;
+  }
+
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--brd)">
+    <div>
+      <span style="font-family:'Playfair Display',serif;font-size:15px;font-weight:500">All Documents</span>
+      <span style="font-size:11px;color:var(--txt3);margin-left:8px">${firmDocs.length + clientDocs.length} total · ${firmDocs.length} firm · ${clientDocs.length} client uploads</span>
+    </div>
+  </div>`;
+
+  // ── Section: Firm-uploaded documents ──
+  if(firmDocs.length){
+    html += `<div style="padding:8px 20px 4px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.8px;font-weight:500;background:var(--cream);border-bottom:1px solid var(--brd)">📂 Uploaded by Firm (${firmDocs.length})</div>`;
+    firmDocs.forEach(doc => {
+      let dName=doc.name, cat='', desc='';
+      if(doc.name.includes('__')){
+        const rawName = doc.name.startsWith('shared__') ? doc.name.slice('shared__'.length) : doc.name;
+        const parts = rawName.split('__');
+        cat = parts[0]||''; desc = parts[1]||''; dName = parts.slice(2).join('__')||rawName;
+      }
+      const tsM = dName.match(/^\d+_(.+)$/); if(tsM) dName=tsM[1];
+      const size = fmtFileSize(doc.metadata?.size);
+      const dateStr = fmtDocDate(doc.created_at);
+      const safeName = esc(doc.name);
+      const safeDisplay = esc(dName);
+      const matterTitle = doc._matter?.title||'';
+      // Store matter id for download context
+      const mid = doc._matter?.id||'';
+      const actions = `
+        <button class="doc-btn view-btn" onclick="viewMatterDocFromProfile('${mid}','${safeName}','${safeDisplay}')">👁</button>
+        <button class="doc-btn" onclick="downloadMatterDocFromProfile('${mid}','${safeName}','${safeDisplay}')">⬇</button>
+        <button class="doc-btn ${doc.name.startsWith('shared__')?'share-active':'share-off'}" 
+          title="${doc.name.startsWith('shared__')?'Visible to client':'Hidden from client'}" 
+          onclick="toggleShareFromProfile('${mid}','${safeName}','${safeDisplay}',this)"
+          style="${doc.name.startsWith('shared__')?'color:var(--green);border-color:var(--green)':'color:var(--txt3)'}">
+          ${doc.name.startsWith('shared__')?'👁':'🔒'}
+        </button>`;
+      html += docRow(doc.name, dName, size, dateStr, cat, desc, matterTitle, 'firm', actions);
+    });
+  } else {
+    html += `<div style="padding:8px 20px 4px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.8px;font-weight:500;background:var(--cream);border-bottom:1px solid var(--brd)">📂 Uploaded by Firm</div>
+    <div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">No firm documents for this client's matters yet.</div>`;
+  }
+
+  // ── Section: Client-uploaded documents ──
+  html += `<div style="padding:8px 20px 4px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.8px;font-weight:500;background:var(--cream);border-bottom:1px solid var(--brd);margin-top:4px">📤 Uploaded by Client (${clientDocs.length})</div>`;
+  if(clientDocs.length){
+    clientDocs.forEach(f => {
+      const parts = f.name.split('__');
+      const dName = parts.length>=3 ? parts.slice(2).join('__') : f.name;
+      const cat = parts[0]||'other'; const desc = parts[1]||'';
+      const size = fmtFileSize(f.metadata?.size);
+      const dateStr = fmtDocDate(f.created_at);
+      const actions = `
+        <button class="doc-btn view-btn" onclick="viewClientFile('${clientId}','${esc(f.name)}','${esc(dName)}')">👁</button>
+        <button class="doc-btn" onclick="downloadClientFile('${clientId}','${esc(f.name)}','${esc(dName)}')">⬇</button>`;
+      html += docRow(f.name, dName, size, dateStr, cat, desc, '', 'client', actions);
+    });
+  } else {
+    html += `<div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">Client has not uploaded any files yet.</div>`;
+  }
+
+  card.innerHTML = html;
+}
+
+// Helpers for matter doc actions called from profile context
+async function viewMatterDocFromProfile(matterId, storageName, displayName){
+  const path = `${matterId}/${storageName}`;
+  const{data,error} = await sb.storage.from(STORAGE_BUCKET).createSignedUrl(path,600);
+  if(error){toast('Could not open file.',true);return;}
+  const url = data.signedUrl;
+  const ext = (storageName.split('.').pop()||'').toLowerCase();
+  const overlay = document.getElementById('doc-viewer-overlay');
+  document.getElementById('doc-viewer-filename').textContent = displayName;
+  document.getElementById('doc-viewer-dl-btn').onclick = () => {
+    const a=document.createElement('a');a.href=url;a.download=displayName;a.target='_blank';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  };
+  const body = document.getElementById('doc-viewer-body');
+  if(['jpg','jpeg','png','gif','webp'].includes(ext)){
+    body.innerHTML=`<img src="${url}" style="max-width:100%;max-height:76vh;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
+  } else if(ext==='pdf'){
+    body.innerHTML=`<iframe src="${url}" style="width:100%;height:76vh;border:none;display:block"></iframe>`;
+  } else {
+    body.innerHTML=`<div class="doc-viewer-nopreview"><div style="font-size:36px;margin-bottom:16px">📄</div><div style="font-weight:500;color:var(--txt);margin-bottom:8px">${esc(displayName)}</div><div>Preview not available. Use Download.</div></div>`;
+  }
+  overlay.classList.remove('hidden');
+}
+
+async function downloadMatterDocFromProfile(matterId, storageName, displayName){
+  const path = `${matterId}/${storageName}`;
+  const{data,error} = await sb.storage.from(STORAGE_BUCKET).createSignedUrl(path,300);
+  if(error){toast('Could not download.',true);return;}
+  const a=document.createElement('a');a.href=data.signedUrl;a.download=displayName;a.target='_blank';document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+
+async function toggleShareFromProfile(matterId, storageName, displayName, btn){
+  // Temporarily switch activeMatterId so toggleShareWithClient works, then restore
+  const prev = activeMatterId;
+  activeMatterId = matterId;
+  await toggleShareWithClient(storageName, displayName, btn);
+  activeMatterId = prev;
+  // Refresh the unified view
+  const c = clients.find(x=>x.id===activeClientId);
+  if(c) loadClientDocumentsUnified(c.id, c.name);
+}
+
+
+// ─── BROWSER NOTIFICATIONS ────────────────────────────────────────
+// Requests permission once after login, then fires native notifications
+// for: new client messages, new client file uploads, upcoming events (today).
+
+let _notifPermission = 'default';
+let _notifCheckInterval = null;
+let _lastSeenMsgIds = new Set();
+let _lastSeenFileKeys = new Set();
+let _todayEventsFired = new Set();
+
+async function initBrowserNotifications(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'granted'){
+    _notifPermission = 'granted';
+    startNotificationPolling();
+  } else if(Notification.permission !== 'denied'){
+    // Show a soft prompt toast before asking
+    setTimeout(()=>{
+      const t = document.createElement('div');
+      t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;z-index:9999;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);max-width:400px';
+      t.innerHTML = `<span>🔔</span><span style="flex:1">Enable notifications to get alerts for new messages and client uploads.</span><button onclick="requestNotifPermission();this.closest('div').remove()" style="background:var(--gold);color:var(--navy);border:none;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">Enable</button><button onclick="this.closest('div').remove()" style="background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button>`;
+      document.body.appendChild(t);
+      setTimeout(()=>t.remove(), 12000);
+    }, 3000);
+  }
+}
+
+async function requestNotifPermission(){
+  const result = await Notification.requestPermission();
+  _notifPermission = result;
+  if(result === 'granted'){
+    toast('Notifications enabled ✓');
+    startNotificationPolling();
+    // Fire a test notification
+    setTimeout(()=> fireNotification('DKMA Notifications Active', 'You will now receive alerts for messages, uploads, and events.', '🔔'), 800);
+  } else {
+    toast('Notifications not enabled. You can change this in your browser settings.', true);
+  }
+}
+
+function fireNotification(title, body, icon='⚖️'){
+  if(_notifPermission !== 'granted') return;
+  try {
+    const n = new Notification(title, {
+      body,
+      icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>' + icon + '</text></svg>',
+      badge: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚖️</text></svg>',
+      tag: title + body, // dedupes identical notifications
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+  } catch(e){ /* silently fail if blocked */ }
+}
+
+function startNotificationPolling(){
+  if(_notifCheckInterval) return; // already running
+  // Seed known state so we don't fire on first load
+  _lastSeenMsgIds = new Set(inboxMessages.map(m=>m.id));
+  // Seed known client files per client
+  _lastSeenFileKeys = new Set();
+  // Check for today's events immediately
+  checkTodayEvents();
+  // Poll every 60s for messages; 120s for files; today events once per session
+  _notifCheckInterval = setInterval(async ()=>{
+    await pollNewMessages();
+    await pollNewClientFiles();
+  }, 60000);
+}
+
+async function pollNewMessages(){
+  if(_notifPermission !== 'granted') return;
+  const{data} = await sb.from('client_messages')
+    .select('*').eq('sender','client').eq('read_by_firm',false)
+    .order('created_at',{ascending:false}).limit(20);
+  if(!data) return;
+  const newMsgs = data.filter(m => !_lastSeenMsgIds.has(m.id));
+  newMsgs.forEach(m => {
+    _lastSeenMsgIds.add(m.id);
+    const client = clients.find(c=>c.id===m.client_id);
+    const name = client?.name || 'A client';
+    fireNotification('New Message — ' + name, m.message?.slice(0,100) || 'New message received', '💬');
+  });
+  // Also reload inbox data quietly
+  if(newMsgs.length) await loadInboxMessages();
+}
+
+async function pollNewClientFiles(){
+  if(_notifPermission !== 'granted') return;
+  // Check recent client uploads across all active clients
+  const activeClients = clients.slice(0, 30); // limit to avoid too many requests
+  for(const c of activeClients){
+    const{data} = await sb.storage.from(CLIENT_BUCKET).list(c.id, {limit:10, sortBy:{column:'created_at',order:'desc'}});
+    if(!data) continue;
+    const recentFiles = data.filter(f => {
+      if(f.name==='.emptyFolderPlaceholder') return false;
+      const key = c.id + '/' + f.name;
+      if(_lastSeenFileKeys.has(key)) return false;
+      // Only notify if file is less than 5 mins old
+      if(!f.created_at) return false;
+      const age = Date.now() - new Date(f.created_at).getTime();
+      return age < 5 * 60 * 1000;
+    });
+    recentFiles.forEach(f => {
+      const key = c.id + '/' + f.name;
+      _lastSeenFileKeys.add(key);
+      const parts = f.name.split('__');
+      const dName = parts.length>=3 ? parts.slice(2).join('__') : f.name;
+      fireNotification('New File Upload — ' + c.name, dName.slice(0,80), '📎');
+    });
+    // Seed all known files
+    data.forEach(f => _lastSeenFileKeys.add(c.id + '/' + f.name));
+  }
+}
+
+function checkTodayEvents(){
+  if(_notifPermission !== 'granted') return;
+  const today = new Date().toISOString().slice(0,10);
+  const todayEvs = events.filter(e => e.event_date === today);
+  todayEvs.forEach(e => {
+    if(_todayEventsFired.has(e.id)) return;
+    _todayEventsFired.add(e.id);
+    const matter = matters.find(m=>m.id===e.matter_id);
+    const body = (e.event_time ? e.event_time + ' · ' : '') + (e.location || matter?.title || '');
+    fireNotification('Today: ' + e.title, body || 'Scheduled for today', '📅');
+  });
+}
+
+// ── Notification settings button in sidebar footer ──
+function renderNotifToggle(){
+  const el = document.getElementById('notif-toggle-btn');
+  if(!el) return;
+  if(!('Notification' in window)){ el.style.display='none'; return; }
+  const perm = Notification.permission;
+  if(perm === 'granted'){
+    el.textContent = '🔔 Notifications On';
+    el.style.color = 'rgba(255,255,255,0.6)';
+    el.onclick = () => toast('Notifications are already enabled. Manage them in your browser site settings.');
+  } else if(perm === 'denied'){
+    el.textContent = '🔕 Blocked — click to learn more';
+    el.style.color = 'rgba(255,255,255,0.3)';
+    el.title = 'Notifications are blocked. Go to browser Site Settings to allow them.';
+    el.onclick = () => toast('Notifications are blocked by your browser. Open Site Settings (🔒 in the address bar) and allow notifications for this site.', true);
+  } else {
+    el.textContent = '🔔 Enable Notifications';
+    el.style.color = 'var(--gold)';
+    el.onclick = requestNotifPermission;
   }
 }
 
@@ -4035,6 +4388,87 @@ initAuth();
   </div>
   <div class="doc-viewer-body" id="doc-viewer-body"></div>
 </div>
+
+
+<!-- PWA INSTALL BANNER -->
+<div id="pwa-install-banner">
+  <div class="pwa-banner-icon">💻</div>
+  <div class="pwa-banner-text">
+    <div class="pwa-banner-title">Install DKMA CMS as an App</div>
+    <div class="pwa-banner-sub">Run the CMS in its own window — faster access, no browser tabs needed.</div>
+  </div>
+  <button class="pwa-install-btn" onclick="triggerPwaInstall()">Install</button>
+  <button class="pwa-dismiss-btn" onclick="dismissPwaBanner()" title="Dismiss">×</button>
+</div>
+
+<script>
+// ── SERVICE WORKER REGISTRATION (CMS) ─────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js', {scope: '/dkmaclient/'})
+      .then(reg => { console.log('[DKMA CMS] SW registered:', reg.scope); window._swReg = reg; })
+      .catch(err => console.warn('[DKMA CMS] SW failed:', err));
+  });
+}
+
+// ── PWA INSTALL PROMPT (CMS) ──────────────────────────────────────
+let _deferredInstallPrompt = null;
+const _pwaInstallKey = 'dkma-cms-pwa-dismissed';
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  if(!sessionStorage.getItem(_pwaInstallKey)){
+    setTimeout(showPwaBanner, 5000);
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  hidePwaBanner();
+  _deferredInstallPrompt = null;
+  toast('CMS installed as app! Launch it from your taskbar or desktop.');
+});
+
+function showPwaBanner(){
+  if(window.matchMedia('(display-mode: standalone)').matches) return;
+  const b = document.getElementById('pwa-install-banner');
+  if(b) b.classList.add('show');
+}
+function hidePwaBanner(){
+  const b = document.getElementById('pwa-install-banner');
+  if(b) b.classList.remove('show');
+}
+function dismissPwaBanner(){
+  hidePwaBanner();
+  sessionStorage.setItem(_pwaInstallKey, '1');
+}
+async function triggerPwaInstall(){
+  if(!_deferredInstallPrompt){
+    showCmsIosInstallGuide();
+    return;
+  }
+  _deferredInstallPrompt.prompt();
+  const { outcome } = await _deferredInstallPrompt.userChoice;
+  if(outcome === 'accepted') hidePwaBanner();
+  _deferredInstallPrompt = null;
+}
+function showCmsIosInstallGuide(){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(13,27,42,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:14px;padding:28px;max-width:420px;width:100%">
+      <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);margin-bottom:10px">💻 Install DKMA CMS</div>
+      <div style="font-size:13px;color:var(--txt2);line-height:1.6;margin-bottom:16px">For the best experience, use <strong>Google Chrome</strong> on desktop or Android. Then click the install icon <strong>⊕</strong> in the address bar, or open Chrome menu → <strong>Install DKMA CMS</strong>.</div>
+      <div style="background:var(--cream);border-radius:8px;padding:14px;font-size:12px;color:var(--txt3);line-height:1.6">
+        On <strong>Windows/Mac</strong>: Chrome address bar → ⊕ icon → Install<br>
+        On <strong>Android</strong>: Chrome menu (⋮) → Add to Home Screen<br>
+        On <strong>iPhone/iPad</strong>: Safari → Share → Add to Home Screen
+      </div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="margin-top:18px;width:100%;background:var(--navy);color:#fff;border:none;padding:11px;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Got it</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+</script>
 
 </body>
 </html>
