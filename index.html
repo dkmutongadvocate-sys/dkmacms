@@ -293,7 +293,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 
 /* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transform:translateY(8px);transition:all 0.25s;pointer-events:none;max-width:calc(100vw - 48px)}
-@media(max-width:640px){.toast{bottom:72px;right:12px;left:12px;text-align:center}}
+@media(max-width:640px){.toast{bottom:16px;right:12px;left:12px;text-align:center}}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.error{background:#A33}
 
@@ -418,32 +418,65 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .inbox-file-meta{font-size:10px;color:var(--txt3);margin-top:2px}
 .inbox-file-actions{display:flex;gap:6px;flex-shrink:0}
 
-/* ── MOBILE BOTTOM NAV ───────────────────────────────────────────── */
-.mobile-bottom-nav{
-  display:none;position:fixed;bottom:0;left:0;right:0;
-  background:var(--navy);border-top:1px solid rgba(255,255,255,0.1);
-  z-index:500;
-  padding-bottom:env(safe-area-inset-bottom);
+/* ── HAMBURGER DRAWER (mobile) ───────────────────────────────────── */
+.hamburger-btn{
+  display:none;background:none;border:none;cursor:pointer;
+  padding:8px;margin-right:4px;color:var(--txt);border-radius:6px;
+  touch-action:manipulation;flex-shrink:0;
 }
-.mobile-bottom-nav-inner{
-  display:flex;height:60px;align-items:stretch;
+.hamburger-btn:hover{background:var(--cream)}
+.drawer-overlay{
+  display:none;position:fixed;inset:0;background:rgba(13,27,42,0.55);
+  z-index:900;opacity:0;transition:opacity 0.25s;
 }
-.mbn-item{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3px;cursor:pointer;color:rgba(255,255,255,0.45);font-size:9px;
-  letter-spacing:0.3px;text-transform:uppercase;font-weight:500;
-  border-top:2px solid transparent;transition:all 0.15s;padding:6px 4px 4px;
-  position:relative;
+.drawer-overlay.open{opacity:1}
+.nav-drawer{
+  position:fixed;top:0;left:0;bottom:0;width:280px;
+  background:var(--navy);z-index:901;
+  transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  display:flex;flex-direction:column;overflow-y:auto;
+  box-shadow:4px 0 24px rgba(0,0,0,0.35);
 }
-.mbn-item.active{color:var(--gold);border-top-color:var(--gold)}
-.mbn-item svg{width:20px;height:20px;flex-shrink:0}
-.mbn-badge{
-  position:absolute;top:4px;right:calc(50% - 18px);
-  background:#E2443A;color:#fff;font-size:8px;font-weight:700;
-  padding:1px 4px;border-radius:6px;min-width:14px;text-align:center;
-  border:1.5px solid var(--navy);
+.nav-drawer.open{transform:translateX(0)}
+.drawer-header{
+  padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.08);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
 }
-.mbn-badge.gold{background:var(--gold);color:var(--navy)}
+.drawer-logo{font-family:'Playfair Display',serif;font-size:14px;color:#fff;font-weight:500;line-height:1.3}
+.drawer-logo-sub{font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.drawer-close{
+  background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  border-radius:8px;font-size:20px;touch-action:manipulation;
+}
+.drawer-close:hover{background:rgba(255,255,255,0.08);color:#fff}
+.drawer-nav{flex:1;padding:8px 0}
+.drawer-label{font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:1.5px;text-transform:uppercase;padding:10px 20px 4px}
+.drawer-item{
+  display:flex;align-items:center;gap:12px;padding:11px 20px;
+  cursor:pointer;color:rgba(255,255,255,0.6);font-size:13px;
+  transition:all 0.15s;border-left:2px solid transparent;
+  touch-action:manipulation;
+}
+.drawer-item:hover{color:rgba(255,255,255,0.9);background:rgba(255,255,255,0.05)}
+.drawer-item.active{color:#fff;border-left-color:var(--gold);background:rgba(184,149,58,0.12)}
+.drawer-item svg{width:16px;height:16px;flex-shrink:0}
+.drawer-badge{margin-left:auto;background:var(--gold);color:var(--navy);font-size:9px;padding:1px 6px;border-radius:8px;font-weight:600}
+.drawer-badge.red{background:#E2443A;color:#fff}
+.drawer-footer{
+  padding:14px 20px;border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0;
+}
+.drawer-user{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.drawer-user-av{width:36px;height:36px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0}
+.drawer-user-name{font-size:12px;color:#fff;font-weight:500}
+.drawer-user-role{font-size:10px;color:rgba(255,255,255,0.4);margin-top:1px}
+.drawer-signout{
+  width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+  color:rgba(255,255,255,0.6);padding:8px;border-radius:7px;
+  font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;
+  touch-action:manipulation;transition:all 0.15s;
+}
+.drawer-signout:hover{background:rgba(255,255,255,0.1);color:#fff}
 
 /* ── TABLET (960px) ──────────────────────────────────────────────── */
 @media(max-width:960px){
@@ -461,12 +494,11 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 
 /* ── SMALL TABLET / LARGE PHONE (640px) ─────────────────────────── */
 @media(max-width:640px){
-  /* Hide sidebar; show bottom nav instead */
+  /* Hide sidebar; show hamburger button instead */
   .sidebar{display:none}
-  .mobile-bottom-nav{display:block}
-  /* Push content above bottom nav + safe area */
-  .main{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
-  .content{padding:14px;padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+  .hamburger-btn{display:flex}
+  .main{padding-bottom:0}
+  .content{padding:14px}
 
   /* Topbar */
   .topbar{padding:0 14px;height:52px}
@@ -561,29 +593,33 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
   .topbar{padding:0 10px;height:48px}
   .stats-grid{grid-template-columns:1fr}
   .card-header{flex-direction:column;align-items:flex-start;gap:6px}
-  .mbn-item{font-size:8px}
   .modal{max-height:96vh}
 }
 
-/* ── PWA INSTALL BANNER ──────────────────────────────────────────── */
+/* ── PWA INSTALL MODAL ───────────────────────────────────────────── */
 #pwa-install-banner{
-  position:fixed;bottom:0;left:0;right:0;background:var(--navy2);z-index:8000;
-  padding:12px 24px;display:flex;align-items:center;gap:14px;
-  box-shadow:0 -4px 20px rgba(0,0,0,0.35);transform:translateY(100%);
-  transition:transform 0.35s cubic-bezier(0.34,1.2,0.64,1);
-  border-top:1px solid rgba(184,149,58,0.3);
+  position:fixed;inset:0;background:rgba(13,27,42,0.65);z-index:8000;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  opacity:0;pointer-events:none;transition:opacity 0.2s;
 }
-@media(max-width:640px){
-  #pwa-install-banner{bottom:60px;border-radius:12px 12px 0 0;}
+#pwa-install-banner.show{opacity:1;pointer-events:auto}
+.pwa-modal{
+  background:#fff;border-radius:16px;width:100%;max-width:400px;
+  padding:32px 28px 24px;position:relative;
+  box-shadow:0 24px 64px rgba(13,27,42,0.35);
+  transform:scale(0.95);transition:transform 0.2s;
 }
-#pwa-install-banner{pointer-events:none}
-#pwa-install-banner.show{transform:translateY(0);pointer-events:auto}
-.pwa-banner-icon{font-size:26px;flex-shrink:0}
-.pwa-banner-text{flex:1}
-.pwa-banner-title{font-size:13px;color:#fff;font-weight:500}
-.pwa-banner-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px}
-.pwa-install-btn{background:var(--gold);color:var(--navy);border:none;padding:8px 18px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0;min-height:44px;touch-action:manipulation}
-.pwa-dismiss-btn{background:none;border:none;color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;touch-action:manipulation}
+#pwa-install-banner.show .pwa-modal{transform:scale(1)}
+.pwa-modal-icon{font-size:40px;margin-bottom:16px;text-align:center}
+.pwa-modal-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--navy);font-weight:500;text-align:center;margin-bottom:8px}
+.pwa-modal-sub{font-size:13px;color:var(--txt3);text-align:center;line-height:1.6;margin-bottom:24px}
+.pwa-modal-actions{display:flex;gap:10px}
+.pwa-install-btn{flex:1;background:var(--navy);color:#fff;border:none;padding:12px;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;touch-action:manipulation;transition:background 0.15s}
+.pwa-install-btn:hover{background:var(--navy2)}
+.pwa-dismiss-btn{background:transparent;border:1px solid var(--brd2);color:var(--txt2);padding:12px 18px;border-radius:9px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;touch-action:manipulation;transition:all 0.15s;white-space:nowrap}
+.pwa-dismiss-btn:hover{background:var(--cream)}
+.pwa-modal-close{position:absolute;top:14px;right:14px;background:var(--cream);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;color:var(--txt3);display:flex;align-items:center;justify-content:center;touch-action:manipulation;line-height:1}
+.pwa-modal-close:hover{background:var(--cream2);color:var(--txt)}
 </style>
 </head>
 <body>
@@ -726,6 +762,9 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 <!-- MAIN -->
 <div class="main">
   <div class="topbar">
+    <button class="hamburger-btn" id="hamburger-btn" onclick="openDrawer()" aria-label="Open menu">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
     <div><div class="topbar-title" id="view-title">Dashboard</div></div>
     <div class="topbar-right">
       <button class="topbar-btn sec" onclick="openModal('matter')">+ New Matter</button>
@@ -1317,32 +1356,72 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 </div><!-- /modal-overlay -->
 </div><!-- /app -->
 
-<!-- MOBILE BOTTOM NAV (shown on ≤640px) -->
-<nav class="mobile-bottom-nav" id="mobile-bottom-nav">
-  <div class="mobile-bottom-nav-inner">
-    <div class="mbn-item active" id="mbn-dashboard" onclick="showView('dashboard',null,true)">
+<!-- MOBILE DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
+<!-- MOBILE NAV DRAWER -->
+<nav class="nav-drawer" id="nav-drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-logo">Dennis Kimani Mutonga</div>
+      <div class="drawer-logo-sub">Advocate · DKMA</div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()" aria-label="Close menu">×</button>
+  </div>
+  <div class="drawer-nav">
+    <div class="drawer-label">Main</div>
+    <div class="drawer-item active" id="di-dashboard" onclick="showView('dashboard',null,true);closeDrawer()">
       <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".8"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".5"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".5"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".3"/></svg>
-      Home
+      Dashboard
     </div>
-    <div class="mbn-item" id="mbn-matters" onclick="showView('matters',null,true)">
+    <div class="drawer-item" id="di-matters" onclick="showView('matters',null,true);closeDrawer()">
       <svg viewBox="0 0 16 16" fill="none"><path d="M2 3h12M2 6h8M2 9h10M2 12h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <span class="mbn-badge gold" id="mbn-matters-badge" style="display:none">0</span>
       Matters
+      <span class="drawer-badge" id="di-matters-badge" style="display:none">0</span>
     </div>
-    <div class="mbn-item" id="mbn-clients" onclick="showView('clients',null,true)">
+    <div class="drawer-item" id="di-clients" onclick="showView('clients',null,true);closeDrawer()">
       <svg viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       Clients
     </div>
-    <div class="mbn-item" id="mbn-calendar" onclick="showView('calendar',null,true)">
+    <div class="drawer-item" id="di-calendar" onclick="showView('calendar',null,true);closeDrawer()">
       <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="2.5" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      <span class="mbn-badge" id="mbn-events-badge" style="display:none">0</span>
       Calendar
+      <span class="drawer-badge red" id="di-events-badge" style="display:none">0</span>
     </div>
-    <div class="mbn-item" id="mbn-inbox" onclick="showView('inbox',null,true)">
+    <div class="drawer-label">Finance</div>
+    <div class="drawer-item" id="di-finance" onclick="showView('finance',null,true);closeDrawer()">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M8 1v14M5 4h4.5a2.5 2.5 0 010 5H5M5 9h5a2.5 2.5 0 010 5H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Finance
+    </div>
+    <div class="drawer-item" id="di-timesheet" onclick="showView('timesheet',null,true);closeDrawer()">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3.5l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Timesheets
+    </div>
+    <div class="drawer-label">Firm</div>
+    <div class="drawer-item" id="di-inbox" onclick="showView('inbox',null,true);closeDrawer()">
       <svg viewBox="0 0 16 16" fill="none"><path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.4"/><path d="M1 4l7 5 7-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      <span class="mbn-badge" id="mbn-inbox-badge" style="display:none">0</span>
-      Inbox
+      Client Inbox
+      <span class="drawer-badge red" id="di-inbox-badge" style="display:none">0</span>
     </div>
+    <div class="drawer-item" id="di-alerts" onclick="showView('alerts',null,true);closeDrawer()">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M8 1a5 5 0 015 5c0 2.5.5 4 1.5 5H1.5C2.5 10 3 8.5 3 6a5 5 0 015-5zM6 12a2 2 0 004 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Alerts
+      <span class="drawer-badge red" id="di-alerts-badge" style="display:none">0</span>
+    </div>
+    <div class="drawer-item admin-only" id="di-team" onclick="showView('team',null,true);closeDrawer()">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.209 1.791-4 4-4s4 1.791 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 9c1.657 0 3 1.343 3 3v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></svg>
+      Team
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <div class="drawer-user">
+      <div class="drawer-user-av" id="drawer-user-av">—</div>
+      <div>
+        <div class="drawer-user-name" id="drawer-user-name">—</div>
+        <div class="drawer-user-role" id="drawer-user-role">—</div>
+      </div>
+    </div>
+    <button class="drawer-signout" onclick="signOut()">Sign Out</button>
   </div>
 </nav>
 
@@ -1413,17 +1492,15 @@ function showView(id,el,fromMobile){
   document.getElementById('view-'+id).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
-  // If triggered from mobile nav or sidebar shortcut, find matching sidebar item too
   if(!el||fromMobile){
     const sidebarItem=document.querySelector(`.nav-item[onclick*="'${id}'"]`);
     if(sidebarItem)sidebarItem.classList.add('active');
   }
-  // Sync mobile bottom nav
-  document.querySelectorAll('.mbn-item').forEach(n=>n.classList.remove('active'));
-  const mbnItem=document.getElementById('mbn-'+id);
-  if(mbnItem)mbnItem.classList.add('active');
+  // Sync drawer active state
+  document.querySelectorAll('.drawer-item').forEach(n=>n.classList.remove('active'));
+  const drawerItem=document.getElementById('di-'+id);
+  if(drawerItem)drawerItem.classList.add('active');
   document.getElementById('view-title').textContent=viewTitles[id]||id;
-  // Scroll content to top on mobile view switch
   const content=document.querySelector('.content');
   if(content&&window.innerWidth<=640)content.scrollTop=0;
   if(id==='matters')renderMatters();
@@ -1437,17 +1514,41 @@ function showView(id,el,fromMobile){
   if(id==='inbox'){renderInboxThreadList();}
 }
 
-// Sync mobile badge counts whenever sidebar badges update
+// ── DRAWER open/close ─────────────────────────────────────────────
+function openDrawer(){
+  document.getElementById('nav-drawer').classList.add('open');
+  document.getElementById('drawer-overlay').style.display='block';
+  requestAnimationFrame(()=>document.getElementById('drawer-overlay').classList.add('open'));
+  document.body.style.overflow='hidden';
+}
+function closeDrawer(){
+  const drawer=document.getElementById('nav-drawer');
+  const overlay=document.getElementById('drawer-overlay');
+  drawer.classList.remove('open');
+  overlay.classList.remove('open');
+  document.body.style.overflow='';
+  setTimeout(()=>{if(!overlay.classList.contains('open'))overlay.style.display='none';},280);
+}
+// Close drawer on Escape
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+
+// Sync drawer user info (called from showApp)
+function syncDrawerUser(name,role,initials){
+  const av=document.getElementById('drawer-user-av');
+  const nm=document.getElementById('drawer-user-name');
+  const rl=document.getElementById('drawer-user-role');
+  if(av)av.textContent=initials||'?';
+  if(nm)nm.textContent=name||'—';
+  if(rl)rl.textContent=role||'—';
+}
+
+// Sync drawer badge counts
 function syncMobileBadges(){
-  ['matters','events','inbox','alerts'].forEach(key=>{
-    const src=document.getElementById(key+'-badge');
-    const dest=document.getElementById('mbn-'+(key==='events'?'events':key)+'-badge');
-    if(src&&dest){
-      const val=src.textContent;
-      const show=src.style.display!=='none'&&parseInt(val)>0;
-      dest.textContent=val;
-      dest.style.display=show?'':'none';
-    }
+  const map={'matters':{badge:'matters-badge',dest:'di-matters-badge'},'events':{badge:'events-badge',dest:'di-events-badge'},'inbox':{badge:'inbox-badge',dest:'di-inbox-badge'},'alerts':{badge:'alerts-badge',dest:'di-alerts-badge'}};
+  Object.values(map).forEach(({badge,dest})=>{
+    const src=document.getElementById(badge);
+    const d=document.getElementById(dest);
+    if(src&&d){const val=src.textContent;const show=src.style.display!=='none'&&parseInt(val)>0;d.textContent=val;d.style.display=show?'':'none';}
   });
 }
 
@@ -1569,6 +1670,7 @@ function updateUserUI(){
   document.getElementById('sidebar-user-name').textContent=name;
   document.getElementById('sidebar-user-role').textContent=roleLabel(p.role);
   document.getElementById('sidebar-user-av').textContent=initials(name);
+  syncDrawerUser(name,roleLabel(p.role),initials(name));
   // Show/hide admin-only elements
   const isAdmin=p.role==='admin'||p.role==='head';
   document.querySelectorAll('.admin-only').forEach(el=>{
@@ -1794,11 +1896,7 @@ function updateBadges(){
   const ca=alerts.filter(a=>a.priority==='critical');
   document.getElementById('alerts-badge').textContent=ca.length;
   if(ca.length>0)document.getElementById('notify-dot').style.display='block';
-  // Sync to mobile bottom nav badges
-  const mbnM=document.getElementById('mbn-matters-badge');
-  if(mbnM){mbnM.textContent=activeMatters;mbnM.style.display=activeMatters>0?'':'none';}
-  const mbnE=document.getElementById('mbn-events-badge');
-  if(mbnE){mbnE.textContent=me.length;mbnE.style.display=me.length>0?'':'none';}
+  syncMobileBadges();
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────
@@ -4193,8 +4291,7 @@ function updateInboxBadge(){
   const unread=inboxMessages.filter(m=>m.sender==='client'&&!m.read_by_firm).length;
   const badge=document.getElementById('inbox-badge');
   if(badge){badge.textContent=unread;badge.style.display=unread>0?'inline-block':'none';}
-  const mbnB=document.getElementById('mbn-inbox-badge');
-  if(mbnB){mbnB.textContent=unread;mbnB.style.display=unread>0?'':'none';}
+  syncMobileBadges();
 }
 
 function renderInboxThreadList(){
@@ -4584,13 +4681,16 @@ initAuth();
 
 <!-- PWA INSTALL BANNER -->
 <div id="pwa-install-banner">
-  <div class="pwa-banner-icon">💻</div>
-  <div class="pwa-banner-text">
-    <div class="pwa-banner-title">Install DKMA CMS as an App</div>
-    <div class="pwa-banner-sub">Run the CMS in its own window — faster access, no browser tabs needed.</div>
+  <div class="pwa-modal">
+    <button class="pwa-modal-close" onclick="dismissPwaBanner()" aria-label="Close">×</button>
+    <div class="pwa-modal-icon">💻</div>
+    <div class="pwa-modal-title">Install DKMA CMS</div>
+    <div class="pwa-modal-sub">Run the CMS as a standalone app — faster access, no browser tabs, works offline.</div>
+    <div class="pwa-modal-actions">
+      <button class="pwa-install-btn" onclick="triggerPwaInstall()">Install App</button>
+      <button class="pwa-dismiss-btn" onclick="dismissPwaBanner()">Not now</button>
+    </div>
   </div>
-  <button class="pwa-install-btn" onclick="triggerPwaInstall()">Install</button>
-  <button class="pwa-dismiss-btn" onclick="dismissPwaBanner()" title="Dismiss">×</button>
 </div>
 
 <script>
