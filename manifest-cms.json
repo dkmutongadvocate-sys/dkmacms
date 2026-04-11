@@ -2,8 +2,8 @@
   "name": "DKMA Law Firm CMS",
   "short_name": "DKMA CMS",
   "description": "Law firm management system for Dennis Kimani Mutonga Advocate — manage matters, clients, documents and billing.",
-  "start_url": "/dkmaclient/index_new_cms.html",
-  "scope": "/dkmaclient/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "landscape-primary",
   "background_color": "#0D1B2A",
@@ -21,22 +21,22 @@
   "shortcuts": [
     {
       "name": "Dashboard",
-      "url": "/dkmaclient/index_new_cms.html#dashboard",
+      "url": "./#dashboard",
       "description": "Firm dashboard"
     },
     {
       "name": "Matters",
-      "url": "/dkmaclient/index_new_cms.html#matters",
+      "url": "./#matters",
       "description": "Manage matters"
     },
     {
       "name": "Calendar",
-      "url": "/dkmaclient/index_new_cms.html#calendar",
+      "url": "./#calendar",
       "description": "Calendar & events"
     },
     {
       "name": "Inbox",
-      "url": "/dkmaclient/index_new_cms.html#inbox",
+      "url": "./#inbox",
       "description": "Client messages"
     }
   ]
