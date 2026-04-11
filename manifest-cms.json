@@ -1,0 +1,43 @@
+{
+  "name": "DKMA Law Firm CMS",
+  "short_name": "DKMA CMS",
+  "description": "Law firm management system for Dennis Kimani Mutonga Advocate — manage matters, clients, documents and billing.",
+  "start_url": "/dkmaclient/index_new_cms.html",
+  "scope": "/dkmaclient/",
+  "display": "standalone",
+  "orientation": "landscape-primary",
+  "background_color": "#0D1B2A",
+  "theme_color": "#0D1B2A",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%230D1B2A'/><text y='320' x='256' font-size='280' text-anchor='middle' font-family='Georgia,serif' fill='%23B8953A'>⚖</text><rect x='320' y='300' width='160' height='160' rx='20' fill='%23B8953A'/><text y='430' x='400' font-size='110' text-anchor='middle' fill='%230D1B2A'>✦</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dkmaclient/index_new_cms.html#dashboard",
+      "description": "Firm dashboard"
+    },
+    {
+      "name": "Matters",
+      "url": "/dkmaclient/index_new_cms.html#matters",
+      "description": "Manage matters"
+    },
+    {
+      "name": "Calendar",
+      "url": "/dkmaclient/index_new_cms.html#calendar",
+      "description": "Calendar & events"
+    },
+    {
+      "name": "Inbox",
+      "url": "/dkmaclient/index_new_cms.html#inbox",
+      "description": "Client messages"
+    }
+  ]
+}
