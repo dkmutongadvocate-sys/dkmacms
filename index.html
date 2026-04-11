@@ -2487,7 +2487,7 @@ function showClientCredentials(name,email,password){
 }
 
 function copyCredentials(email,password){
-  const portalUrl=window.location.origin+'/DKMA_ClientPortal.html';
+  const portalUrl='https://dkmutongadvocate-sys.github.io/dkmaclient/';
   const text=`DKMA Client Portal Access\n\nPortal URL: ${portalUrl}\nEmail: ${email}\nPassword: ${password}\n\nPlease log in and change your password after first sign-in.`;
   navigator.clipboard.writeText(text).then(()=>toast('Credentials copied to clipboard ✓'));
 }
@@ -4405,7 +4405,7 @@ initAuth();
 // ── SERVICE WORKER REGISTRATION (CMS) ─────────────────────────────
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js', {scope: '/dkmaclient/'})
+    navigator.serviceWorker.register('sw.js', {scope: './' })
       .then(reg => { console.log('[DKMA CMS] SW registered:', reg.scope); window._swReg = reg; })
       .catch(err => console.warn('[DKMA CMS] SW failed:', err));
   });
