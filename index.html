@@ -1990,23 +1990,158 @@ function renderGazettedHolidaysList(){
 
 
 // ─── REALTIME ─────────────────────────────────────────────────────
+// ─── POLLING-BASED REALTIME (works on GitHub Pages / static hosts) ─
+let _pollInterval=null;
+// Snapshots used to detect changes between polls
+let _snap={clients:0,matters:0,events:0,invoices:0,time_entries:0,alerts:0,parties:0,messages:0,holidays:0};
+
+function _activeView(){
+  const v=document.querySelector('.view.active');
+  return v?v.id.replace('view-',''):'';
+}
+
+async function _pollCount(table){
+  const{count}=await sb.from(table).select('*',{count:'exact',head:true});
+  return count||0;
+}
+async function _pollMsgMax(){
+  // Use max created_at as a lightweight change signal for messages
+  const{data}=await sb.from('client_messages').select('created_at').order('created_at',{ascending:false}).limit(1);
+  return data&&data[0]?data[0].created_at:'';
+}
+
+async function pollAll(){
+  try{
+    // ── Messages (highest priority — poll every tick) ──────────────
+    const msgMax=await _pollMsgMax();
+    if(msgMax!==_snap.messages){
+      _snap.messages=msgMax;
+      await loadInboxMessages();
+      renderInboxThreadList();
+      updateBadges();
+      if(activeInboxClientId){
+        const msgsEl=document.getElementById('inbox-messages-pane');
+        if(msgsEl){
+          const c=clients.find(x=>x.id===activeInboxClientId);
+          const msgs=inboxMessages.filter(m=>m.client_id===activeInboxClientId);
+          if(c){
+            const rendered=new Set([...msgsEl.querySelectorAll('[data-msg-id]')].map(el=>el.getAttribute('data-msg-id')));
+            msgs.forEach(m=>{
+              const id=String(m.id);
+              if(rendered.has(id))return;
+              const tmp=msgsEl.querySelector('[data-msg-id^="_tmp_"]');
+              if(m.sender==='firm'&&tmp){tmp.setAttribute('data-msg-id',id);rendered.add(id);return;}
+              _appendMsgBubble(m,activeInboxClientId);
+            });
+            msgsEl.scrollTop=msgsEl.scrollHeight;
+          }
+        } else {
+          renderInboxConversation(activeInboxClientId,{skipFileFetch:true});
+        }
+      }
+    }
+
+    // ── Other tables — count-based change detection ────────────────
+    const[cC,mC,eC,iC,tC,aC,pC,hC]=await Promise.all([
+      _pollCount('clients'),_pollCount('matters'),_pollCount('events'),
+      _pollCount('invoices'),_pollCount('time_entries'),_pollCount('alerts'),
+      _pollCount('parties'),_pollCount('gazetted_holidays')
+    ]);
+
+    const view=_activeView();
+
+    if(cC!==_snap.clients){
+      _snap.clients=cC;
+      await loadClients();
+      if(view==='clients')renderClients();
+      renderDashboard();
+    }
+    if(mC!==_snap.matters){
+      _snap.matters=mC;
+      await loadMatters();
+      if(view==='matters')renderMatters();
+      renderDashboard();updateBadges();
+      if(activeMatterId)renderMatterDetail();
+    }
+    if(eC!==_snap.events){
+      _snap.events=eC;
+      await loadEvents();
+      if(view==='calendar'){renderCalendar();renderGazettedHolidaysList();}
+      renderDashboard();updateBadges();
+      if(activeMatterId)renderMatterDetailTab();
+    }
+    if(iC!==_snap.invoices){
+      _snap.invoices=iC;
+      await loadInvoices();
+      if(view==='finance')renderFinance();
+      renderDashboard();
+      if(activeClientId)renderProfileTab();
+      if(activeMatterId)renderMatterDetailTab();
+    }
+    if(tC!==_snap.time_entries){
+      _snap.time_entries=tC;
+      await loadTimeEntries();
+      if(view==='timesheet')renderTimesheet();
+      if(activeClientId)renderProfileTab();
+      if(activeMatterId)renderMatterDetailTab();
+    }
+    if(aC!==_snap.alerts){
+      _snap.alerts=aC;
+      await loadAlerts();
+      if(view==='alerts')renderAlerts();
+      renderDashboard();updateBadges();
+    }
+    if(pC!==_snap.parties){
+      _snap.parties=pC;
+      await loadParties();
+      if(activeClientId)renderProfileTab();
+    }
+    if(hC!==_snap.holidays){
+      _snap.holidays=hC;
+      await loadGazettedHolidays();
+      if(view==='calendar'){renderCalendar();renderGazettedHolidaysList();}
+    }
+  }catch(e){/* network error — silently skip this tick */}
+}
+
 function setupRealtime(){
-  const refresh=async(table)=>{
-    if(table==='clients'){await loadClients();renderClients();renderDashboard();}
-    if(table==='matters'){await loadMatters();renderMatters();renderDashboard();updateBadges();if(activeMatterId)renderMatterDetail();}
-    if(table==='events'){await loadEvents();renderCalendar();renderDashboard();updateBadges();if(activeMatterId)renderMatterDetailTab();}
-    if(table==='invoices'){await loadInvoices();renderFinance();renderDashboard();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
-    if(table==='time_entries'){await loadTimeEntries();renderTimesheet();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
-    if(table==='alerts'){await loadAlerts();renderAlerts();renderDashboard();updateBadges();}
-    if(table==='parties'){await loadParties();if(activeClientId)renderProfileTab();}
-    if(table==='client_messages'){await loadInboxMessages();renderInboxThreadList();if(activeInboxClientId){const msgsEl=document.getElementById('inbox-messages-pane');if(msgsEl){const c=clients.find(x=>x.id===activeInboxClientId);const msgs=inboxMessages.filter(m=>m.client_id===activeInboxClientId);if(c){const renderedIds=new Set([...msgsEl.querySelectorAll('[data-msg-id]')].map(el=>el.getAttribute('data-msg-id')));msgs.forEach(m=>{const idStr=String(m.id);if(renderedIds.has(idStr))return;const tmpEl=msgsEl.querySelector('[data-msg-id^="_tmp_"]');if(m.sender==="firm"&&tmpEl){tmpEl.setAttribute('data-msg-id',idStr);renderedIds.add(idStr);return;}appendMsgBubble(m,activeInboxClientId);});msgsEl.scrollTop=msgsEl.scrollHeight;}}else{renderInboxConversation(activeInboxClientId,{skipFileFetch:true});}}}
-    if(table==='gazetted_holidays'){await loadGazettedHolidays();renderCalendar();renderGazettedHolidaysList();}
-  };
-  ['clients','matters','events','invoices','time_entries','alerts','parties','client_messages','gazetted_holidays'].forEach(table=>{
-    sb.channel('rt-'+table)
-      .on('postgres_changes',{event:'*',schema:'public',table},(payload)=>{refresh(table);})
-      .subscribe();
-  });
+  // Seed snapshot counts so first poll doesn't trigger spurious re-renders
+  _snap.clients=clients.length;
+  _snap.matters=matters.length;
+  _snap.events=events.length;
+  _snap.invoices=invoices.length;
+  _snap.time_entries=timeEntries.length;
+  _snap.alerts=alerts.length;
+  _snap.parties=parties.length;
+  _snap.holidays=gazettedHolidays.length;
+  _snap.messages='';
+  // Poll every 4 seconds — fast enough to feel realtime, light enough for GitHub Pages
+  if(_pollInterval)clearInterval(_pollInterval);
+  _pollInterval=setInterval(pollAll,4000);
+}
+
+// Shared bubble appender (used by polling and optimistic send)
+function _appendMsgBubble(m,clientId){
+  const msgsEl=document.getElementById('inbox-messages-pane');
+  if(!msgsEl)return;
+  const c=clients.find(x=>x.id===clientId);
+  if(!c)return;
+  const firmName=currentProfile?.full_name||'DKMA';
+  const isClient=m.sender==='client';
+  const av=isClient?`<div class="inbox-msg-av ${avColor(c.name)}">${initials(c.name)}</div>`:`<div class="inbox-msg-av" style="background:var(--navy);color:#fff">${initials(firmName)}</div>`;
+  const fileHtml=m.file_name?`<div class="inbox-msg-file" onclick="viewClientFile('${clientId}','${esc(m.file_storage_name||m.file_name)}','${esc(m.file_name)}')">
+    <div class="inbox-msg-file-icon">${docIconEmoji(m.file_name)}</div>
+    <div><div class="inbox-msg-file-name">${esc(m.file_name)}</div><div class="inbox-msg-file-meta">Tap to view</div></div>
+  </div>`:'';
+  msgsEl.insertAdjacentHTML('beforeend',`<div class="inbox-msg ${isClient?'from-client':'from-firm'}" data-msg-id="${m.id}">
+    ${av}
+    <div class="inbox-msg-content">
+      ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
+      ${fileHtml}
+      <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
+    </div>
+  </div>`);
+  msgsEl.scrollTop=msgsEl.scrollHeight;
 }
 
 // ─── DELETE FUNCTIONS ─────────────────────────────────────────────
@@ -5258,7 +5393,7 @@ async function markMessagesRead(clientId){
   updateInboxBadge();
 }
 
-// Cache client files to avoid re-fetching on every message update
+// Cache client files to avoid re-fetching storage on every message update
 const _inboxFilesCache={};
 
 async function renderInboxConversation(clientId,{skipFileFetch=false}={}){
@@ -5267,7 +5402,7 @@ async function renderInboxConversation(clientId,{skipFileFetch=false}={}){
   const main=document.getElementById('inbox-main');
   const msgs=inboxMessages.filter(m=>m.client_id===clientId);
 
-  // Fetch files from storage only when needed (opening a client or switching to files tab)
+  // Only fetch storage files when opening a client or switching to the Files tab
   let files=_inboxFilesCache[clientId]||[];
   if(!skipFileFetch){
     const{data:fileData}=await sb.storage.from(CLIENT_BUCKET).list(clientId,{limit:100,sortBy:{column:'created_at',order:'desc'}});
@@ -5301,8 +5436,27 @@ async function renderInboxConversation(clientId,{skipFileFetch=false}={}){
   }
 }
 
+function _buildMsgBubbleHtml(m,c,clientId){
+  const firmName=currentProfile?.full_name||'DKMA';
+  const isClient=m.sender==='client';
+  const av=isClient?`<div class="inbox-msg-av ${avColor(c.name)}">${initials(c.name)}</div>`:`<div class="inbox-msg-av" style="background:var(--navy);color:#fff">${initials(firmName)}</div>`;
+  const fileHtml=m.file_name?`<div class="inbox-msg-file" onclick="viewClientFile('${clientId}','${esc(m.file_storage_name||m.file_name)}','${esc(m.file_name)}')">
+    <div class="inbox-msg-file-icon">${docIconEmoji(m.file_name)}</div>
+    <div><div class="inbox-msg-file-name">${esc(m.file_name)}</div><div class="inbox-msg-file-meta">Tap to view</div></div>
+  </div>`:'';
+  return`<div class="inbox-msg ${isClient?'from-client':'from-firm'}" data-msg-id="${m.id}">
+    ${av}
+    <div class="inbox-msg-content">
+      ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
+      ${fileHtml}
+      <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
+    </div>
+  </div>`;
+}
+
 function renderMessagesPane(msgs,c,clientId){
-  const msgsHtml=renderMessageBubbles(msgs,c,clientId);
+  const msgsHtml=msgs.length?msgs.map(m=>_buildMsgBubbleHtml(m,c,clientId)).join('')
+    :`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:13px;padding:40px;text-align:center"><div><div style="font-size:32px;margin-bottom:10px">💬</div>No messages yet.<br>Send a message to start the conversation.</div></div>`;
   return`<div class="inbox-messages" id="inbox-messages-pane">${msgsHtml}</div>
     <div class="inbox-compose">
       <div style="font-size:10px;color:var(--txt3);margin-bottom:7px">Replying to ${esc(c.name)}</div>
@@ -5338,7 +5492,7 @@ function renderFilesPane(files,clientId){
 
 function switchInboxTab(tab,clientId){
   activeInboxTab=tab;
-  // Only re-fetch storage files when explicitly switching to the files tab
+  // Skip storage re-fetch when switching to messages; fetch fresh for files tab
   renderInboxConversation(clientId,{skipFileFetch:tab==='messages'});
 }
 
@@ -5348,11 +5502,17 @@ async function sendInboxMessage(clientId){
   if(!msg)return;
   const btn=document.getElementById('inbox-send-btn');
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
-  // Optimistically append so the message appears instantly
+  // ── Optimistic update — show bubble immediately ──────────────────
   const optimistic={id:'_tmp_'+Date.now(),client_id:clientId,sender:'firm',message:msg,read_by_firm:true,read_by_client:false,created_at:new Date().toISOString()};
   inboxMessages=[...inboxMessages,optimistic];
   if(inp)inp.value='';
-  appendMsgBubble(optimistic,clientId);
+  // Append bubble directly instead of full re-render
+  const c=clients.find(x=>x.id===clientId);
+  if(c){
+    const msgsEl=document.getElementById('inbox-messages-pane');
+    if(msgsEl){msgsEl.insertAdjacentHTML('beforeend',_buildMsgBubbleHtml(optimistic,c,clientId));msgsEl.scrollTop=msgsEl.scrollHeight;}
+  }
+  renderInboxThreadList();
   const{data,error}=await sb.from('client_messages').insert([{
     client_id:clientId,
     sender:'firm',
@@ -5362,64 +5522,20 @@ async function sendInboxMessage(clientId){
   }]).select().single();
   if(btn){btn.disabled=false;btn.textContent='Send';}
   if(error){
-    // Roll back optimistic update
+    // Roll back optimistic entry
     inboxMessages=inboxMessages.filter(m=>m.id!==optimistic.id);
-    renderInboxThreadList();
-    // Re-render conversation to remove the failed bubble
     const msgsEl=document.getElementById('inbox-messages-pane');
-    if(msgsEl){const c=clients.find(x=>x.id===clientId);if(c)msgsEl.innerHTML=renderMessageBubbles(inboxMessages.filter(m=>m.client_id===clientId),c,clientId);}
+    if(msgsEl){const tmp=msgsEl.querySelector(`[data-msg-id="${optimistic.id}"]`);if(tmp)tmp.remove();}
+    renderInboxThreadList();
     toast('Failed to send: '+error.message,true);
     if(inp)inp.value=msg;
     return;
   }
-  // Replace temp entry with real DB record
+  // Replace temp id with real DB id in state and DOM
   inboxMessages=inboxMessages.map(m=>m.id===optimistic.id?(data||optimistic):m);
-  renderInboxThreadList();
-}
-
-function appendMsgBubble(m,clientId){
   const msgsEl=document.getElementById('inbox-messages-pane');
-  if(!msgsEl)return;
-  const c=clients.find(x=>x.id===clientId);
-  if(!c)return;
-  const firmName=currentProfile?.full_name||'DKMA';
-  const isClient=m.sender==='client';
-  const av=isClient?`<div class="inbox-msg-av ${avColor(c.name)}">${initials(c.name)}</div>`:`<div class="inbox-msg-av" style="background:var(--navy);color:#fff">${initials(firmName)}</div>`;
-  const fileHtml=m.file_name?`<div class="inbox-msg-file" onclick="viewClientFile('${clientId}','${esc(m.file_storage_name||m.file_name)}','${esc(m.file_name)}')">
-    <div class="inbox-msg-file-icon">${docIconEmoji(m.file_name)}</div>
-    <div><div class="inbox-msg-file-name">${esc(m.file_name)}</div><div class="inbox-msg-file-meta">Tap to view</div></div>
-  </div>`:'';
-  const bubble=`<div class="inbox-msg ${isClient?'from-client':'from-firm'}" data-msg-id="${m.id}">
-    ${av}
-    <div class="inbox-msg-content">
-      ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
-      ${fileHtml}
-      <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
-    </div>
-  </div>`;
-  msgsEl.insertAdjacentHTML('beforeend',bubble);
-  msgsEl.scrollTop=msgsEl.scrollHeight;
-}
-
-function renderMessageBubbles(msgs,c,clientId){
-  const firmName=currentProfile?.full_name||'DKMA';
-  if(!msgs.length)return`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:13px;padding:40px;text-align:center"><div><div style="font-size:32px;margin-bottom:10px">💬</div>No messages yet.<br>Send a message to start the conversation.</div></div>`;
-  return msgs.map(m=>{
-    const isClient=m.sender==='client';
-    const av=isClient?`<div class="inbox-msg-av ${avColor(c.name)}">${initials(c.name)}</div>`:`<div class="inbox-msg-av" style="background:var(--navy);color:#fff">${initials(firmName)}</div>`;
-    const fileHtml=m.file_name?`<div class="inbox-msg-file" onclick="viewClientFile('${clientId}','${esc(m.file_storage_name||m.file_name)}','${esc(m.file_name)}')">
-      <div class="inbox-msg-file-icon">${docIconEmoji(m.file_name)}</div>
-      <div><div class="inbox-msg-file-name">${esc(m.file_name)}</div><div class="inbox-msg-file-meta">Tap to view</div></div>
-    </div>`:'';
-    return`<div class="inbox-msg ${isClient?'from-client':'from-firm'}" data-msg-id="${m.id}">
-      ${av}
-      <div class="inbox-msg-content">
-        ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
-        ${fileHtml}
-        <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
-      </div>
-    </div>`;
-  }).join('');
+  if(msgsEl){const tmp=msgsEl.querySelector(`[data-msg-id="${optimistic.id}"]`);if(tmp&&data)tmp.setAttribute('data-msg-id',String(data.id));}
+  renderInboxThreadList();
 }
 
 async function viewClientFile(clientId,storageName,displayName){
