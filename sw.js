@@ -1,100 +1,154 @@
-// DKMA Service Worker — handles PWA install, offline shell caching, push notifications
-const CACHE_NAME = 'dkma-v1';
-// Derive base path dynamically so this SW works in any GitHub Pages repo
-const SW_BASE = self.location.pathname.replace(/sw\.js$/, '');
-const PORTAL_SHELL = SW_BASE;
-const CMS_SHELL = SW_BASE;  // both apps are index.html in their respective repos
+// DKMA CMS Service Worker — Background Push Notifications
+// Deploy this as sw.js at the root of the CMS GitHub Pages site
 
-// ── Install: pre-cache both app shells ────────────────────────────
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache =>
-      cache.addAll([PORTAL_SHELL, CMS_SHELL]).catch(() => {})
-      // Silently fail if offline during install — PWA will still work when online
-    )
-  );
+const SW_VERSION = '1.0.0';
+
+// ── INSTALL & ACTIVATE ────────────────────────────────────────────
+self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
-// ── Activate: clear old caches ─────────────────────────────────────
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+self.addEventListener('activate', e => {
+  e.waitUntil(clients.claim());
 });
 
-// ── Fetch: network-first for API/Supabase, cache-first for shells ──
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-
-  // Always network-first for Supabase, fonts, CDN
-  if (
-    url.hostname.includes('supabase') ||
-    url.hostname.includes('googleapis') ||
-    url.hostname.includes('jsdelivr') ||
-    url.hostname.includes('accounts.google') ||
-    event.request.method !== 'GET'
-  ) {
-    return; // Let browser handle
-  }
-
-  // For navigation requests to the app shells — serve from cache if offline
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          // Update cache with fresh version
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => caches.match(event.request).then(r => r || caches.match(SW_BASE)))
-    );
-  }
-});
-
-// ── Push Notifications ─────────────────────────────────────────────
-// Receives push payloads sent from Supabase Edge Functions or your backend.
-// Payload format: { title, body, icon, url, tag }
-self.addEventListener('push', event => {
-  if (!event.data) return;
-  let payload;
-  try { payload = event.data.json(); }
-  catch { payload = { title: 'DKMA', body: event.data.text() }; }
+// ── PUSH EVENT — fires even when tab is closed ────────────────────
+self.addEventListener('push', e => {
+  let payload = { title: '🚨 DKMA Alert', body: 'You have a new notification.', tag: 'dkma-alert', urgent: false };
+  try { if (e.data) payload = { ...payload, ...e.data.json() }; } catch {}
 
   const options = {
-    body: payload.body || '',
-    icon: payload.icon || SW_BASE + 'icons/icon-192.png',
-    badge: SW_BASE + 'icons/badge-72.png',
-    tag: payload.tag || 'dkma-notification',
-    data: { url: payload.url || '/dkmaclient/' },
-    requireInteraction: false,
-    actions: payload.actions || [],
+    body: payload.body,
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    tag: payload.tag || 'dkma-alert',       // replaces previous notification with same tag
+    renotify: true,
+    requireInteraction: payload.urgent,      // stays on screen until dismissed for SOS
+    vibrate: payload.urgent ? [200, 100, 200, 100, 400] : [200],
+    data: { url: payload.url || '/', urgent: payload.urgent },
+    actions: payload.urgent
+      ? [{ action: 'open', title: '🚨 Open CMS' }]
+      : [{ action: 'open', title: 'View' }]
   };
 
-  event.waitUntil(
-    self.registration.showNotification(payload.title || 'DKMA', options)
-  );
+  e.waitUntil(self.registration.showNotification(payload.title, options));
 });
 
-// ── Notification click: focus or open the app ─────────────────────
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  const targetUrl = event.notification.data?.url || SW_BASE;
-  event.waitUntil(
+// ── NOTIFICATION CLICK — focus or open the CMS tab ───────────────
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const targetUrl = e.notification.data?.url || '/';
+
+  e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
-      // Focus existing tab if open
+      // Find an existing CMS tab and focus it
       for (const client of windowClients) {
-        if (client.url.includes(SW_BASE) && 'focus' in client) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.focus();
           client.postMessage({ type: 'NOTIFICATION_CLICK', url: targetUrl });
-          return client.focus();
+          return;
         }
       }
-      // Otherwise open new window
+      // No tab open — open a new one
       if (clients.openWindow) return clients.openWindow(targetUrl);
     })
   );
 });
+
+// ── PERIODIC BACKGROUND SYNC (Chrome only, bonus) ─────────────────
+// Registered from the CMS page; fires roughly every 5 mins in background
+self.addEventListener('periodicsync', e => {
+  if (e.tag === 'dkma-panic-check') {
+    e.waitUntil(checkForPanicAlerts());
+  }
+});
+
+async function checkForPanicAlerts() {
+  // SW has no access to the page's JS variables, so we read config from IndexedDB
+  // (the CMS page writes SUPABASE_URL + KEY + session token there on login)
+  try {
+    const config = await readSwConfig();
+    if (!config?.url || !config?.key || !config?.token) return;
+
+    const res = await fetch(`${config.url}/rest/v1/panic_alerts?resolved=eq.false&acknowledged=eq.false&select=id,triggered_at,situation,client_id&order=triggered_at.desc&limit=5`, {
+      headers: {
+        'apikey': config.key,
+        'Authorization': `Bearer ${config.token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!res.ok) return;
+    const alerts = await res.json();
+    if (!alerts?.length) return;
+
+    // Check if we've already notified about these
+    const knownIds = await readKnownAlertIds();
+    const newAlerts = alerts.filter(a => !knownIds.has(a.id));
+    if (!newAlerts.length) return;
+
+    // Store new IDs so we don't re-notify
+    await writeKnownAlertIds(new Set([...knownIds, ...newAlerts.map(a => a.id)]));
+
+    // Fire notification for each new alert
+    for (const alert of newAlerts) {
+      await self.registration.showNotification('🚨 CLIENT EMERGENCY — DKMA', {
+        body: `Emergency alert received. Open CMS immediately.`,
+        tag: `panic-${alert.id}`,
+        requireInteraction: true,
+        vibrate: [200, 100, 200, 100, 400],
+        renotify: true,
+        data: { url: '/', urgent: true }
+      });
+    }
+  } catch (err) {
+    console.warn('[DKMA SW] Panic check failed:', err);
+  }
+}
+
+// ── INDEXEDDB HELPERS (SW ↔ CMS page communication) ──────────────
+function openDb() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('dkma-sw-store', 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore('kv');
+    };
+    req.onsuccess = e => res(e.target.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+async function dbGet(key) {
+  const db = await openDb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('kv', 'readonly');
+    const req = tx.objectStore('kv').get(key);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+async function dbSet(key, value) {
+  const db = await openDb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(value, key);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+}
+
+async function readSwConfig() {
+  return await dbGet('swConfig');
+}
+
+async function readKnownAlertIds() {
+  const ids = await dbGet('knownAlertIds');
+  return new Set(ids || []);
+}
+
+async function writeKnownAlertIds(idSet) {
+  // Keep only the last 100 to avoid unbounded growth
+  const arr = [...idSet].slice(-100);
+  await dbSet('knownAlertIds', arr);
+}
