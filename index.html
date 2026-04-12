@@ -2031,7 +2031,8 @@ function renderPanicAlerts(){
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-        ${isUnack?`<button onclick="acknowledgePanic('${a.id}')" style="background:#2D6A4F;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">✓ Acknowledge</button>`:'<span style="font-size:10px;color:var(--green);font-weight:500">✓ Handled</span>'}
+        ${isUnack?`<button onclick="acknowledgePanic('${a.id}')" style="background:#2D6A4F;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">✓ Acknowledge</button>`:a.resolved?'<span style="font-size:10px;color:var(--txt3);font-weight:500">✓ Resolved</span>':'<span style="font-size:10px;color:var(--green);font-weight:500">✓ Acknowledged</span>'}
+        ${!a.resolved?`<button onclick="resolvePanic('${a.id}')" style="background:#A30000;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">✓ Mark Resolved</button>`:''}
         ${c?`<a href="tel:${esc(c.phone||'')}" style="background:var(--navy);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;text-align:center;white-space:nowrap">📞 Call</a>`:''}
       </div>
     </div>`;
@@ -2045,6 +2046,16 @@ async function acknowledgePanic(id){
   renderPanicAlerts();
   updatePanicBadge();
   toast('Alert acknowledged.');
+}
+
+async function resolvePanic(id){
+  if(!confirm('Mark this alert as resolved? The client will be able to send a new SOS alert.'))return;
+  const{error}=await sb.from('panic_alerts').update({resolved:true,resolved_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast('Error resolving alert: '+error.message,true);return;}
+  panicAlerts=panicAlerts.map(a=>a.id===id?{...a,resolved:true,acknowledged:true}:a);
+  renderPanicAlerts();
+  updatePanicBadge();
+  toast('Alert marked as resolved. Client can now send a new SOS.');
 }
 
 function startPanicPolling(){
