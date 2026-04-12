@@ -2486,7 +2486,7 @@ function renderProfile(){
         <button class="topbar-btn sec" onclick="openEditClient('${c.id}')">✏️ Edit</button>
         <button class="topbar-btn sec" onclick="openMatterModalForClient('${c.id}')">+ New Matter</button>
         <button class="topbar-btn gold" onclick="openPartyModalForClient('${c.id}')">+ Other Party</button>
-        ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="topbar-btn" style="background:#185FA5" onclick="sendClientNewPassword('${c.id}')">🔑 Send Client Password</button>`:''}
+        ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="topbar-btn" style="background:#185FA5" onclick="sendClientNewPassword('${c.id}')">🔑 Send Client Password</button>`:''}\n        <button class="topbar-btn" style="background:#A30000" onclick="generateSosCode('${c.id}','${esc(c.name)}')">🆘 Generate SOS Code</button>
       </div>
     </div>`;
 
@@ -3593,6 +3593,54 @@ function copyCredentials(email,password){
   const portalUrl='https://dkmutongadvocate-sys.github.io/dkmaclient/';
   const text=`DKMA Client Portal Access\n\nPortal URL: ${portalUrl}\nEmail: ${email}\nPassword: ${password}\n\nPlease log in and change your password after first sign-in.`;
   navigator.clipboard.writeText(text).then(()=>toast('Credentials copied to clipboard ✓'));
+}
+
+// ─── GENERATE SOS CODE ────────────────────────────────────────────
+async function generateSosCode(clientId, clientName) {
+  // Generate a readable one-time code e.g. SOS-4X9K2M
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let code = 'SOS-';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+
+  // Save to clients table — one-time, replaced on every generation
+  const { error } = await sb.from('clients').update({ panic_code: code }).eq('id', clientId);
+  if (error) { toast('Could not generate SOS code: ' + error.message, true); return; }
+
+  // Show the code in a modal
+  const sosUrl = 'https://dkmutongadvocate-sys.github.io/dkmapanic/';
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(13,27,42,0.75);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:32px;max-width:440px;width:100%;border:0.5px solid var(--brd)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:22px">🆘</span>
+        <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--txt)">SOS Code Generated</div>
+      </div>
+      <div style="font-size:13px;color:var(--txt3);margin-bottom:24px;line-height:1.6">
+        Share this one-time code with <strong>${esc(clientName)}</strong>. It expires as soon as they use it to activate their emergency button.
+      </div>
+      <div style="background:#FFF0F0;border-radius:10px;padding:20px 24px;margin-bottom:14px;border:1px solid #F5C6C6;text-align:center">
+        <div style="font-size:10px;color:#A30000;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600">One-Time SOS Code</div>
+        <div style="font-size:32px;font-weight:700;color:#A30000;font-family:monospace;letter-spacing:4px">${code}</div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:8px">Valid for one use only — expires after client activates</div>
+      </div>
+      <div style="background:var(--cream);border-radius:8px;padding:14px 18px;margin-bottom:20px;border:1px solid var(--brd)">
+        <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">SOS Page URL</div>
+        <div style="font-size:12px;font-weight:500;color:var(--navy);font-family:monospace;word-break:break-all">${sosUrl}</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="copySosCode('${code}','${sosUrl}','${esc(clientName)}')" style="flex:1;background:#A30000;color:#fff;border:none;padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">📋 Copy to Share</button>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;background:var(--cream);color:var(--txt2);border:1px solid var(--brd);padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Done</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  // Close on backdrop click
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function copySosCode(code, url, name) {
+  const text = `DKMA Emergency Alert Setup\n\nDear ${name},\n\nYour one-time SOS activation code is:\n\n${code}\n\n1. Open the DKMA Emergency page: ${url}\n2. Enter the code above when prompted\n3. Your emergency button will be activated immediately\n\nThis code can only be used once. If you need a new code, contact the firm.\n\n— DKMA Advocates`;
+  navigator.clipboard.writeText(text).then(() => toast('SOS code copied to clipboard ✓'));
 }
 
 // ─── SEND CLIENT NEW PASSWORD ─────────────────────────────────────
