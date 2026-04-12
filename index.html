@@ -1037,7 +1037,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
     <!-- ALERTS -->
     <div class="view" id="view-alerts">
       <!-- PANIC ALERTS BANNER (shown when unacknowledged panic alerts exist) -->
-      <div id="panic-banner" style="display:none;background:#A30000;border-radius:10px;padding:16px 20px;margin-bottom:18px;display:none;align-items:center;gap:14px;animation:panic-flash 1.5s ease-in-out infinite">
+      <div id="panic-banner" style="display:none;background:#A30000;border-radius:10px;padding:16px 20px;margin-bottom:18px;align-items:center;gap:14px;animation:panic-flash 1.5s ease-in-out infinite">
         <span style="font-size:28px;flex-shrink:0">🚨</span>
         <div style="flex:1">
           <div style="font-family:'Playfair Display',serif;font-size:15px;color:#fff;font-weight:500">CLIENT EMERGENCY ALERT</div>
@@ -1658,7 +1658,7 @@ function showView(id,el,fromMobile){
   if(id==='calendar'){renderCalendar();renderGazettedHolidaysList();}
   if(id==='finance')renderFinance();
   if(id==='timesheet')renderTimesheet();
-  if(id==='alerts')renderAlerts();
+  if(id==='alerts'){renderAlerts();loadPanicAlerts();}
   if(id==='dashboard')renderDashboard();
   if(id==='team')renderTeam();
   if(id==='inbox'){renderInboxThreadList();}
