@@ -1288,28 +1288,40 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       </div>
       <div class="form-row">
         <label>Select Files <span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:3px;margin-left:4px;font-weight:500">Bulk Upload Supported</span></label>
-        <!-- Drop zone for bulk upload -->
-        <div id="bulk-drop-zone" style="border:2px dashed var(--brd2);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--cream);position:relative" onclick="document.getElementById('doc-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)';this.style.background='rgba(184,149,58,0.04)'" ondragleave="this.style.borderColor='var(--brd2)';this.style.background='var(--cream)'" ondrop="event.preventDefault();this.style.borderColor='var(--brd2)';this.style.background='var(--cream)';handleBulkDropFiles(event.dataTransfer.files)">
-          <input type="file" id="doc-file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.zip" style="display:none" onchange="handleBulkFileSelect(this.files)"/>
-          <div style="font-size:28px;margin-bottom:8px">📂</div>
-          <div style="font-size:13px;color:var(--txt2);font-weight:500">Click to browse or drag &amp; drop files here</div>
-          <div style="font-size:10px;color:var(--txt3);margin-top:4px">PDF, Word, Excel, Images, ZIP · Max 20 MB each · Multiple files allowed</div>
+        <!-- Hidden real file input — triggered programmatically -->
+        <input type="file" id="doc-file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.zip" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px"/>
+        <!-- Visual drop zone -->
+        <div id="bulk-drop-zone" style="border:2px dashed var(--brd2);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--cream)">
+          <div style="font-size:30px;margin-bottom:8px">📂</div>
+          <div style="font-size:13px;color:var(--txt2);font-weight:500">Click to browse or drag &amp; drop</div>
+          <div style="font-size:10px;color:var(--txt3);margin-top:4px">PDF, Word, Excel, Images, ZIP · Max 20 MB each · Select multiple files at once</div>
         </div>
       </div>
-      <!-- Selected files list -->
-      <div id="bulk-file-list" style="display:none;margin-top:12px">
-        <div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:8px">Files to Upload (<span id="bulk-file-count">0</span>)</div>
-        <div id="bulk-file-items" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto"></div>
+      <!-- Selected files queue -->
+      <div id="bulk-file-list" style="display:none;margin-top:14px">
+        <div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+          <span>Files queued: <span id="bulk-file-count">0</span></span>
+          <button onclick="window._bulkFiles=[];renderBulkFileList()" style="font-size:10px;color:var(--txt3);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--txt3)'">Clear all</button>
+        </div>
+        <div id="bulk-file-items" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto;padding-right:2px"></div>
       </div>
-      <!-- Progress area -->
-      <div id="doc-upload-progress-wrap" style="display:none;margin-top:14px">
-        <div style="font-size:11px;color:var(--txt2);margin-bottom:6px;font-weight:500" id="doc-upload-status">Uploading…</div>
-        <div class="doc-upload-progress"><div class="doc-upload-bar" id="doc-upload-bar" style="width:0%"></div></div>
-        <div id="bulk-upload-log" style="margin-top:10px;max-height:120px;overflow-y:auto;font-size:11px;color:var(--txt3);display:flex;flex-direction:column;gap:4px"></div>
+      <!-- Upload progress — hidden until upload starts -->
+      <div id="doc-upload-progress-wrap" style="display:none;margin-top:16px">
+        <!-- Overall label -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:500;color:var(--txt)" id="doc-upload-status">Uploading…</span>
+          <span style="font-size:12px;font-weight:600;color:var(--navy)" id="doc-upload-pct">0%</span>
+        </div>
+        <!-- Chunky progress bar -->
+        <div style="height:10px;background:var(--cream2);border-radius:6px;overflow:hidden;margin-bottom:12px">
+          <div id="doc-upload-bar" style="height:100%;width:0%;background:var(--gold);border-radius:6px;transition:width 0.3s ease"></div>
+        </div>
+        <!-- Per-file log -->
+        <div id="bulk-upload-log" style="max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;font-size:11px"></div>
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-secondary" id="doc-cancel-btn" onclick="closeModal()">Cancel</button>
       <button class="btn-primary" id="save-doc-btn" onclick="uploadDocument()">Upload</button>
     </div>
   </div>
@@ -4155,106 +4167,196 @@ function openDocumentUploadModal(){
   document.getElementById('doc-matter-display').textContent=m?(m.title+(m.file_number?' ('+m.file_number+')':'')):'—';
   document.getElementById('doc-description').value='';
   document.getElementById('doc-category').value='pleading';
-  document.getElementById('doc-file').value='';
   document.getElementById('doc-upload-progress-wrap').style.display='none';
   document.getElementById('bulk-file-list').style.display='none';
   document.getElementById('bulk-file-items').innerHTML='';
   document.getElementById('bulk-file-count').textContent='0';
   document.getElementById('save-doc-btn').textContent='Upload';
+  document.getElementById('save-doc-btn').disabled=false;
+  document.getElementById('doc-cancel-btn').disabled=false;
   window._bulkFiles=[];
+  // Wire up the drop zone and file input (fresh each time modal opens)
+  _initBulkDropZone();
 }
 
-function handleBulkFileSelect(files){
-  if(!files||!files.length)return;
-  addBulkFiles(Array.from(files));
+function _initBulkDropZone(){
+  const zone=document.getElementById('bulk-drop-zone');
+  const inp=document.getElementById('doc-file');
+  if(!zone||!inp)return;
+  // Remove old listeners by cloning
+  const zoneNew=zone.cloneNode(true);
+  zone.parentNode.replaceChild(zoneNew,zone);
+  const inpNew=inp.cloneNode(true);
+  inp.parentNode.replaceChild(inpNew,inp);
+
+  // Click zone → open file picker
+  zoneNew.addEventListener('click',()=>inpNew.click());
+
+  // Drag styling
+  zoneNew.addEventListener('dragover',e=>{
+    e.preventDefault();e.stopPropagation();
+    zoneNew.style.borderColor='var(--gold)';
+    zoneNew.style.background='rgba(184,149,58,0.06)';
+  });
+  zoneNew.addEventListener('dragleave',e=>{
+    e.preventDefault();
+    zoneNew.style.borderColor='var(--brd2)';
+    zoneNew.style.background='var(--cream)';
+  });
+  zoneNew.addEventListener('drop',e=>{
+    e.preventDefault();e.stopPropagation();
+    zoneNew.style.borderColor='var(--brd2)';
+    zoneNew.style.background='var(--cream)';
+    _addBulkFiles(Array.from(e.dataTransfer.files));
+  });
+
+  // File picker selection
+  inpNew.addEventListener('change',()=>{
+    _addBulkFiles(Array.from(inpNew.files));
+    // Reset so same files can be re-selected if needed
+    inpNew.value='';
+  });
 }
-function handleBulkDropFiles(files){
-  if(!files||!files.length)return;
-  addBulkFiles(Array.from(files));
-}
-function addBulkFiles(newFiles){
-  if(!window._bulkFiles)window._bulkFiles=[];
+
+function _addBulkFiles(newFiles){
+  if(!Array.isArray(window._bulkFiles))window._bulkFiles=[];
   newFiles.forEach(f=>{
-    if(!window._bulkFiles.find(x=>x.name===f.name&&x.size===f.size)) window._bulkFiles.push(f);
+    // Dedupe by name+size
+    if(!window._bulkFiles.find(x=>x.name===f.name&&x.size===f.size)){
+      window._bulkFiles.push(f);
+    }
   });
   renderBulkFileList();
 }
+
 function removeBulkFile(idx){
-  if(window._bulkFiles)window._bulkFiles.splice(idx,1);
+  if(Array.isArray(window._bulkFiles))window._bulkFiles.splice(idx,1);
   renderBulkFileList();
 }
+
 function renderBulkFileList(){
   const files=window._bulkFiles||[];
   const listEl=document.getElementById('bulk-file-list');
   const itemsEl=document.getElementById('bulk-file-items');
   const countEl=document.getElementById('bulk-file-count');
-  if(!files.length){listEl.style.display='none';return;}
+  const btn=document.getElementById('save-doc-btn');
+  if(!listEl)return;
+  if(!files.length){
+    listEl.style.display='none';
+    if(btn&&!btn.disabled)btn.textContent='Upload';
+    return;
+  }
   listEl.style.display='block';
-  countEl.textContent=files.length;
-  itemsEl.innerHTML=files.map((f,i)=>{
-    const{icon}=docFileIcon(f.name);
-    const size=fmtFileSize(f.size);
-    const tooLarge=f.size>20*1024*1024;
-    return`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--cream);border-radius:7px;border:1px solid ${tooLarge?'var(--red)':'var(--brd)'}">
-      <span style="font-size:16px;flex-shrink:0">${icon}</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</div>
-        <div style="font-size:10px;color:${tooLarge?'var(--red)':'var(--txt3)'}">${size}${tooLarge?' — exceeds 20 MB limit':''}</div>
-      </div>
-      <button onclick="removeBulkFile(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txt3);padding:2px 6px;border-radius:4px;flex-shrink:0" onmouseover="this.style.background='#FCEBEB';this.style.color='var(--red)'" onmouseout="this.style.background='none';this.style.color='var(--txt3)'">×</button>
-    </div>`;
-  }).join('');
-  document.getElementById('save-doc-btn').textContent=`Upload ${files.length} File${files.length!==1?'s':''}`;
+  if(countEl)countEl.textContent=files.length;
+  if(itemsEl){
+    itemsEl.innerHTML=files.map((f,i)=>{
+      const{icon}=docFileIcon(f.name);
+      const size=fmtFileSize(f.size);
+      const tooLarge=f.size>20*1024*1024;
+      return`<div style="display:flex;align-items:center;gap:9px;padding:7px 10px;background:${tooLarge?'#FCEBEB':'var(--cream)'};border-radius:7px;border:1px solid ${tooLarge?'#E2443A':'var(--brd)'}">
+        <span style="font-size:15px;flex-shrink:0">${icon}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</div>
+          <div style="font-size:10px;color:${tooLarge?'#A33':'var(--txt3)'}">${size}${tooLarge?' — exceeds 20 MB limit':''}</div>
+        </div>
+        <button onclick="removeBulkFile(${i})" style="background:none;border:none;cursor:pointer;font-size:17px;color:var(--txt3);padding:2px 5px;border-radius:4px;flex-shrink:0;line-height:1" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--txt3)'">×</button>
+      </div>`;
+    }).join('');
+  }
+  if(btn&&!btn.disabled){
+    const valid=files.filter(f=>f.size<=20*1024*1024).length;
+    const over=files.length-valid;
+    btn.textContent=`Upload ${valid} File${valid!==1?'s':''}${over?' ('+over+' too large)':''}`;
+  }
 }
 
 async function uploadDocument(){
-  const files=window._bulkFiles||[];
-  // Fallback: single file from native input if no bulk selection made
+  const allFiles=window._bulkFiles||[];
+  // Filter out oversized files silently
+  const files=allFiles.filter(f=>f.size<=20*1024*1024);
+  const skipped=allFiles.length-files.length;
   if(!files.length){
-    const fi=document.getElementById('doc-file');
-    if(fi.files&&fi.files.length) Array.from(fi.files).forEach(f=>files.push(f));
+    toast('Please select at least one file under 20 MB.',true);
+    return;
   }
-  if(!files.length){toast('Please select at least one file.',true);return;}
-  const oversized=files.filter(f=>f.size>20*1024*1024);
-  if(oversized.length){toast('Remove files exceeding 20 MB first.',true);return;}
+
+  // Lock UI
+  const btn=document.getElementById('save-doc-btn');
+  const cancelBtn=document.getElementById('doc-cancel-btn');
+  btn.disabled=true;
+  cancelBtn.disabled=true;
+
   const category=document.getElementById('doc-category').value;
   const description=document.getElementById('doc-description').value.trim();
-  const btn=document.getElementById('save-doc-btn');
-  btn.disabled=true;
+
+  // Show progress UI, hide file list
+  document.getElementById('bulk-file-list').style.display='none';
   const progWrap=document.getElementById('doc-upload-progress-wrap');
   const bar=document.getElementById('doc-upload-bar');
+  const pct=document.getElementById('doc-upload-pct');
   const statusEl=document.getElementById('doc-upload-status');
   const logEl=document.getElementById('bulk-upload-log');
   progWrap.style.display='block';
   logEl.innerHTML='';
+  bar.style.width='0%';
+  if(pct)pct.textContent='0%';
+
   let done=0,failed=0;
-  for(let i=0;i<files.length;i++){
+  const total=files.length;
+
+  for(let i=0;i<total;i++){
     const f=files[i];
-    statusEl.textContent=`Uploading ${i+1} of ${files.length}: ${f.name}…`;
-    bar.style.width=Math.round((i/files.length)*100)+'%';
+    const progress=Math.round((i/total)*100);
+    if(pct)pct.textContent=progress+'%';
+    bar.style.width=progress+'%';
+    statusEl.textContent=`Uploading ${i+1} of ${total}: ${f.name}`;
+
     const{error}=await uploadSingleFile(f,category,description);
+
     if(error){
       failed++;
-      logEl.innerHTML+=`<div style="color:var(--red)">✕ ${esc(f.name)} — ${esc(error.message)}</div>`;
+      logEl.innerHTML+=`<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#FCEBEB;border-radius:5px;color:#A33">
+        <span style="font-weight:700;flex-shrink:0">✕</span>
+        <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(error.message)}">${esc(f.name)}</span>
+        <span style="font-size:10px;flex-shrink:0">${esc(error.message.slice(0,40))}</span>
+      </div>`;
     } else {
       done++;
-      logEl.innerHTML+=`<div style="color:var(--green)">✓ ${esc(f.name)}</div>`;
+      logEl.innerHTML+=`<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#EAF3DE;border-radius:5px;color:#2D6A4F">
+        <span style="font-weight:700;flex-shrink:0">✓</span>
+        <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</span>
+        <span style="font-size:10px;color:var(--txt3);flex-shrink:0">${fmtFileSize(f.size)}</span>
+      </div>`;
     }
     logEl.scrollTop=logEl.scrollHeight;
   }
+
+  // Final state
   bar.style.width='100%';
-  statusEl.textContent=`Done — ${done} uploaded${failed?' · '+failed+' failed':''}`;
+  if(pct)pct.textContent='100%';
+  const skippedNote=skipped?` · ${skipped} skipped (too large)`:'';
+  statusEl.textContent=`Done — ${done} uploaded${failed?' · '+failed+' failed':''}${skippedNote}`;
+  btn.textContent='Done';
   btn.disabled=false;
-  btn.textContent='Upload';
+  cancelBtn.disabled=false;
+  btn.onclick=()=>{closeModal();};
   window._bulkFiles=[];
+
   if(done>0){
-    toast(done+' file'+(done!==1?'s':'')+' uploaded'+( failed?' ('+failed+' failed)':'')+'.', failed>0);
-    // Switch to documents tab
+    toast(`${done} file${done!==1?'s':''} uploaded successfully.`+(failed?` (${failed} failed)`:''));
+    // Switch to documents tab and reload
     activeMatterTab='documents';
-    document.querySelectorAll('.matter-detail-tab').forEach((t,i)=>{t.classList.toggle('active',i===1);});
-    document.getElementById('matter-detail-content').innerHTML=`<div class="card" id="docs-card"><div style="padding:40px;text-align:center;color:var(--txt3)">Loading…</div></div>`;
+    document.querySelectorAll('.matter-detail-tab').forEach((t,i)=>{
+      t.classList.toggle('active',i===1);
+    });
+    document.getElementById('matter-detail-content').innerHTML=
+      `<div class="card" id="docs-card"><div style="padding:40px;text-align:center;color:var(--txt3)">Loading documents…</div></div>`;
     closeModal();
     await loadMatterDocuments();
+  } else {
+    // All failed — let them try again
+    btn.textContent='Close';
+    toast('All uploads failed. Check your connection and try again.',true);
   }
 }
 
