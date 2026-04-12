@@ -874,6 +874,9 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
         <div class="matter-detail-tab" onclick="switchMatterTab('events',this)">Events</div>
         <div class="matter-detail-tab" onclick="switchMatterTab('time',this)">Time</div>
         <div class="matter-detail-tab" onclick="switchMatterTab('invoices',this)">Invoices</div>
+        <div class="matter-detail-tab" onclick="switchMatterTab('updates',this)">
+          Updates <span id="matter-updates-count" style="display:none;background:var(--gold);color:var(--navy);font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:4px;vertical-align:middle">0</span>
+        </div>
       </div>
       <div id="matter-detail-content"></div>
     </div>
@@ -1256,44 +1259,58 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
     <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" id="save-alert-btn" onclick="saveAlert()">Save Alert</button></div>
   </div>
 
-  <!-- DOCUMENT UPLOAD MODAL -->
-  <div class="modal" id="modal-document" style="display:none;max-width:480px">
-    <div class="modal-head"><span class="modal-title">Upload Document</span><button class="modal-close" onclick="closeModal()">×</button></div>
+  <!-- DOCUMENT UPLOAD MODAL (bulk) -->
+  <div class="modal" id="modal-document" style="display:none;max-width:520px">
+    <div class="modal-head"><span class="modal-title">Upload Documents</span><button class="modal-close" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <div class="form-row">
         <label>Matter</label>
         <div id="doc-matter-display" style="font-size:13px;color:var(--txt);padding:9px 12px;background:var(--cream);border-radius:7px;border:1px solid var(--brd)">—</div>
       </div>
-      <div class="form-row">
-        <label>Document Category</label>
-        <select id="doc-category">
-          <option value="pleading">Pleading / Court Document</option>
-          <option value="correspondence">Correspondence</option>
-          <option value="evidence">Evidence / Exhibits</option>
-          <option value="contract">Contract / Agreement</option>
-          <option value="id">ID / KYC Documents</option>
-          <option value="finance">Financial Document</option>
-          <option value="order">Court Order / Judgment</option>
-          <option value="other">Other</option>
-        </select>
+      <div class="form-two">
+        <div class="form-row">
+          <label>Document Category</label>
+          <select id="doc-category">
+            <option value="pleading">Pleading / Court Document</option>
+            <option value="correspondence">Correspondence</option>
+            <option value="evidence">Evidence / Exhibits</option>
+            <option value="contract">Contract / Agreement</option>
+            <option value="id">ID / KYC Documents</option>
+            <option value="finance">Financial Document</option>
+            <option value="order">Court Order / Judgment</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Description (optional)</label>
+          <input id="doc-description" placeholder="e.g. Plaint filed 3 Jan 2025"/>
+        </div>
       </div>
       <div class="form-row">
-        <label>Description (optional)</label>
-        <input id="doc-description" placeholder="e.g. Plaint filed 3 Jan 2025"/>
+        <label>Select Files <span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:3px;margin-left:4px;font-weight:500">Bulk Upload Supported</span></label>
+        <!-- Drop zone for bulk upload -->
+        <div id="bulk-drop-zone" style="border:2px dashed var(--brd2);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--cream);position:relative" onclick="document.getElementById('doc-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)';this.style.background='rgba(184,149,58,0.04)'" ondragleave="this.style.borderColor='var(--brd2)';this.style.background='var(--cream)'" ondrop="event.preventDefault();this.style.borderColor='var(--brd2)';this.style.background='var(--cream)';handleBulkDropFiles(event.dataTransfer.files)">
+          <input type="file" id="doc-file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.zip" style="display:none" onchange="handleBulkFileSelect(this.files)"/>
+          <div style="font-size:28px;margin-bottom:8px">📂</div>
+          <div style="font-size:13px;color:var(--txt2);font-weight:500">Click to browse or drag &amp; drop files here</div>
+          <div style="font-size:10px;color:var(--txt3);margin-top:4px">PDF, Word, Excel, Images, ZIP · Max 20 MB each · Multiple files allowed</div>
+        </div>
       </div>
-      <div class="form-row">
-        <label>Select File</label>
-        <input type="file" id="doc-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.zip" style="width:100%;font-size:13px;padding:8px 0;font-family:'DM Sans',sans-serif;color:var(--txt)"/>
-        <div style="font-size:10px;color:var(--txt3);margin-top:4px">PDF, Word, Excel, Images, ZIP · Max 20 MB</div>
+      <!-- Selected files list -->
+      <div id="bulk-file-list" style="display:none;margin-top:12px">
+        <div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:8px">Files to Upload (<span id="bulk-file-count">0</span>)</div>
+        <div id="bulk-file-items" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto"></div>
       </div>
-      <div id="doc-upload-progress-wrap" style="display:none">
-        <div style="font-size:11px;color:var(--txt2);margin-bottom:4px" id="doc-upload-status">Uploading…</div>
+      <!-- Progress area -->
+      <div id="doc-upload-progress-wrap" style="display:none;margin-top:14px">
+        <div style="font-size:11px;color:var(--txt2);margin-bottom:6px;font-weight:500" id="doc-upload-status">Uploading…</div>
         <div class="doc-upload-progress"><div class="doc-upload-bar" id="doc-upload-bar" style="width:0%"></div></div>
+        <div id="bulk-upload-log" style="margin-top:10px;max-height:120px;overflow-y:auto;font-size:11px;color:var(--txt3);display:flex;flex-direction:column;gap:4px"></div>
       </div>
     </div>
     <div class="modal-foot">
       <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn-primary" id="save-doc-btn" onclick="uploadDocument()">Upload Document</button>
+      <button class="btn-primary" id="save-doc-btn" onclick="uploadDocument()">Upload</button>
     </div>
   </div>
 
@@ -3974,7 +3991,7 @@ function renderMatterDetail(){
       ${m.notes?`<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--brd);font-size:13px;color:var(--txt2);line-height:1.6">${esc(m.notes)}</div>`:''}
     </div>`;
   document.querySelectorAll('.matter-detail-tab').forEach((t,i)=>{
-    t.classList.toggle('active',['overview','documents','events','time','invoices'][i]===activeMatterTab);
+    t.classList.toggle('active',['overview','documents','events','time','invoices','updates'][i]===activeMatterTab);
   });
   renderMatterDetailTab();
 }
@@ -4022,6 +4039,8 @@ function renderMatterDetailTab(){
         :`<div class="invoice-row header"><span>Invoice</span><span>Amount</span><span>Status</span><span>Date</span><span>Due</span></div>`+
         mi.map(i=>`<div class="invoice-row"><span style="font-weight:500">${esc(i.invoice_no||'—')}</span><span style="font-weight:500">${fmtMoney(i.amount)}</span><span><span class="status-pill ${statusClass(i.status)}">${statusLabel(i.status)}</span></span><span style="color:var(--txt3)">${fmtDate(i.invoice_date)}</span><span style="color:var(--txt3);display:flex;align-items:center;justify-content:space-between">${fmtDate(i.due_date)}<button class="op-del" title="Delete" onclick="deleteInvoice('${i.id}','${esc(i.invoice_no||'—')}',event)">×</button></span></div>`).join('')}
     </div>`;
+  } else if(activeMatterTab==='updates'){
+    loadMatterUpdates();
   }
 }
 
@@ -4138,30 +4157,105 @@ function openDocumentUploadModal(){
   document.getElementById('doc-category').value='pleading';
   document.getElementById('doc-file').value='';
   document.getElementById('doc-upload-progress-wrap').style.display='none';
+  document.getElementById('bulk-file-list').style.display='none';
+  document.getElementById('bulk-file-items').innerHTML='';
+  document.getElementById('bulk-file-count').textContent='0';
+  document.getElementById('save-doc-btn').textContent='Upload';
+  window._bulkFiles=[];
+}
+
+function handleBulkFileSelect(files){
+  if(!files||!files.length)return;
+  addBulkFiles(Array.from(files));
+}
+function handleBulkDropFiles(files){
+  if(!files||!files.length)return;
+  addBulkFiles(Array.from(files));
+}
+function addBulkFiles(newFiles){
+  if(!window._bulkFiles)window._bulkFiles=[];
+  newFiles.forEach(f=>{
+    if(!window._bulkFiles.find(x=>x.name===f.name&&x.size===f.size)) window._bulkFiles.push(f);
+  });
+  renderBulkFileList();
+}
+function removeBulkFile(idx){
+  if(window._bulkFiles)window._bulkFiles.splice(idx,1);
+  renderBulkFileList();
+}
+function renderBulkFileList(){
+  const files=window._bulkFiles||[];
+  const listEl=document.getElementById('bulk-file-list');
+  const itemsEl=document.getElementById('bulk-file-items');
+  const countEl=document.getElementById('bulk-file-count');
+  if(!files.length){listEl.style.display='none';return;}
+  listEl.style.display='block';
+  countEl.textContent=files.length;
+  itemsEl.innerHTML=files.map((f,i)=>{
+    const{icon}=docFileIcon(f.name);
+    const size=fmtFileSize(f.size);
+    const tooLarge=f.size>20*1024*1024;
+    return`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--cream);border-radius:7px;border:1px solid ${tooLarge?'var(--red)':'var(--brd)'}">
+      <span style="font-size:16px;flex-shrink:0">${icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</div>
+        <div style="font-size:10px;color:${tooLarge?'var(--red)':'var(--txt3)'}">${size}${tooLarge?' — exceeds 20 MB limit':''}</div>
+      </div>
+      <button onclick="removeBulkFile(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txt3);padding:2px 6px;border-radius:4px;flex-shrink:0" onmouseover="this.style.background='#FCEBEB';this.style.color='var(--red)'" onmouseout="this.style.background='none';this.style.color='var(--txt3)'">×</button>
+    </div>`;
+  }).join('');
+  document.getElementById('save-doc-btn').textContent=`Upload ${files.length} File${files.length!==1?'s':''}`;
 }
 
 async function uploadDocument(){
-  const fileInput=document.getElementById('doc-file');
-  const file=fileInput.files[0];
-  if(!file){toast('Please select a file.',true);return;}
-  if(file.size>20*1024*1024){toast('File too large. Max 20 MB.',true);return;}
+  const files=window._bulkFiles||[];
+  // Fallback: single file from native input if no bulk selection made
+  if(!files.length){
+    const fi=document.getElementById('doc-file');
+    if(fi.files&&fi.files.length) Array.from(fi.files).forEach(f=>files.push(f));
+  }
+  if(!files.length){toast('Please select at least one file.',true);return;}
+  const oversized=files.filter(f=>f.size>20*1024*1024);
+  if(oversized.length){toast('Remove files exceeding 20 MB first.',true);return;}
   const category=document.getElementById('doc-category').value;
   const description=document.getElementById('doc-description').value.trim();
-  setLoading('save-doc-btn',true,'Upload Document');
-  document.getElementById('doc-upload-progress-wrap').style.display='block';
+  const btn=document.getElementById('save-doc-btn');
+  btn.disabled=true;
+  const progWrap=document.getElementById('doc-upload-progress-wrap');
   const bar=document.getElementById('doc-upload-bar');
-  bar.style.width='30%';
-  document.getElementById('doc-upload-status').textContent='Uploading '+file.name+'…';
-  const{error}=await uploadSingleFile(file,category,description);
+  const statusEl=document.getElementById('doc-upload-status');
+  const logEl=document.getElementById('bulk-upload-log');
+  progWrap.style.display='block';
+  logEl.innerHTML='';
+  let done=0,failed=0;
+  for(let i=0;i<files.length;i++){
+    const f=files[i];
+    statusEl.textContent=`Uploading ${i+1} of ${files.length}: ${f.name}…`;
+    bar.style.width=Math.round((i/files.length)*100)+'%';
+    const{error}=await uploadSingleFile(f,category,description);
+    if(error){
+      failed++;
+      logEl.innerHTML+=`<div style="color:var(--red)">✕ ${esc(f.name)} — ${esc(error.message)}</div>`;
+    } else {
+      done++;
+      logEl.innerHTML+=`<div style="color:var(--green)">✓ ${esc(f.name)}</div>`;
+    }
+    logEl.scrollTop=logEl.scrollHeight;
+  }
   bar.style.width='100%';
-  setLoading('save-doc-btn',false,'Upload Document');
-  if(error){toast('Upload failed: '+error.message,true);document.getElementById('doc-upload-progress-wrap').style.display='none';return;}
-  closeModal();toast('Document uploaded.');
-  // Switch to documents tab
-  activeMatterTab='documents';
-  document.querySelectorAll('.matter-detail-tab').forEach((t,i)=>{t.classList.toggle('active',i===1);});
-  document.getElementById('matter-detail-content').innerHTML=`<div class="card" id="docs-card"><div style="padding:40px;text-align:center;color:var(--txt3)">Loading…</div></div>`;
-  await loadMatterDocuments();
+  statusEl.textContent=`Done — ${done} uploaded${failed?' · '+failed+' failed':''}`;
+  btn.disabled=false;
+  btn.textContent='Upload';
+  window._bulkFiles=[];
+  if(done>0){
+    toast(done+' file'+(done!==1?'s':'')+' uploaded'+( failed?' ('+failed+' failed)':'')+'.', failed>0);
+    // Switch to documents tab
+    activeMatterTab='documents';
+    document.querySelectorAll('.matter-detail-tab').forEach((t,i)=>{t.classList.toggle('active',i===1);});
+    document.getElementById('matter-detail-content').innerHTML=`<div class="card" id="docs-card"><div style="padding:40px;text-align:center;color:var(--txt3)">Loading…</div></div>`;
+    closeModal();
+    await loadMatterDocuments();
+  }
 }
 
 async function uploadSingleFile(file,category,description){
@@ -4213,6 +4307,144 @@ async function toggleShareWithClient(storageName,displayName,btn){
 function openEventModalForMatter(matterId){
   openModal('event');
   setTimeout(()=>{const sel=document.getElementById('ev-matter');if(sel)sel.value=matterId;},50);
+}
+
+// ─── MATTER UPDATES ────────────────────────────────────────────────
+const UPDATE_TYPE_LABELS={
+  'hearing':'Hearing',
+  'filing':'Court Filing',
+  'correspondence':'Correspondence',
+  'negotiation':'Negotiation',
+  'instruction':'Client Instruction',
+  'order':'Court Order',
+  'settlement':'Settlement',
+  'research':'Legal Research',
+  'general':'General Update',
+};
+function updateTypeLabel(t){return UPDATE_TYPE_LABELS[t]||t||'Update';}
+function updateTypeBg(t){const m={'hearing':'#FCEBEB','filing':'#E6F1FB','correspondence':'#EAF3DE','negotiation':'#EEEDFE','instruction':'#FAEEDA','order':'#FCEBEB','settlement':'#EAF3DE','research':'var(--cream2)','general':'var(--cream2)'};return m[t]||'var(--cream2)';}
+function updateTypeColor(t){const m={'hearing':'#A32D2D','filing':'#185FA5','correspondence':'#2D6A4F','negotiation':'#3C3489','instruction':'#854F0B','order':'#A32D2D','settlement':'#2D6A4F','research':'var(--txt2)','general':'var(--txt2)'};return m[t]||'var(--txt2)';}
+
+async function loadMatterUpdates(){
+  const el=document.getElementById('matter-detail-content');
+  el.innerHTML=`<div class="card" id="updates-card"><div style="padding:40px;text-align:center;color:var(--txt3)">Loading updates…</div></div>`;
+  const{data,error}=await sb.from('matter_updates').select('*').eq('matter_id',activeMatterId).order('update_date',{ascending:false});
+  if(error){
+    el.innerHTML=`<div class="card"><div style="padding:20px;color:var(--red);font-size:13px">Could not load updates: ${esc(error.message)}<br><div style="margin-top:8px;font-size:11px;color:var(--txt3);background:var(--cream);padding:10px;border-radius:6px">Create a Supabase table <strong>matter_updates</strong> with columns: id (uuid, pk), matter_id (uuid), update_date (date), update_type (text), details (text), updated_by (text), created_at (timestamptz). Enable RLS and add a policy allowing authenticated reads/inserts.</div></div></div>`;
+    return;
+  }
+  const updates=data||[];
+  // Update badge
+  const badge=document.getElementById('matter-updates-count');
+  if(badge){badge.textContent=updates.length;badge.style.display=updates.length?'inline':'none';}
+
+  el.innerHTML=`<div class="card" id="updates-card">
+    <div class="card-header">
+      <span class="card-title">Matter Updates (${updates.length})</span>
+      <button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openAddUpdateModal()">+ Add Update</button>
+    </div>
+    <!-- ADD UPDATE FORM (inline, shown via modal) -->
+    ${!updates.length?emptyStateSm('No updates recorded for this matter yet. Click "+ Add Update" to log the first one.')
+    :updates.map(u=>{
+      const profName=u.updated_by||'—';
+      const dateStr=u.update_date?new Date(u.update_date+'T00:00').toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):fmtDate(u.created_at);
+      return`<div style="padding:14px 20px;border-bottom:1px solid var(--brd);display:flex;gap:14px;align-items:flex-start">
+        <div style="width:42px;text-align:center;flex-shrink:0;padding-top:2px">
+          <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--navy);line-height:1">${new Date(u.update_date+'T00:00').getDate()}</div>
+          <div style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px">${new Date(u.update_date+'T00:00').toLocaleString('en',{month:'short'})}</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap">
+            <span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:500;background:${updateTypeBg(u.update_type)};color:${updateTypeColor(u.update_type)}">${esc(updateTypeLabel(u.update_type))}</span>
+            <span style="font-size:11px;color:var(--txt3)">${dateStr}</span>
+          </div>
+          <div style="font-size:13px;color:var(--txt);line-height:1.6">${esc(u.details)}</div>
+          <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
+            <div style="width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${initials(profName)}</div>
+            <span style="font-size:11px;color:var(--txt3)">${esc(profName)}</span>
+          </div>
+        </div>
+        <button class="op-del" title="Delete update" onclick="deleteMatterUpdate('${u.id}')">×</button>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function openAddUpdateModal(){
+  // Build a simple inline overlay
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.6);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.id='add-update-overlay';
+  const authorName=currentProfile?.full_name||currentUser?.email||'—';
+  overlay.innerHTML=`
+    <div style="background:#fff;border-radius:12px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="background:var(--navy);padding:18px 22px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-family:'Playfair Display',serif;font-size:17px;color:#fff;font-weight:500">Add Matter Update</div>
+        <button onclick="document.getElementById('add-update-overlay').remove()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
+      </div>
+      <div style="padding:22px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;font-weight:500">Date</div>
+            <input type="date" id="upd-date" value="${new Date().toISOString().slice(0,10)}" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;font-weight:500">Type of Update</div>
+            <select id="upd-type" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+              ${Object.entries(UPDATE_TYPE_LABELS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;font-weight:500">Details</div>
+          <textarea id="upd-details" rows="4" placeholder="Describe what happened, what was filed, what was agreed, next steps…" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none;resize:vertical;line-height:1.6"></textarea>
+        </div>
+        <div style="margin-bottom:20px;background:var(--cream);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--txt2);display:flex;align-items:center;gap:9px">
+          <div style="width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${initials(authorName)}</div>
+          <div>Recorded by <strong>${esc(authorName)}</strong></div>
+        </div>
+        <div id="upd-error" style="font-size:12px;color:var(--red);min-height:16px;margin-bottom:10px"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button onclick="document.getElementById('add-update-overlay').remove()" style="background:transparent;border:1px solid var(--brd2);color:var(--txt2);padding:8px 18px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Cancel</button>
+          <button id="upd-save-btn" onclick="saveMatterUpdate('${authorName}')" style="background:var(--navy);color:#fff;border:none;padding:8px 22px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Save Update</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(()=>document.getElementById('upd-details')?.focus(),60);
+}
+
+async function saveMatterUpdate(authorName){
+  const date=document.getElementById('upd-date').value;
+  const type=document.getElementById('upd-type').value;
+  const details=(document.getElementById('upd-details').value||'').trim();
+  const errEl=document.getElementById('upd-error');
+  errEl.textContent='';
+  if(!date){errEl.textContent='Please select a date.';return;}
+  if(!details){errEl.textContent='Please enter details of the update.';return;}
+  const btn=document.getElementById('upd-save-btn');
+  btn.disabled=true;btn.textContent='Saving…';
+  const{error}=await sb.from('matter_updates').insert([{
+    matter_id:activeMatterId,
+    update_date:date,
+    update_type:type,
+    details,
+    updated_by:authorName||currentProfile?.full_name||currentUser?.email||'—',
+  }]);
+  btn.disabled=false;btn.textContent='Save Update';
+  if(error){errEl.textContent='Error: '+error.message;return;}
+  document.getElementById('add-update-overlay').remove();
+  toast('Update recorded.');
+  // Re-render updates tab
+  if(activeMatterTab==='updates')loadMatterUpdates();
+}
+
+async function deleteMatterUpdate(updateId){
+  if(!confirm('Delete this update? This cannot be undone.'))return;
+  const{error}=await sb.from('matter_updates').delete().eq('id',updateId);
+  if(error){toast('Error: '+error.message,true);return;}
+  toast('Update deleted.');
+  if(activeMatterTab==='updates')loadMatterUpdates();
 }
 
 
