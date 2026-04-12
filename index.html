@@ -1999,7 +1999,7 @@ function setupRealtime(){
     if(table==='time_entries'){await loadTimeEntries();renderTimesheet();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
     if(table==='alerts'){await loadAlerts();renderAlerts();renderDashboard();updateBadges();}
     if(table==='parties'){await loadParties();if(activeClientId)renderProfileTab();}
-    if(table==='client_messages'){await loadInboxMessages();renderInboxThreadList();if(activeInboxClientId)renderInboxConversation(activeInboxClientId);}
+    if(table==='client_messages'){await loadInboxMessages();renderInboxThreadList();if(activeInboxClientId){const msgsEl=document.getElementById('inbox-messages-pane');if(msgsEl){const c=clients.find(x=>x.id===activeInboxClientId);const msgs=inboxMessages.filter(m=>m.client_id===activeInboxClientId);if(c){const renderedIds=new Set([...msgsEl.querySelectorAll('[data-msg-id]')].map(el=>el.getAttribute('data-msg-id')));msgs.forEach(m=>{const idStr=String(m.id);if(renderedIds.has(idStr))return;const tmpEl=msgsEl.querySelector('[data-msg-id^="_tmp_"]');if(m.sender==="firm"&&tmpEl){tmpEl.setAttribute('data-msg-id',idStr);renderedIds.add(idStr);return;}appendMsgBubble(m,activeInboxClientId);});msgsEl.scrollTop=msgsEl.scrollHeight;}}else{renderInboxConversation(activeInboxClientId,{skipFileFetch:true});}}}
     if(table==='gazetted_holidays'){await loadGazettedHolidays();renderCalendar();renderGazettedHolidaysList();}
   };
   ['clients','matters','events','invoices','time_entries','alerts','parties','client_messages','gazetted_holidays'].forEach(table=>{
@@ -5258,16 +5258,21 @@ async function markMessagesRead(clientId){
   updateInboxBadge();
 }
 
-async function renderInboxConversation(clientId){
+// Cache client files to avoid re-fetching on every message update
+const _inboxFilesCache={};
+
+async function renderInboxConversation(clientId,{skipFileFetch=false}={}){
   const c=clients.find(x=>x.id===clientId);
   if(!c)return;
   const main=document.getElementById('inbox-main');
   const msgs=inboxMessages.filter(m=>m.client_id===clientId);
 
-  // Fetch files from storage
-  let files=[];
-  const{data:fileData}=await sb.storage.from(CLIENT_BUCKET).list(clientId,{limit:100,sortBy:{column:'created_at',order:'desc'}});
-  if(fileData)files=fileData.filter(f=>f.name!=='');
+  // Fetch files from storage only when needed (opening a client or switching to files tab)
+  let files=_inboxFilesCache[clientId]||[];
+  if(!skipFileFetch){
+    const{data:fileData}=await sb.storage.from(CLIENT_BUCKET).list(clientId,{limit:100,sortBy:{column:'created_at',order:'desc'}});
+    if(fileData){files=fileData.filter(f=>f.name!=='');_inboxFilesCache[clientId]=files;}
+  }
 
   main.innerHTML=`
     <div class="inbox-main-head">
@@ -5297,23 +5302,7 @@ async function renderInboxConversation(clientId){
 }
 
 function renderMessagesPane(msgs,c,clientId){
-  const firmName=currentProfile?.full_name||'DKMA';
-  const msgsHtml=msgs.length?msgs.map(m=>{
-    const isClient=m.sender==='client';
-    const av=isClient?`<div class="inbox-msg-av ${avColor(c.name)}">${initials(c.name)}</div>`:`<div class="inbox-msg-av" style="background:var(--navy);color:#fff">${initials(firmName)}</div>`;
-    const fileHtml=m.file_name?`<div class="inbox-msg-file" onclick="viewClientFile('${clientId}','${esc(m.file_storage_name||m.file_name)}','${esc(m.file_name)}')">
-      <div class="inbox-msg-file-icon">${docIconEmoji(m.file_name)}</div>
-      <div><div class="inbox-msg-file-name">${esc(m.file_name)}</div><div class="inbox-msg-file-meta">Tap to view</div></div>
-    </div>`:'';
-    return`<div class="inbox-msg ${isClient?'from-client':'from-firm'}">
-      ${av}
-      <div class="inbox-msg-content">
-        ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
-        ${fileHtml}
-        <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
-      </div>
-    </div>`;
-  }).join(''):`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:13px;padding:40px;text-align:center"><div><div style="font-size:32px;margin-bottom:10px">💬</div>No messages yet.<br>Send a message to start the conversation.</div></div>`;
+  const msgsHtml=renderMessageBubbles(msgs,c,clientId);
   return`<div class="inbox-messages" id="inbox-messages-pane">${msgsHtml}</div>
     <div class="inbox-compose">
       <div style="font-size:10px;color:var(--txt3);margin-bottom:7px">Replying to ${esc(c.name)}</div>
@@ -5349,7 +5338,8 @@ function renderFilesPane(files,clientId){
 
 function switchInboxTab(tab,clientId){
   activeInboxTab=tab;
-  renderInboxConversation(clientId);
+  // Only re-fetch storage files when explicitly switching to the files tab
+  renderInboxConversation(clientId,{skipFileFetch:tab==='messages'});
 }
 
 async function sendInboxMessage(clientId){
@@ -5358,18 +5348,78 @@ async function sendInboxMessage(clientId){
   if(!msg)return;
   const btn=document.getElementById('inbox-send-btn');
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
-  const{error}=await sb.from('client_messages').insert([{
+  // Optimistically append so the message appears instantly
+  const optimistic={id:'_tmp_'+Date.now(),client_id:clientId,sender:'firm',message:msg,read_by_firm:true,read_by_client:false,created_at:new Date().toISOString()};
+  inboxMessages=[...inboxMessages,optimistic];
+  if(inp)inp.value='';
+  appendMsgBubble(optimistic,clientId);
+  const{data,error}=await sb.from('client_messages').insert([{
     client_id:clientId,
     sender:'firm',
     message:msg,
     read_by_firm:true,
     read_by_client:false
-  }]);
+  }]).select().single();
   if(btn){btn.disabled=false;btn.textContent='Send';}
-  if(error){toast('Failed to send: '+error.message,true);return;}
-  if(inp)inp.value='';
-  await loadInboxMessages();
-  await renderInboxConversation(clientId);
+  if(error){
+    // Roll back optimistic update
+    inboxMessages=inboxMessages.filter(m=>m.id!==optimistic.id);
+    renderInboxThreadList();
+    // Re-render conversation to remove the failed bubble
+    const msgsEl=document.getElementById('inbox-messages-pane');
+    if(msgsEl){const c=clients.find(x=>x.id===clientId);if(c)msgsEl.innerHTML=renderMessageBubbles(inboxMessages.filter(m=>m.client_id===clientId),c,clientId);}
+    toast('Failed to send: '+error.message,true);
+    if(inp)inp.value=msg;
+    return;
+  }
+  // Replace temp entry with real DB record
+  inboxMessages=inboxMessages.map(m=>m.id===optimistic.id?(data||optimistic):m);
+  renderInboxThreadList();
+}
+
+function appendMsgBubble(m,clientId){
+  const msgsEl=document.getElementById('inbox-messages-pane');
+  if(!msgsEl)return;
+  const c=clients.find(x=>x.id===clientId);
+  if(!c)return;
+  const firmName=currentProfile?.full_name||'DKMA';
+  const isClient=m.sender==='client';
+  const av=isClient?`<div class="inbox-msg-av ${avColor(c.name)}">${initials(c.name)}</div>`:`<div class="inbox-msg-av" style="background:var(--navy);color:#fff">${initials(firmName)}</div>`;
+  const fileHtml=m.file_name?`<div class="inbox-msg-file" onclick="viewClientFile('${clientId}','${esc(m.file_storage_name||m.file_name)}','${esc(m.file_name)}')">
+    <div class="inbox-msg-file-icon">${docIconEmoji(m.file_name)}</div>
+    <div><div class="inbox-msg-file-name">${esc(m.file_name)}</div><div class="inbox-msg-file-meta">Tap to view</div></div>
+  </div>`:'';
+  const bubble=`<div class="inbox-msg ${isClient?'from-client':'from-firm'}" data-msg-id="${m.id}">
+    ${av}
+    <div class="inbox-msg-content">
+      ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
+      ${fileHtml}
+      <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
+    </div>
+  </div>`;
+  msgsEl.insertAdjacentHTML('beforeend',bubble);
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+
+function renderMessageBubbles(msgs,c,clientId){
+  const firmName=currentProfile?.full_name||'DKMA';
+  if(!msgs.length)return`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:13px;padding:40px;text-align:center"><div><div style="font-size:32px;margin-bottom:10px">💬</div>No messages yet.<br>Send a message to start the conversation.</div></div>`;
+  return msgs.map(m=>{
+    const isClient=m.sender==='client';
+    const av=isClient?`<div class="inbox-msg-av ${avColor(c.name)}">${initials(c.name)}</div>`:`<div class="inbox-msg-av" style="background:var(--navy);color:#fff">${initials(firmName)}</div>`;
+    const fileHtml=m.file_name?`<div class="inbox-msg-file" onclick="viewClientFile('${clientId}','${esc(m.file_storage_name||m.file_name)}','${esc(m.file_name)}')">
+      <div class="inbox-msg-file-icon">${docIconEmoji(m.file_name)}</div>
+      <div><div class="inbox-msg-file-name">${esc(m.file_name)}</div><div class="inbox-msg-file-meta">Tap to view</div></div>
+    </div>`:'';
+    return`<div class="inbox-msg ${isClient?'from-client':'from-firm'}" data-msg-id="${m.id}">
+      ${av}
+      <div class="inbox-msg-content">
+        ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
+        ${fileHtml}
+        <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 async function viewClientFile(clientId,storageName,displayName){
