@@ -2446,7 +2446,7 @@ function renderClients(){
     const mc=matters.filter(m=>m.client_id===c.id).length;
     const hasPortal=!!c.user_id;
     const portalEnabled=hasPortal&&c.portal_enabled!==false;
-    const sosActive=!!c.panic_code;
+    const sosActive=!!c.sos_enabled;
     const portalBadge=hasPortal
       ?(portalEnabled
         ?'<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:8px;background:#EAF3DE;color:#2D6A4F">● Portal On</span>'
@@ -2526,7 +2526,7 @@ function renderProfile(){
         <button class="topbar-btn sec" onclick="openEditClient('${c.id}')">✏️ Edit</button>
         <button class="topbar-btn sec" onclick="openMatterModalForClient('${c.id}')">+ New Matter</button>
         <button class="topbar-btn gold" onclick="openPartyModalForClient('${c.id}')">+ Other Party</button>
-        ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="topbar-btn" style="background:#185FA5" onclick="sendClientNewPassword('${c.id}')">🔑 Send Client Password</button>`:''}${c.panic_code?`<button class="topbar-btn" style="background:#2D6A4F" onclick="deactivateSos('${c.id}','${esc(c.name)}')">🆘 SOS Active — Deactivate</button>`:`<button class="topbar-btn" style="background:#A30000" onclick="activateSos('${c.id}','${esc(c.name)}')">🆘 Activate SOS</button>`}
+        ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="topbar-btn" style="background:#185FA5" onclick="sendClientNewPassword('${c.id}')">🔑 Send Client Password</button>`:''}${c.sos_enabled?`<button class="topbar-btn" style="background:#2D6A4F" onclick="deactivateSos('${c.id}','${esc(c.name)}')">🆘 SOS Active — Deactivate</button>`:`<button class="topbar-btn" style="background:#A30000" onclick="activateSos('${c.id}','${esc(c.name)}')">🆘 Activate SOS</button>`}
       </div>
     </div>`;
 
@@ -3642,12 +3642,12 @@ async function activateSos(clientId, clientName) {
   let code = 'SOS-';
   for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
 
-  const { error } = await sb.from('clients').update({ panic_code: code }).eq('id', clientId);
+  const { error } = await sb.from('clients').update({ panic_code: code, sos_enabled: true }).eq('id', clientId);
   if (error) { toast('Could not activate SOS: ' + error.message, true); return; }
 
   // Update local client record so button flips immediately
   const cl = clients.find(x => x.id === clientId);
-  if (cl) cl.panic_code = code;
+  if (cl) { cl.panic_code = code; cl.sos_enabled = true; }
 
   const sosUrl = 'https://dkmutongadvocate-sys.github.io/dkmapanic/';
   const overlay = document.createElement('div');
@@ -3681,10 +3681,10 @@ async function activateSos(clientId, clientName) {
 
 async function deactivateSos(clientId, clientName) {
   if (!confirm(`Deactivate SOS access for ${clientName}?\n\nThey will no longer be able to send emergency alerts until you reactivate.`)) return;
-  const { error } = await sb.from('clients').update({ panic_code: null }).eq('id', clientId);
+  const { error } = await sb.from('clients').update({ panic_code: null, sos_enabled: false }).eq('id', clientId);
   if (error) { toast('Could not deactivate SOS: ' + error.message, true); return; }
   const cl = clients.find(x => x.id === clientId);
-  if (cl) cl.panic_code = null;
+  if (cl) { cl.panic_code = null; cl.sos_enabled = false; }
   openClientProfile(clientId);
   toast(`SOS deactivated for ${clientName}.`);
 }
