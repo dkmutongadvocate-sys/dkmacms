@@ -1952,6 +1952,10 @@ async function loadAll(){
   setupRealtime();
   initBrowserNotifications();
   renderNotifToggle();
+  writeSwConfig();
+  subscribeToPush();
+  registerPeriodicSync();
+  setupVisibilityResume();
 }
 async function loadClients(){const{data,error}=await sb.from('clients').select('*').order('created_at',{ascending:false});if(!error)clients=data||[];}
 async function loadMatters(){const{data,error}=await sb.from('matters').select('*').order('created_at',{ascending:false});if(!error)matters=data||[];}
@@ -2873,6 +2877,7 @@ async function requestNotifPermission(){
   if(result === 'granted'){
     toast('Notifications enabled ✓');
     startNotificationPolling();
+    subscribeToPush();
     // Fire a test notification
     setTimeout(()=> fireNotification('DKMA Notifications Active', 'You will now receive alerts for messages, uploads, and events.', '🔔'), 800);
   } else {
@@ -2891,6 +2896,95 @@ function fireNotification(title, body, icon='⚖️'){
     });
     n.onclick = () => { window.focus(); n.close(); };
   } catch(e){ /* silently fail if blocked */ }
+}
+
+
+// ── SW BACKGROUND INFRASTRUCTURE ─────────────────────────────────
+// Write Supabase config + current session token to IndexedDB so the
+// Service Worker can make authenticated Supabase calls in the background.
+async function writeSwConfig(){
+  if(!('indexedDB' in window)) return;
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session) return;
+    const config={url:SUPABASE_URL,key:SUPABASE_KEY,token:session.access_token};
+    await new Promise((res,rej)=>{
+      const req=indexedDB.open('dkma-sw-store',1);
+      req.onupgradeneeded=e=>e.target.result.createObjectStore('kv');
+      req.onsuccess=e=>{
+        const db=e.target.result;
+        const tx=db.transaction('kv','readwrite');
+        tx.objectStore('kv').put(config,'swConfig');
+        tx.oncomplete=res;tx.onerror=()=>rej(tx.error);
+      };
+      req.onerror=()=>rej(req.error);
+    });
+  }catch(e){console.warn('[DKMA] writeSwConfig failed:',e);}
+}
+
+// Subscribe to Web Push and store the subscription in Supabase so the
+// Edge Function can send push notifications when panic alerts arrive.
+const VAPID_PUBLIC_KEY='%%VAPID_PUBLIC_KEY%%';
+async function subscribeToPush(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)) return;
+  if(VAPID_PUBLIC_KEY.includes('%%')) return;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){
+      sub=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session) return;
+    await sb.from('push_subscriptions').upsert({
+      user_id:session.user.id,
+      subscription:JSON.stringify(sub),
+      updated_at:new Date().toISOString()
+    },{onConflict:'user_id'});
+    console.log('[DKMA] Push subscription stored.');
+  }catch(e){console.warn('[DKMA] Push subscribe failed:',e);}
+}
+
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const rawData=atob(base64);
+  return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
+}
+
+async function registerPeriodicSync(){
+  if(!('serviceWorker' in navigator)||!('periodicSync' in ServiceWorkerRegistration.prototype)) return;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const tags=await reg.periodicSync.getTags();
+    if(!tags.includes('dkma-panic-check')){
+      await reg.periodicSync.register('dkma-panic-check',{minInterval:5*60*1000});
+      console.log('[DKMA] Periodic background sync registered.');
+    }
+  }catch(e){console.warn('[DKMA] Periodic sync failed:',e);}
+}
+
+function setupVisibilityResume(){
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'){
+      writeSwConfig();
+      startPanicPolling();
+      loadPanicAlerts();
+    }
+  });
+}
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('message',e=>{
+    if(e.data?.type==='NOTIFICATION_CLICK'){
+      window.focus();
+      const navEl=document.querySelector('.nav-item[onclick*=\"alerts\"]');
+      showView('alerts',navEl);
+    }
+  });
 }
 
 function startNotificationPolling(){
