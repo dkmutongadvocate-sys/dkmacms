@@ -736,6 +736,11 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M13 7c1.105 0 2 .895 2 2v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></svg>
       <span>Clients</span>
     </div>
+    <div class="nav-item" onclick="showView('parties-main',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2.2" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="5" r="2.2" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.209 1.791-4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M15 13c0-2.209-1.791-4-4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8 10v3M6.5 11.5h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></svg>
+      <span>Other Parties</span>
+      <span class="nav-badge" id="parties-main-badge" style="display:none">0</span>
+    </div>
     <div class="nav-item" onclick="showView('calendar',this)">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="2.5" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       <span>Calendar</span>
@@ -874,6 +879,9 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
         <div class="matter-detail-tab" onclick="switchMatterTab('events',this)">Events</div>
         <div class="matter-detail-tab" onclick="switchMatterTab('time',this)">Time</div>
         <div class="matter-detail-tab" onclick="switchMatterTab('invoices',this)">Invoices</div>
+        <div class="matter-detail-tab" onclick="switchMatterTab('parties',this)">
+          Parties <span id="matter-parties-count" style="display:none;background:var(--cream2);color:var(--txt2);font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:4px;vertical-align:middle">0</span>
+        </div>
         <div class="matter-detail-tab" onclick="switchMatterTab('updates',this)">
           Updates <span id="matter-updates-count" style="display:none;background:var(--gold);color:var(--navy);font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:4px;vertical-align:middle">0</span>
         </div>
@@ -913,6 +921,29 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
         <div class="profile-tab" onclick="switchProfileTab('documents',this)">Documents <span id="client-doc-badge" style="display:none;background:var(--gold);color:var(--navy);font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:3px;vertical-align:middle">0</span></div>
       </div>
       <div id="profile-tab-content"></div>
+    </div>
+
+    <!-- OTHER PARTIES MAIN VIEW -->
+    <div class="view" id="view-parties-main">
+      <div class="matters-toolbar" style="margin-bottom:18px">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="color:var(--txt3);flex-shrink:0"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input id="parties-search" placeholder="Search parties by name, role, or matter…" oninput="renderPartiesMain()"/>
+        </div>
+        <select id="parties-role-filter" class="filter-btn" onchange="renderPartiesMain()" style="padding:7px 12px;font-size:12px;border:1px solid var(--brd);border-radius:7px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--txt2)">
+          <option value="">All Roles</option>
+          <option value="Opposing Party">Opposing Party</option>
+          <option value="Opposing Counsel">Opposing Counsel</option>
+          <option value="Witness">Witness</option>
+          <option value="Insurance">Insurance</option>
+          <option value="Expert">Expert Witness</option>
+          <option value="Mediator">Mediator / Arbitrator</option>
+          <option value="Guarantor">Guarantor</option>
+          <option value="Other">Other</option>
+        </select>
+        <button class="topbar-btn gold" onclick="openModal('party')" style="white-space:nowrap">+ Add Party</button>
+      </div>
+      <div id="parties-main-content"></div>
     </div>
 
     <!-- CALENDAR -->
@@ -1469,6 +1500,10 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <svg viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       Clients
     </div>
+    <div class="drawer-item" id="di-parties-main" onclick="showView('parties-main',null,true);closeDrawer()">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2.2" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="5" r="2.2" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.209 1.791-4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M15 13c0-2.209-1.791-4-4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Other Parties
+    </div>
     <div class="drawer-item" id="di-calendar" onclick="showView('calendar',null,true);closeDrawer()">
       <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="2.5" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       Calendar
@@ -1573,7 +1608,7 @@ function partyTypePill(role){
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────
-const viewTitles={dashboard:'Dashboard',matters:'Matters',clients:'Clients','client-profile':'Client Profile',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox'};
+const viewTitles={dashboard:'Dashboard',matters:'Matters',clients:'Clients','client-profile':'Client Profile','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox'};
 function showView(id,el,fromMobile){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
@@ -1592,6 +1627,7 @@ function showView(id,el,fromMobile){
   if(content&&window.innerWidth<=640)content.scrollTop=0;
   if(id==='matters')renderMatters();
   if(id==='clients')renderClients();
+  if(id==='parties-main')renderPartiesMain();
   if(id==='calendar'){renderCalendar();renderGazettedHolidaysList();}
   if(id==='finance')renderFinance();
   if(id==='timesheet')renderTimesheet();
@@ -1882,6 +1918,9 @@ async function forceChangePassword(){
 async function loadAll(){
   await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties(),loadInboxMessages(),loadAllProfiles(),loadGazettedHolidays()]);
   renderDashboard();updateBadges();
+  // Update parties badge
+  const pb=document.getElementById('parties-main-badge');
+  if(pb&&parties.length){pb.textContent=parties.length;pb.style.display='';}else if(pb){pb.style.display='none';}
   setupRealtime();
   initBrowserNotifications();
   renderNotifToggle();
@@ -2651,6 +2690,181 @@ function renderNotifToggle(){
   }
 }
 
+// ─── OTHER PARTIES MAIN VIEW ──────────────────────────────────────
+function renderPartiesMain(){
+  const c = document.getElementById('parties-main-content');
+  if(!c) return;
+
+  const search = (document.getElementById('parties-search')?.value||'').toLowerCase().trim();
+  const roleFilter = document.getElementById('parties-role-filter')?.value||'';
+
+  let filtered = parties.filter(p=>{
+    if(roleFilter && p.role !== roleFilter) return false;
+    if(search){
+      const m = matters.find(x=>x.id===p.matter_id);
+      const cl = clients.find(x=>x.id===p.client_id);
+      const hay = [p.name,p.role,p.organisation,p.phone,p.email,p.address,m?.title,cl?.name].filter(Boolean).join(' ').toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  // Update badge
+  const badge = document.getElementById('parties-main-badge');
+  if(badge){ badge.textContent=parties.length; badge.style.display=parties.length>0?'':'none'; }
+
+  if(!filtered.length){
+    c.innerHTML=`<div class="card"><div style="padding:48px;text-align:center;color:var(--txt3)"><div style="font-size:32px;margin-bottom:12px">👥</div><div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--txt2);margin-bottom:6px">${parties.length?'No matches found':'No other parties yet'}</div><div style="font-size:12px">${parties.length?'Try adjusting your search or filter.':'Add parties to your matters using the button above.'}</div></div></div>`;
+    return;
+  }
+
+  // Group by matter
+  const byMatter = {};
+  const noMatter = [];
+  filtered.forEach(p=>{
+    if(p.matter_id){ if(!byMatter[p.matter_id]) byMatter[p.matter_id]=[]; byMatter[p.matter_id].push(p); }
+    else noMatter.push(p);
+  });
+
+  let html = '';
+
+  const renderGroup = (title, subtitle, pts) => {
+    return `<div class="card" style="margin-bottom:16px">
+      <div class="card-header" style="justify-content:flex-start;gap:12px">
+        <div>
+          <div class="card-title">📁 ${esc(title)}</div>
+          ${subtitle?`<div style="font-size:11px;color:var(--txt3);margin-top:2px">${esc(subtitle)}</div>`:''}
+        </div>
+        <span style="margin-left:auto;font-size:11px;color:var(--txt3)">${pts.length} part${pts.length!==1?'ies':'y'}</span>
+      </div>
+      <div class="op-table" style="border:none;border-radius:0;margin-bottom:0">
+        <div class="op-header"><span>Name &amp; Role</span><span>Organisation</span><span>Contact</span><span>Client</span><span>Notes</span><span></span></div>
+        ${pts.map(p=>{
+          const cl = clients.find(x=>x.id===p.client_id);
+          return `<div class="op-row" id="party-cms-row-${p.id}" style="grid-template-columns:1.8fr 1.2fr 1.4fr 1fr 1fr 80px">
+            <div class="op-cell">
+              <div style="font-weight:500;color:var(--txt)">${esc(p.name||'—')}</div>
+              <div style="margin-top:3px">${partyTypePill(p.role)}</div>
+            </div>
+            <div class="op-cell muted">${esc(p.organisation||'—')}</div>
+            <div class="op-cell muted" style="line-height:1.7">
+              ${p.phone?`<div><a href="tel:${esc(p.phone)}" style="color:var(--navy);text-decoration:none">📞 ${esc(p.phone)}</a></div>`:''}
+              ${p.email?`<div><a href="mailto:${esc(p.email)}" style="color:var(--navy);text-decoration:none">✉️ ${esc(p.email)}</a></div>`:''}
+              ${!p.phone&&!p.email?'—':''}
+            </div>
+            <div class="op-cell muted">${cl?`<a onclick="viewClient('${cl.id}')" style="color:var(--navy);cursor:pointer;text-decoration:underline">${esc(cl.name)}</a>`:'—'}</div>
+            <div class="op-cell muted" style="font-size:11px">${p.notes?esc(p.notes.slice(0,60))+(p.notes.length>60?'…':''):'—'}</div>
+            <div class="op-cell" style="display:flex;gap:5px">
+              <button class="topbar-btn sec" style="font-size:10px;padding:3px 8px" onclick="openEditPartyModal('${p.id}')">✏️</button>
+              <button class="op-del" onclick="deletePartyFromMain('${p.id}')" title="Delete">×</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  };
+
+  Object.keys(byMatter).forEach(mid=>{
+    const m = matters.find(x=>x.id===mid);
+    const cl = m ? clients.find(x=>x.id===m.client_id) : null;
+    html += renderGroup(m?.title||'Unknown Matter', cl?'Client: '+cl.name:'', byMatter[mid]);
+  });
+  if(noMatter.length) html += renderGroup('No Specific Matter', 'Parties not linked to a matter', noMatter);
+
+  c.innerHTML = html;
+}
+
+function openEditPartyModal(partyId){
+  const p = parties.find(x=>String(x.id)===String(partyId));
+  if(!p){ toast('Party not found.',true); return; }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'cms-party-edit-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(13,27,42,0.6);z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div class="modal" style="display:block;max-width:540px;width:100%;position:relative;max-height:90vh;overflow-y:auto">
+      <div class="modal-head"><span class="modal-title">Edit Party — ${esc(p.name)}</span><button class="modal-close" onclick="document.getElementById('cms-party-edit-overlay').remove()">×</button></div>
+      <div class="modal-body">
+        <div class="form-two">
+          <div class="form-row"><label>Party Name</label><input id="ep-name" value="${esc(p.name||'')}"/></div>
+          <div class="form-row"><label>Role / Type</label><select id="ep-role">
+            <option ${p.role==='Opposing Party'?'selected':''}>Opposing Party</option>
+            <option ${p.role==='Opposing Counsel'?'selected':''}>Opposing Counsel</option>
+            <option ${p.role==='Witness'?'selected':''}>Witness</option>
+            <option ${p.role==='Insurance'?'selected':''}>Insurance</option>
+            <option ${p.role==='Expert'?'selected':''}>Expert Witness</option>
+            <option ${p.role==='Mediator'?'selected':''}>Mediator / Arbitrator</option>
+            <option ${p.role==='Guarantor'?'selected':''}>Guarantor</option>
+            <option ${p.role==='Other'?'selected':''}>Other</option>
+          </select></div>
+        </div>
+        <div class="form-row"><label>Related Matter</label><select id="ep-matter">
+          <option value="">No specific matter</option>
+          ${matters.map(m=>`<option value="${m.id}" ${p.matter_id===m.id?'selected':''}>${esc(m.title)}</option>`).join('')}
+        </select></div>
+        <div class="section-divider">Contact Details</div>
+        <div class="form-two">
+          <div class="form-row"><label>Phone</label><input id="ep-phone" value="${esc(p.phone||'')}"/></div>
+          <div class="form-row"><label>Email</label><input id="ep-email" value="${esc(p.email||'')}"/></div>
+        </div>
+        <div class="form-two">
+          <div class="form-row"><label>Physical Address</label><input id="ep-address" value="${esc(p.address||'')}"/></div>
+          <div class="form-row"><label>Postal Address</label><input id="ep-postal" value="${esc(p.postal||'')}"/></div>
+        </div>
+        <div class="form-row"><label>Law Firm / Organisation</label><input id="ep-org" value="${esc(p.organisation||'')}"/></div>
+        <div class="form-row"><label>Notes</label><textarea id="ep-notes" style="min-height:70px">${esc(p.notes||'')}</textarea></div>
+        <div id="ep-error" style="font-size:12px;color:var(--red);min-height:16px;margin-bottom:4px"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-secondary" onclick="document.getElementById('cms-party-edit-overlay').remove()">Cancel</button>
+        <button class="btn-primary" id="ep-save-btn" onclick="savePartyEdit_cms('${p.id}')">Save Changes</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+async function savePartyEdit_cms(partyId){
+  const btn = document.getElementById('ep-save-btn');
+  const errEl = document.getElementById('ep-error');
+  if(!btn) return;
+  btn.disabled=true; btn.textContent='Saving…';
+  const payload = {
+    name: document.getElementById('ep-name').value.trim(),
+    role: document.getElementById('ep-role').value,
+    matter_id: document.getElementById('ep-matter').value||null,
+    phone: document.getElementById('ep-phone').value.trim()||null,
+    email: document.getElementById('ep-email').value.trim()||null,
+    address: document.getElementById('ep-address').value.trim()||null,
+    postal: document.getElementById('ep-postal').value.trim()||null,
+    organisation: document.getElementById('ep-org').value.trim()||null,
+    notes: document.getElementById('ep-notes').value.trim()||null,
+  };
+  if(!payload.name){ errEl.textContent='Name is required.'; btn.disabled=false; btn.textContent='Save Changes'; return; }
+  const {data,error} = await sb.from('parties').update(payload).eq('id',partyId).select().single();
+  btn.disabled=false; btn.textContent='Save Changes';
+  if(error){ errEl.textContent='Error: '+error.message; return; }
+  // Update local state
+  const idx = parties.findIndex(x=>String(x.id)===String(partyId));
+  if(idx>-1) parties[idx]={...parties[idx],...payload};
+  document.getElementById('cms-party-edit-overlay').remove();
+  toast('Party updated successfully.');
+  renderPartiesMain();
+  // Also refresh profile tab if open
+  if(activeProfileTab==='parties') renderProfileTab();
+}
+
+async function deletePartyFromMain(partyId){
+  if(!confirm('Remove this party? This cannot be undone.')) return;
+  const {error} = await sb.from('parties').delete().eq('id',partyId);
+  if(error){ toast('Error: '+error.message,true); return; }
+  parties = parties.filter(p=>String(p.id)!==String(partyId));
+  toast('Party removed.');
+  renderPartiesMain();
+  if(activeProfileTab==='parties') renderProfileTab();
+}
+
 // ─── PARTY ACTIONS ────────────────────────────────────────────────
 function openPartyModalForClient(clientId){
   activeClientId=clientId;
@@ -2659,6 +2873,24 @@ function openPartyModalForClient(clientId){
   const mSel=document.getElementById('p-matter');
   const cm=matters.filter(m=>m.client_id===clientId);
   mSel.innerHTML='<option value="">Select matter (optional)…</option>'+cm.map(m=>`<option value="${m.id}">${esc(m.title)}</option>`).join('');
+}
+
+function openPartyModalForMatter(matterId, clientId){
+  if(clientId) activeClientId=clientId;
+  openModal('party');
+  const mSel=document.getElementById('p-matter');
+  mSel.innerHTML='<option value="">Select matter (optional)…</option>'+matters.map(m=>`<option value="${m.id}" ${m.id===matterId?'selected':''}>${esc(m.title)}</option>`).join('');
+}
+
+async function deletePartyFromMatterTab(partyId){
+  if(!confirm('Remove this party?')) return;
+  const {error} = await sb.from('parties').delete().eq('id',partyId);
+  if(error){ toast('Error: '+error.message,true); return; }
+  parties = parties.filter(p=>String(p.id)!==String(partyId));
+  toast('Party removed.');
+  renderMatterDetailTab();
+  renderPartiesMain();
+  if(activeProfileTab==='parties') renderProfileTab();
 }
 function openMatterModalForClient(clientId){
   openModal('matter');
@@ -3676,6 +3908,12 @@ async function saveParty(){
   parties=[data[0],...parties];closeModal();toast('Party added.');
   ['p-name','p-phone','p-email','p-address','p-postal','p-org','p-notes'].forEach(id=>document.getElementById(id).value='');
   if(activeClientId)renderProfileTab();
+  if(activeMatterId&&activeMatterTab==='parties')renderMatterDetailTab();
+  renderPartiesMain();
+  // Update matter parties badge
+  const mp=parties.filter(p=>p.matter_id===activeMatterId);
+  const pcBadge=document.getElementById('matter-parties-count');
+  if(pcBadge){pcBadge.textContent=mp.length;pcBadge.style.display=mp.length?'':'none';}
 }
 
 async function saveTime(){
@@ -4003,8 +4241,12 @@ function renderMatterDetail(){
       ${m.notes?`<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--brd);font-size:13px;color:var(--txt2);line-height:1.6">${esc(m.notes)}</div>`:''}
     </div>`;
   document.querySelectorAll('.matter-detail-tab').forEach((t,i)=>{
-    t.classList.toggle('active',['overview','documents','events','time','invoices','updates'][i]===activeMatterTab);
+    t.classList.toggle('active',['overview','documents','events','time','invoices','parties','updates'][i]===activeMatterTab);
   });
+  // Update parties badge
+  const mp = parties.filter(p=>p.matter_id===activeMatterId);
+  const pcBadge = document.getElementById('matter-parties-count');
+  if(pcBadge){ pcBadge.textContent=mp.length; pcBadge.style.display=mp.length?'':'none'; }
   renderMatterDetailTab();
 }
 
@@ -4051,6 +4293,45 @@ function renderMatterDetailTab(){
         :`<div class="invoice-row header"><span>Invoice</span><span>Amount</span><span>Status</span><span>Date</span><span>Due</span></div>`+
         mi.map(i=>`<div class="invoice-row"><span style="font-weight:500">${esc(i.invoice_no||'—')}</span><span style="font-weight:500">${fmtMoney(i.amount)}</span><span><span class="status-pill ${statusClass(i.status)}">${statusLabel(i.status)}</span></span><span style="color:var(--txt3)">${fmtDate(i.invoice_date)}</span><span style="color:var(--txt3);display:flex;align-items:center;justify-content:space-between">${fmtDate(i.due_date)}<button class="op-del" title="Delete" onclick="deleteInvoice('${i.id}','${esc(i.invoice_no||'—')}',event)">×</button></span></div>`).join('')}
     </div>`;
+  } else if(activeMatterTab==='parties'){
+    const mp = parties.filter(p=>p.matter_id===m.id);
+    // Update count badge
+    const pcBadge = document.getElementById('matter-parties-count');
+    if(pcBadge){ pcBadge.textContent=mp.length; pcBadge.style.display=mp.length?'':'none'; }
+    el.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:13px;color:var(--txt2)">${mp.length} other part${mp.length!==1?'ies':'y'} on this matter</div>
+        <button class="topbar-btn gold" onclick="openPartyModalForMatter('${m.id}','${m.client_id||''}')">+ Add Party</button>
+      </div>
+      <div class="op-table">
+        <div class="op-header"><span>Name</span><span>Role</span><span>Organisation</span><span>Phone</span><span>Email</span><span></span></div>
+        ${!mp.length
+          ? emptyStateSm('No other parties recorded for this matter. Add one above.')
+          : mp.map(p=>`
+          <div class="op-row">
+            <div class="op-cell">
+              <div style="font-weight:500">${esc(p.name||'—')}</div>
+              ${p.address?`<div class="op-cell muted" style="margin-top:2px;font-size:10px">📍 ${esc(p.address)}</div>`:''}
+            </div>
+            <div class="op-cell">${partyTypePill(p.role)}</div>
+            <div class="op-cell muted">${esc(p.organisation||'—')}</div>
+            <div class="op-cell muted"><a href="tel:${esc(p.phone||'')}" style="color:var(--navy);text-decoration:none">${esc(p.phone||'—')}</a></div>
+            <div class="op-cell muted"><a href="mailto:${esc(p.email||'')}" style="color:var(--navy);text-decoration:none">${esc(p.email||'—')}</a></div>
+            <div class="op-cell" style="display:flex;gap:5px">
+              <button class="topbar-btn sec" style="font-size:10px;padding:3px 8px" onclick="openEditPartyModal('${p.id}')">✏️ Edit</button>
+              <button class="op-del" onclick="deletePartyFromMatterTab('${p.id}')" title="Delete">×</button>
+            </div>
+          </div>`).join('')}
+      </div>
+      ${mp.filter(p=>p.notes).length>0?`
+        <div class="card" style="margin-top:18px">
+          <div class="card-header"><span class="card-title">Party Notes</span></div>
+          ${mp.filter(p=>p.notes).map(p=>`
+            <div style="padding:12px 20px;border-bottom:1px solid var(--brd)">
+              <div style="font-size:11px;font-weight:500;color:var(--txt)">${esc(p.name)} <span style="color:var(--txt3);font-weight:400">· ${esc(p.role)}</span></div>
+              <div style="font-size:12px;color:var(--txt2);margin-top:4px;line-height:1.5">${esc(p.notes)}</div>
+            </div>`).join('')}
+        </div>`:''}`;
   } else if(activeMatterTab==='updates'){
     loadMatterUpdates();
   }
