@@ -2486,7 +2486,7 @@ function renderProfile(){
         <button class="topbar-btn sec" onclick="openEditClient('${c.id}')">✏️ Edit</button>
         <button class="topbar-btn sec" onclick="openMatterModalForClient('${c.id}')">+ New Matter</button>
         <button class="topbar-btn gold" onclick="openPartyModalForClient('${c.id}')">+ Other Party</button>
-        ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="topbar-btn" style="background:#185FA5" onclick="sendClientNewPassword('${c.id}')">🔑 Send Client Password</button>`:''}\n        <button class="topbar-btn" style="background:#A30000" onclick="generateSosCode('${c.id}','${esc(c.name)}')">🆘 Generate SOS Code</button>
+        ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="topbar-btn" style="background:#185FA5" onclick="sendClientNewPassword('${c.id}')">🔑 Send Client Password</button>`:''}}<button class="topbar-btn" style="background:#A30000" onclick="generateSosCode('${c.id}','${esc(c.name)}')">🆘 Generate SOS Code</button>
       </div>
     </div>`;
 
