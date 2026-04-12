@@ -634,6 +634,9 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .pwa-dismiss-btn:hover{background:var(--cream)}
 .pwa-modal-close{position:absolute;top:14px;right:14px;background:var(--cream);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;color:var(--txt3);display:flex;align-items:center;justify-content:center;touch-action:manipulation;line-height:1}
 .pwa-modal-close:hover{background:var(--cream2);color:var(--txt)}
+/* ── PANIC / SOS ──────────────────────────────────────────────── */
+@keyframes panic-dot-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.4)}}
+@keyframes panic-nav-pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 </style>
 </head>
 <body>
@@ -765,6 +768,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1a5 5 0 015 5c0 2.5.5 4 1.5 5H1.5C2.5 10 3 8.5 3 6a5 5 0 015-5zM6 12a2 2 0 004 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       <span>Alerts</span>
       <span class="nav-badge" id="alerts-badge" style="background:#E2443A;color:#fff">0</span>
+      <span id="panic-nav-badge" style="display:none;background:#A30000;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;animation:panic-nav-pulse 1s ease-in-out infinite">🚨</span>
     </div>
     <div class="nav-item admin-only" onclick="showView('team',this)">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.209 1.791-4 4-4s4 1.791 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 9c1.657 0 3 1.343 3 3v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></svg>
@@ -1032,6 +1036,29 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 
     <!-- ALERTS -->
     <div class="view" id="view-alerts">
+      <!-- PANIC ALERTS BANNER (shown when unacknowledged panic alerts exist) -->
+      <div id="panic-banner" style="display:none;background:#A30000;border-radius:10px;padding:16px 20px;margin-bottom:18px;display:none;align-items:center;gap:14px;animation:panic-flash 1.5s ease-in-out infinite">
+        <span style="font-size:28px;flex-shrink:0">🚨</span>
+        <div style="flex:1">
+          <div style="font-family:'Playfair Display',serif;font-size:15px;color:#fff;font-weight:500">CLIENT EMERGENCY ALERT</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:2px" id="panic-banner-txt">A client has triggered an emergency alert</div>
+        </div>
+        <button onclick="document.querySelector('.view.active #panic-alerts-card').scrollIntoView({behavior:'smooth'})" style="background:rgba(255,255,255,0.2);color:#fff;border:none;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">View ↓</button>
+      </div>
+      <style>@keyframes panic-flash{0%,100%{box-shadow:0 0 0 0 rgba(163,0,0,0.6)}50%{box-shadow:0 0 0 8px rgba(163,0,0,0)}}</style>
+
+      <!-- PANIC ALERTS CARD -->
+      <div class="card" style="margin-bottom:18px;border-color:#f5c6c6" id="panic-alerts-card">
+        <div class="card-header" style="background:#fff5f5">
+          <span class="card-title" style="color:#A30000">🚨 Client Emergency Alerts</span>
+          <span id="panic-unack-badge" style="display:none;background:#A30000;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px">0 new</span>
+          <button class="card-action" onclick="loadPanicAlerts()" style="margin-left:auto">↻ Refresh</button>
+        </div>
+        <div id="panic-alerts-list">
+          <div class="empty-state"><p>No emergency alerts. If a client triggers SOS, it will appear here immediately.</p></div>
+        </div>
+      </div>
+
       <div class="two-col">
         <div class="card">
           <div class="card-header"><span class="card-title">Urgent Alerts</span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('alert')">+ Add Alert</button></div>
@@ -1917,6 +1944,7 @@ async function forceChangePassword(){
 // ─── LOAD ALL ─────────────────────────────────────────────────────
 async function loadAll(){
   await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties(),loadInboxMessages(),loadAllProfiles(),loadGazettedHolidays()]);
+  await loadPanicAlerts();
   renderDashboard();updateBadges();
   // Update parties badge
   const pb=document.getElementById('parties-main-badge');
@@ -1936,6 +1964,140 @@ async function loadParties(){const{data,error}=await sb.from('parties').select('
 async function loadGazettedHolidays(){
   const{data,error}=await sb.from('gazetted_holidays').select('*').order('date',{ascending:true});
   if(!error)gazettedHolidays=data||[];
+}
+
+// ── PANIC / SOS ALERTS ────────────────────────────────────────────
+let panicAlerts=[];
+let _panicLastCount=0;
+let _panicPollInterval=null;
+let _panicAudioCtx=null;
+
+async function loadPanicAlerts(){
+  const{data,error}=await sb.from('panic_alerts')
+    .select('*')
+    .order('triggered_at',{ascending:false})
+    .limit(50);
+  if(!error)panicAlerts=data||[];
+  renderPanicAlerts();
+  updatePanicBadge();
+}
+
+function updatePanicBadge(){
+  const unack=panicAlerts.filter(a=>!a.acknowledged).length;
+  const badge=document.getElementById('panic-unack-badge');
+  const navBadge=document.getElementById('panic-nav-badge');
+  const banner=document.getElementById('panic-banner');
+  if(badge){badge.textContent=unack+' new';badge.style.display=unack>0?'inline-block':'none';}
+  if(navBadge){navBadge.style.display=unack>0?'inline-block':'none';}
+  if(banner){
+    if(unack>0){
+      banner.style.display='flex';
+      const names=[...new Set(panicAlerts.filter(a=>!a.acknowledged).map(a=>{const c=clients.find(x=>x.id===a.client_id);return c?c.name:'Unknown client';}))];
+      document.getElementById('panic-banner-txt').textContent=names.slice(0,2).join(', ')+(names.length>2?` +${names.length-2} more`:'')+' triggered emergency alert';
+    } else {
+      banner.style.display='none';
+    }
+  }
+}
+
+function renderPanicAlerts(){
+  const el=document.getElementById('panic-alerts-list');
+  if(!el)return;
+  if(!panicAlerts.length){
+    el.innerHTML='<div class="empty-state"><p>No emergency alerts. If a client triggers SOS, it will appear here immediately.</p></div>';
+    return;
+  }
+  const sitLabel={arrested:'🚔 Arrested / Detained',danger:'⚠️ In Danger',accident:'🏥 Accident / Injury',other:'❗ Other Emergency',unspecified:'❗ Emergency'};
+  el.innerHTML=panicAlerts.map(a=>{
+    const c=clients.find(x=>x.id===a.client_id);
+    const name=c?c.name:'Unknown Client';
+    const dt=new Date(a.triggered_at);
+    const timeStr=dt.toLocaleString('en-KE',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const mapLink=a.maps_link?`<a href="${esc(a.maps_link)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:#185FA5;font-size:11px;font-weight:500;text-decoration:none;margin-top:6px;background:#E6F1FB;padding:4px 10px;border-radius:6px">📍 Open in Maps</a>`:'<span style="font-size:11px;color:var(--txt3)">📍 Location not available</span>';
+    const isUnack=!a.acknowledged;
+    return`<div style="padding:16px 20px;border-bottom:1px solid ${isUnack?'#f5c6c6':'var(--brd)'};background:${isUnack?'#fff8f8':'#fff'};display:flex;gap:14px;align-items:flex-start">
+      <div style="width:10px;height:10px;border-radius:50%;background:${isUnack?'#A30000':'var(--txt3)'};flex-shrink:0;margin-top:5px;${isUnack?'animation:panic-dot-pulse 1.2s ease-in-out infinite':''}"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:600;color:${isUnack?'#A30000':'var(--txt)'}">${esc(name)}</span>
+          <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;background:${isUnack?'#A30000':'var(--cream2)'};color:${isUnack?'#fff':'var(--txt2)'}">${sitLabel[a.situation]||'❗ Emergency'}</span>
+          ${isUnack?'<span style="font-size:9px;font-weight:700;color:#A30000;letter-spacing:0.5px;text-transform:uppercase">NEW</span>':''}
+        </div>
+        ${a.note?`<div style="font-size:12px;color:var(--txt2);margin-bottom:6px;background:var(--cream);padding:7px 10px;border-radius:6px;border-left:3px solid ${isUnack?'#A30000':'var(--brd2)'}"><em>"${esc(a.note)}"</em></div>`:''}
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+          ${mapLink}
+          ${a.device_info?`<span style="font-size:10px;color:var(--txt3)">📱 ${esc(a.device_info)}</span>`:''}
+          <span style="font-size:10px;color:var(--txt3)">🕐 ${timeStr}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        ${isUnack?`<button onclick="acknowledgePanic('${a.id}')" style="background:#2D6A4F;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">✓ Acknowledge</button>`:'<span style="font-size:10px;color:var(--green);font-weight:500">✓ Handled</span>'}
+        ${c?`<a href="tel:${esc(c.phone||'')}" style="background:var(--navy);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;text-align:center;white-space:nowrap">📞 Call</a>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function acknowledgePanic(id){
+  const{error}=await sb.from('panic_alerts').update({acknowledged:true,acknowledged_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast('Error acknowledging alert: '+error.message,true);return;}
+  panicAlerts=panicAlerts.map(a=>a.id===id?{...a,acknowledged:true}:a);
+  renderPanicAlerts();
+  updatePanicBadge();
+  toast('Alert acknowledged.');
+}
+
+function startPanicPolling(){
+  if(_panicPollInterval)return;
+  _panicLastCount=panicAlerts.filter(a=>!a.acknowledged).length;
+  _panicPollInterval=setInterval(async()=>{
+    try{
+      const{data}=await sb.from('panic_alerts').select('*').order('triggered_at',{ascending:false}).limit(50);
+      if(!data)return;
+      const prevIds=new Set(panicAlerts.map(a=>a.id));
+      const newAlerts=data.filter(a=>!prevIds.has(a.id)&&!a.acknowledged);
+      panicAlerts=data;
+      renderPanicAlerts();
+      updatePanicBadge();
+      if(newAlerts.length){
+        newAlerts.forEach(a=>{
+          const c=clients.find(x=>x.id===a.client_id);
+          const name=c?c.name:'A client';
+          const sitL={arrested:'has been arrested',danger:'is in danger',accident:'has had an accident',other:'has an emergency',unspecified:'needs urgent help'};
+          // Fire browser notification
+          fireNotification('🚨 EMERGENCY — '+name,name+' '+( sitL[a.situation]||'triggered SOS')+'!','🚨');
+          // Show toast
+          toast('🚨 EMERGENCY: '+name+' triggered SOS!',true);
+          // Play alert sound
+          _playAlertSound();
+          // Auto-switch to alerts view if not already there
+          if(_activeView()!=='alerts'){
+            const navEl=document.querySelector('.nav-item[onclick*="alerts"]');
+            showView('alerts',navEl);
+          }
+        });
+      }
+    }catch(e){}
+  },4000);
+}
+
+function _playAlertSound(){
+  try{
+    if(!_panicAudioCtx)_panicAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const ctx=_panicAudioCtx;
+    [0,0.3,0.6].forEach(delay=>{
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.type='square';
+      osc.frequency.setValueAtTime(880,ctx.currentTime+delay);
+      osc.frequency.setValueAtTime(660,ctx.currentTime+delay+0.1);
+      gain.gain.setValueAtTime(0.3,ctx.currentTime+delay);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+0.25);
+      osc.start(ctx.currentTime+delay);
+      osc.stop(ctx.currentTime+delay+0.25);
+    });
+  }catch(e){}
 }
 
 async function saveGazettedHoliday(){
@@ -1990,10 +2152,9 @@ function renderGazettedHolidaysList(){
 
 
 // ─── REALTIME ─────────────────────────────────────────────────────
-// ─── POLLING-BASED REALTIME (works on GitHub Pages / static hosts) ─
+// ── POLLING-BASED REALTIME (works on GitHub Pages / static hosts) ──
 let _pollInterval=null;
-// Snapshots used to detect changes between polls
-let _snap={clients:0,matters:0,events:0,invoices:0,time_entries:0,alerts:0,parties:0,messages:0,holidays:0};
+let _snap={clients:0,matters:0,events:0,invoices:0,time_entries:0,alerts:0,parties:0,messages:'',holidays:0};
 
 function _activeView(){
   const v=document.querySelector('.view.active');
@@ -2004,15 +2165,15 @@ async function _pollCount(table){
   const{count}=await sb.from(table).select('*',{count:'exact',head:true});
   return count||0;
 }
+
 async function _pollMsgMax(){
-  // Use max created_at as a lightweight change signal for messages
   const{data}=await sb.from('client_messages').select('created_at').order('created_at',{ascending:false}).limit(1);
   return data&&data[0]?data[0].created_at:'';
 }
 
 async function pollAll(){
   try{
-    // ── Messages (highest priority — poll every tick) ──────────────
+    // ── Messages ──────────────────────────────────────────────────
     const msgMax=await _pollMsgMax();
     if(msgMax!==_snap.messages){
       _snap.messages=msgMax;
@@ -2041,71 +2202,26 @@ async function pollAll(){
       }
     }
 
-    // ── Other tables — count-based change detection ────────────────
+    // ── Other tables ──────────────────────────────────────────────
     const[cC,mC,eC,iC,tC,aC,pC,hC]=await Promise.all([
       _pollCount('clients'),_pollCount('matters'),_pollCount('events'),
       _pollCount('invoices'),_pollCount('time_entries'),_pollCount('alerts'),
       _pollCount('parties'),_pollCount('gazetted_holidays')
     ]);
-
     const view=_activeView();
-
-    if(cC!==_snap.clients){
-      _snap.clients=cC;
-      await loadClients();
-      if(view==='clients')renderClients();
-      renderDashboard();
-    }
-    if(mC!==_snap.matters){
-      _snap.matters=mC;
-      await loadMatters();
-      if(view==='matters')renderMatters();
-      renderDashboard();updateBadges();
-      if(activeMatterId)renderMatterDetail();
-    }
-    if(eC!==_snap.events){
-      _snap.events=eC;
-      await loadEvents();
-      if(view==='calendar'){renderCalendar();renderGazettedHolidaysList();}
-      renderDashboard();updateBadges();
-      if(activeMatterId)renderMatterDetailTab();
-    }
-    if(iC!==_snap.invoices){
-      _snap.invoices=iC;
-      await loadInvoices();
-      if(view==='finance')renderFinance();
-      renderDashboard();
-      if(activeClientId)renderProfileTab();
-      if(activeMatterId)renderMatterDetailTab();
-    }
-    if(tC!==_snap.time_entries){
-      _snap.time_entries=tC;
-      await loadTimeEntries();
-      if(view==='timesheet')renderTimesheet();
-      if(activeClientId)renderProfileTab();
-      if(activeMatterId)renderMatterDetailTab();
-    }
-    if(aC!==_snap.alerts){
-      _snap.alerts=aC;
-      await loadAlerts();
-      if(view==='alerts')renderAlerts();
-      renderDashboard();updateBadges();
-    }
-    if(pC!==_snap.parties){
-      _snap.parties=pC;
-      await loadParties();
-      if(activeClientId)renderProfileTab();
-    }
-    if(hC!==_snap.holidays){
-      _snap.holidays=hC;
-      await loadGazettedHolidays();
-      if(view==='calendar'){renderCalendar();renderGazettedHolidaysList();}
-    }
-  }catch(e){/* network error — silently skip this tick */}
+    if(cC!==_snap.clients){_snap.clients=cC;await loadClients();if(view==='clients')renderClients();renderDashboard();}
+    if(mC!==_snap.matters){_snap.matters=mC;await loadMatters();if(view==='matters')renderMatters();renderDashboard();updateBadges();if(activeMatterId)renderMatterDetail();}
+    if(eC!==_snap.events){_snap.events=eC;await loadEvents();if(view==='calendar'){renderCalendar();renderGazettedHolidaysList();}renderDashboard();updateBadges();if(activeMatterId)renderMatterDetailTab();}
+    if(iC!==_snap.invoices){_snap.invoices=iC;await loadInvoices();if(view==='finance')renderFinance();renderDashboard();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
+    if(tC!==_snap.time_entries){_snap.time_entries=tC;await loadTimeEntries();if(view==='timesheet')renderTimesheet();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
+    if(aC!==_snap.alerts){_snap.alerts=aC;await loadAlerts();if(view==='alerts')renderAlerts();renderDashboard();updateBadges();}
+    if(pC!==_snap.parties){_snap.parties=pC;await loadParties();if(activeClientId)renderProfileTab();}
+    if(hC!==_snap.holidays){_snap.holidays=hC;await loadGazettedHolidays();if(view==='calendar'){renderCalendar();renderGazettedHolidaysList();}}
+  }catch(e){}
 }
 
 function setupRealtime(){
-  // Seed snapshot counts so first poll doesn't trigger spurious re-renders
+  // Seed snapshots so first poll doesn't trigger spurious re-renders
   _snap.clients=clients.length;
   _snap.matters=matters.length;
   _snap.events=events.length;
@@ -2115,17 +2231,16 @@ function setupRealtime(){
   _snap.parties=parties.length;
   _snap.holidays=gazettedHolidays.length;
   _snap.messages='';
-  // Poll every 4 seconds — fast enough to feel realtime, light enough for GitHub Pages
   if(_pollInterval)clearInterval(_pollInterval);
   _pollInterval=setInterval(pollAll,4000);
+  // Start panic polling separately so it runs even if general poll errors
+  startPanicPolling();
 }
 
-// Shared bubble appender (used by polling and optimistic send)
-function _appendMsgBubble(m,clientId){
-  const msgsEl=document.getElementById('inbox-messages-pane');
-  if(!msgsEl)return;
-  const c=clients.find(x=>x.id===clientId);
-  if(!c)return;
+// ── MSG BUBBLE HELPERS ────────────────────────────────────────────
+const _inboxFilesCache={};
+
+function _buildMsgBubbleHtml(m,c,clientId){
   const firmName=currentProfile?.full_name||'DKMA';
   const isClient=m.sender==='client';
   const av=isClient?`<div class="inbox-msg-av ${avColor(c.name)}">${initials(c.name)}</div>`:`<div class="inbox-msg-av" style="background:var(--navy);color:#fff">${initials(firmName)}</div>`;
@@ -2133,14 +2248,22 @@ function _appendMsgBubble(m,clientId){
     <div class="inbox-msg-file-icon">${docIconEmoji(m.file_name)}</div>
     <div><div class="inbox-msg-file-name">${esc(m.file_name)}</div><div class="inbox-msg-file-meta">Tap to view</div></div>
   </div>`:'';
-  msgsEl.insertAdjacentHTML('beforeend',`<div class="inbox-msg ${isClient?'from-client':'from-firm'}" data-msg-id="${m.id}">
+  return`<div class="inbox-msg ${isClient?'from-client':'from-firm'}" data-msg-id="${m.id}">
     ${av}
     <div class="inbox-msg-content">
       ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
       ${fileHtml}
       <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
     </div>
-  </div>`);
+  </div>`;
+}
+
+function _appendMsgBubble(m,clientId){
+  const msgsEl=document.getElementById('inbox-messages-pane');
+  if(!msgsEl)return;
+  const c=clients.find(x=>x.id===clientId);
+  if(!c)return;
+  msgsEl.insertAdjacentHTML('beforeend',_buildMsgBubbleHtml(m,c,clientId));
   msgsEl.scrollTop=msgsEl.scrollHeight;
 }
 
@@ -5393,16 +5516,13 @@ async function markMessagesRead(clientId){
   updateInboxBadge();
 }
 
-// Cache client files to avoid re-fetching storage on every message update
-const _inboxFilesCache={};
-
 async function renderInboxConversation(clientId,{skipFileFetch=false}={}){
   const c=clients.find(x=>x.id===clientId);
   if(!c)return;
   const main=document.getElementById('inbox-main');
   const msgs=inboxMessages.filter(m=>m.client_id===clientId);
 
-  // Only fetch storage files when opening a client or switching to the Files tab
+  // Only fetch storage when opening client or switching to Files tab
   let files=_inboxFilesCache[clientId]||[];
   if(!skipFileFetch){
     const{data:fileData}=await sb.storage.from(CLIENT_BUCKET).list(clientId,{limit:100,sortBy:{column:'created_at',order:'desc'}});
@@ -5436,26 +5556,9 @@ async function renderInboxConversation(clientId,{skipFileFetch=false}={}){
   }
 }
 
-function _buildMsgBubbleHtml(m,c,clientId){
-  const firmName=currentProfile?.full_name||'DKMA';
-  const isClient=m.sender==='client';
-  const av=isClient?`<div class="inbox-msg-av ${avColor(c.name)}">${initials(c.name)}</div>`:`<div class="inbox-msg-av" style="background:var(--navy);color:#fff">${initials(firmName)}</div>`;
-  const fileHtml=m.file_name?`<div class="inbox-msg-file" onclick="viewClientFile('${clientId}','${esc(m.file_storage_name||m.file_name)}','${esc(m.file_name)}')">
-    <div class="inbox-msg-file-icon">${docIconEmoji(m.file_name)}</div>
-    <div><div class="inbox-msg-file-name">${esc(m.file_name)}</div><div class="inbox-msg-file-meta">Tap to view</div></div>
-  </div>`:'';
-  return`<div class="inbox-msg ${isClient?'from-client':'from-firm'}" data-msg-id="${m.id}">
-    ${av}
-    <div class="inbox-msg-content">
-      ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
-      ${fileHtml}
-      <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
-    </div>
-  </div>`;
-}
-
 function renderMessagesPane(msgs,c,clientId){
-  const msgsHtml=msgs.length?msgs.map(m=>_buildMsgBubbleHtml(m,c,clientId)).join('')
+  const msgsHtml=msgs.length
+    ?msgs.map(m=>_buildMsgBubbleHtml(m,c,clientId)).join('')
     :`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:13px;padding:40px;text-align:center"><div><div style="font-size:32px;margin-bottom:10px">💬</div>No messages yet.<br>Send a message to start the conversation.</div></div>`;
   return`<div class="inbox-messages" id="inbox-messages-pane">${msgsHtml}</div>
     <div class="inbox-compose">
@@ -5492,7 +5595,6 @@ function renderFilesPane(files,clientId){
 
 function switchInboxTab(tab,clientId){
   activeInboxTab=tab;
-  // Skip storage re-fetch when switching to messages; fetch fresh for files tab
   renderInboxConversation(clientId,{skipFileFetch:tab==='messages'});
 }
 
@@ -5502,11 +5604,10 @@ async function sendInboxMessage(clientId){
   if(!msg)return;
   const btn=document.getElementById('inbox-send-btn');
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
-  // ── Optimistic update — show bubble immediately ──────────────────
+  // Optimistic — show bubble immediately
   const optimistic={id:'_tmp_'+Date.now(),client_id:clientId,sender:'firm',message:msg,read_by_firm:true,read_by_client:false,created_at:new Date().toISOString()};
   inboxMessages=[...inboxMessages,optimistic];
   if(inp)inp.value='';
-  // Append bubble directly instead of full re-render
   const c=clients.find(x=>x.id===clientId);
   if(c){
     const msgsEl=document.getElementById('inbox-messages-pane');
@@ -5514,15 +5615,10 @@ async function sendInboxMessage(clientId){
   }
   renderInboxThreadList();
   const{data,error}=await sb.from('client_messages').insert([{
-    client_id:clientId,
-    sender:'firm',
-    message:msg,
-    read_by_firm:true,
-    read_by_client:false
+    client_id:clientId,sender:'firm',message:msg,read_by_firm:true,read_by_client:false
   }]).select().single();
   if(btn){btn.disabled=false;btn.textContent='Send';}
   if(error){
-    // Roll back optimistic entry
     inboxMessages=inboxMessages.filter(m=>m.id!==optimistic.id);
     const msgsEl=document.getElementById('inbox-messages-pane');
     if(msgsEl){const tmp=msgsEl.querySelector(`[data-msg-id="${optimistic.id}"]`);if(tmp)tmp.remove();}
@@ -5531,7 +5627,6 @@ async function sendInboxMessage(clientId){
     if(inp)inp.value=msg;
     return;
   }
-  // Replace temp id with real DB id in state and DOM
   inboxMessages=inboxMessages.map(m=>m.id===optimistic.id?(data||optimistic):m);
   const msgsEl=document.getElementById('inbox-messages-pane');
   if(msgsEl){const tmp=msgsEl.querySelector(`[data-msg-id="${optimistic.id}"]`);if(tmp&&data)tmp.setAttribute('data-msg-id',String(data.id));}
