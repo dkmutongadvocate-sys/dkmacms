@@ -156,15 +156,15 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 
 /* MATTER TABLE */
 .matter-table{background:#fff;border-radius:10px;border:0.5px solid var(--brd);overflow:hidden}
-.mt-header{display:grid;grid-template-columns:90px 2fr 1.4fr 1fr 1fr 1fr 90px;padding:10px 20px;border-bottom:1px solid var(--brd);background:var(--cream)}
+.mt-header{display:grid;grid-template-columns:minmax(110px,160px) 2fr 1.4fr 1fr 1fr 1fr 100px;padding:10px 20px;border-bottom:1px solid var(--brd);background:var(--cream)}
 .mt-header span{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500}
-.mt-row{display:grid;grid-template-columns:90px 2fr 1.4fr 1fr 1fr 1fr 90px;padding:13px 20px;border-bottom:1px solid var(--brd);align-items:center;cursor:pointer;transition:background 0.12s}
+.mt-row{display:grid;grid-template-columns:minmax(110px,160px) 2fr 1.4fr 1fr 1fr 1fr 100px;padding:13px 20px;border-bottom:1px solid var(--brd);align-items:center;cursor:pointer;transition:background 0.12s}
 .mt-row:hover{background:var(--cream)}
 .mt-row:last-child{border-bottom:none}
-.mt-cell{font-size:12px;color:var(--txt)}
+.mt-cell{font-size:12px;color:var(--txt);min-width:0;overflow:hidden}
 .mt-cell.muted{color:var(--txt3)}
 .mt-cell.bold{font-weight:500}
-.file-no-badge{font-family:monospace;font-size:11px;background:var(--cream2);color:var(--navy);padding:2px 7px;border-radius:4px;font-weight:600;white-space:nowrap}
+.file-no-badge{font-family:monospace;font-size:10px;background:var(--cream2);color:var(--navy);padding:2px 6px;border-radius:4px;font-weight:600;white-space:nowrap;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
 
 /* CLIENTS GRID */
 .clients-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -238,7 +238,16 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .cal-day{height:58px;border-radius:6px;padding:4px 6px;border:0.5px solid transparent;cursor:pointer;transition:all 0.12s;overflow:hidden}
 .cal-day:hover{border-color:var(--brd2);background:var(--cream)}
 .cal-day.today .cal-day-num{color:var(--gold);font-weight:600}
+.cal-day.holiday{background:rgba(45,106,79,0.06);border-color:rgba(45,106,79,0.2)}
+.cal-day.holiday .cal-day-num{color:#2D6A4F}
+.cal-day.holiday-islamic{background:rgba(24,95,165,0.06);border-color:rgba(24,95,165,0.2)}
+.cal-day.holiday-islamic .cal-day-num{color:#185FA5}
+.cal-day.holiday-gazetted{background:rgba(133,79,11,0.06);border-color:rgba(133,79,11,0.25)}
+.cal-day.holiday-gazetted .cal-day-num{color:#854F0B}
 .cal-day-num{font-size:11px;font-weight:500;color:var(--txt2)}
+.cal-holiday-label{font-size:8px;color:#2D6A4F;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;line-height:1.2}
+.cal-day.holiday-islamic .cal-holiday-label{color:#185FA5}
+.cal-day.holiday-gazetted .cal-holiday-label{color:#854F0B}
 .cal-dot{width:5px;height:5px;border-radius:50%;margin:2px auto 0}
 .dot-gold{background:var(--gold)}.dot-navy{background:var(--navy)}.dot-red{background:#E2443A}
 .cal-event-mini{font-size:9px;color:var(--navy);background:rgba(13,27,42,0.07);border-radius:2px;padding:1px 4px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}
@@ -483,7 +492,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .two-col,.three-col{grid-template-columns:1fr}
   .clients-grid{grid-template-columns:repeat(2,1fr)}
-  .mt-header,.mt-row{grid-template-columns:80px 2fr 1fr 1fr 80px}
+  .mt-header,.mt-row{grid-template-columns:minmax(100px,130px) 2fr 1fr 1fr 90px}
   .mt-header span:nth-child(4),.mt-row .mt-cell:nth-child(4),
   .mt-header span:nth-child(6),.mt-row .mt-cell:nth-child(6){display:none}
   .detail-grid{grid-template-columns:1fr 1fr}
@@ -520,11 +529,16 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
   .matter-detail-tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
   .matter-detail-tab{flex-shrink:0}
 
-  /* Matter table — collapse to 3 cols */
-  .mt-header,.mt-row{grid-template-columns:70px 2fr 70px}
-  .mt-header span:nth-child(2),.mt-row .mt-cell:nth-child(2){display:none}
-  .mt-header span:nth-child(3),.mt-row .mt-cell:nth-child(3){display:none}
-  .mt-header span:nth-child(5),.mt-row .mt-cell:nth-child(5){display:none}
+  /* Matter table — collapse to card-style on mobile */
+  .mt-header{display:none}
+  .mt-row{grid-template-columns:1fr;padding:12px 14px;gap:6px;border-bottom:1px solid var(--brd)}
+  .mt-row>.mt-cell:nth-child(1){display:flex;align-items:center;gap:8px;font-size:11px}
+  .mt-row>.mt-cell:nth-child(2){font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mt-row>.mt-cell:nth-child(3){font-size:11px;color:var(--txt3)}
+  .mt-row>.mt-cell:nth-child(4){font-size:11px;color:var(--txt3)}
+  .mt-row>.mt-cell:nth-child(5){display:flex;align-items:center}
+  .mt-row>.mt-cell:nth-child(6){display:none}
+  .mt-row>.mt-cell:nth-child(7){border-top:1px solid var(--brd);padding-top:8px;margin-top:2px}
 
   /* Other-parties table */
   .op-header,.op-row{grid-template-columns:1.5fr 1fr 44px}
@@ -623,6 +637,16 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 </style>
 </head>
 <body>
+<!-- LOADING SPLASH (shown on initial load, hidden once auth resolves) -->
+<div id="loading-splash" style="display:flex;position:fixed;inset:0;background:var(--navy);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+  <div style="font-family:'Playfair Display',serif;font-size:24px;color:#fff;font-weight:500">DKMA</div>
+  <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:2px;text-transform:uppercase">Law Firm Management</div>
+  <div style="margin-top:8px;width:32px;height:3px;background:rgba(255,255,255,0.15);border-radius:2px;overflow:hidden">
+    <div style="height:100%;background:var(--gold);border-radius:2px;animation:splashBar 1.2s ease-in-out infinite"></div>
+  </div>
+  <style>@keyframes splashBar{0%{width:0%;margin-left:0}50%{width:100%;margin-left:0}100%{width:0%;margin-left:100%}}</style>
+</div>
+
 <!-- AUTH SCREEN -->
 <div id="auth-screen" style="display:none;position:fixed;inset:0;background:var(--navy);z-index:9000;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:14px;padding:40px;width:100%;max-width:380px;margin:20px;">
@@ -908,6 +932,39 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
           <div class="card-header"><span class="card-title">Events This Month</span><div style="display:flex;gap:6px;align-items:center"><button id="gcal-sync-btn" class="topbar-btn sec" style="font-size:11px;padding:5px 12px;display:flex;align-items:center;gap:5px" onclick="handleGCalAuth()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg><span id="gcal-btn-label">Connect Google Cal</span></button><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('event')">+ Add Event</button></div></div>
           <div id="cal-events-list"><div class="empty-state"><p>No events this month.</p></div></div>
         </div>
+      </div>
+      <!-- GAZETTED / AD-HOC HOLIDAYS PANEL (admin/head only) -->
+      <div class="card admin-only" id="gazetted-holidays-card" style="margin-top:18px">
+        <div class="card-header">
+          <span class="card-title">📋 Gazetted &amp; Ad-hoc Holidays</span>
+          <div style="font-size:11px;color:var(--txt3)">Announced holidays not in the standard calendar — elections, national mourning, presidential proclamations</div>
+        </div>
+        <!-- Add form -->
+        <div style="padding:16px 20px;border-bottom:1px solid var(--brd);background:var(--cream)">
+          <div style="display:grid;grid-template-columns:1fr 2fr 1fr auto;gap:10px;align-items:end">
+            <div>
+              <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;font-weight:500">Date</div>
+              <input type="date" id="gh-date" class="form-input" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;font-weight:500">Holiday Name</div>
+              <input type="text" id="gh-name" class="form-input" placeholder="e.g. General Election Day, National Day of Mourning…" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none" onkeydown="if(event.key==='Enter')saveGazettedHoliday()"/>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;font-weight:500">Type</div>
+              <select id="gh-type" class="form-input" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+                <option value="gazetted">Gazetted Holiday</option>
+                <option value="election">Election Day</option>
+                <option value="mourning">National Mourning</option>
+                <option value="proclamation">Presidential Proclamation</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <button class="topbar-btn" style="padding:7px 16px;font-size:12px" onclick="saveGazettedHoliday()">+ Add</button>
+          </div>
+        </div>
+        <!-- List -->
+        <div id="gazetted-holidays-list"></div>
       </div>
     </div>
 
@@ -1450,6 +1507,7 @@ function toPortalEmail(email){
 
 // ─── STATE ────────────────────────────────────────────────────────
 let clients=[],matters=[],events=[],invoices=[],timeEntries=[],alerts=[],parties=[];
+let gazettedHolidays=[];   // custom holidays from Supabase — gazetted/ad-hoc
 let currentFilter='all',clientFilter='all';
 let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 let activeClientId=null,activeProfileTab='overview';
@@ -1505,7 +1563,7 @@ function showView(id,el,fromMobile){
   if(content&&window.innerWidth<=640)content.scrollTop=0;
   if(id==='matters')renderMatters();
   if(id==='clients')renderClients();
-  if(id==='calendar')renderCalendar();
+  if(id==='calendar'){renderCalendar();renderGazettedHolidaysList();}
   if(id==='finance')renderFinance();
   if(id==='timesheet')renderTimesheet();
   if(id==='alerts')renderAlerts();
@@ -1682,21 +1740,25 @@ function updateUserUI(){
 
 function roleLabel(r){return{admin:'Administrator',head:'Head of Department',senior:'Senior Associate',associate:'Associate'}[r]||r||'—';}
 
+function hideSplash(){const s=document.getElementById('loading-splash');if(s)s.style.display='none';}
 function showApp(){
   // If the profile requires a password change, show that screen instead of the app
   if(currentProfile&&currentProfile.force_password_change){
     document.getElementById('auth-screen').style.display='flex';
     document.getElementById('app-shell').style.display='none';
     showFirmMode('forcechange');
+    hideSplash();
     return;
   }
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-shell').style.display='flex';
+  hideSplash();
 }
 function showAuthScreen(){
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('app-shell').style.display='none';
   showFirmMode('signin');
+  hideSplash();
 }
 
 async function signIn(){
@@ -1789,7 +1851,7 @@ async function forceChangePassword(){
 
 // ─── LOAD ALL ─────────────────────────────────────────────────────
 async function loadAll(){
-  await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties(),loadInboxMessages(),loadAllProfiles()]);
+  await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties(),loadInboxMessages(),loadAllProfiles(),loadGazettedHolidays()]);
   renderDashboard();updateBadges();
   setupRealtime();
   initBrowserNotifications();
@@ -1803,6 +1865,61 @@ async function loadTimeEntries(){const{data,error}=await sb.from('time_entries')
 async function loadAlerts(){const{data,error}=await sb.from('alerts').select('*').order('created_at',{ascending:false});if(!error)alerts=data||[];}
 async function loadAllProfiles(){const{data}=await sb.from('profiles').select('*').order('full_name');window._allProfiles=data||[];}
 async function loadParties(){const{data,error}=await sb.from('parties').select('*').order('created_at',{ascending:false});if(!error)parties=data||[];}
+async function loadGazettedHolidays(){
+  const{data,error}=await sb.from('gazetted_holidays').select('*').order('date',{ascending:true});
+  if(!error)gazettedHolidays=data||[];
+}
+
+async function saveGazettedHoliday(){
+  const date=(document.getElementById('gh-date').value||'').trim();
+  const name=(document.getElementById('gh-name').value||'').trim();
+  const type=document.getElementById('gh-type').value||'gazetted';
+  if(!date){toast('Please select a date.',true);return;}
+  if(!name){toast('Please enter a holiday name.',true);return;}
+  const{error}=await sb.from('gazetted_holidays').insert([{date,name,type,created_by:currentUser?.id||null}]);
+  if(error){toast('Error saving holiday: '+error.message,true);return;}
+  document.getElementById('gh-name').value='';
+  document.getElementById('gh-date').value='';
+  toast('Holiday added.');
+  await loadGazettedHolidays();
+  renderCalendar();
+  renderGazettedHolidaysList();
+}
+
+async function deleteGazettedHoliday(id,name){
+  if(!confirm('Remove "'+name+'" from the holiday list?'))return;
+  const{error}=await sb.from('gazetted_holidays').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,true);return;}
+  gazettedHolidays=gazettedHolidays.filter(h=>h.id!==id);
+  toast('Holiday removed.');
+  renderCalendar();
+  renderGazettedHolidaysList();
+}
+
+function renderGazettedHolidaysList(){
+  const el=document.getElementById('gazetted-holidays-list');
+  if(!el)return;
+  if(!gazettedHolidays.length){
+    el.innerHTML=`<div class="empty-state" style="padding:24px"><p>No gazetted or ad-hoc holidays added yet. Use the form above to add announced holidays.</p></div>`;
+    return;
+  }
+  const typeLabel={gazetted:'Gazetted',election:'Election Day',mourning:'National Mourning',proclamation:'Presidential Proclamation',other:'Other'};
+  const typeColor={gazetted:'#854F0B',election:'#185FA5',mourning:'#A32D2D',proclamation:'var(--navy)',other:'var(--txt2)'};
+  const typeBg={gazetted:'#FAEEDA',election:'#E6F1FB',mourning:'#FCEBEB',proclamation:'var(--cream2)',other:'var(--cream2)'};
+  el.innerHTML=gazettedHolidays.map(h=>`
+    <div class="upcoming-item" style="align-items:center">
+      <div class="upcoming-date">
+        <div class="upcoming-day">${parseDateLocal(h.date).getDate()}</div>
+        <div class="upcoming-month">${parseDateLocal(h.date).toLocaleString('en',{month:'short'})}</div>
+      </div>
+      <div class="upcoming-body" style="flex:1">
+        <div class="upcoming-title">📋 ${esc(h.name)}</div>
+        <div class="upcoming-sub">${parseDateLocal(h.date).getFullYear()} · <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${typeBg[h.type]||typeBg.other};color:${typeColor[h.type]||typeColor.other};font-weight:500">${typeLabel[h.type]||'Holiday'}</span></div>
+      </div>
+      <button class="op-del" title="Remove holiday" onclick="deleteGazettedHoliday('${h.id}','${esc(h.name)}')" style="flex-shrink:0">×</button>
+    </div>`).join('');
+}
+
 
 // ─── REALTIME ─────────────────────────────────────────────────────
 function setupRealtime(){
@@ -1815,8 +1932,9 @@ function setupRealtime(){
     if(table==='alerts'){await loadAlerts();renderAlerts();renderDashboard();updateBadges();}
     if(table==='parties'){await loadParties();if(activeClientId)renderProfileTab();}
     if(table==='client_messages'){await loadInboxMessages();renderInboxThreadList();if(activeInboxClientId)renderInboxConversation(activeInboxClientId);}
+    if(table==='gazetted_holidays'){await loadGazettedHolidays();renderCalendar();renderGazettedHolidaysList();}
   };
-  ['clients','matters','events','invoices','time_entries','alerts','parties','client_messages'].forEach(table=>{
+  ['clients','matters','events','invoices','time_entries','alerts','parties','client_messages','gazetted_holidays'].forEach(table=>{
     sb.channel('rt-'+table)
       .on('postgres_changes',{event:'*',schema:'public',table},(payload)=>{refresh(table);})
       .subscribe();
@@ -2535,6 +2653,84 @@ function parseDateLocal(dateStr){
   return new Date(y,m-1,d);
 }
 
+// ─── KENYAN PUBLIC HOLIDAYS ───────────────────────────────────────
+// Returns array of {date:'YYYY-MM-DD', name, islamic?, estimated?} for the given year.
+// Easter is computed. Islamic holidays use a gazetted lookup table.
+//
+// ── HOW TO UPDATE ISLAMIC DATES EACH YEAR ────────────────────────
+// When the Kenya Gazette announces Eid ul-Fitr and Eid ul-Adha dates,
+// add/update the entry in ISLAMIC_HOLIDAYS below and remove estimated:true.
+// Source: https://www.kenyalaw.org/kl/index.php?id=4521 (Kenya Gazette)
+// ─────────────────────────────────────────────────────────────────
+const ISLAMIC_HOLIDAYS={
+  2020:{eidFitr:'2020-05-24', eidAdha:'2020-07-31'},
+  2021:{eidFitr:'2021-05-13', eidAdha:'2021-07-20'},
+  2022:{eidFitr:'2022-05-02', eidAdha:'2022-07-09'},
+  2023:{eidFitr:'2023-04-21', eidAdha:'2023-06-28'},
+  2024:{eidFitr:'2024-04-10', eidAdha:'2024-06-16'},
+  2025:{eidFitr:'2025-03-30', eidAdha:'2025-06-06'},
+  // ── Add next year's dates here once gazetted ─────────────────
+  2026:{eidFitr:'2026-03-20', eidAdha:'2026-05-27', estimated:true},
+  2027:{eidFitr:'2027-03-09', eidAdha:'2027-05-16', estimated:true},
+  2028:{eidFitr:'2028-02-26', eidAdha:'2028-05-04', estimated:true},
+};
+
+function getKenyanHolidays(year){
+  const fixed=[
+    {md:'01-01',name:"New Year's Day"},
+    {md:'05-01',name:'Labour Day'},
+    {md:'06-01',name:'Madaraka Day'},
+    {md:'10-10',name:'Huduma Day'},
+    {md:'10-20',name:'Mashujaa Day'},
+    {md:'12-12',name:'Jamhuri Day'},
+    {md:'12-25',name:'Christmas Day'},
+    {md:'12-26',name:'Boxing Day'},
+  ];
+  const holidays=fixed.map(h=>({date:`${year}-${h.md}`,name:h.name}));
+
+  // Easter (Anonymous Gregorian algorithm)
+  function easterDate(y){
+    const a=y%19,b=Math.floor(y/100),c=y%100;
+    const d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25);
+    const g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
+    const i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7;
+    const m=Math.floor((a+11*h+22*l)/451);
+    const month=Math.floor((h+l-7*m+114)/31);
+    const day=((h+l-7*m+114)%31)+1;
+    return new Date(y,month-1,day);
+  }
+  const easter=easterDate(year);
+  function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+  function fmt(d){return d.toISOString().split('T')[0];}
+  holidays.push({date:fmt(addDays(easter,-2)),name:'Good Friday'});
+  holidays.push({date:fmt(addDays(easter,-1)),name:'Holy Saturday'});
+  holidays.push({date:fmt(easter),            name:'Easter Sunday'});
+  holidays.push({date:fmt(addDays(easter, 1)),name:'Easter Monday'});
+
+  // Islamic holidays — gazetted lookup table (updated annually)
+  const islamic=ISLAMIC_HOLIDAYS[year];
+  if(islamic){
+    const est=islamic.estimated===true;
+    if(islamic.eidFitr) holidays.push({date:islamic.eidFitr, name:'Eid ul-Fitr'+(est?' *':''), islamic:true, estimated:est});
+    if(islamic.eidAdha) holidays.push({date:islamic.eidAdha, name:'Eid ul-Adha'+(est?' *':''), islamic:true, estimated:est});
+  }
+
+  // Sunday → Monday observed (fixed/Easter only; Islamic holidays not typically shifted)
+  const result=[];
+  holidays.forEach(h=>{
+    result.push(h);
+    if(!h.islamic){
+      const dow=parseDateLocal(h.date).getDay();
+      if(dow===0){
+        const obs=fmt(addDays(parseDateLocal(h.date),1));
+        if(!result.find(x=>x.date===obs))
+          result.push({date:obs,name:h.name+' (observed)'});
+      }
+    }
+  });
+  return result;
+}
+
 function renderCalendar(){
   const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('cal-month-title').textContent=months[calMonth]+' '+calYear;
@@ -2543,25 +2739,125 @@ function renderCalendar(){
   for(let i=0;i<firstDay;i++){const b=document.createElement('div');g.appendChild(b);}
   const dim=new Date(calYear,calMonth+1,0).getDate();
   const today=new Date();
+
+  // Build event map keyed by day-of-month
   const me={};
   events.forEach(e=>{const d=parseDateLocal(e.event_date);if(d.getFullYear()===calYear&&d.getMonth()===calMonth){const day=d.getDate();if(!me[day])me[day]=[];me[day].push(e);}});
+
+  // Build holiday map for this month — static + gazetted DB holidays merged
+  const allHolidays=getKenyanHolidays(calYear);
+  // Merge in gazetted holidays from DB, tagged so they render distinctly
+  gazettedHolidays.forEach(h=>{
+    if(!allHolidays.find(x=>x.date===h.date&&x.name===h.name))
+      allHolidays.push({date:h.date,name:h.name,gazetted:true,ghType:h.type});
+  });
+  const holidayMap={};
+  allHolidays.forEach(h=>{
+    const hd=parseDateLocal(h.date);
+    if(hd.getFullYear()===calYear&&hd.getMonth()===calMonth){
+      const day=hd.getDate();
+      if(!holidayMap[day])holidayMap[day]=[];
+      holidayMap[day].push(h);
+    }
+  });
+
   for(let d=1;d<=dim;d++){
     const el=document.createElement('div');
     const isT=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
-    el.className='cal-day'+(isT?' today':'');
+    const hols=holidayMap[d]||[];
+    const hasIslamic=hols.some(h=>h.islamic);
+    const allIslamic=hols.length>0&&hols.every(h=>h.islamic);
+    const hasGazetted=hols.some(h=>h.gazetted);
+    const onlyGazetted=hols.length>0&&hols.every(h=>h.gazetted);
+    let holClass='';
+    if(hols.length){
+      if(onlyGazetted) holClass=' holiday-gazetted';
+      else if(allIslamic) holClass=' holiday-islamic';
+      else if(hasIslamic) holClass=' holiday holiday-islamic';
+      else if(hasGazetted) holClass=' holiday holiday-gazetted';
+      else holClass=' holiday';
+    }
+    el.className='cal-day'+(isT?' today':'')+holClass;
     const evs=me[d]||[];
     const dc={'court':'dot-red','client':'dot-navy','deadline':'dot-gold','internal':'dot-navy','adr':'dot-navy'}[evs[0]?.type]||'dot-navy';
-    el.innerHTML=`<div class="cal-day-num">${d}</div>${evs.length?`<div class="cal-dot ${dc}"></div><div class="cal-event-mini">${esc(evs[0].title)}</div>`:''}`;
-    if(evs.length)el.addEventListener('click',()=>evs.length===1?openEventDetail(evs[0].id):openDayEvents(d,evs));
+    let inner=`<div class="cal-day-num">${d}</div>`;
+    if(hols.length){
+      const firstHol=hols[0];
+      const flag=firstHol.gazetted?'📋':firstHol.islamic?'☪️':'🇰🇪';
+      const firstName=firstHol.name.length>13?firstHol.name.slice(0,12)+'…':firstHol.name;
+      inner+=`<div class="cal-holiday-label" title="${esc(hols.map(h=>h.name+(h.estimated?' (est.)':'')).join(', '))}">${flag} ${esc(firstName)}</div>`;
+    }
+    if(evs.length)  inner+=`<div class="cal-dot ${dc}"></div><div class="cal-event-mini">${esc(evs[0].title)}</div>`;
+    el.innerHTML=inner;
+    el.addEventListener('click',()=>{
+      if(hols.length||evs.length){
+        if(evs.length===1&&!hols.length) openEventDetail(evs[0].id);
+        else if(evs.length>1||hols.length) openDayEvents(d,evs,hols);
+      }
+    });
     g.appendChild(el);
   }
+
+  // Sidebar events list — firm events this month
   const meList=events.filter(e=>{const d=parseDateLocal(e.event_date);return d.getFullYear()===calYear&&d.getMonth()===calMonth;});
-  // Sort events by date then time
   meList.sort((a,b)=>{const da=parseDateLocal(a.event_date)-parseDateLocal(b.event_date);if(da!==0)return da;return(a.event_time||'').localeCompare(b.event_time||'');});
+
+  // Holidays this month for the sidebar
+  const holidaysThisMonth=allHolidays.filter(h=>{const hd=parseDateLocal(h.date);return hd.getFullYear()===calYear&&hd.getMonth()===calMonth;});
+  holidaysThisMonth.sort((a,b)=>a.date.localeCompare(b.date));
+
   const listEl=document.getElementById('cal-events-list');
-  if(!meList.length){listEl.innerHTML=emptyState('No events this month.');return;}
   const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal','adr':'tag-client'};
-  listEl.innerHTML=meList.map(e=>{const d=parseDateLocal(e.event_date);return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventDetail('${e.id}')"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span>${gcalAddBtnHtml(e.id)}</div><button class="op-del" title="Delete event" onclick="event.stopPropagation();deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('');
+
+  let html='';
+  // Holidays section — split static vs gazetted for clearer labelling
+  const staticHols=holidaysThisMonth.filter(h=>!h.gazetted);
+  const ghHols=holidaysThisMonth.filter(h=>h.gazetted);
+  const ghTypeLabel={gazetted:'Gazetted',election:'Election Day',mourning:'Natl. Mourning',proclamation:'Proclamation',other:'Ad-hoc'};
+  const ghTypeBg={gazetted:'#FAEEDA',election:'#E6F1FB',mourning:'#FCEBEB',proclamation:'var(--cream2)',other:'#EEEDFE'};
+  const ghTypeColor={gazetted:'#854F0B',election:'#185FA5',mourning:'#A32D2D',proclamation:'var(--navy)',other:'#3C3489'};
+
+  if(staticHols.length){
+    html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd)">🇰🇪 Public Holidays</div>`;
+    html+=staticHols.map(h=>{
+      const hd=parseDateLocal(h.date);
+      const flag=h.islamic?'☪️':'🇰🇪';
+      const tagBg=h.islamic?'#E6F1FB':'#EAF3DE';
+      const tagColor=h.islamic?'#185FA5':'#2D6A4F';
+      return`<div class="upcoming-item" style="opacity:0.85">
+        <div class="upcoming-date"><div class="upcoming-day">${hd.getDate()}</div><div class="upcoming-month">${hd.toLocaleString('en',{month:'short'})}</div></div>
+        <div class="upcoming-body" style="flex:1">
+          <div class="upcoming-title">${esc(h.name)}</div>
+          <div class="upcoming-sub">Public Holiday · Kenya${h.estimated?' · Date subject to moon sighting':''}</div>
+          <span class="upcoming-tag" style="background:${tagBg};color:${tagColor}">${flag} Holiday</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  if(ghHols.length){
+    html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd);${staticHols.length?'border-top:1px solid var(--brd);margin-top:4px':''}">📋 Gazetted &amp; Ad-hoc</div>`;
+    html+=ghHols.map(h=>{
+      const hd=parseDateLocal(h.date);
+      const tl=ghTypeLabel[h.ghType]||'Holiday';
+      const tb=ghTypeBg[h.ghType]||ghTypeBg.other;
+      const tc2=ghTypeColor[h.ghType]||ghTypeColor.other;
+      return`<div class="upcoming-item" style="opacity:0.9">
+        <div class="upcoming-date"><div class="upcoming-day">${hd.getDate()}</div><div class="upcoming-month">${hd.toLocaleString('en',{month:'short'})}</div></div>
+        <div class="upcoming-body" style="flex:1">
+          <div class="upcoming-title">📋 ${esc(h.name)}</div>
+          <div class="upcoming-sub">Gazetted · Kenya</div>
+          <span class="upcoming-tag" style="background:${tb};color:${tc2}">${tl}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  // Firm events section
+  if(meList.length){
+    if(holidaysThisMonth.length) html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd);border-top:1px solid var(--brd);margin-top:4px">Firm Events</div>`;
+    html+=meList.map(e=>{const d=parseDateLocal(e.event_date);return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventDetail('${e.id}')"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div><span class="upcoming-tag ${tc['court']==='tag-court'?tc[e.type]||'tag-internal':tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span>${gcalAddBtnHtml(e.id)}</div><button class="op-del" title="Delete event" onclick="event.stopPropagation();deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('');
+  }
+  if(!html) html=emptyState('No events or holidays this month.');
+  listEl.innerHTML=html;
 }
 
 // ─── FINANCE ──────────────────────────────────────────────────────
@@ -4518,12 +4814,25 @@ function fmtFileSize(b){
 let _activeDetailEventId = null;
 
 
-function openDayEvents(day, evs) {
-  // Show a simple picker if multiple events on same day
-  const names = evs.map((e,i) => (i+1)+'. '+e.title).join('\n');
-  const choice = prompt('Multiple events on this day — enter number to view:\n\n'+names);
-  const idx = parseInt(choice) - 1;
-  if (!isNaN(idx) && evs[idx]) openEventDetail(evs[idx].id);
+function openDayEvents(day, evs, hols=[]) {
+  // Build a combined list for display
+  const items=[];
+  hols.forEach(h=>items.push({type:'holiday',name:h}));
+  evs.forEach((e,i)=>items.push({type:'event',e,idx:i}));
+  if(items.length===1&&items[0].type==='event'){openEventDetail(items[0].e.id);return;}
+  if(items.length===1&&items[0].type==='holiday'){
+    alert('🇰🇪 '+items[0].name+'\n\nPublic Holiday — Kenya');return;
+  }
+  const lines=items.map((it,i)=>
+    it.type==='holiday'?`${i+1}. 🇰🇪 ${it.name} (Holiday)`:`${i+1}. ${it.e.title}`
+  ).join('\n');
+  const choice=prompt('Events on this day — enter number to view:\n\n'+lines);
+  const idx=parseInt(choice)-1;
+  if(!isNaN(idx)&&items[idx]){
+    const it=items[idx];
+    if(it.type==='event')openEventDetail(it.e.id);
+    else alert('🇰🇪 '+it.name+'\n\nPublic Holiday — Kenya');
+  }
 }
 function openEventDetail(eventId) {
   const e = events.find(ev => ev.id === eventId);
@@ -4637,6 +4946,7 @@ async function deleteEventFromDetail() {
     document.getElementById('auth-screen').style.display='flex';
     document.getElementById('app-shell').style.display='none';
     showFirmMode('newpassword');
+    const s=document.getElementById('loading-splash');if(s)s.style.display='none';
     // Clean the hash from the URL bar so a refresh doesn't re-trigger
     history.replaceState(null,'',window.location.pathname+window.location.search);
   }
