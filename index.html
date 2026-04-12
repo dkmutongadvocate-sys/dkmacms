@@ -2444,23 +2444,52 @@ function renderClients(){
   if(!filtered.length){g.innerHTML=emptyState('No clients found.');return;}
   g.innerHTML=filtered.map(c=>{
     const mc=matters.filter(m=>m.client_id===c.id).length;
+    const hasPortal=!!c.user_id;
+    const portalEnabled=hasPortal&&c.portal_enabled!==false;
+    const sosActive=!!c.panic_code;
+    const portalBadge=hasPortal
+      ?(portalEnabled
+        ?'<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:8px;background:#EAF3DE;color:#2D6A4F">● Portal On</span>'
+        :'<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:8px;background:var(--cream2);color:var(--txt3)">● Portal Off</span>')
+      :'<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:var(--cream2);color:var(--txt3)">No Portal</span>';
+    const sosBadge=sosActive
+      ?'<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:8px;background:#FCEBEB;color:#A30000">🆘 SOS On</span>'
+      :'<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:var(--cream2);color:var(--txt3)">SOS Off</span>';
     return`<div class="client-card">
       <div class="cc-top"><div class="cc-av ${avColor(c.name)}">${initials(c.name)}</div>
-      <div><div class="cc-name">${esc(c.name)}</div><div class="cc-since">Since ${fmtDate(c.client_since)}</div></div></div>
+      <div style="flex:1;min-width:0"><div class="cc-name">${esc(c.name)}</div><div class="cc-since">Since ${fmtDate(c.client_since)}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">${portalBadge}${sosBadge}</div>
+      </div></div>
       <div class="cc-meta">
         <div class="cc-meta-item"><div class="cc-meta-label">Type</div><div class="cc-meta-val">${esc(c.type||'—')}</div></div>
         <div class="cc-meta-item"><div class="cc-meta-label">Matters</div><div class="cc-meta-val">${mc}</div></div>
         <div class="cc-meta-item"><div class="cc-meta-label">Phone</div><div class="cc-meta-val" style="font-size:11px">${esc(c.phone||'—')}</div></div>
         <div class="cc-meta-item"><div class="cc-meta-label">Practice</div><div class="cc-meta-val" style="font-size:10px">${esc(c.practice_area||'—')}</div></div>
       </div>
-      <div class="cc-tags"><span class="cc-tag">${esc(c.practice_area||'—')}</span></div>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button class="cc-view-btn" style="flex:1;margin-top:0" onclick="openClientProfile('${c.id}')">View Full Profile →</button>
-        <button class="op-del" style="padding:7px 10px;border-radius:6px;border:1px solid var(--brd);color:var(--navy);font-size:13px" title="Edit client" onclick="openEditClient('${c.id}');event.stopPropagation()" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️</button>
-        <button class="op-del" style="padding:7px 10px;border-radius:6px;border:1px solid var(--brd)" title="Delete client" onclick="deleteClient('${c.id}','${esc(c.name)}',event)">×</button>
+      <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
+        <button class="cc-view-btn" style="flex:1;margin-top:0;min-width:100px" onclick="openClientProfile('${c.id}')">View Profile →</button>
+        ${hasPortal?`<button title="${portalEnabled?'Disable portal access':'Enable portal access'}" onclick="togglePortal('${c.id}','${esc(c.name)}',${portalEnabled},event)" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='none'">${portalEnabled?'🔒':'🔓'}</button>`:''}
+        ${sosActive?`<button title="Deactivate SOS" onclick="deactivateSos('${c.id}','${esc(c.name)}');event.stopPropagation()" style="padding:6px 10px;border-radius:6px;border:1px solid #f5c6c6;background:none;font-size:12px;cursor:pointer;color:#A30000" onmouseover="this.style.background='#FCEBEB'" onmouseout="this.style.background='none'">🆘×</button>`:''}
+        <button class="op-del" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);color:var(--navy);font-size:12px" title="Edit" onclick="openEditClient('${c.id}');event.stopPropagation()" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️</button>
+        <button class="op-del" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd)" title="Delete" onclick="deleteClient('${c.id}','${esc(c.name)}',event)">×</button>
       </div>
     </div>`;
   }).join('');
+}
+
+async function togglePortal(clientId, clientName, currentlyEnabled, event){
+  event.stopPropagation();
+  const enable = !currentlyEnabled;
+  const msg = enable
+    ? `Re-enable portal access for ${clientName}?`
+    : `Disable portal access for ${clientName}?\n\nThey will not be able to log into the client portal until re-enabled.`;
+  if(!confirm(msg))return;
+  const{error}=await sb.from('clients').update({portal_enabled:enable}).eq('id',clientId);
+  if(error){toast('Could not update portal access: '+error.message,true);return;}
+  const cl=clients.find(x=>x.id===clientId);
+  if(cl)cl.portal_enabled=enable;
+  renderClients();
+  toast(enable?`Portal re-enabled for ${clientName}.`:`Portal disabled for ${clientName}.`);
 }
 
 // ─── CLIENT PROFILE ───────────────────────────────────────────────
