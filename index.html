@@ -1624,6 +1624,7 @@ function statusLabel(s){return s?s.charAt(0).toUpperCase()+s.slice(1):'—';}
 function emptyState(msg){return`<div class="empty-state"><p>${msg}</p></div>`;}
 function emptyStateSm(msg){return`<div class="empty-state-sm">${msg}</div>`;}
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function jsStr(s){if(!s)return'';return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");} // escape for JS string in HTML attr
 function fmtDate(d){if(!d)return'—';const dt=new Date(d);return isNaN(dt)?d:dt.toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'});}
 function partyTypePill(role){
   const map={
@@ -2523,7 +2524,7 @@ function renderClients(){
       <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
         <button class="cc-view-btn" style="flex:1;margin-top:0;min-width:100px" onclick="openClientProfile('${c.id}')">View Profile →</button>
         ${hasPortal?`<button title="${portalEnabled?'Disable portal access':'Enable portal access'}" onclick="togglePortal('${c.id}','${esc(c.name)}',${portalEnabled},event)" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='none'">${portalEnabled?'🔒':'🔓'}</button>`:''}
-        ${sosActive?`<button title="Deactivate SOS" onclick="deactivateSos('${c.id}','${esc(c.name)}');event.stopPropagation()" style="padding:6px 10px;border-radius:6px;border:1px solid #f5c6c6;background:none;font-size:12px;cursor:pointer;color:#A30000" onmouseover="this.style.background='#FCEBEB'" onmouseout="this.style.background='none'">🆘×</button>`:''}
+        ${sosActive?`<button title="Deactivate SOS" onclick="deactivateSos('${c.id}','${jsStr(c.name)}');event.stopPropagation()" style="padding:6px 10px;border-radius:6px;border:1px solid #f5c6c6;background:none;font-size:12px;cursor:pointer;color:#A30000" onmouseover="this.style.background='#FCEBEB'" onmouseout="this.style.background='none'">🆘×</button>`:''}
         <button class="op-del" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);color:var(--navy);font-size:12px" title="Edit" onclick="openEditClient('${c.id}');event.stopPropagation()" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️</button>
         <button class="op-del" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd)" title="Delete" onclick="deleteClient('${c.id}','${esc(c.name)}',event)">×</button>
       </div>
@@ -2580,7 +2581,7 @@ function renderProfile(){
         <button class="topbar-btn sec" onclick="openEditClient('${c.id}')">✏️ Edit</button>
         <button class="topbar-btn sec" onclick="openMatterModalForClient('${c.id}')">+ New Matter</button>
         <button class="topbar-btn gold" onclick="openPartyModalForClient('${c.id}')">+ Other Party</button>
-        ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="topbar-btn" style="background:#185FA5" onclick="sendClientNewPassword('${c.id}')">🔑 Send Client Password</button>`:''}${c.sos_enabled?`<button class="topbar-btn" style="background:#2D6A4F" onclick="deactivateSos('${c.id}','${esc(c.name)}')">🆘 SOS Active — Deactivate</button>`:`<button class="topbar-btn" style="background:#A30000" onclick="activateSos('${c.id}','${esc(c.name)}')">🆘 Activate SOS</button>`}
+        ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="topbar-btn" style="background:#185FA5" onclick="sendClientNewPassword('${c.id}')">🔑 Send Client Password</button>`:''}${c.sos_enabled?`<button class="topbar-btn" style="background:#2D6A4F" onclick="deactivateSos('${c.id}','${jsStr(c.name)}')">🆘 SOS Active — Deactivate</button>`:`<button class="topbar-btn" style="background:#A30000" onclick="activateSos('${c.id}','${jsStr(c.name)}')">🆘 Activate SOS</button>`}
       </div>
     </div>`;
 
