@@ -1,35 +1,28 @@
 name: Build & Deploy DKMA App
-
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: true
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
       - name: Debug — verify file and secrets
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           echo "--- Files in root ---"
           ls -la
@@ -37,28 +30,21 @@ jobs:
           grep -o '%%[^%]*%%' index.html | sort | uniq || echo "No placeholders found"
           echo "--- SUPABASE_URL: $([ -z "$SUPABASE_URL" ] && echo MISSING || echo SET)"
           echo "--- SUPABASE_ANON_KEY: $([ -z "$SUPABASE_ANON_KEY" ] && echo MISSING || echo SET)"
-          echo "--- SUPABASE_SERVICE_ROLE_KEY: $([ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && echo MISSING || echo SET)"
-
       - name: Inject Supabase credentials
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           sed -i "s|%%SUPABASE_URL%%|${SUPABASE_URL}|g" index.html
           sed -i "s|%%SUPABASE_ANON_KEY%%|${SUPABASE_ANON_KEY}|g" index.html
-          sed -i "s|%%SUPABASE_SERVICE_ROLE_KEY%%|${SUPABASE_SERVICE_ROLE_KEY}|g" index.html
           echo "--- Post-injection check ---"
           grep -o '%%[^%]*%%' index.html && echo "WARNING: placeholders still present!" || echo "OK — all replaced"
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
