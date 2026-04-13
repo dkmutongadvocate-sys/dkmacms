@@ -1587,12 +1587,28 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 // ─── SUPABASE ─────────────────────────────────────────────────────
 const SUPABASE_URL='%%SUPABASE_URL%%';
 const SUPABASE_KEY='%%SUPABASE_ANON_KEY%%';
-const SERVICE_ROLE_KEY='%%SUPABASE_SERVICE_ROLE_KEY%%';
 if(SUPABASE_URL.includes('%%')||SUPABASE_KEY.includes('%%')){
   document.body.innerHTML='<div style="font-family:sans-serif;padding:40px;text-align:center;color:#a33"><h2>Configuration Error</h2><p style="margin-top:12px;font-size:14px">Supabase credentials were not injected.<br>Ensure GitHub Actions secrets are set and the workflow has run.</p></div>';
   throw new Error('Supabase credentials not injected — placeholders still present.');
 }
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{storageKey:'dkma-cms-session'}});
+
+// ─── ADMIN EDGE FUNCTION HELPER ───────────────────────────────────
+async function callAdminFunction(fnName, body) {
+  const { data: { session } } = await sb.auth.getSession();
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/${fnName}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+      'apikey': SUPABASE_KEY,
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Edge function error');
+  return data;
+}
 
 // ─── PORTAL EMAIL HELPER ──────────────────────────────────────────
 // Clients are stored in Supabase Auth with a +portal alias so their
@@ -3697,55 +3713,17 @@ async function addUser(){
   const btn=document.getElementById('au-btn');
   btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span>Creating…';
 
-  // Use the Supabase Admin REST API to create the user server-side.
-  // This bypasses the "Signups not allowed" restriction (which blocks client-side signUp).
-  // We call the /auth/v1/admin/users endpoint with the service role key.
-  // If SERVICE_ROLE_KEY is not set, fall back to inviteUserByEmail.
+  // Use the admin-create-user Edge Function to create the user server-side.
   let newUserId=null;
 
-  if(typeof SERVICE_ROLE_KEY!=='undefined'&&SERVICE_ROLE_KEY){
-    // Admin API path — requires service role key
-    const res=await fetch(`${SUPABASE_URL}/auth/v1/admin/users`,{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'apikey':SERVICE_ROLE_KEY,
-        'Authorization':'Bearer '+SERVICE_ROLE_KEY
-      },
-      body:JSON.stringify({
-        email,password,
-        email_confirm:true,
-        user_metadata:{full_name:name,role,department:dept||null}
-      })
+  try{
+    const result=await callAdminFunction('admin-create-user',{
+      email, password, full_name: name, role, department: dept||null
     });
-    const resData=await res.json();
-    if(!res.ok){
-      btn.disabled=false;btn.innerHTML='Create User';
-      errEl.textContent='Auth error: '+(resData.message||resData.msg||JSON.stringify(resData));return;
-    }
-    newUserId=resData.id;
-  } else {
-    // Fallback: invite by email. User receives an invite link to set their own password.
-    // Works even when "Enable Signups" is OFF in Supabase dashboard.
-    const{data:inviteData,error:inviteErr}=await sb.auth.admin.inviteUserByEmail(email,{
-      data:{full_name:name,role,department:dept||null}
-    });
-    if(inviteErr){
-      // Last resort: try signUp (works if signups are enabled)
-      const{data:authData,error:authErr}=await sb.auth.signUp({
-        email,password,
-        options:{data:{full_name:name,role,department:dept||null}}
-      });
-      if(authErr){
-        btn.disabled=false;btn.innerHTML='Create User';
-        errEl.textContent='Auth error: '+authErr.message+
-          '. To fix: enable "Allow new users to sign up" in your Supabase dashboard → Authentication → Settings, OR add a SERVICE_ROLE_KEY variable to this app.';
-        return;
-      }
-      newUserId=authData?.user?.id;
-    } else {
-      newUserId=inviteData?.user?.id;
-    }
+    newUserId=result.id;
+  }catch(err){
+    btn.disabled=false;btn.innerHTML='Create User';
+    errEl.textContent='Auth error: '+err.message;return;
   }
 
   // Insert/upsert profile row for the new user
@@ -3760,7 +3738,7 @@ async function addUser(){
   document.getElementById('au-name').value='';
   document.getElementById('au-email').value='';
   document.getElementById('au-password').value='';
-  toast(newUserId?'User created. They can now sign in with their credentials.':'Invite sent to '+email+'. They must click the link to activate their account.');
+  toast('User created. They can now sign in with their credentials.');
   renderTeam();
 }
 
@@ -3873,68 +3851,14 @@ function copySosActivation(code, url, name) {
 async function sendClientNewPassword(clientId){
   const client=clients.find(c=>c.id===clientId);
   if(!client?.email){toast('No email address on file for this client.',true);return;}
-  // Generate a new temporary password
-  const chars='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
-  let newPw='';
-  for(let i=0;i<12;i++)newPw+=chars[Math.floor(Math.random()*chars.length)];
-  if(!confirm(`Set a new temporary password for ${client.name}?\n\nEmail: ${client.email}\nNew password: ${newPw}\n\nNote this password — it will be shown once.`))return;
+  if(!confirm(`Set a new temporary password for ${client.name}?\n\nEmail: ${client.email}\n\nA secure password will be generated. Note it — it will be shown once.`))return;
 
-  if(!SERVICE_ROLE_KEY||SERVICE_ROLE_KEY.includes('%%')){
-    toast('Service role key not configured — cannot reset password securely.',true);
-    return;
+  try{
+    const result=await callAdminFunction('admin-send-client-password',{email:client.email});
+    showNewClientPasswordOverlay(client.name,client.email,result.new_password);
+  }catch(err){
+    toast('Failed to reset password: '+err.message,true);
   }
-
-  // Find the auth user — try portal-aliased email first, then raw email as fallback
-  const portalEmail=toPortalEmail(client.email);
-  const rawEmail=client.email.trim().toLowerCase();
-
-  async function findAuthUser(emailToSearch){
-    const res=await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(emailToSearch)}`,{
-      headers:{'apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY}
-    });
-    if(!res.ok){
-      const e=await res.json().catch(()=>({}));
-      console.error('[findAuthUser] search failed:',e);
-      return null;
-    }
-    const d=await res.json();
-    return d?.users?.[0]||null;
-  }
-
-  let authUser=await findAuthUser(portalEmail);
-  // Fallback: if the account was provisioned on the raw email (no +portal alias)
-  if(!authUser&&rawEmail!==portalEmail){
-    console.warn('[sendClientNewPassword] +portal alias not found, trying raw email:',rawEmail);
-    authUser=await findAuthUser(rawEmail);
-  }
-
-  if(!authUser){
-    toast(`No portal account found for ${portalEmail}. Use "Grant Portal Access" first.`,true);
-    return;
-  }
-
-  // Update password + set must_change_password flag via Admin API
-  const updateRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${authUser.id}`,{
-    method:'PUT',
-    headers:{
-      'Content-Type':'application/json',
-      'apikey':SERVICE_ROLE_KEY,
-      'Authorization':'Bearer '+SERVICE_ROLE_KEY
-    },
-    body:JSON.stringify({
-      password:newPw,
-      email_confirm:true,
-      user_metadata:{...authUser.user_metadata,must_change_password:true}
-    })
-  });
-  if(!updateRes.ok){
-    const err=await updateRes.json().catch(()=>({}));
-    toast('Failed to reset password: '+(err.msg||err.message||err.error||JSON.stringify(err)),true);
-    console.error('[sendClientNewPassword] PUT failed:',err);
-    return;
-  }
-
-  showNewClientPasswordOverlay(client.name,client.email,newPw);
 }
 
 function showNewClientPasswordOverlay(name,email,password){
@@ -4036,29 +3960,20 @@ async function resetTeamMemberPassword(userId,name,e){
   // on that browser — which would let the team member accidentally change the
   // admin's password instead of their own.
   //
-  // Instead, we use the Supabase Admin API (service role key) to set a new
+  // Instead, we use the admin-reset-password Edge Function to set a new
   // temporary password directly. The admin shares it with the user, who can
   // then change it themselves after logging in normally.
-  if(!SERVICE_ROLE_KEY||SERVICE_ROLE_KEY.includes('%%')){
-    toast('Service role key not configured — cannot reset password securely.',true);
-    return;
-  }
   const newPw=prompt(`Set a new temporary password for ${name||'this user'}:\n\nMust be at least 8 characters. You will share this with them directly.`);
   if(!newPw||!newPw.trim()){return;}
   if(newPw.trim().length<8){toast('Password must be at least 8 characters.',true);return;}
   e&&e.stopPropagation();
-  const res=await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`,{
-    method:'PUT',
-    headers:{
-      'Content-Type':'application/json',
-      'apikey':SERVICE_ROLE_KEY,
-      'Authorization':'Bearer '+SERVICE_ROLE_KEY
-    },
-    body:JSON.stringify({password:newPw.trim()})
-  });
-  const data=await res.json();
-  if(!res.ok){
-    toast('Error resetting password: '+(data.message||data.msg||JSON.stringify(data)),true);
+  try{
+    await callAdminFunction('admin-reset-password',{
+      user_id: userId,
+      new_password: newPw.trim()
+    });
+  }catch(err){
+    toast('Error resetting password: '+err.message,true);
     return;
   }
   // Flag this user's profile so they are forced to change password on next login
@@ -4362,47 +4277,14 @@ async function saveClient(){
 
     // Create portal auth account if password provided
     if(portalPassword&&email){
-      const portalEmail=toPortalEmail(email); // e.g. user@domain.com → user+portal@domain.com
-      let portalUserId=null;
-      let portalErr=null;
-      // Use Admin REST API if service role key is available
-      if(typeof SERVICE_ROLE_KEY!=='undefined'&&SERVICE_ROLE_KEY){
-        const res=await fetch(`${SUPABASE_URL}/auth/v1/admin/users`,{
-          method:'POST',
-          headers:{
-            'Content-Type':'application/json',
-            'apikey':SERVICE_ROLE_KEY,
-            'Authorization':'Bearer '+SERVICE_ROLE_KEY
-          },
-          body:JSON.stringify({
-            email:portalEmail,password:portalPassword,
-            email_confirm:true,
-            user_metadata:{full_name:name,role:'client',must_change_password:true}
-          })
+      try{
+        const result=await callAdminFunction('admin-create-client-portal',{
+          client_id: savedClient.id, email, password: portalPassword, full_name: name
         });
-        const rd=await res.json();
-        if(!res.ok){portalErr=rd.message||rd.msg||'Failed to create portal account';}
-        else{portalUserId=rd.id;}
-      } else {
-        // Fallback: standard signUp (requires signups enabled in Supabase dashboard)
-        const{data:authData,error:authErr}=await sb.auth.signUp({
-          email:portalEmail,password:portalPassword,
-          options:{data:{full_name:name,role:'client',must_change_password:true}}
-        });
-        if(authErr){portalErr=authErr.message;}
-        else{portalUserId=authData?.user?.id;}
-      }
-      if(portalErr){
-        toast('Client saved but portal account failed: '+portalErr+
-          '. Fix: enable signups in Supabase dashboard or add SERVICE_ROLE_KEY.',true);
-      } else {
-        // Link auth user to client record
-        if(portalUserId){
-          await sb.from('clients').update({user_id:portalUserId}).eq('id',savedClient.id);
-          savedClient.user_id=portalUserId;
-        }
-        // Show credentials to advocate
+        savedClient.user_id=result.portal_user_id;
         showClientCredentials(name,email,portalPassword);
+      }catch(err){
+        toast('Client saved but portal account failed: '+err.message,true);
       }
     } else {
       toast('Client saved.');
@@ -4652,44 +4534,15 @@ async function updateClient(clientId){
     if(error){toast('Error: '+error.message,true);return;}
     const updatedClient=data[0];
 
-    // If a new portal password was provided, update it via Admin API
+    // If a new portal password was provided, update it via Edge Function
     if(portalPassword&&email){
-      const c=clients.find(x=>x.id===clientId);
-      const portalEmail=toPortalEmail(email);
-      if(SERVICE_ROLE_KEY&&!SERVICE_ROLE_KEY.includes('%%')){
-        // Find existing auth user — try +portal alias first, fallback to raw email
-        async function findAuthUserForUpdate(emailToSearch){
-          const r=await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(emailToSearch)}`,{
-            headers:{'apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY}
-          });
-          const d=await r.json();
-          return d?.users?.[0]||null;
-        }
-        let authUser=await findAuthUserForUpdate(portalEmail);
-        const rawEmailLc=email.trim().toLowerCase();
-        if(!authUser&&portalEmail!==rawEmailLc){
-          authUser=await findAuthUserForUpdate(rawEmailLc);
-        }
-        if(authUser){
-          // Update password on existing account
-          const upRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${authUser.id}`,{
-            method:'PUT',
-            headers:{'Content-Type':'application/json','apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY},
-            body:JSON.stringify({password:portalPassword,email_confirm:true,user_metadata:{...authUser.user_metadata,must_change_password:true}})
-          });
-          if(!upRes.ok){const e=await upRes.json().catch(()=>({}));toast('Portal password update failed: '+(e.msg||e.message||'Unknown error'),true);}
-        } else {
-          // Create new portal account
-          const crRes=await fetch(`${SUPABASE_URL}/auth/v1/admin/users`,{
-            method:'POST',
-            headers:{'Content-Type':'application/json','apikey':SERVICE_ROLE_KEY,'Authorization':'Bearer '+SERVICE_ROLE_KEY},
-            body:JSON.stringify({email:portalEmail,password:portalPassword,email_confirm:true,user_metadata:{full_name:name,role:'client',must_change_password:true}})
-          });
-          if(!crRes.ok){const e=await crRes.json().catch(()=>({}));toast('Portal account creation failed: '+(e.msg||e.message||'Unknown error'),true);}
-        }
+      try{
+        await callAdminFunction('admin-update-client-portal',{
+          client_id: clientId, email, password: portalPassword, full_name: name
+        });
         showClientCredentials(name,email,portalPassword);
-      } else {
-        toast('Client updated. To change portal password, a SERVICE_ROLE_KEY is required.',true);
+      }catch(err){
+        toast('Portal password update failed: '+err.message,true);
       }
     }
 
