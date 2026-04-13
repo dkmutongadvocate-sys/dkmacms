@@ -768,6 +768,10 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1a5 5 0 015 5c0 2.5.5 4 1.5 5H1.5C2.5 10 3 8.5 3 6a5 5 0 015-5zM6 12a2 2 0 004 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       <span>Alerts</span>
       <span class="nav-badge" id="alerts-badge" style="background:#E2443A;color:#fff">0</span>
+    </div>
+    <div class="nav-item" onclick="showView('sos',this)" id="nav-sos">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3.5M8 10.5v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>SOS Alerts</span>
       <span id="panic-nav-badge" style="display:none;background:#A30000;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;animation:panic-nav-pulse 1s ease-in-out infinite">🚨</span>
     </div>
     <div class="nav-item admin-only" onclick="showView('team',this)">
@@ -1035,30 +1039,29 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
     </div>
 
     <!-- ALERTS -->
-    <div class="view" id="view-alerts">
-      <!-- PANIC ALERTS BANNER (shown when unacknowledged panic alerts exist) -->
+    <!-- SOS VIEW — dedicated tab -->
+    <div class="view" id="view-sos">
       <div id="panic-banner" style="display:none;background:#A30000;border-radius:10px;padding:16px 20px;margin-bottom:18px;align-items:center;gap:14px;animation:panic-flash 1.5s ease-in-out infinite">
         <span style="font-size:28px;flex-shrink:0">🚨</span>
         <div style="flex:1">
           <div style="font-family:'Playfair Display',serif;font-size:15px;color:#fff;font-weight:500">CLIENT EMERGENCY ALERT</div>
           <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:2px" id="panic-banner-txt">A client has triggered an emergency alert</div>
         </div>
-        <button onclick="document.querySelector('.view.active #panic-alerts-card').scrollIntoView({behavior:'smooth'})" style="background:rgba(255,255,255,0.2);color:#fff;border:none;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">View ↓</button>
       </div>
       <style>@keyframes panic-flash{0%,100%{box-shadow:0 0 0 0 rgba(163,0,0,0.6)}50%{box-shadow:0 0 0 8px rgba(163,0,0,0)}}</style>
-
-      <!-- PANIC ALERTS CARD -->
-      <div class="card" style="margin-bottom:18px;border-color:#f5c6c6" id="panic-alerts-card">
+      <div class="card" style="border-color:#f5c6c6" id="panic-alerts-card">
         <div class="card-header" style="background:#fff5f5">
           <span class="card-title" style="color:#A30000">🚨 Client Emergency Alerts</span>
           <span id="panic-unack-badge" style="display:none;background:#A30000;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px">0 new</span>
           <button class="card-action" onclick="loadPanicAlerts()" style="margin-left:auto">↻ Refresh</button>
         </div>
         <div id="panic-alerts-list">
-          <div class="empty-state"><p>No emergency alerts. If a client triggers SOS, it will appear here immediately.</p></div>
+          <div class="empty-state"><p>No emergency alerts yet. When a client triggers SOS it will appear here immediately.</p></div>
         </div>
       </div>
+    </div>
 
+    <div class="view" id="view-alerts">
       <div class="two-col">
         <div class="card">
           <div class="card-header"><span class="card-title">Urgent Alerts</span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('alert')">+ Add Alert</button></div>
@@ -1556,6 +1559,11 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       Alerts
       <span class="drawer-badge red" id="di-alerts-badge" style="display:none">0</span>
     </div>
+    <div class="drawer-item" id="di-sos" onclick="showView('sos',null,true);closeDrawer()" style="color:#A30000;font-weight:600">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3.5M8 10.5v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      🆘 SOS Alerts
+      <span class="drawer-badge" id="di-sos-badge" style="display:none;background:#A30000;color:#fff">0</span>
+    </div>
     <div class="drawer-item admin-only" id="di-team" onclick="showView('team',null,true);closeDrawer()">
       <svg viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.209 1.791-4 4-4s4 1.791 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 9c1.657 0 3 1.343 3 3v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></svg>
       Team
@@ -1636,7 +1644,7 @@ function partyTypePill(role){
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────
-const viewTitles={dashboard:'Dashboard',matters:'Matters',clients:'Clients','client-profile':'Client Profile','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox'};
+const viewTitles={dashboard:'Dashboard',sos:'SOS Alerts',matters:'Matters',clients:'Clients','client-profile':'Client Profile','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox'};
 function showView(id,el,fromMobile){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
@@ -1659,7 +1667,8 @@ function showView(id,el,fromMobile){
   if(id==='calendar'){renderCalendar();renderGazettedHolidaysList();}
   if(id==='finance')renderFinance();
   if(id==='timesheet')renderTimesheet();
-  if(id==='alerts'){renderAlerts();loadPanicAlerts();}
+  if(id==='alerts'){renderAlerts();}
+  if(id==='sos'){loadPanicAlerts();}
   if(id==='dashboard')renderDashboard();
   if(id==='team')renderTeam();
   if(id==='inbox'){renderInboxThreadList();}
@@ -1695,7 +1704,7 @@ function syncDrawerUser(name,role,initials){
 
 // Sync drawer badge counts
 function syncMobileBadges(){
-  const map={'matters':{badge:'matters-badge',dest:'di-matters-badge'},'events':{badge:'events-badge',dest:'di-events-badge'},'inbox':{badge:'inbox-badge',dest:'di-inbox-badge'},'alerts':{badge:'alerts-badge',dest:'di-alerts-badge'}};
+  const map={'matters':{badge:'matters-badge',dest:'di-matters-badge'},'events':{badge:'events-badge',dest:'di-events-badge'},'inbox':{badge:'inbox-badge',dest:'di-inbox-badge'},'alerts':{badge:'alerts-badge',dest:'di-alerts-badge'},'sos':{badge:'panic-unack-badge-nav',dest:'di-sos-badge'}};
   Object.values(map).forEach(({badge,dest})=>{
     const src=document.getElementById(badge);
     const d=document.getElementById(dest);
@@ -1977,6 +1986,7 @@ let _panicLastCount=0;
 let _panicPollInterval=null;
 let _panicAudioCtx=null;
 let _panicPollSeededIds=new Set(); // IDs already notified at load — don't re-notify in poll
+let _panicActionInFlight=false; // set during ack/resolve to prevent poll overwriting DOM
 
 async function loadPanicAlerts(){
   const{data,error}=await sb.from('panic_alerts')
@@ -1999,7 +2009,7 @@ async function loadPanicAlerts(){
       fireNotification('🚨 EMERGENCY — '+name,name+' '+(sitL[a.situation]||'triggered SOS')+'!','🚨');
       toast('🚨 EMERGENCY: '+name+' triggered SOS!',true);
       _playAlertSound();
-      if(_activeView()!=='alerts'){
+      if(_activeView()!=='sos'){
         const navEl=document.querySelector('.nav-item[onclick*="alerts"]');
         showView('alerts',navEl);
       }
@@ -2073,21 +2083,36 @@ function renderPanicAlerts(){
 }
 
 async function acknowledgePanic(id){
-  const{error}=await sb.from('panic_alerts').update({acknowledged:true,acknowledged_at:new Date().toISOString()}).eq('id',id);
-  if(error){toast('Error acknowledging alert: '+error.message,true);return;}
+  _panicActionInFlight=true;
+  // Optimistic local update — button disappears immediately
   panicAlerts=panicAlerts.map(a=>a.id===id?{...a,acknowledged:true}:a);
   renderPanicAlerts();
   updatePanicBadge();
+  const{error}=await sb.from('panic_alerts').update({acknowledged:true,acknowledged_at:new Date().toISOString()}).eq('id',id);
+  _panicActionInFlight=false;
+  if(error){
+    // Roll back optimistic update on failure
+    panicAlerts=panicAlerts.map(a=>a.id===id?{...a,acknowledged:false}:a);
+    renderPanicAlerts();updatePanicBadge();
+    toast('Error acknowledging alert: '+error.message,true);return;
+  }
   toast('Alert acknowledged.');
 }
 
 async function resolvePanic(id){
   if(!confirm('Mark this alert as resolved? The client will be able to send a new SOS alert.'))return;
-  const{error}=await sb.from('panic_alerts').update({resolved:true,resolved_at:new Date().toISOString()}).eq('id',id);
-  if(error){toast('Error resolving alert: '+error.message,true);return;}
+  _panicActionInFlight=true;
+  // Optimistic local update
   panicAlerts=panicAlerts.map(a=>a.id===id?{...a,resolved:true,acknowledged:true}:a);
   renderPanicAlerts();
   updatePanicBadge();
+  const{error}=await sb.from('panic_alerts').update({resolved:true,resolved_at:new Date().toISOString()}).eq('id',id);
+  _panicActionInFlight=false;
+  if(error){
+    panicAlerts=panicAlerts.map(a=>a.id===id?{...a,resolved:false}:a);
+    renderPanicAlerts();updatePanicBadge();
+    toast('Error resolving alert: '+error.message,true);return;
+  }
   toast('Alert marked as resolved. Client can now send a new SOS.');
 }
 
@@ -2117,9 +2142,9 @@ function startPanicPolling(){
           // Play alert sound
           _playAlertSound();
           // Auto-switch to alerts view if not already there
-          if(_activeView()!=='alerts'){
-            const navEl=document.querySelector('.nav-item[onclick*="alerts"]');
-            showView('alerts',navEl);
+          if(_activeView()!=='sos'){
+            const navEl=document.querySelector('.nav-item[onclick*="sos"]');
+            showView('sos',navEl);
           }
         });
       }
@@ -5714,15 +5739,35 @@ function updateInboxBadge(){
 
 function renderInboxThreadList(){
   const q=(document.getElementById('inbox-search')||{}).value||'';
-  const filtered=clients.filter(c=>!q||c.name.toLowerCase().includes(q.toLowerCase()));
-  document.getElementById('inbox-client-count').textContent=filtered.length+' client'+(filtered.length!==1?'s':'');
+  // Only show clients who have at least one message (or are currently active)
+  const clientsWithMsgs=clients.filter(c=>{
+    if(c.id===activeInboxClientId)return true; // keep active client visible
+    return inboxMessages.some(m=>m.client_id===c.id);
+  });
+  const filtered=clientsWithMsgs.filter(c=>!q||c.name.toLowerCase().includes(q.toLowerCase()));
+  // Sort: unread first, then by latest message time
+  filtered.sort((a,b)=>{
+    const aUnread=inboxMessages.filter(m=>m.client_id===a.id&&m.sender==='client'&&!m.read_by_firm).length;
+    const bUnread=inboxMessages.filter(m=>m.client_id===b.id&&m.sender==='client'&&!m.read_by_firm).length;
+    if(bUnread!==aUnread)return bUnread-aUnread;
+    const aLast=inboxMessages.filter(m=>m.client_id===a.id).slice(-1)[0]?.created_at||'';
+    const bLast=inboxMessages.filter(m=>m.client_id===b.id).slice(-1)[0]?.created_at||'';
+    return bLast.localeCompare(aLast);
+  });
+  const countEl=document.getElementById('inbox-client-count');
+  if(countEl)countEl.textContent=filtered.length+' conversation'+(filtered.length!==1?'s':'');
   const el=document.getElementById('inbox-thread-list');
-  if(!filtered.length){el.innerHTML='<div class="empty-state-sm">No clients found.</div>';return;}
+  if(!filtered.length){
+    el.innerHTML=q
+      ?'<div class="empty-state-sm">No clients match your search.</div>'
+      :'<div class="empty-state-sm">No messages yet. Clients can message you through the portal.</div>';
+    return;
+  }
   el.innerHTML=filtered.map(c=>{
     const msgs=inboxMessages.filter(m=>m.client_id===c.id);
     const last=msgs[msgs.length-1];
     const unread=msgs.filter(m=>m.sender==='client'&&!m.read_by_firm).length;
-    const preview=last?(last.sender==='firm'?'You: '+last.message:last.message):'No messages yet';
+    const preview=last?(last.sender==='firm'?'You: '+(last.message||''):(last.message||'(file)')):'';
     const time=last?fmtMsgTime(last.created_at):'';
     const active=activeInboxClientId===c.id?'active':'';
     return`<div class="inbox-thread ${active}" onclick="openInboxClient('${c.id}')">
