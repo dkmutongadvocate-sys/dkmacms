@@ -1975,16 +1975,41 @@ let panicAlerts=[];
 let _panicLastCount=0;
 let _panicPollInterval=null;
 let _panicAudioCtx=null;
+let _panicPollSeededIds=new Set(); // IDs already notified at load — don't re-notify in poll
 
 async function loadPanicAlerts(){
   const{data,error}=await sb.from('panic_alerts')
     .select('*')
     .order('triggered_at',{ascending:false})
     .limit(50);
-  if(!error)panicAlerts=data||[];
-  // If any alert references a client not in our local array, reload clients
+  if(error){console.warn('[DKMA] loadPanicAlerts error:',error.message);return;}
+
+  const prevIds=new Set(panicAlerts.map(a=>a.id));
+  panicAlerts=data||[];
+
+  // Fire notifications for unacknowledged alerts not previously seen
+  // (catches alerts that arrived while the tab was closed/reloaded)
+  const newUnack=(data||[]).filter(a=>!prevIds.has(a.id)&&!a.acknowledged);
+  if(newUnack.length){
+    newUnack.forEach(a=>{
+      const c=clients.find(x=>x.id===a.client_id);
+      const name=c?c.name:'A client';
+      const sitL={arrested:'has been arrested',danger:'is in danger',accident:'has had an accident',other:'has an emergency',unspecified:'needs urgent help'};
+      fireNotification('🚨 EMERGENCY — '+name,name+' '+(sitL[a.situation]||'triggered SOS')+'!','🚨');
+      toast('🚨 EMERGENCY: '+name+' triggered SOS!',true);
+      _playAlertSound();
+      if(_activeView()!=='alerts'){
+        const navEl=document.querySelector('.nav-item[onclick*="alerts"]');
+        showView('alerts',navEl);
+      }
+    });
+  }
+
+  // If any alert references a client not in our local array, reload clients then re-render
   const unknownClientIds=(data||[]).filter(a=>!clients.find(x=>x.id===a.client_id)).map(a=>a.client_id);
-  if(unknownClientIds.length){loadClients().then(()=>{renderPanicAlerts();updatePanicBadge();});return;}
+  if(unknownClientIds.length){
+    await loadClients();
+  }
   renderPanicAlerts();
   updatePanicBadge();
 }
@@ -2073,7 +2098,9 @@ function startPanicPolling(){
       const{data}=await sb.from('panic_alerts').select('*').order('triggered_at',{ascending:false}).limit(50);
       if(!data)return;
       const prevIds=new Set(panicAlerts.map(a=>a.id));
-      const newAlerts=data.filter(a=>!prevIds.has(a.id)); // notify on ALL new alerts, even if pre-acknowledged
+      // Exclude alerts already notified at load time to avoid double-notifications
+      const newAlerts=data.filter(a=>!prevIds.has(a.id)&&!_panicPollSeededIds.has(a.id));
+      _panicPollSeededIds=new Set(); // clear after first poll — only suppress on first run
       panicAlerts=data;
       renderPanicAlerts();
       updatePanicBadge();
@@ -2251,6 +2278,9 @@ async function pollAll(){
 }
 
 function setupRealtime(){
+  // Seed panic poll prev IDs from whatever was loaded at startup
+  // so the poll doesn't re-notify for alerts already caught by loadPanicAlerts()
+  _panicPollSeededIds=new Set(panicAlerts.map(a=>a.id));
   // Seed snapshots so first poll doesn't trigger spurious re-renders
   // Seed with latest updated_at timestamps so we don't re-render on first poll
   const _seed=t=>t&&t[0]?t[0].updated_at||t[0].created_at||'':'';
