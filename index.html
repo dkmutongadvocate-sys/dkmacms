@@ -3795,6 +3795,7 @@ async function activateSos(clientId, clientName) {
   // Update local client record so button flips immediately
   const cl = clients.find(x => x.id === clientId);
   if (cl) { cl.panic_code = code; cl.sos_enabled = true; }
+  renderClients(); // refresh grid card immediately
 
   const sosUrl = 'https://dkmutongadvocate-sys.github.io/dkmapanic/';
   const overlay = document.createElement('div');
@@ -3832,7 +3833,8 @@ async function deactivateSos(clientId, clientName) {
   if (error) { toast('Could not deactivate SOS: ' + error.message, true); return; }
   const cl = clients.find(x => x.id === clientId);
   if (cl) { cl.panic_code = null; cl.sos_enabled = false; }
-  openClientProfile(clientId);
+  renderClients();        // refresh grid card badge + deactivate button
+  openClientProfile(clientId); // refresh profile header button
   toast(`SOS deactivated for ${clientName}.`);
 }
 
