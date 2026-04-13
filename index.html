@@ -1982,6 +1982,9 @@ async function loadPanicAlerts(){
     .order('triggered_at',{ascending:false})
     .limit(50);
   if(!error)panicAlerts=data||[];
+  // If any alert references a client not in our local array, reload clients
+  const unknownClientIds=(data||[]).filter(a=>!clients.find(x=>x.id===a.client_id)).map(a=>a.client_id);
+  if(unknownClientIds.length){loadClients().then(()=>{renderPanicAlerts();updatePanicBadge();});return;}
   renderPanicAlerts();
   updatePanicBadge();
 }
@@ -2014,7 +2017,7 @@ function renderPanicAlerts(){
   const sitLabel={arrested:'🚔 Arrested / Detained',danger:'⚠️ In Danger',accident:'🏥 Accident / Injury',other:'❗ Other Emergency',unspecified:'❗ Emergency'};
   el.innerHTML=panicAlerts.map(a=>{
     const c=clients.find(x=>x.id===a.client_id);
-    const name=c?c.name:'Unknown Client';
+    const name=c?c.name:'Unknown Client (reload to refresh)';
     const dt=new Date(a.triggered_at);
     const timeStr=dt.toLocaleString('en-KE',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
     const mapLink=a.maps_link?`<a href="${esc(a.maps_link)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:#185FA5;font-size:11px;font-weight:500;text-decoration:none;margin-top:6px;background:#E6F1FB;padding:4px 10px;border-radius:6px">📍 Open in Maps</a>`:'<span style="font-size:11px;color:var(--txt3)">📍 Location not available</span>';
@@ -2070,7 +2073,7 @@ function startPanicPolling(){
       const{data}=await sb.from('panic_alerts').select('*').order('triggered_at',{ascending:false}).limit(50);
       if(!data)return;
       const prevIds=new Set(panicAlerts.map(a=>a.id));
-      const newAlerts=data.filter(a=>!prevIds.has(a.id)&&!a.acknowledged);
+      const newAlerts=data.filter(a=>!prevIds.has(a.id)); // notify on ALL new alerts, even if pre-acknowledged
       panicAlerts=data;
       renderPanicAlerts();
       updatePanicBadge();
@@ -2092,7 +2095,7 @@ function startPanicPolling(){
           }
         });
       }
-    }catch(e){}
+    }catch(e){console.warn('[DKMA panic poll] Error:',e?.message||e);}
   },4000);
 }
 
@@ -2217,33 +2220,47 @@ async function pollAll(){
       }
     }
 
-    // ── Other tables ──────────────────────────────────────────────
-    const[cC,mC,eC,iC,tC,aC,pC,hC]=await Promise.all([
-      _pollCount('clients'),_pollCount('matters'),_pollCount('events'),
-      _pollCount('invoices'),_pollCount('time_entries'),_pollCount('alerts'),
-      _pollCount('parties'),_pollCount('gazetted_holidays')
-    ]);
+    // ── Other tables — use max(updated_at) so edits/updates are caught too ──
     const view=_activeView();
-    if(cC!==_snap.clients){_snap.clients=cC;await loadClients();if(view==='clients')renderClients();renderDashboard();}
-    if(mC!==_snap.matters){_snap.matters=mC;await loadMatters();if(view==='matters')renderMatters();renderDashboard();updateBadges();if(activeMatterId)renderMatterDetail();}
-    if(eC!==_snap.events){_snap.events=eC;await loadEvents();if(view==='calendar'){renderCalendar();renderGazettedHolidaysList();}renderDashboard();updateBadges();if(activeMatterId)renderMatterDetailTab();}
-    if(iC!==_snap.invoices){_snap.invoices=iC;await loadInvoices();if(view==='finance')renderFinance();renderDashboard();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
-    if(tC!==_snap.time_entries){_snap.time_entries=tC;await loadTimeEntries();if(view==='timesheet')renderTimesheet();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
-    if(aC!==_snap.alerts){_snap.alerts=aC;await loadAlerts();if(view==='alerts')renderAlerts();renderDashboard();updateBadges();}
-    if(pC!==_snap.parties){_snap.parties=pC;await loadParties();if(activeClientId)renderProfileTab();}
+    async function _pollMax(table,col='updated_at'){
+      // Try updated_at first; fall back to created_at if column doesn't exist
+      const{data,error}=await sb.from(table).select(col).order(col,{ascending:false}).limit(1);
+      if(error||!data||!data[0]){
+        if(error&&col==='updated_at'){
+          const{data:d2}=await sb.from(table).select('created_at').order('created_at',{ascending:false}).limit(1);
+          return d2&&d2[0]?d2[0].created_at:'';
+        }
+        return '';
+      }
+      return data[0][col]||'';
+    }
+    const[cT,mT,eT,iT,tT,aT,pT,hC]=await Promise.all([
+      _pollMax('clients'),_pollMax('matters'),_pollMax('events'),
+      _pollMax('invoices'),_pollMax('time_entries'),_pollMax('alerts'),
+      _pollMax('parties'),_pollCount('gazetted_holidays')
+    ]);
+    if(cT!==_snap.clients){_snap.clients=cT;await loadClients();if(view==='clients')renderClients();renderDashboard();}
+    if(mT!==_snap.matters){_snap.matters=mT;await loadMatters();if(view==='matters')renderMatters();renderDashboard();updateBadges();if(activeMatterId)renderMatterDetail();}
+    if(eT!==_snap.events){_snap.events=eT;await loadEvents();if(view==='calendar'){renderCalendar();renderGazettedHolidaysList();}renderDashboard();updateBadges();if(activeMatterId)renderMatterDetailTab();}
+    if(iT!==_snap.invoices){_snap.invoices=iT;await loadInvoices();if(view==='finance')renderFinance();renderDashboard();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
+    if(tT!==_snap.time_entries){_snap.time_entries=tT;await loadTimeEntries();if(view==='timesheet')renderTimesheet();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
+    if(aT!==_snap.alerts){_snap.alerts=aT;await loadAlerts();if(view==='alerts')renderAlerts();renderDashboard();updateBadges();}
+    if(pT!==_snap.parties){_snap.parties=pT;await loadParties();if(activeClientId)renderProfileTab();}
     if(hC!==_snap.holidays){_snap.holidays=hC;await loadGazettedHolidays();if(view==='calendar'){renderCalendar();renderGazettedHolidaysList();}}
-  }catch(e){}
+  }catch(e){console.warn('[DKMA poll] Error:',e?.message||e);}
 }
 
 function setupRealtime(){
   // Seed snapshots so first poll doesn't trigger spurious re-renders
-  _snap.clients=clients.length;
-  _snap.matters=matters.length;
-  _snap.events=events.length;
-  _snap.invoices=invoices.length;
-  _snap.time_entries=timeEntries.length;
-  _snap.alerts=alerts.length;
-  _snap.parties=parties.length;
+  // Seed with latest updated_at timestamps so we don't re-render on first poll
+  const _seed=t=>t&&t[0]?t[0].updated_at||t[0].created_at||'':'';
+  _snap.clients=_seed([...clients].sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||'')));
+  _snap.matters=_seed([...matters].sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||'')));
+  _snap.events=_seed([...events].sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||'')));
+  _snap.invoices=_seed([...invoices].sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||'')));
+  _snap.time_entries=_seed([...timeEntries].sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||'')));
+  _snap.alerts=_seed([...alerts].sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||'')));
+  _snap.parties=_seed([...parties].sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||'')));
   _snap.holidays=gazettedHolidays.length;
   _snap.messages='';
   if(_pollInterval)clearInterval(_pollInterval);
@@ -2353,8 +2370,11 @@ function updateBadges(){
   const me=events.filter(e=>{const d=parseDateLocal(e.event_date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
   document.getElementById('events-badge').textContent=me.length;
   const ca=alerts.filter(a=>a.priority==='critical');
-  document.getElementById('alerts-badge').textContent=ca.length;
-  if(ca.length>0)document.getElementById('notify-dot').style.display='block';
+  const panicUnack=panicAlerts.filter(a=>!a.acknowledged).length;
+  const totalAlertBadge=ca.length+panicUnack;
+  document.getElementById('alerts-badge').textContent=totalAlertBadge;
+  if(totalAlertBadge>0)document.getElementById('notify-dot').style.display='block';
+  else document.getElementById('notify-dot').style.display='none';
   syncMobileBadges();
 }
 
@@ -2967,7 +2987,10 @@ async function registerPeriodicSync(){
   }catch(e){console.warn('[DKMA] Periodic sync failed:',e);}
 }
 
+let _visibilityResumeSetup=false;
 function setupVisibilityResume(){
+  if(_visibilityResumeSetup)return;
+  _visibilityResumeSetup=true;
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible'){
       writeSwConfig();
