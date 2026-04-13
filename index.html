@@ -764,6 +764,11 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <span>Client Inbox</span>
       <span class="nav-badge" id="inbox-badge" style="background:#E2443A;color:#fff;display:none">0</span>
     </div>
+    <div class="nav-item" onclick="showView('staff-inbox',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.4"/><path d="M1 4l7 5 7-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="4" r="2.5" fill="#B8953A" stroke="#fff" stroke-width="0.8"/></svg>
+      <span>Staff Inbox</span>
+      <span class="nav-badge" id="staff-inbox-badge" style="background:#E2443A;color:#fff;display:none">0</span>
+    </div>
     <div class="nav-item" onclick="showView('alerts',this)">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1a5 5 0 015 5c0 2.5.5 4 1.5 5H1.5C2.5 10 3 8.5 3 6a5 5 0 015-5zM6 12a2 2 0 004 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       <span>Alerts</span>
@@ -1059,17 +1064,77 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
           <div class="empty-state"><p>No emergency alerts yet. When a client triggers SOS it will appear here immediately.</p></div>
         </div>
       </div>
+
+      <!-- PTT SPEAK REQUESTS -->
+      <div class="card" style="margin-top:18px;border-color:#d4e8b0">
+        <div class="card-header" style="background:#f4faed">
+          <span class="card-title" style="color:#2D6A4F">📢 Speak Requests (PTT)</span>
+          <span style="font-size:11px;color:var(--txt3);margin-left:10px">Clients requesting a call — not an emergency</span>
+          <button class="card-action" onclick="loadPttRequests()" style="margin-left:auto">↻ Refresh</button>
+        </div>
+        <div id="ptt-requests-list">
+          <div class="empty-state"><p>No speak requests. When a client sends a PTT request it appears here.</p></div>
+        </div>
+      </div>
     </div>
 
     <div class="view" id="view-alerts">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:2px" id="alerts-scope-label"></div>
+        </div>
+        <button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('alert')">+ Add Alert</button>
+      </div>
       <div class="two-col">
         <div class="card">
-          <div class="card-header"><span class="card-title">Urgent Alerts</span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('alert')">+ Add Alert</button></div>
+          <div class="card-header"><span class="card-title">Urgent Alerts</span><span id="urgent-count-badge" style="display:none;background:#E2443A;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;margin-left:8px;font-weight:600">0</span></div>
           <div id="urgent-alerts-list"><div class="empty-state"><p>No urgent alerts.</p></div></div>
         </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Reminders &amp; Notices</span></div>
           <div id="reminders-list"><div class="empty-state"><p>No reminders.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAFF INBOX -->
+    <div class="view" id="view-staff-inbox">
+      <div class="inbox-layout">
+        <!-- LEFT: Thread list -->
+        <div class="inbox-sidebar">
+          <div class="inbox-sidebar-head">
+            <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:500;color:var(--txt)">Staff Inbox</div>
+            <div style="font-size:11px;color:var(--txt3);margin-top:2px" id="staff-inbox-scope-label">Internal messages</div>
+            <div class="inbox-sidebar-search">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="color:var(--txt3);flex-shrink:0"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input placeholder="Search staff…" id="staff-inbox-search" oninput="renderStaffInboxList()"/>
+            </div>
+            <button class="topbar-btn" style="width:100%;margin-top:10px;font-size:11px;padding:6px" onclick="openNewStaffMessageModal()">✉️ New Message</button>
+          </div>
+          <div class="inbox-thread-list" id="staff-inbox-thread-list">
+            <div class="empty-state-sm">Loading…</div>
+          </div>
+        </div>
+        <!-- RIGHT: Conversation -->
+        <div class="inbox-main" id="staff-inbox-main">
+          <div class="inbox-empty-state" id="staff-inbox-placeholder">
+            <div class="inbox-empty-state-icon">👥</div>
+            <div style="font-weight:500;color:var(--txt2);font-family:'Playfair Display',serif;font-size:15px">Select a conversation</div>
+            <div style="font-size:12px;color:var(--txt3);margin-top:6px;text-align:center">Choose a staff thread from the left or start a new message.</div>
+          </div>
+          <div id="staff-inbox-conversation" style="display:none;flex-direction:column;height:100%">
+            <div class="inbox-conv-head" id="staff-inbox-conv-head" style="border-bottom:1px solid var(--brd);padding:14px 20px;background:#fff;display:flex;align-items:center;gap:12px">
+              <div style="flex:1">
+                <div style="font-weight:500;font-size:14px;color:var(--txt)" id="staff-conv-name">—</div>
+                <div style="font-size:11px;color:var(--txt3);margin-top:1px" id="staff-conv-role">—</div>
+              </div>
+            </div>
+            <div class="inbox-messages" id="staff-inbox-messages" style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px"></div>
+            <div class="inbox-compose" style="padding:12px 16px;border-top:1px solid var(--brd);background:#fff;display:flex;gap:10px;align-items:flex-end">
+              <textarea id="staff-reply-input" class="inbox-compose-input" placeholder="Type a message…" rows="1" style="flex:1;border:1px solid var(--brd);border-radius:8px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;resize:none;outline:none;max-height:120px;overflow-y:auto" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendStaffMessage();}"></textarea>
+              <button class="inbox-compose-send" style="background:var(--navy);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap" onclick="sendStaffMessage()">Send</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1316,6 +1381,31 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
         <div class="form-row"><label>Priority</label><select id="al-priority"><option value="critical">Critical (Red)</option><option value="reminder">Reminder (Gold)</option><option value="info">Info (Navy)</option></select></div>
         <div class="form-row"><label>Date</label><input type="date" id="al-date"/></div>
       </div>
+      <div class="form-row">
+        <label>Alert Type</label>
+        <select id="al-type" onchange="toggleAlertTargeting()">
+          <option value="staff">Staff Alert</option>
+          <option value="client">Client Alert</option>
+        </select>
+      </div>
+      <!-- Staff targeting (visible when type=staff) -->
+      <div id="al-staff-target-row" class="form-row">
+        <label>Visible To <span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:3px;margin-left:4px">Role-based</span></label>
+        <select id="al-staff-target">
+          <option value="all">All Staff (Admin only)</option>
+          <option value="dept">My Department</option>
+          <option value="my_associates">My Associates only</option>
+          <option value="myself">Myself only</option>
+        </select>
+        <div style="font-size:10px;color:var(--txt3);margin-top:4px">Admins see all alerts. Dept heads see dept alerts. Senior associates see their associates' alerts.</div>
+      </div>
+      <!-- Client targeting (visible when type=client) -->
+      <div id="al-client-target-row" class="form-row" style="display:none">
+        <label>Target Client</label>
+        <select id="al-client-target">
+          <option value="">All clients</option>
+        </select>
+      </div>
     </div>
     <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" id="save-alert-btn" onclick="saveAlert()">Save Alert</button></div>
   </div>
@@ -1554,6 +1644,11 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       Client Inbox
       <span class="drawer-badge red" id="di-inbox-badge" style="display:none">0</span>
     </div>
+    <div class="drawer-item" id="di-staff-inbox" onclick="showView('staff-inbox',null,true);closeDrawer()">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.4"/><path d="M1 4l7 5 7-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="4" r="2.5" fill="#B8953A" stroke="var(--navy)" stroke-width="0.8"/></svg>
+      Staff Inbox
+      <span class="drawer-badge red" id="di-staff-inbox-badge" style="display:none">0</span>
+    </div>
     <div class="drawer-item" id="di-alerts" onclick="showView('alerts',null,true);closeDrawer()">
       <svg viewBox="0 0 16 16" fill="none"><path d="M8 1a5 5 0 015 5c0 2.5.5 4 1.5 5H1.5C2.5 10 3 8.5 3 6a5 5 0 015-5zM6 12a2 2 0 004 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       Alerts
@@ -1660,7 +1755,7 @@ function partyTypePill(role){
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────
-const viewTitles={dashboard:'Dashboard',sos:'SOS Alerts',matters:'Matters',clients:'Clients','client-profile':'Client Profile','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox'};
+const viewTitles={dashboard:'Dashboard',sos:'SOS Alerts',matters:'Matters',clients:'Clients','client-profile':'Client Profile','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox','staff-inbox':'Staff Inbox'};
 function showView(id,el,fromMobile){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
@@ -1684,10 +1779,15 @@ function showView(id,el,fromMobile){
   if(id==='finance')renderFinance();
   if(id==='timesheet')renderTimesheet();
   if(id==='alerts'){renderAlerts();}
-  if(id==='sos'){loadPanicAlerts();}
+  if(id==='sos'){loadPanicAlerts();loadPttRequests();}
   if(id==='dashboard')renderDashboard();
   if(id==='team')renderTeam();
   if(id==='inbox'){renderInboxThreadList();}
+  if(id==='staff-inbox'){
+    ensureAllProfilesLoaded().then(()=>{
+      loadStaffMessages().then(()=>renderStaffInboxList());
+    });
+  }
 }
 
 // ── DRAWER open/close ─────────────────────────────────────────────
@@ -1720,7 +1820,7 @@ function syncDrawerUser(name,role,initials){
 
 // Sync drawer badge counts
 function syncMobileBadges(){
-  const map={'matters':{badge:'matters-badge',dest:'di-matters-badge'},'events':{badge:'events-badge',dest:'di-events-badge'},'inbox':{badge:'inbox-badge',dest:'di-inbox-badge'},'alerts':{badge:'alerts-badge',dest:'di-alerts-badge'},'sos':{badge:'panic-unack-badge-nav',dest:'di-sos-badge'}};
+  const map={'matters':{badge:'matters-badge',dest:'di-matters-badge'},'events':{badge:'events-badge',dest:'di-events-badge'},'inbox':{badge:'inbox-badge',dest:'di-inbox-badge'},'staff-inbox':{badge:'staff-inbox-badge',dest:'di-staff-inbox-badge'},'alerts':{badge:'alerts-badge',dest:'di-alerts-badge'},'sos':{badge:'panic-unack-badge-nav',dest:'di-sos-badge'}};
   Object.values(map).forEach(({badge,dest})=>{
     const src=document.getElementById(badge);
     const d=document.getElementById(dest);
@@ -1969,7 +2069,7 @@ async function forceChangePassword(){
 
 // ─── LOAD ALL ─────────────────────────────────────────────────────
 async function loadAll(){
-  await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties(),loadInboxMessages(),loadAllProfiles(),loadGazettedHolidays()]);
+  await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties(),loadInboxMessages(),loadAllProfiles(),loadGazettedHolidays(),loadStaffMessages()]);
   await loadPanicAlerts();
   renderDashboard();updateBadges();
   // Update parties badge
@@ -1989,7 +2089,7 @@ async function loadEvents(){const{data,error}=await sb.from('events').select('*'
 async function loadInvoices(){const{data,error}=await sb.from('invoices').select('*').order('created_at',{ascending:false});if(!error)invoices=data||[];}
 async function loadTimeEntries(){const{data,error}=await sb.from('time_entries').select('*').order('entry_date',{ascending:false});if(!error)timeEntries=data||[];}
 async function loadAlerts(){const{data,error}=await sb.from('alerts').select('*').order('created_at',{ascending:false});if(!error)alerts=data||[];}
-async function loadAllProfiles(){const{data}=await sb.from('profiles').select('*').order('full_name');window._allProfiles=data||[];}
+async function loadAllProfiles(){const{data}=await sb.from('profiles').select('*').order('full_name');window._allProfiles=data||[];allProfiles=window._allProfiles;}
 async function loadParties(){const{data,error}=await sb.from('parties').select('*').order('created_at',{ascending:false});if(!error)parties=data||[];}
 async function loadGazettedHolidays(){
   const{data,error}=await sb.from('gazetted_holidays').select('*').order('date',{ascending:true});
@@ -3647,14 +3747,89 @@ function renderTimesheet(){
 }
 
 // ─── ALERTS ───────────────────────────────────────────────────────
+function getVisibleAlerts(){
+  const role=currentProfile?.role||'associate';
+  const dept=currentProfile?.department||null;
+  const uid=currentUser?.id||null;
+  return alerts.filter(a=>{
+    // Client alerts only shown in client-facing view, not staff alerts view
+    if(a.alert_type==='client') return false;
+    // Default old alerts (no alert_type) treated as 'all' staff
+    const target=a.staff_target||'all';
+    const alertDept=a.target_department||null;
+    const createdBy=a.created_by||null;
+    if(role==='admin') return true; // admin sees everything
+    if(target==='all') return true; // broadcast to all staff
+    if(target==='myself') return createdBy===uid;
+    if(target==='dept'||target==='my_associates'){
+      if(!dept||!alertDept) return createdBy===uid;
+      if(role==='head') return alertDept===dept;
+      if(role==='senior') return alertDept===dept; // see dept alerts from head and own
+      return createdBy===uid;
+    }
+    return false;
+  });
+}
+
 function renderAlerts(){
-  const urgent=alerts.filter(a=>a.priority==='critical');
-  const other=alerts.filter(a=>a.priority!=='critical');
+  // Update scope label
+  const role=currentProfile?.role||'associate';
+  const scopeEl=document.getElementById('alerts-scope-label');
+  if(scopeEl){
+    const labels={admin:'Showing all firm alerts',head:'Showing all alerts in your department',senior:'Showing your alerts and broadcasts',associate:'Showing alerts addressed to you'};
+    scopeEl.textContent=labels[role]||'';
+  }
+  const visible=getVisibleAlerts();
+  const urgent=visible.filter(a=>a.priority==='critical');
+  const other=visible.filter(a=>a.priority!=='critical');
   const uEl=document.getElementById('urgent-alerts-list');
   const rEl=document.getElementById('reminders-list');
-  uEl.innerHTML=urgent.length?urgent.map(a=>`<div class="alert-item"><div class="alert-dot red"></div><div style="flex:1"><div class="alert-text">${esc(a.text)}</div><div class="alert-time">Critical · ${fmtDate(a.alert_date)}</div></div><button class="op-del" title="Delete" onclick="deleteAlert('${a.id}',event)">×</button></div>`).join(''):emptyState('No urgent alerts.');
-  rEl.innerHTML=other.length?other.map(a=>{const dc={reminder:'gold',info:'navy'}[a.priority]||'navy';return`<div class="alert-item"><div class="alert-dot ${dc}"></div><div style="flex:1"><div class="alert-text">${esc(a.text)}</div><div class="alert-time">${statusLabel(a.priority)} · ${fmtDate(a.alert_date)}</div></div><button class="op-del" title="Delete" onclick="deleteAlert('${a.id}',event)">×</button></div>`;}).join(''):emptyState('No reminders or notices.');
+  // Urgent count badge
+  const ucBadge=document.getElementById('urgent-count-badge');
+  if(ucBadge){ucBadge.textContent=urgent.length;ucBadge.style.display=urgent.length?'inline':'none';}
+  const makeAlertItem=(a,dotClass)=>{
+    const scopeTag=a.staff_target==='all'?'<span style="font-size:9px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:4px;font-weight:500;margin-left:6px">Firm-wide</span>':
+      a.staff_target==='dept'?`<span style="font-size:9px;background:#EAF3DE;color:#2D6A4F;padding:1px 6px;border-radius:4px;font-weight:500;margin-left:6px">Dept</span>`:'';
+    const creatorTag=a.created_by_name?`<span style="font-size:9px;color:var(--txt3);margin-left:4px">by ${esc(a.created_by_name)}</span>`:'';
+    return`<div class="alert-item"><div class="alert-dot ${dotClass}"></div><div style="flex:1"><div class="alert-text">${esc(a.text)}${scopeTag}</div><div class="alert-time">${statusLabel(a.priority)} · ${fmtDate(a.alert_date)}${creatorTag}</div></div><button class="op-del" title="Delete" onclick="deleteAlert('${a.id}',event)">×</button></div>`;
+  };
+  uEl.innerHTML=urgent.length?urgent.map(a=>makeAlertItem(a,'red')).join(''):emptyState('No urgent alerts visible to you.');
+  rEl.innerHTML=other.length?other.map(a=>{const dc={reminder:'gold',info:'navy'}[a.priority]||'navy';return makeAlertItem(a,dc);}).join(''):emptyState('No reminders or notices.');
 }
+
+// ─── ALERT MODAL HELPERS ──────────────────────────────────────────
+function toggleAlertTargeting(){
+  const t=document.getElementById('al-type')?.value;
+  const staffRow=document.getElementById('al-staff-target-row');
+  const clientRow=document.getElementById('al-client-target-row');
+  if(staffRow)staffRow.style.display=t==='staff'?'':'none';
+  if(clientRow)clientRow.style.display=t==='client'?'':'none';
+}
+
+function populateAlertClientSelect(){
+  const sel=document.getElementById('al-client-target');
+  if(!sel)return;
+  sel.innerHTML='<option value="">All clients</option>'+clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+}
+
+// Restrict staff_target options based on role
+function populateAlertStaffTarget(){
+  const sel=document.getElementById('al-staff-target');
+  if(!sel)return;
+  const role=currentProfile?.role||'associate';
+  sel.innerHTML='';
+  if(role==='admin'){
+    sel.innerHTML='<option value="all">All Staff (firm-wide)</option><option value="dept">Specific Department</option><option value="myself">Myself only</option>';
+  } else if(role==='head'){
+    sel.innerHTML='<option value="dept">My Department</option><option value="myself">Myself only</option>';
+  } else if(role==='senior'){
+    sel.innerHTML='<option value="my_associates">My Associates</option><option value="myself">Myself only</option>';
+  } else {
+    sel.innerHTML='<option value="myself">Myself only</option>';
+  }
+}
+
+
 
 // ─── TEAM ─────────────────────────────────────────────────────────
 async function renderTeam(){
@@ -4014,6 +4189,7 @@ function openModal(type){
   if(type==='time')popTimeModal();
   if(type==='invoice')popInvoiceModal();
   if(type==='event')popEventModal();
+  if(type==='alert'){populateAlertStaffTarget();populateAlertClientSelect();toggleAlertTargeting();}
 }
 function closeModal(){
   // Reset meeting link field
@@ -4398,7 +4574,20 @@ async function saveAlert(){
   const text=document.getElementById('al-text').value.trim();
   if(!text){toast('Please enter alert text.',true);return;}
   setLoading('save-alert-btn',true,'Save Alert');
-  const payload={text,priority:document.getElementById('al-priority').value,alert_date:document.getElementById('al-date').value||null};
+  const alertType=document.getElementById('al-type')?.value||'staff';
+  const staffTarget=document.getElementById('al-staff-target')?.value||'all';
+  const clientTarget=document.getElementById('al-client-target')?.value||null;
+  const payload={
+    text,
+    priority:document.getElementById('al-priority').value,
+    alert_date:document.getElementById('al-date').value||null,
+    alert_type:alertType,
+    staff_target:alertType==='staff'?staffTarget:null,
+    target_client_id:alertType==='client'?clientTarget:null,
+    target_department:alertType==='staff'&&(staffTarget==='dept'||staffTarget==='my_associates')?currentProfile?.department:null,
+    created_by:currentUser?.id||null,
+    created_by_name:currentProfile?.full_name||currentUser?.email||null,
+  };
   const{data,error}=await sb.from('alerts').insert([payload]).select();
   setLoading('save-alert-btn',false,'Save Alert');
   if(error){toast('Error: '+error.message,true);return;}
@@ -5974,6 +6163,273 @@ async function deleteEventFromDetail() {
     history.replaceState(null,'',window.location.pathname+window.location.search);
   }
 })();
+
+// ─── STAFF INBOX ──────────────────────────────────────────────────
+let staffMessages = [];
+let activeStaffThreadUserId = null;
+let allProfiles = [];
+
+async function loadStaffMessages(){
+  if(!currentUser)return;
+  const{data,error}=await sb.from('staff_messages')
+    .select('*')
+    .or(`from_user.eq.${currentUser.id},to_user.eq.${currentUser.id}`)
+    .order('created_at',{ascending:true});
+  if(!error)staffMessages=data||[];
+  updateStaffInboxBadge();
+  if(activeStaffThreadUserId)renderStaffConversation(activeStaffThreadUserId);
+}
+
+function updateStaffInboxBadge(){
+  const unread=staffMessages.filter(m=>m.to_user===currentUser?.id&&!m.read).length;
+  const badge=document.getElementById('staff-inbox-badge');
+  if(badge){badge.textContent=unread;badge.style.display=unread>0?'inline-block':'none';}
+  syncMobileBadges();
+}
+
+async function ensureAllProfilesLoaded(){
+  if(allProfiles.length)return;
+  const{data}=await sb.from('profiles').select('*').order('full_name');
+  allProfiles=data||[];
+  window._allProfiles=allProfiles;
+}
+
+function getStaffThreads(){
+  // Group messages into threads by conversation partner
+  const threads={};
+  staffMessages.forEach(m=>{
+    const partnerId=m.from_user===currentUser?.id?m.to_user:m.from_user;
+    const partnerName=m.from_user===currentUser?.id?m.to_name:m.from_name;
+    if(!threads[partnerId]){threads[partnerId]={userId:partnerId,name:partnerName||'Unknown',messages:[],unread:0};}
+    threads[partnerId].messages.push(m);
+    if(m.to_user===currentUser?.id&&!m.read)threads[partnerId].unread++;
+  });
+  // Sort by last message time
+  return Object.values(threads).sort((a,b)=>{
+    const la=a.messages[a.messages.length-1]?.created_at||'';
+    const lb=b.messages[b.messages.length-1]?.created_at||'';
+    return lb.localeCompare(la);
+  });
+}
+
+function renderStaffInboxList(){
+  const q=(document.getElementById('staff-inbox-search')||{}).value?.toLowerCase()||'';
+  const threads=getStaffThreads().filter(t=>!q||t.name.toLowerCase().includes(q));
+  const el=document.getElementById('staff-inbox-thread-list');
+  if(!el)return;
+  if(!threads.length){
+    el.innerHTML=`<div class="empty-state-sm" style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">No conversations yet.<br>Click "New Message" to start one.</div>`;
+    return;
+  }
+  el.innerHTML=threads.map(t=>{
+    const last=t.messages[t.messages.length-1];
+    const lastText=last?last.body:'';
+    const lastTime=last?fmtRelativeTime(last.created_at):'';
+    const isActive=t.userId===activeStaffThreadUserId;
+    return`<div class="inbox-thread-item${isActive?' active':''}" onclick="openStaffThread('${t.userId}')" style="padding:12px 16px;border-bottom:1px solid var(--brd);cursor:pointer;background:${isActive?'var(--cream)':'#fff'};transition:background 0.12s">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${initials(t.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:12px;font-weight:${t.unread?600:500};color:var(--txt)">${esc(t.name)}</div>
+            <div style="font-size:9px;color:var(--txt3)">${lastTime}</div>
+          </div>
+          <div style="font-size:11px;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">${esc(lastText.slice(0,50))}</div>
+        </div>
+        ${t.unread?`<div style="width:16px;height:16px;background:#E2443A;color:#fff;border-radius:50%;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${t.unread}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fmtRelativeTime(isoStr){
+  if(!isoStr)return'';
+  const now=new Date();const d=new Date(isoStr);
+  const diff=Math.floor((now-d)/1000);
+  if(diff<60)return'just now';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  return d.toLocaleDateString('en-KE',{day:'numeric',month:'short'});
+}
+
+async function openStaffThread(userId){
+  activeStaffThreadUserId=userId;
+  // Mark messages as read
+  const unread=staffMessages.filter(m=>m.from_user===userId&&m.to_user===currentUser?.id&&!m.read);
+  if(unread.length){
+    await sb.from('staff_messages').update({read:true}).in('id',unread.map(m=>m.id));
+    unread.forEach(m=>m.read=true);
+    updateStaffInboxBadge();
+  }
+  renderStaffInboxList();
+  renderStaffConversation(userId);
+  // Show conversation panel
+  const placeholder=document.getElementById('staff-inbox-placeholder');
+  const conv=document.getElementById('staff-inbox-conversation');
+  if(placeholder)placeholder.style.display='none';
+  if(conv){conv.style.display='flex';}
+}
+
+function renderStaffConversation(userId){
+  // Find partner profile
+  const profile=allProfiles.find(p=>p.id===userId);
+  const thread=getStaffThreads().find(t=>t.userId===userId);
+  const name=thread?.name||profile?.full_name||'Staff Member';
+  const role=profile?roleLabel(profile.role)+(profile.department?' · '+profile.department:''):'';
+  const nameEl=document.getElementById('staff-conv-name');
+  const roleEl=document.getElementById('staff-conv-role');
+  if(nameEl)nameEl.textContent=name;
+  if(roleEl)roleEl.textContent=role;
+  const msgs=staffMessages.filter(m=>(m.from_user===userId&&m.to_user===currentUser?.id)||(m.from_user===currentUser?.id&&m.to_user===userId));
+  const msgsEl=document.getElementById('staff-inbox-messages');
+  if(!msgsEl)return;
+  if(!msgs.length){
+    msgsEl.innerHTML=`<div style="text-align:center;color:var(--txt3);font-size:12px;padding:20px">Start the conversation below.</div>`;
+    return;
+  }
+  msgsEl.innerHTML=msgs.map(m=>{
+    const isMe=m.from_user===currentUser?.id;
+    const time=new Date(m.created_at).toLocaleString('en-KE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
+    return`<div style="display:flex;flex-direction:column;align-items:${isMe?'flex-end':'flex-start'};gap:2px">
+      <div style="max-width:72%;padding:9px 13px;border-radius:10px;font-size:12px;line-height:1.6;${isMe?'background:var(--navy);color:#fff;border-top-right-radius:3px':'background:#fff;border:1px solid var(--brd);color:var(--txt);border-top-left-radius:3px'}">${esc(m.body)}</div>
+      <div style="font-size:9px;color:var(--txt3)">${isMe?'You':''}${!isMe?esc(m.from_name||''):''}  · ${time}</div>
+    </div>`;
+  }).join('');
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+
+async function sendStaffMessage(){
+  const input=document.getElementById('staff-reply-input');
+  if(!input)return;
+  const body=input.value.trim();
+  if(!body||!activeStaffThreadUserId)return;
+  const myName=currentProfile?.full_name||currentUser?.email||'—';
+  const toProfile=allProfiles.find(p=>p.id===activeStaffThreadUserId);
+  const toName=toProfile?.full_name||toProfile?.email||'Staff';
+  const{data,error}=await sb.from('staff_messages').insert([{
+    from_user:currentUser.id,to_user:activeStaffThreadUserId,
+    body,read:false,from_name:myName,to_name:toName
+  }]).select().single();
+  if(error){toast('Failed to send: '+error.message,true);return;}
+  staffMessages.push(data);
+  input.value='';
+  renderStaffConversation(activeStaffThreadUserId);
+  renderStaffInboxList();
+}
+
+async function openNewStaffMessageModal(){
+  await ensureAllProfilesLoaded();
+  const others=allProfiles.filter(p=>p.id!==currentUser?.id);
+  const overlay=document.createElement('div');
+  overlay.id='new-staff-msg-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML=`
+    <div style="background:#fff;border-radius:12px;width:100%;max-width:440px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="background:var(--navy);padding:18px 22px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-family:'Playfair Display',serif;font-size:17px;color:#fff;font-weight:500">New Staff Message</div>
+        <button onclick="document.getElementById('new-staff-msg-overlay').remove()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+      </div>
+      <div style="padding:22px;display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;font-weight:500">To</label>
+          <select id="nsm-to" style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none;background:#fff">
+            <option value="">Select staff member…</option>
+            ${others.map(p=>`<option value="${p.id}">${esc(p.full_name||p.email||'Unknown')} — ${roleLabel(p.role)}${p.department?' ('+esc(p.department)+')':''}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;font-weight:500">Message</label>
+          <textarea id="nsm-body" placeholder="Type your message…" style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none;resize:none;min-height:80px;line-height:1.5"></textarea>
+        </div>
+        <div id="nsm-error" style="font-size:12px;color:var(--red);min-height:16px"></div>
+        <div style="display:flex;gap:10px">
+          <button onclick="sendNewStaffMessage()" style="flex:1;background:var(--navy);color:#fff;border:none;padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Send Message</button>
+          <button onclick="document.getElementById('new-staff-msg-overlay').remove()" style="padding:10px 18px;border:1px solid var(--brd);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;background:transparent;color:var(--txt2)">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+}
+
+async function sendNewStaffMessage(){
+  const toId=document.getElementById('nsm-to')?.value;
+  const body=document.getElementById('nsm-body')?.value.trim();
+  const errEl=document.getElementById('nsm-error');
+  if(!toId){if(errEl)errEl.textContent='Please select a recipient.';return;}
+  if(!body){if(errEl)errEl.textContent='Please enter a message.';return;}
+  const myName=currentProfile?.full_name||currentUser?.email||'—';
+  const toProfile=allProfiles.find(p=>p.id===toId);
+  const toName=toProfile?.full_name||toProfile?.email||'Staff';
+  const{data,error}=await sb.from('staff_messages').insert([{
+    from_user:currentUser.id,to_user:toId,
+    body,read:false,from_name:myName,to_name:toName
+  }]).select().single();
+  if(error){if(errEl)errEl.textContent='Failed: '+error.message;return;}
+  document.getElementById('new-staff-msg-overlay')?.remove();
+  staffMessages.push(data);
+  activeStaffThreadUserId=toId;
+  await ensureAllProfilesLoaded();
+  renderStaffInboxList();
+  // Open the conversation
+  const placeholder=document.getElementById('staff-inbox-placeholder');
+  const conv=document.getElementById('staff-inbox-conversation');
+  if(placeholder)placeholder.style.display='none';
+  if(conv)conv.style.display='flex';
+  renderStaffConversation(toId);
+  toast('Message sent to '+toName+' ✓');
+}
+
+// ─── PTT (Push-to-Talk) REQUESTS (SOS Panel) ─────────────────────
+let pttRequests = [];
+
+async function loadPttRequests(){
+  const{data,error}=await sb.from('ptt_requests').select('*').eq('resolved',false).order('created_at',{ascending:false});
+  if(!error)pttRequests=data||[];
+  renderPttRequests();
+}
+
+function renderPttRequests(){
+  const el=document.getElementById('ptt-requests-list');
+  if(!el)return;
+  if(!pttRequests.length){
+    el.innerHTML='<div class="empty-state"><p>No active speak requests. When a client sends a PTT request it appears here.</p></div>';
+    return;
+  }
+  el.innerHTML=pttRequests.map(r=>{
+    const since=fmtRelativeTime(r.created_at);
+    const client=clients.find(c=>c.id===r.client_id);
+    const phone=client?.phone||'';
+    return`<div style="padding:14px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:flex-start;gap:14px;background:${r.acknowledged?'var(--cream)':'#FFF5F5'}">
+      <span style="font-size:22px;flex-shrink:0">${r.acknowledged?'📞':'🔴'}</span>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px;color:var(--txt)">${esc(r.client_name||'Unknown Client')}</div>
+        ${r.note?`<div style="font-size:11px;color:var(--txt2);margin-top:2px;line-height:1.5">"${esc(r.note)}"</div>`:''}
+        <div style="font-size:10px;color:var(--txt3);margin-top:3px">${since} · Wants to speak with the firm</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        ${phone?`<a href="tel:${esc(phone)}" style="font-size:11px;background:var(--green);color:#fff;padding:5px 12px;border-radius:6px;text-decoration:none;text-align:center;font-weight:500">📞 Call</a>`:''}
+        ${!r.acknowledged?`<button onclick="acknowledgePtt('${r.id}')" style="font-size:11px;background:var(--gold);color:var(--navy);border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:500;font-family:'DM Sans',sans-serif">✓ Acknowledge</button>`:''}
+        <button onclick="resolvePtt('${r.id}')" style="font-size:11px;background:var(--cream2);color:var(--txt2);border:1px solid var(--brd);padding:5px 12px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">Resolve</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function acknowledgePtt(id){
+  await sb.from('ptt_requests').update({acknowledged:true}).eq('id',id);
+  const req=pttRequests.find(r=>r.id===id);
+  if(req)req.acknowledged=true;
+  renderPttRequests();
+  toast('PTT request acknowledged.');
+}
+
+async function resolvePtt(id){
+  await sb.from('ptt_requests').update({resolved:true}).eq('id',id);
+  pttRequests=pttRequests.filter(r=>r.id!==id);
+  renderPttRequests();
+  toast('PTT request resolved.');
+}
 
 initAuth();
 </script>
