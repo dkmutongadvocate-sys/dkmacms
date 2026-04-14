@@ -1678,6 +1678,8 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 
 </div><!-- /app-shell -->
 
+<div id="toast" class="toast"></div>
+
 <script>
 // ─── SUPABASE ─────────────────────────────────────────────────────
 const SUPABASE_URL='%%SUPABASE_URL%%';
@@ -1728,6 +1730,7 @@ let inboxMessages=[],inboxFiles=[],activeInboxClientId=null,activeInboxTab='mess
 // ─── TOAST ────────────────────────────────────────────────────────
 function toast(msg,isError=false){
   const t=document.getElementById('toast');
+  if(!t){console.warn('[toast]',msg);return;}
   t.textContent=msg;t.className='toast'+(isError?' error':'');
   void t.offsetWidth;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3000);
@@ -2389,18 +2392,11 @@ async function pollAll(){
       }
     }
 
-    // ── Other tables — use max(updated_at) so edits/updates are caught too ──
+    // ── Other tables — poll by created_at (tables don't all have updated_at) ──
     const view=_activeView();
-    async function _pollMax(table,col='updated_at'){
-      // Try updated_at first; fall back to created_at if column doesn't exist
+    async function _pollMax(table,col='created_at'){
       const{data,error}=await sb.from(table).select(col).order(col,{ascending:false}).limit(1);
-      if(error||!data||!data[0]){
-        if(error&&col==='updated_at'){
-          const{data:d2}=await sb.from(table).select('created_at').order('created_at',{ascending:false}).limit(1);
-          return d2&&d2[0]?d2[0].created_at:'';
-        }
-        return '';
-      }
+      if(error||!data||!data[0])return '';
       return data[0][col]||'';
     }
     const[cT,mT,eT,iT,tT,aT,pT,hC]=await Promise.all([
@@ -4409,23 +4405,16 @@ async function saveMatter(){
     assigned_to:document.getElementById('m-assigned-to')?.value||null,
     department:currentProfile?.department||null,
   };
-  try{
-    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Request timed out. Check RLS policies on the matters table.')),10000));
-    const query=sb.from('matters').insert([payload]).select();
-    const{data,error}=await Promise.race([query,timeout]);
-    setLoading('save-matter-btn',false,'Open Matter');
-    if(error){toast('Error: '+error.message,true);return;}
-    matters=[data[0],...matters];
-    closeModal();toast('Matter opened.');
-    ['m-fileno','m-title','m-fee','m-court','m-notes'].forEach(id=>document.getElementById(id).value='');
-    const _fn=document.getElementById('m-fileno');if(_fn){_fn.readOnly=true;document.getElementById('fileno-auto-badge').style.display='inline';document.getElementById('fileno-override-btn').textContent='✏️ Override';}
-    document.getElementById('m-client').value='';
-    updateBadges();renderMatters();renderDashboard();
-    if(activeClientId&&data[0].client_id===activeClientId)renderProfile();
-  }catch(err){
-    setLoading('save-matter-btn',false,'Open Matter');
-    toast(err.message,true);
-  }
+  const{data,error}=await sb.from('matters').insert([payload]).select();
+  setLoading('save-matter-btn',false,'Open Matter');
+  if(error){toast('Error: '+error.message,true);return;}
+  matters=[data[0],...matters];
+  closeModal();toast('Matter opened.');
+  ['m-fileno','m-title','m-fee','m-court','m-notes'].forEach(id=>document.getElementById(id).value='');
+  const _fn=document.getElementById('m-fileno');if(_fn){_fn.readOnly=true;document.getElementById('fileno-auto-badge').style.display='inline';document.getElementById('fileno-override-btn').textContent='✏️ Override';}
+  document.getElementById('m-client').value='';
+  updateBadges();renderMatters();renderDashboard();
+  if(activeClientId&&data[0].client_id===activeClientId)renderProfile();
 }
 
 async function saveClient(){
