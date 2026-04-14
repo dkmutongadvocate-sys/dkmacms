@@ -1693,17 +1693,27 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{storageKey:'dkma
 // ─── ADMIN EDGE FUNCTION HELPER ───────────────────────────────────
 async function callAdminFunction(fnName, body) {
   const { data: { session } } = await sb.auth.getSession();
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/${fnName}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
-      'apikey': SUPABASE_KEY,
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Edge function error');
+  if (!session) throw new Error('Not authenticated. Please log in again.');
+  let res, data;
+  try {
+    res = await fetch(`${SUPABASE_URL}/functions/v1/${fnName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_KEY,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch(networkErr) {
+    throw new Error('Network error reaching Edge Function: ' + networkErr.message);
+  }
+  try { data = await res.json(); } catch(e) { data = {}; }
+  if (!res.ok) {
+    // Surface the actual server-side error message for easier debugging
+    const msg = data?.error || data?.message || data?.msg || `Edge function error (HTTP ${res.status})`;
+    throw new Error(msg);
+  }
   return data;
 }
 
@@ -4019,26 +4029,59 @@ function copySosActivation(code, url, name) {
 }
 
 // ─── SEND CLIENT NEW PASSWORD ─────────────────────────────────────
+function generateSecurePassword(len=12){
+  const chars='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
+  let pw='';
+  const arr=new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  arr.forEach(b=>pw+=chars[b%chars.length]);
+  return pw;
+}
+
 async function sendClientNewPassword(clientId){
   const client=clients.find(c=>c.id===clientId);
   if(!client?.email){toast('No email address on file for this client.',true);return;}
   if(!confirm(`Set a new temporary password for ${client.name}?\n\nEmail: ${client.email}\n\nA secure password will be generated. Note it — it will be shown once.`))return;
 
+  // Try the admin Edge Function first; if it fails, fall back to resetPasswordForEmail
   try{
-    const result=await callAdminFunction('admin-send-client-password',{email:client.email});
-    showNewClientPasswordOverlay(client.name,client.email,result.new_password);
+    const result=await callAdminFunction('admin-send-client-password',{email:client.email,client_id:clientId});
+    if(result?.new_password){
+      showNewClientPasswordOverlay(client.name,client.email,result.new_password);
+      return;
+    }
+  }catch(edgeErr){
+    console.warn('[DKMA] admin-send-client-password failed:',edgeErr.message,'. Falling back to reset email.');
+  }
+
+  // Fallback: send a standard Supabase password reset email to the portal alias
+  try{
+    const portalEmail=toPortalEmail(client.email);
+    const{error}=await sb.auth.resetPasswordForEmail(portalEmail,{
+      redirectTo:'https://dkmutongadvocate-sys.github.io/dkmaclient/'
+    });
+    if(error){
+      // Last resort: show a locally-generated password the admin can set manually
+      const localPw=generateSecurePassword();
+      showNewClientPasswordOverlay(client.name,client.email,localPw,true);
+      toast('Reset email could not be sent. A temporary password has been generated — set it manually via Supabase.',true);
+      return;
+    }
+    toast(`Password reset email sent to ${client.email} ✓`);
   }catch(err){
     toast('Failed to reset password: '+err.message,true);
   }
 }
 
-function showNewClientPasswordOverlay(name,email,password){
+function showNewClientPasswordOverlay(name,email,password,isLocalOnly=false){
   const overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px';
+  const warningBanner=isLocalOnly?`<div style="background:#FCEBEB;border:1px solid #f5c6c6;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#A32D2D;line-height:1.5">⚠️ <strong>Action required:</strong> This password was generated locally and has NOT been set in Supabase yet. Go to your Supabase dashboard → Authentication → Users and manually update the password for <strong>${esc(email)}</strong>.</div>`:'';
   overlay.innerHTML=`
     <div style="background:#fff;border-radius:12px;padding:32px;max-width:460px;width:100%;border:0.5px solid var(--brd)">
       <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--txt);margin-bottom:6px">🔑 New Client Password</div>
-      <div style="font-size:13px;color:var(--txt3);margin-bottom:20px;line-height:1.6">Share these temporary credentials with <strong>${esc(name)}</strong>. They will be prompted to set a new password when they first log in.</div>
+      <div style="font-size:13px;color:var(--txt3);margin-bottom:16px;line-height:1.6">Share these temporary credentials with <strong>${esc(name)}</strong>. They will be prompted to set a new password when they first log in.</div>
+      ${warningBanner}
       <div style="background:var(--cream);border-radius:8px;padding:14px 18px;margin-bottom:12px;border:1px solid var(--brd)">
         <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Portal URL</div>
         <div style="font-size:12px;font-weight:500;color:var(--navy);font-family:monospace">https://dkmutongadvocate-sys.github.io/dkmaclient/</div>
@@ -4050,7 +4093,7 @@ function showNewClientPasswordOverlay(name,email,password){
       <div style="background:#FFF8E7;border-radius:8px;padding:14px 18px;margin-bottom:24px;border:1px solid #E8D5A0">
         <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">New Temporary Password</div>
         <div style="font-size:20px;font-weight:600;color:var(--navy);font-family:monospace;letter-spacing:1px">${esc(password)}</div>
-        <div style="font-size:10px;color:var(--txt3);margin-top:6px">Client will be forced to set a new password on first login.</div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:6px">Client will be prompted to set a new password on first login.</div>
       </div>
       <div style="display:flex;gap:10px">
         <button onclick="navigator.clipboard.writeText('Portal: https://dkmutongadvocate-sys.github.io/dkmaclient/\\nEmail: ${esc(email)}\\nPassword: ${esc(password)}').then(()=>toast('Copied ✓'))" style="flex:1;background:var(--navy);color:#fff;border:none;padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">📋 Copy Credentials</button>
@@ -4058,7 +4101,7 @@ function showNewClientPasswordOverlay(name,email,password){
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  toast('Password reset email sent to '+email+' ✓');
+  if(!isLocalOnly) toast('Password reset for '+email+' ✓');
 }
 
 async function resetClientPortalPassword(clientId){
