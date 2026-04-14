@@ -4409,16 +4409,23 @@ async function saveMatter(){
     assigned_to:document.getElementById('m-assigned-to')?.value||null,
     department:currentProfile?.department||null,
   };
-  const{data,error}=await sb.from('matters').insert([payload]).select();
-  setLoading('save-matter-btn',false,'Open Matter');
-  if(error){toast('Error: '+error.message,true);return;}
-  matters=[data[0],...matters];
-  closeModal();toast('Matter opened.');
-  ['m-fileno','m-title','m-fee','m-court','m-notes'].forEach(id=>document.getElementById(id).value='');
-  const _fn=document.getElementById('m-fileno');if(_fn){_fn.readOnly=true;document.getElementById('fileno-auto-badge').style.display='inline';document.getElementById('fileno-override-btn').textContent='✏️ Override';}
-  document.getElementById('m-client').value='';
-  updateBadges();renderMatters();renderDashboard();
-  if(activeClientId&&data[0].client_id===activeClientId)renderProfile();
+  try{
+    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Request timed out. Check RLS policies on the matters table.')),10000));
+    const query=sb.from('matters').insert([payload]).select();
+    const{data,error}=await Promise.race([query,timeout]);
+    setLoading('save-matter-btn',false,'Open Matter');
+    if(error){toast('Error: '+error.message,true);return;}
+    matters=[data[0],...matters];
+    closeModal();toast('Matter opened.');
+    ['m-fileno','m-title','m-fee','m-court','m-notes'].forEach(id=>document.getElementById(id).value='');
+    const _fn=document.getElementById('m-fileno');if(_fn){_fn.readOnly=true;document.getElementById('fileno-auto-badge').style.display='inline';document.getElementById('fileno-override-btn').textContent='✏️ Override';}
+    document.getElementById('m-client').value='';
+    updateBadges();renderMatters();renderDashboard();
+    if(activeClientId&&data[0].client_id===activeClientId)renderProfile();
+  }catch(err){
+    setLoading('save-matter-btn',false,'Open Matter');
+    toast(err.message,true);
+  }
 }
 
 async function saveClient(){
