@@ -1797,9 +1797,9 @@ function showView(id,el,fromMobile){
   if(id==='team')renderTeam();
   if(id==='inbox'){renderInboxThreadList();}
   if(id==='staff-inbox'){
-    ensureAllProfilesLoaded().then(()=>{
-      loadStaffMessages().then(()=>renderStaffInboxList());
-    });
+    const listEl=document.getElementById('staff-inbox-thread-list');
+    if(listEl&&!staffMessages.length)listEl.innerHTML='<div class="empty-state-sm" style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">Loading…</div>';
+    Promise.all([ensureAllProfilesLoaded(),loadStaffMessages()]).then(()=>renderStaffInboxList());
   }
 }
 
