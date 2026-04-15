@@ -4230,7 +4230,7 @@ function openModal(type){
     return;
   }
   document.getElementById('modal-overlay').classList.remove('hidden');
-  ['matter','client','party','time','invoice','event','alert','document'].forEach(t=>{
+  ['matter','client','party','time','invoice','event','alert','document','email-doc'].forEach(t=>{
     document.getElementById('modal-'+t).style.display=t===type?'block':'none';
   });
   const today=new Date().toISOString().split('T')[0];
@@ -5036,7 +5036,7 @@ function renderDocumentsCard(){
         <div class="doc-actions">
           <button class="doc-btn view-btn" onclick="viewDocument('${safeName}','${safeDisplay}')">👁 View</button>
           <button class="doc-btn" onclick="downloadDocument('${safeName}')">⬇</button>
-          <button class="doc-btn" onclick="openEmailDocModal('${safeName}','${safeDisplay}')" title="Email to client" style="color:#185FA5;border-color:#185FA5">📧</button>
+          <button class="doc-btn" onclick="openEmailDocModal('${safeName}','${safeDisplay}')" title="Email document" style="color:#185FA5;border-color:#185FA5">📧</button>
           <button class="doc-btn ${doc.name.startsWith('shared__')?'share-active':'share-off'}" title="${doc.name.startsWith('shared__')?'Visible to client — click to hide':'Hidden from client — click to share'}" onclick="toggleShareWithClient('${safeName}','${safeDisplay}',this)" style="${doc.name.startsWith('shared__')?'color:var(--green);border-color:var(--green)':'color:var(--txt3)'}">${doc.name.startsWith('shared__')?'👁 Client':'🔒 Hidden'}</button>
           <button class="doc-btn del" onclick="deleteDocument('${safeName}','${safeDisplay}')">✕</button>
         </div>
