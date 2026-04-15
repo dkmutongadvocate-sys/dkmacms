@@ -4004,8 +4004,8 @@ async function activateSos(clientId, clientName) {
         <div style="font-size:12px;font-weight:500;color:var(--navy);font-family:monospace;word-break:break-all">${sosUrl}</div>
       </div>
       <div style="display:flex;gap:10px">
-        <button onclick="copySosActivation('${code}','${sosUrl}','${esc(clientName)}')" style="flex:1;background:#A30000;color:#fff;border:none;padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">📋 Copy to Share</button>
-        <button onclick="this.closest('div[style*=fixed]').remove();openClientProfile('${clientId}')" style="flex:1;background:var(--cream);color:var(--txt2);border:1px solid var(--brd);padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Done</button>
+        <button data-code="${code}" data-url="${sosUrl}" data-name="${esc(clientName)}" onclick="copySosActivation(this.dataset.code,this.dataset.url,this.dataset.name)" style="flex:1;background:#A30000;color:#fff;border:none;padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">📋 Copy to Share</button>
+        <button data-clientid="${clientId}" onclick="this.closest('div[style*=fixed]').remove();openClientProfile(this.dataset.clientid)" style="flex:1;background:var(--cream);color:var(--txt2);border:1px solid var(--brd);padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Done</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
