@@ -1480,7 +1480,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
   <!-- EMAIL DOCUMENT MODAL -->
   <div class="modal" id="modal-email-doc" style="display:none;max-width:500px">
     <div class="modal-head">
-      <span class="modal-title">📧 Email Document to Client</span>
+      <span class="modal-title">📧 Email Document</span>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <div class="modal-body">
@@ -1492,8 +1492,21 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
         </div>
       </div>
       <div class="form-row">
+        <label>Send To</label>
+        <select id="email-doc-recipient-type" onchange="onEmailDocRecipientChange()" style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:8px 11px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+          <option value="client">Client</option>
+          <option value="party">Other Party</option>
+          <option value="custom">Custom Recipient</option>
+        </select>
+      </div>
+      <div id="email-doc-party-row" class="form-row" style="display:none">
+        <label>Select Party</label>
+        <select id="email-doc-party-select" onchange="onEmailDocPartySelect()" style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:8px 11px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+        </select>
+      </div>
+      <div class="form-row">
         <label>Recipient Email</label>
-        <input id="email-doc-to" type="email" placeholder="client@email.com"/>
+        <input id="email-doc-to" type="email" placeholder="recipient@email.com"/>
       </div>
       <div class="form-row">
         <label>Recipient Name</label>
@@ -1514,8 +1527,6 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <button class="btn-primary" id="email-doc-btn" onclick="sendDocumentEmail()">📧 Send Document</button>
     </div>
   </div>
-
-</div><!-- /modal-overlay -->
 
 <!-- ADD USER MODAL (Admin only) -->
 <div class="modal-overlay hidden" id="adduser-overlay" onclick="if(event.target.id==='adduser-overlay')closeAdduserModal()">
@@ -5727,26 +5738,74 @@ function closeDocViewer() {
 const SUPABASE_URL_EDGE=SUPABASE_URL; // reuse injected URL
 
 function openEmailDocModal(storageName, displayName){
-  // Pre-fill client email/name from current matter
   const matter=matters.find(m=>m.id===activeMatterId);
   const client=matter?clients.find(c=>c.id===matter.client_id):null;
+  const matterParties=parties.filter(p=>p.matter_id===activeMatterId&&(p.email||p.name));
+
   document.getElementById('email-doc-filename').textContent=displayName;
-  // Set icon based on extension
   const ext=(displayName.split('.').pop()||'').toLowerCase();
   const iconMap={pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',jpg:'🖼️',jpeg:'🖼️',png:'🖼️'};
   document.getElementById('email-doc-icon').textContent=iconMap[ext]||'📎';
+
+  // Reset recipient type to client
+  const typeEl=document.getElementById('email-doc-recipient-type');
+  typeEl.value='client';
+
+  // Populate party dropdown
+  const partySelect=document.getElementById('email-doc-party-select');
+  partySelect.innerHTML=matterParties.length
+    ?matterParties.map(p=>`<option value="${p.id}" data-email="${p.email||''}" data-name="${p.name||''}">${p.name||'Unnamed'}${p.role?' ('+p.role+')':''}${p.email?' — '+p.email:' — no email'}</option>`).join('')
+    :'<option value="">No parties with contact info on this matter</option>';
+  document.getElementById('email-doc-party-row').style.display='none';
+
+  // Pre-fill with client
   document.getElementById('email-doc-to').value=client?.email||'';
   document.getElementById('email-doc-toname').value=client?.name||'';
+  document.getElementById('email-doc-to').readOnly=false;
+  document.getElementById('email-doc-toname').readOnly=false;
+
   const matterTitle=matter?matter.title:'Document';
   document.getElementById('email-doc-subject').value=`Document from Dennis Kimani Mutonga Advocate — ${matterTitle}`;
   document.getElementById('email-doc-message').value='';
   document.getElementById('email-doc-status').textContent='';
   document.getElementById('email-doc-status').style.color='var(--txt3)';
-  // Store storage name for sending
   document.getElementById('modal-email-doc').dataset.storageName=storageName;
   document.getElementById('modal-email-doc').dataset.displayName=displayName;
   openModal('email-doc');
 }
+
+function onEmailDocRecipientChange(){
+  const type=document.getElementById('email-doc-recipient-type').value;
+  const matter=matters.find(m=>m.id===activeMatterId);
+  const client=matter?clients.find(c=>c.id===matter.client_id):null;
+  const partyRow=document.getElementById('email-doc-party-row');
+  const toEl=document.getElementById('email-doc-to');
+  const nameEl=document.getElementById('email-doc-toname');
+
+  if(type==='client'){
+    partyRow.style.display='none';
+    toEl.value=client?.email||'';
+    nameEl.value=client?.name||'';
+    toEl.readOnly=false;nameEl.readOnly=false;
+  } else if(type==='party'){
+    partyRow.style.display='';
+    onEmailDocPartySelect();
+  } else {
+    partyRow.style.display='none';
+    toEl.value='';nameEl.value='';
+    toEl.readOnly=false;nameEl.readOnly=false;
+    toEl.focus();
+  }
+}
+
+function onEmailDocPartySelect(){
+  const sel=document.getElementById('email-doc-party-select');
+  const opt=sel.options[sel.selectedIndex];
+  if(!opt)return;
+  document.getElementById('email-doc-to').value=opt.dataset.email||'';
+  document.getElementById('email-doc-toname').value=opt.dataset.name||'';
+}
+
 
 async function sendDocumentEmail(){
   const modal=document.getElementById('modal-email-doc');
