@@ -5825,6 +5825,8 @@ async function sendDocumentEmail(){
   statusEl.style.color='var(--txt3)';
   statusEl.textContent='Fetching document and sending…';
 
+  const htmlBody=buildDocumentEmailHtml(toName,displayName,message);
+
   try{
     const{data:{session}}=await sb.auth.getSession();
     const res=await fetch(`${SUPABASE_URL_EDGE}/functions/v1/send-document`,{
@@ -5840,7 +5842,8 @@ async function sendDocumentEmail(){
         toEmail,
         toName,
         subject:subject||`Document from Dennis Kimani Mutonga Advocate`,
-        message
+        message,
+        htmlBody
       })
     });
     const data=await res.json();
@@ -5859,6 +5862,94 @@ async function sendDocumentEmail(){
     statusEl.style.color='var(--red)';
     statusEl.textContent='Error: '+e.message;
   }
+}
+
+function buildDocumentEmailHtml(toName, fileName, personalMessage){
+  const msgBlock = personalMessage
+    ? `<p style="margin:0 0 18px 0;font-size:14px;line-height:1.6;color:#212121;">${personalMessage.replace(/\n/g,'<br>')}</p>`
+    : '';
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);max-width:600px;width:100%;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#0a1628;padding:24px 32px;text-align:left;">
+            <span style="font-family:'Georgia',serif;font-size:20px;color:#c9a84c;font-weight:bold;letter-spacing:1px;">DKMA</span>
+            <span style="font-size:12px;color:#8899aa;margin-left:12px;">Dennis Kimani Mutonga, Advocate</span>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:32px 32px 24px 32px;">
+            <p style="margin:0 0 16px 0;font-size:15px;color:#212121;">Dear ${toName},</p>
+            ${msgBlock}
+            <p style="margin:0 0 20px 0;font-size:14px;line-height:1.6;color:#212121;">Please find attached the document: <strong>${fileName}</strong></p>
+            <p style="margin:0 0 8px 0;font-size:13px;color:#555555;">If you have any questions regarding this document, please do not hesitate to contact us.</p>
+          </td>
+        </tr>
+
+        <!-- Divider -->
+        <tr><td style="padding:0 32px;"><hr style="border:none;border-top:1px solid #e8e8e8;margin:0;"></td></tr>
+
+        <!-- Signature -->
+        <tr>
+          <td style="padding:24px 32px 16px 32px;">
+            <p style="margin:0 0 4px 0;font-size:13px;font-weight:bold;color:#212121;">Client Services</p>
+            <p style="margin:0 0 12px 0;font-size:12px;color:#555555;">Support Services | Dennis Kimani Mutonga, Advocate</p>
+            <p style="margin:0;font-size:12px;color:#212121;line-height:1.8;">
+              📍 Kazilife Workspace, Room 201, Greenwood Plaza, Kikuyu-Nderi Road, Kikuyu, Nairobi, Kenya<br>
+              📬 P.O. BOX <a href="tel:+17063800400" style="color:#479ef5;text-decoration:none;">70638-00400</a> Nairobi, Kenya<br>
+              📞 <a href="tel:+254757354379" style="color:#479ef5;text-decoration:none;">+254 757 354 379</a><br>
+              🌐 <a href="https://www.dkma.co.ke/" style="color:#479ef5;text-decoration:none;">www.dkma.co.ke</a><br>
+              ✉ <a href="mailto:info@dkma.co.ke" style="color:#479ef5;text-decoration:none;">info@dkma.co.ke</a> / <a href="mailto:service@dkma.co.ke" style="color:#479ef5;text-decoration:none;">service@dkma.co.ke</a>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Social Icons -->
+        <tr>
+          <td style="padding:8px 32px 20px 32px;">
+            <a href="https://www.facebook.com/dkmutongadv/" style="text-decoration:none;margin-right:10px;display:inline-block;">
+              <img src="https://cdn-icons-png.flaticon.com/32/733/733547.png" width="28" height="28" alt="Facebook" style="border-radius:4px;">
+            </a>
+            <a href="https://twitter.com/dkmadv" style="text-decoration:none;margin-right:10px;display:inline-block;">
+              <img src="https://cdn-icons-png.flaticon.com/32/5968/5968830.png" width="28" height="28" alt="Twitter" style="border-radius:4px;">
+            </a>
+            <a href="https://instagram.com/dkmadv" style="text-decoration:none;margin-right:10px;display:inline-block;">
+              <img src="https://cdn-icons-png.flaticon.com/32/2111/2111463.png" width="28" height="28" alt="Instagram" style="border-radius:4px;">
+            </a>
+            <a href="https://www.tiktok.com/@dkmadv" style="text-decoration:none;margin-right:10px;display:inline-block;">
+              <img src="https://cdn-icons-png.flaticon.com/32/3116/3116491.png" width="28" height="28" alt="TikTok" style="border-radius:4px;">
+            </a>
+            <a href="https://www.linkedin.com/company/dkmutongadvocate/" style="text-decoration:none;margin-right:10px;display:inline-block;">
+              <img src="https://cdn-icons-png.flaticon.com/32/733/733561.png" width="28" height="28" alt="LinkedIn" style="border-radius:4px;">
+            </a>
+            <a href="https://www.youtube.com/@dkmadv" style="text-decoration:none;display:inline-block;">
+              <img src="https://cdn-icons-png.flaticon.com/32/1384/1384060.png" width="28" height="28" alt="YouTube" style="border-radius:4px;">
+            </a>
+          </td>
+        </tr>
+
+        <!-- Disclaimer -->
+        <tr>
+          <td style="background:#f9f9f9;padding:16px 32px;border-top:1px solid #e8e8e8;">
+            <p style="margin:0;font-size:11px;color:#888888;line-height:1.6;font-style:italic;">
+              ⚖️ This email and any attachments are confidential and may be legally privileged. If you are not the intended recipient, please notify us immediately and delete this message. Any unauthorized use, disclosure, or copying is prohibited.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 }
 
 // ─── CLIENT INBOX ─────────────────────────────────────────────────
