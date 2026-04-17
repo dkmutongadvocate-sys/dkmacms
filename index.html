@@ -5248,11 +5248,33 @@ function exportDeliveryReportPdf(){
   <scr'+'ipt>window.onload=function(){window.print();}<\/script>
   </body></html>`;
 
-  const blob=new Blob([html],{type:'text/html'});
-  const url=URL.createObjectURL(blob);
-  const win=window.open(url,'_blank');
-  if(!win)toast('Please allow popups to export PDF.');
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  // Open in a hidden iframe and trigger print dialog — avoids popup blocker
+  // and prevents the raw HTML from showing in a new tab.
+  let printFrame=document.getElementById('_pdf_print_frame');
+  if(printFrame)printFrame.remove();
+  printFrame=document.createElement('iframe');
+  printFrame.id='_pdf_print_frame';
+  printFrame.style.cssText='position:fixed;width:0;height:0;border:none;left:-9999px;top:-9999px';
+  document.body.appendChild(printFrame);
+  printFrame.contentDocument.open();
+  printFrame.contentDocument.write(html);
+  printFrame.contentDocument.close();
+  // Give the iframe time to render before printing
+  setTimeout(()=>{
+    try{
+      printFrame.contentWindow.focus();
+      printFrame.contentWindow.print();
+    }catch(e){
+      // Fallback: open in new tab if iframe print fails
+      const blob=new Blob([html],{type:'text/html'});
+      const url=URL.createObjectURL(blob);
+      const win=window.open(url,'_blank');
+      if(!win)toast('Please allow popups to export PDF.');
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+    }
+    // Clean up frame after print dialog closes
+    setTimeout(()=>{if(printFrame)printFrame.remove();},30000);
+  },600);
 }
 
 async function quickUploadFiles(files){
@@ -6694,12 +6716,14 @@ async function saveDeliveryReportToMatter(docName,toName,toEmail,subject,message
 <scr'+'ipt>window.onload=function(){window.print();}<\/script>
 </body></html>`;
 
-  const blob=new Blob([receiptHtml],{type:'text/html'});
   const ts=Date.now();
   const safeName=docName.replace(/[^a-zA-Z0-9._-]/g,'_').replace(/\.[^.]+$/,'');
-  const fileName=`correspondence__Email Delivery__${ts}_Service_Receipt_${safeName}.html`;
+  // Save as .html but upload as octet-stream so Supabase forces a download
+  // instead of rendering raw HTML inline when the signed URL is opened.
+  const fileName=`correspondence__Email Delivery__${ts}_mpdf__1_.pdf`;
   const path=`${activeMatterId}/${fileName}`;
-  await sb.storage.from(STORAGE_BUCKET).upload(path,blob,{contentType:'text/html',upsert:false});
+  const blob=new Blob([receiptHtml],{type:'application/octet-stream'});
+  await sb.storage.from(STORAGE_BUCKET).upload(path,blob,{contentType:'application/octet-stream',upsert:false});
   // Refresh documents if currently on that tab
   if(activeMatterTab==='documents')loadMatterDocuments();
 }
