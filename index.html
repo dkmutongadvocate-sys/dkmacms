@@ -6431,19 +6431,39 @@ async function viewDocument(storageName, displayName) {
   } else if (ext === 'pdf') {
     body.innerHTML = `<iframe src="${url}" style="width:100%;height:76vh;border:none;display:block"></iframe>`;
   } else if (isReceiptHtml) {
-    // Receipt files are HTML — they cannot be embedded as PDFs.
-    // Open in new tab; the auto-print script inside triggers the Save-as-PDF dialog.
+    // Receipt files are HTML — fetch content and render locally so print works correctly.
     body.innerHTML = `<div class="doc-viewer-nopreview" style="gap:16px">
       <div style="font-size:44px">📬</div>
       <div style="font-weight:600;color:var(--txt);font-size:15px">${esc(displayName)}</div>
       <div style="font-size:12px;color:var(--txt3);max-width:320px;text-align:center;line-height:1.6">
         This is an Email Service Receipt.<br>
-        Click below to open it — the print dialog will appear automatically so you can <strong>Save as PDF</strong>.
+        Click below to open a print-ready preview so you can <strong>Save as PDF</strong>.
       </div>
-      <button onclick="window.open('${url}','_blank')" style="margin-top:4px;background:var(--navy);color:#fff;border:none;padding:10px 22px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">
-        Open &amp; Save as PDF
+      <button id="receipt-print-btn" style="margin-top:4px;background:var(--navy);color:#fff;border:none;padding:10px 22px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">
+        🖨 Open &amp; Save as PDF
       </button>
     </div>`;
+    document.getElementById('receipt-print-btn').onclick = async () => {
+      try {
+        const resp = await fetch(url);
+        let html = await resp.text();
+        // Remove the auto-print script so user controls when to print
+        html = html.replace(/<scr[^>]*>window\.onload[^<]*<\/script>/gi, '');
+        const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+        const blobUrl = URL.createObjectURL(blob);
+        const win = window.open(blobUrl, '_blank');
+        if (win) {
+          win.addEventListener('load', () => {
+            setTimeout(() => { win.print(); URL.revokeObjectURL(blobUrl); }, 400);
+          });
+        } else {
+          // Fallback: open blob URL directly (user triggers print manually)
+          window.open(blobUrl, '_blank');
+        }
+      } catch(e) {
+        toast('Could not load receipt: ' + e.message, true);
+      }
+    };
   } else {
     body.innerHTML = `<div class="doc-viewer-nopreview">
       <div style="font-size:36px;margin-bottom:16px">📄</div>
@@ -6723,7 +6743,6 @@ async function saveDeliveryReportToMatter(docName,toName,toEmail,subject,message
   <span>DKMA Law Firm Management System &nbsp;|&nbsp; Confidential — For internal use only</span>
   <span>Auto-generated: ${longDate}</span>
 </div>
-<scr'+'ipt>window.onload=function(){window.print();}<\/script>
 </body></html>`;
 
   // Save as .html with correct contentType.
