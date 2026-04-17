@@ -5127,66 +5127,123 @@ async function loadEmailDeliveryLog(){
 function exportDeliveryReportPdf(){
   const reports=window._deliveryReports||[];
   const matter=matters.find(m=>m.id===activeMatterId);
-  const matterTitle=matter?(matter.title+(matter.file_number?' ('+matter.file_number+')':'')):'Matter';
+  const matterTitle=matter?matter.title:'Matter';
+  const fileNo=matter?.file_number||'';
   const generatedOn=new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
 
-  const rows=reports.map((r,i)=>{
-    const sentDate=r.sent_at?new Date(r.sent_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
-    const bg=i%2===0?'#ffffff':'#f8f5f0';
-    return`<tr style="background:${bg}">
-      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;color:#1a1a1a;font-weight:500">${esc(r.document_name||'—')}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;color:#1a1a1a">${esc(r.recipient_name||r.recipient_email||'—')}<br><span style="color:#8a8a8a;font-size:10px">${esc(r.recipient_email||'')}</span></td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;color:#1a1a1a">${esc(r.subject||'—')}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;color:#5a5a5a">${sentDate}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;color:#5a5a5a">${esc(r.sent_by||'—')}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;text-align:center"><span style="background:#EAF3DE;color:#2D6A4F;font-size:9px;padding:2px 8px;border-radius:8px;font-weight:600">✓ ${esc(r.status||'delivered')}</span></td>
-    </tr>`;
+  // Build one detailed card per email
+  const emailCards=reports.map((r,i)=>{
+    const sentDate=r.sent_at?new Date(r.sent_at).toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
+    const msgHtml=r.message
+      ?`<tr><td class="lbl">Message Body</td><td class="val msg">${esc(r.message).replace(/\n/g,'<br>')}</td></tr>`
+      :'';
+    return`<div class="email-card" style="page-break-inside:avoid;margin-bottom:28px;border:1px solid #c8c2b8;border-radius:8px;overflow:hidden">
+      <div style="background:#0D1B2A;padding:10px 16px;display:flex;align-items:center;justify-content:space-between">
+        <span style="color:#B8953A;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;font-family:sans-serif">Email ${i+1} of ${reports.length}</span>
+        <span style="background:#2D6A4F;color:#fff;font-size:9px;padding:2px 10px;border-radius:8px;font-weight:700;font-family:sans-serif">&#10003; ${esc((r.status||'DELIVERED').toUpperCase())}</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px">
+        <tr><td class="lbl">Document Sent</td><td class="val" style="font-weight:600">${esc(r.document_name||'—')}</td></tr>
+        <tr><td class="lbl">Subject</td><td class="val">${esc(r.subject||'—')}</td></tr>
+        <tr><td class="lbl">From</td><td class="val">Dennis Kimani Mutonga Advocate (DKMA) &lt;noreply@dkma.co.ke&gt;<br><span style="color:#666;font-size:10px">Sent by: ${esc(r.sent_by||'—')}</span></td></tr>
+        <tr><td class="lbl">To (Recipient)</td><td class="val"><strong>${esc(r.recipient_name||'—')}</strong><br><span style="color:#444">${esc(r.recipient_email||'—')}</span></td></tr>
+        <tr><td class="lbl">Date &amp; Time Sent</td><td class="val" style="font-weight:600">${sentDate}</td></tr>
+        <tr><td class="lbl">Delivery Status</td><td class="val"><span style="color:#2D6A4F;font-weight:700">&#10003; Delivered Successfully</span></td></tr>
+        ${msgHtml}
+      </table>
+    </div>`;
   }).join('');
 
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"/>
   <title>Email Delivery Report — ${esc(matterTitle)}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Georgia',serif;background:#fff;color:#1a1a1a;padding:40px 48px}
-    .hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #0D1B2A}
-    .firm{font-size:11px;color:#5a5a5a;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px}
-    .report-title{font-size:22px;font-weight:700;color:#0D1B2A;letter-spacing:-0.3px}
-    .matter-name{font-size:13px;color:#5a5a5a;margin-top:4px}
-    .meta{text-align:right;font-size:11px;color:#8a8a8a;line-height:1.6}
-    .summary{display:flex;gap:18px;margin-bottom:28px}
-    .sum-box{flex:1;background:#f8f5f0;border-radius:8px;padding:14px 18px;border:0.5px solid #d9d4cb}
-    .sum-label{font-size:9px;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-family:sans-serif}
-    .sum-val{font-size:20px;font-weight:700;color:#0D1B2A}
-    table{width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
-    thead{background:#0D1B2A;color:#fff}
-    thead th{padding:10px 12px;font-size:10px;text-align:left;letter-spacing:0.5px;text-transform:uppercase;font-family:sans-serif;font-weight:500}
-    tbody tr:last-child td{border-bottom:none}
-    .footer{margin-top:32px;padding-top:14px;border-top:1px solid #d9d4cb;font-size:10px;color:#8a8a8a;display:flex;justify-content:space-between;font-family:sans-serif}
-    @media print{body{padding:28px 32px}.hdr{margin-bottom:24px}}
+    @page{size:A4;margin:22mm 18mm 22mm 18mm}
+    body{font-family:'Georgia',serif;background:#fff;color:#1a1a1a;font-size:12px;line-height:1.5}
+    /* ── LETTERHEAD ── */
+    .letterhead{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14px;border-bottom:3px solid #0D1B2A;margin-bottom:6px}
+    .firm-name{font-size:15px;font-weight:700;color:#0D1B2A;letter-spacing:0.3px;text-transform:uppercase}
+    .firm-sub{font-size:9px;color:#6a6a6a;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;font-family:sans-serif}
+    .lh-right{text-align:right;font-size:9px;color:#8a8a8a;font-family:sans-serif;line-height:1.7}
+    .doc-title-bar{background:#0D1B2A;color:#fff;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+    .doc-title-bar h1{font-size:16px;font-weight:700;letter-spacing:0.3px}
+    .doc-title-bar .matter{font-size:11px;color:#B8953A;margin-top:3px}
+    .doc-title-bar .genon{font-size:9px;color:rgba(255,255,255,0.5);text-align:right;font-family:sans-serif;line-height:1.7}
+    /* ── SUMMARY ── */
+    .summary{display:flex;gap:12px;margin-bottom:22px}
+    .sum-box{flex:1;border:1px solid #d9d4cb;border-radius:6px;padding:12px 14px;text-align:center}
+    .sum-label{font-size:8px;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.7px;font-family:sans-serif;margin-bottom:4px}
+    .sum-val{font-size:22px;font-weight:700;color:#0D1B2A}
+    /* ── COURT NOTICE ── */
+    .court-notice{border:1px solid #B8953A;background:#FFFBF2;border-radius:6px;padding:10px 14px;margin-bottom:22px;font-size:10px;color:#4a3800;font-family:sans-serif;line-height:1.6}
+    .court-notice strong{font-size:10.5px;display:block;margin-bottom:2px;color:#2a2000}
+    /* ── EMAIL CARDS ── */
+    .email-card table td{vertical-align:top;border-bottom:1px solid #ede9e2}
+    .email-card table tr:last-child td{border-bottom:none}
+    td.lbl{width:145px;padding:8px 14px;background:#f5f2ed;color:#5a5a5a;font-size:10px;text-transform:uppercase;letter-spacing:0.4px;font-family:sans-serif;font-weight:600;white-space:nowrap}
+    td.val{padding:8px 14px;color:#1a1a1a;font-size:11.5px}
+    td.val.msg{font-family:sans-serif;font-size:11px;color:#333;background:#fafafa}
+    /* ── FOOTER ── */
+    .doc-footer{margin-top:28px;padding-top:12px;border-top:2px solid #0D1B2A;display:flex;align-items:flex-start;justify-content:space-between;font-size:9px;color:#8a8a8a;font-family:sans-serif}
+    .cert-block{border:1px solid #c8c2b8;border-radius:6px;padding:12px 16px;margin-top:22px;font-size:10px;font-family:sans-serif;line-height:1.7;color:#333}
+    .cert-block .cert-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#0D1B2A;margin-bottom:6px}
+    .sig-line{border-top:1px solid #999;width:220px;margin-top:28px;padding-top:4px;font-size:9.5px;color:#555;font-family:sans-serif}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   </style></head><body>
-  <div class="hdr">
+  <!-- LETTERHEAD -->
+  <div class="letterhead">
     <div>
-      <div class="firm">Dennis Kimani Mutonga Advocate — DKMA</div>
-      <div class="report-title">📬 Email Delivery Report</div>
-      <div class="matter-name">${esc(matterTitle)}</div>
+      <div class="firm-name">Dennis Kimani Mutonga</div>
+      <div class="firm-sub">Advocate of the High Court of Kenya &nbsp;|&nbsp; DKMA</div>
     </div>
-    <div class="meta">Generated: ${generatedOn}<br>Total emails: ${reports.length}</div>
+    <div class="lh-right">
+      P.O. Box — Nairobi, Kenya<br>
+      www.dkma.co.ke
+    </div>
   </div>
+
+  <!-- TITLE BAR -->
+  <div class="doc-title-bar">
+    <div>
+      <h1>Email Delivery Report</h1>
+      <div class="matter">${esc(matterTitle)}${fileNo?' &nbsp;|&nbsp; File No: '+esc(fileNo):''}</div>
+    </div>
+    <div class="genon">Generated: ${generatedOn}<br>Total Emails: ${reports.length}</div>
+  </div>
+
+  <!-- SUMMARY -->
   <div class="summary">
     <div class="sum-box"><div class="sum-label">Emails Sent</div><div class="sum-val">${reports.length}</div></div>
     <div class="sum-box"><div class="sum-label">Delivered</div><div class="sum-val" style="color:#2D6A4F">${reports.filter(r=>(r.status||'delivered')==='delivered').length}</div></div>
     <div class="sum-box"><div class="sum-label">Recipients</div><div class="sum-val">${[...new Set(reports.map(r=>r.recipient_email).filter(Boolean))].length}</div></div>
-    <div class="sum-box"><div class="sum-label">Sent By</div><div class="sum-val" style="font-size:13px;padding-top:4px">${[...new Set(reports.map(r=>r.sent_by).filter(Boolean))].join(', ')||'—'}</div></div>
+    <div class="sum-box"><div class="sum-label">Sent By</div><div class="sum-val" style="font-size:11px;padding-top:6px;line-height:1.4">${[...new Set(reports.map(r=>r.sent_by).filter(Boolean))].join(', ')||'—'}</div></div>
   </div>
-  <table>
-    <thead><tr>
-      <th>Document</th><th>Recipient</th><th>Subject</th><th>Sent At</th><th>Sent By</th><th style="text-align:center">Status</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <div class="footer">
-    <span>DKMA Law Firm Management System</span>
-    <span>Confidential — For internal use only</span>
+
+  <!-- COURT USE NOTICE -->
+  <div class="court-notice">
+    <strong>Notice — Evidence of Electronic Service</strong>
+    This document constitutes a record of electronic service generated by the DKMA Law Firm Management System.
+    Each entry below reflects a document transmitted via email to the stated recipient at the recorded date and time.
+    This report may be produced as evidence of service in judicial or quasi-judicial proceedings.
+  </div>
+
+  <!-- PER-EMAIL DETAIL CARDS -->
+  ${emailCards}
+
+  <!-- CERTIFICATION -->
+  <div class="cert-block">
+    <div class="cert-title">Certificate of Electronic Service</div>
+    I, the undersigned, hereby certify that on the dates and times recorded above, the documents listed were duly transmitted by electronic mail to the named recipients from the DKMA Law Firm Management System. The delivery status of each transmission is recorded as confirmed above.
+    <br><br>
+    Signed at Nairobi on: ${generatedOn}
+    <br><br>
+    <div class="sig-line">Dennis Kimani Mutonga<br>Advocate of the High Court of Kenya</div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="doc-footer">
+    <span>DKMA Law Firm Management System &nbsp;|&nbsp; Confidential — For internal use only</span>
+    <span>Report generated: ${generatedOn}</span>
   </div>
   <scr'+'ipt>window.onload=function(){window.print();}<\/script>
   </body></html>`;
@@ -6524,47 +6581,125 @@ async function saveDeliveryReportToMatter(docName,toName,toEmail,subject,message
   if(!activeMatterId)return;
   const matter=matters.find(m=>m.id===activeMatterId);
   const now=new Date();
-  const dateStr=now.toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
-  const timeStr=now.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
-  const reportText=[
-    '═══════════════════════════════════════════════════════════',
-    '           DKMA — EMAIL DELIVERY REPORT',
-    '═══════════════════════════════════════════════════════════',
-    '',
-    'Matter       : '+(matter?.title||'—'),
-    'File No.     : '+(matter?.file_number||'—'),
-    'Date Sent    : '+dateStr+' at '+timeStr,
-    'Sent By      : '+senderName,
-    '',
-    '───────────────────────────────────────────────────────────',
-    'DOCUMENT TRANSMITTED',
-    '───────────────────────────────────────────────────────────',
-    'Document     : '+docName,
-    'Subject      : '+subject,
-    '',
-    '───────────────────────────────────────────────────────────',
-    'RECIPIENT',
-    '───────────────────────────────────────────────────────────',
-    'Name         : '+toName,
-    'Email        : '+toEmail,
-    '',
-    message?('───────────────────────────────────────────────────────────\nMESSAGE ACCOMPANYING DOCUMENT\n───────────────────────────────────────────────────────────\n'+message+'\n'):'',
-    '───────────────────────────────────────────────────────────',
-    'DELIVERY STATUS : SENT SUCCESSFULLY',
-    '───────────────────────────────────────────────────────────',
-    '',
-    'This is an automatically generated delivery record.',
-    'Dennis Kimani Mutonga Advocates',
-    'www.dkma.co.ke',
-    '═══════════════════════════════════════════════════════════',
-  ].join('\n');
+  const longDate=now.toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const shortDate=now.toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+  const matterTitle=matter?.title||'—';
+  const fileNo=matter?.file_number||'—';
+  const msgBlock=message
+    ?`<tr><td class="lbl">Message Body</td><td class="val msg">${esc(message).replace(/\n/g,'<br>')}</td></tr>`
+    :'';
 
-  const blob=new Blob([reportText],{type:'text/plain'});
+  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+  const receiptHtml=`<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>Email Service Receipt — ${esc(docName)}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  @page{size:A4;margin:22mm 18mm 22mm 18mm}
+  body{font-family:'Georgia',serif;background:#fff;color:#1a1a1a;font-size:12px;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .letterhead{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:12px;border-bottom:3px solid #0D1B2A;margin-bottom:6px}
+  .firm-name{font-size:15px;font-weight:700;color:#0D1B2A;text-transform:uppercase;letter-spacing:0.3px}
+  .firm-sub{font-size:9px;color:#6a6a6a;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;font-family:sans-serif}
+  .lh-right{text-align:right;font-size:9px;color:#8a8a8a;font-family:sans-serif;line-height:1.7}
+  .title-bar{background:#0D1B2A;color:#fff;padding:12px 16px;margin:14px 0;display:flex;align-items:center;justify-content:space-between}
+  .title-bar h1{font-size:15px;font-weight:700}
+  .title-bar .sub{font-size:10px;color:#B8953A;margin-top:2px}
+  .title-bar .ts{font-size:9px;color:rgba(255,255,255,0.55);text-align:right;font-family:sans-serif;line-height:1.7}
+  table.detail{width:100%;border-collapse:collapse;border:1px solid #c8c2b8;border-radius:6px;overflow:hidden;margin-bottom:18px}
+  td.lbl{width:160px;padding:9px 14px;background:#f5f2ed;color:#5a5a5a;font-size:9.5px;text-transform:uppercase;letter-spacing:0.5px;font-family:sans-serif;font-weight:700;border-bottom:1px solid #ede9e2;vertical-align:top}
+  td.val{padding:9px 14px;font-size:11.5px;color:#1a1a1a;border-bottom:1px solid #ede9e2;vertical-align:top}
+  td.val.msg{font-family:sans-serif;font-size:11px;color:#333;background:#fafafa}
+  table.detail tr:last-child td{border-bottom:none}
+  .status-bar{background:#EAF3DE;border:1px solid #a8d5b5;border-radius:6px;padding:10px 16px;display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .status-bar .icon{font-size:18px}
+  .status-bar .text{font-size:12px;color:#1a4a2e;font-weight:700}
+  .status-bar .sub{font-size:10px;color:#2D6A4F;font-family:sans-serif}
+  .court-notice{border:1px solid #B8953A;background:#FFFBF2;border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:10px;color:#4a3800;font-family:sans-serif;line-height:1.65}
+  .court-notice strong{font-size:10.5px;display:block;margin-bottom:2px;color:#2a2000}
+  .cert-block{border:1px solid #c8c2b8;border-radius:6px;padding:13px 16px;font-size:10px;font-family:sans-serif;line-height:1.75;color:#333;margin-bottom:18px}
+  .cert-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#0D1B2A;margin-bottom:6px}
+  .sig-line{border-top:1px solid #999;width:220px;margin-top:24px;padding-top:4px;font-size:9.5px;color:#555;font-family:sans-serif}
+  .doc-footer{padding-top:10px;border-top:2px solid #0D1B2A;display:flex;justify-content:space-between;font-size:8.5px;color:#8a8a8a;font-family:sans-serif}
+</style></head><body>
+
+<!-- LETTERHEAD -->
+<div class="letterhead">
+  <div>
+    <div class="firm-name">Dennis Kimani Mutonga</div>
+    <div class="firm-sub">Advocate of the High Court of Kenya &nbsp;|&nbsp; DKMA</div>
+  </div>
+  <div class="lh-right">P.O. Box — Nairobi, Kenya<br>www.dkma.co.ke</div>
+</div>
+
+<!-- TITLE -->
+<div class="title-bar">
+  <div>
+    <h1>Email Service Receipt</h1>
+    <div class="sub">Evidence of Electronic Service of Documents</div>
+  </div>
+  <div class="ts">Generated: ${longDate}<br>Ref: ${esc(fileNo)}</div>
+</div>
+
+<!-- DELIVERY STATUS BANNER -->
+<div class="status-bar">
+  <span class="icon">&#10003;</span>
+  <div>
+    <div class="text">Delivered Successfully</div>
+    <div class="sub">Document transmitted and delivery confirmed &nbsp;|&nbsp; ${longDate}</div>
+  </div>
+</div>
+
+<!-- MATTER DETAILS -->
+<table class="detail">
+  <tr><td class="lbl">Matter</td><td class="val" style="font-weight:600">${esc(matterTitle)}</td></tr>
+  <tr><td class="lbl">File Number</td><td class="val">${esc(fileNo)}</td></tr>
+</table>
+
+<!-- EMAIL HEADERS -->
+<table class="detail">
+  <tr><td class="lbl">Document Sent</td><td class="val" style="font-weight:600">${esc(docName)}</td></tr>
+  <tr><td class="lbl">Email Subject</td><td class="val">${esc(subject||'—')}</td></tr>
+  <tr><td class="lbl">From</td><td class="val">Dennis Kimani Mutonga Advocate (DKMA) &lt;noreply@dkma.co.ke&gt;<br><span style="color:#666;font-size:10px;font-family:sans-serif">Sent by: ${esc(senderName)}</span></td></tr>
+  <tr><td class="lbl">To (Recipient)</td><td class="val"><strong>${esc(toName)}</strong><br>${esc(toEmail)}</td></tr>
+  <tr><td class="lbl">Date &amp; Time</td><td class="val" style="font-weight:600">${longDate}</td></tr>
+  <tr><td class="lbl">Delivery Status</td><td class="val"><span style="color:#2D6A4F;font-weight:700">&#10003; Delivered</span></td></tr>
+  ${msgBlock}
+</table>
+
+<!-- COURT NOTICE -->
+<div class="court-notice">
+  <strong>Notice — Evidence of Electronic Service</strong>
+  This receipt is an automatically generated record of electronic service produced by the DKMA Law Firm Management System.
+  It records that the document named above was transmitted via electronic mail to the stated recipient at the date and time shown.
+  This document may be filed as evidence of service in judicial or quasi-judicial proceedings in Kenya.
+</div>
+
+<!-- CERTIFICATE -->
+<div class="cert-block">
+  <div class="cert-title">Certificate of Electronic Service</div>
+  I, the undersigned, hereby certify that on <strong>${longDate}</strong>, the document <strong>"${esc(docName)}"</strong>
+  was duly transmitted by electronic mail to <strong>${esc(toName)}</strong> at <strong>${esc(toEmail)}</strong>,
+  from the DKMA Law Firm Management System, in the matter of <strong>${esc(matterTitle)}</strong> (File No. ${esc(fileNo)}).
+  Delivery was confirmed at the time of transmission.
+  <br><br>Signed at Nairobi on: ${shortDate}
+  <br><br>
+  <div class="sig-line">Dennis Kimani Mutonga<br>Advocate of the High Court of Kenya</div>
+</div>
+
+<!-- FOOTER -->
+<div class="doc-footer">
+  <span>DKMA Law Firm Management System &nbsp;|&nbsp; Confidential — For internal use only</span>
+  <span>Auto-generated: ${longDate}</span>
+</div>
+<scr'+'ipt>window.onload=function(){window.print();}<\/script>
+</body></html>`;
+
+  const blob=new Blob([receiptHtml],{type:'text/html'});
   const ts=Date.now();
   const safeName=docName.replace(/[^a-zA-Z0-9._-]/g,'_').replace(/\.[^.]+$/,'');
-  const fileName=`correspondence__Email Delivery__${ts}_Delivery_Report_${safeName}.txt`;
+  const fileName=`correspondence__Email Delivery__${ts}_Service_Receipt_${safeName}.html`;
   const path=`${activeMatterId}/${fileName}`;
-  await sb.storage.from(STORAGE_BUCKET).upload(path,blob,{contentType:'text/plain',upsert:false});
+  await sb.storage.from(STORAGE_BUCKET).upload(path,blob,{contentType:'text/html',upsert:false});
   // Refresh documents if currently on that tab
   if(activeMatterTab==='documents')loadMatterDocuments();
 }
