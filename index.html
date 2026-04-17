@@ -309,6 +309,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 /* LOADING */
 .loading-spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes skeleton-fade{0%,100%{opacity:0.45}50%{opacity:1}}
 
 /* MATTER DETAIL */
 .matter-back{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txt3);cursor:pointer;margin-bottom:20px;width:fit-content}
@@ -1812,7 +1813,10 @@ function showView(id,el,fromMobile){
   if(id==='inbox'){renderInboxThreadList();}
   if(id==='staff-inbox'){
     const listEl=document.getElementById('staff-inbox-thread-list');
-    if(listEl&&!staffMessages.length)listEl.innerHTML='<div class="empty-state-sm" style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">Loading…</div>';
+    if(listEl&&!staffMessages.length){
+      const _sk='<div style="padding:12px 16px;border-bottom:1px solid var(--brd);display:flex;gap:9px;align-items:center"><div style="width:32px;height:32px;border-radius:50%;background:var(--cream2);flex-shrink:0;opacity:0.6;animation:skeleton-fade 1.4s ease-in-out infinite"></div><div style="flex:1"><div style="height:10px;border-radius:4px;background:var(--cream2);width:55%;margin-bottom:6px;animation:skeleton-fade 1.4s ease-in-out infinite"></div><div style="height:9px;border-radius:4px;background:var(--cream2);width:80%;animation:skeleton-fade 1.4s ease-in-out infinite 0.15s"></div></div></div>';
+      listEl.innerHTML=_sk+_sk+_sk;
+    }
     Promise.all([ensureAllProfilesLoaded(),loadStaffMessages()]).then(()=>renderStaffInboxList());
   }
 }
@@ -3871,8 +3875,12 @@ async function renderTeam(){
     </div>
     ${!p.role||p.role==='associate'?`<div style="margin-top:14px;font-size:11px;background:#FAEEDA;color:#854F0B;border-radius:6px;padding:9px 12px;line-height:1.5">Your role shows as <strong>Associate</strong>. If you are an administrator, click <em>Edit Profile</em> above to update your role.</div>`:''}`;
 
-  // Team list
+  // Team list — show skeleton rows immediately while the query runs
   const teamEl=document.getElementById('team-list');
+  if(teamEl){
+    const _sk='<div class="client-item" style="cursor:default"><div class="client-av" style="background:var(--cream2);opacity:0.7;animation:skeleton-fade 1.4s ease-in-out infinite"></div><div style="flex:1"><div style="height:10px;border-radius:4px;background:var(--cream2);width:50%;margin-bottom:5px;animation:skeleton-fade 1.4s ease-in-out infinite"></div><div style="height:9px;border-radius:4px;background:var(--cream2);width:35%;animation:skeleton-fade 1.4s ease-in-out infinite 0.15s"></div></div></div>';
+    teamEl.innerHTML=_sk+_sk+_sk;
+  }
   const{data,error}=await sb.from('profiles').select('*').order('role');
   if(error||!data||!data.length){teamEl.innerHTML=emptyState('No other team members found.');return;}
   const rolePriority={admin:0,head:1,senior:2,associate:3};
@@ -5083,10 +5091,14 @@ async function loadEmailDeliveryLog(){
     return;
   }
   const reports=data||[];
+  // Store reports on window so PDF export can access them
+  window._deliveryReports=reports;
+  const matterTitle=(matters.find(m=>m.id===activeMatterId)?.title)||'Matter';
   logCard.innerHTML=`<div class="card">
     <div class="card-header" style="background:var(--cream)">
       <span class="card-title">📬 Email Delivery Log</span>
       <span style="font-size:11px;color:var(--txt3);margin-left:8px">${reports.length} email${reports.length!==1?'s':''} sent from this matter</span>
+      ${reports.length?`<button onclick="exportDeliveryReportPdf()" class="topbar-btn sec" style="font-size:11px;padding:5px 12px;margin-left:auto">⬇ Export PDF</button>`:''}
     </div>
     ${!reports.length
       ?`<div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">No documents have been emailed from this matter yet.</div>`
@@ -5110,6 +5122,80 @@ async function loadEmailDeliveryLog(){
       }).join('')}
   </div>`;
   el.appendChild(logCard);
+}
+
+function exportDeliveryReportPdf(){
+  const reports=window._deliveryReports||[];
+  const matter=matters.find(m=>m.id===activeMatterId);
+  const matterTitle=matter?(matter.title+(matter.file_number?' ('+matter.file_number+')':'')):'Matter';
+  const generatedOn=new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  const rows=reports.map((r,i)=>{
+    const sentDate=r.sent_at?new Date(r.sent_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+    const bg=i%2===0?'#ffffff':'#f8f5f0';
+    return`<tr style="background:${bg}">
+      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;color:#1a1a1a;font-weight:500">${esc(r.document_name||'—')}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;color:#1a1a1a">${esc(r.recipient_name||r.recipient_email||'—')}<br><span style="color:#8a8a8a;font-size:10px">${esc(r.recipient_email||'')}</span></td>
+      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;color:#1a1a1a">${esc(r.subject||'—')}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;color:#5a5a5a">${sentDate}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;color:#5a5a5a">${esc(r.sent_by||'—')}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #e0dbd4;font-size:11px;text-align:center"><span style="background:#EAF3DE;color:#2D6A4F;font-size:9px;padding:2px 8px;border-radius:8px;font-weight:600">✓ ${esc(r.status||'delivered')}</span></td>
+    </tr>`;
+  }).join('');
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+  <title>Email Delivery Report — ${esc(matterTitle)}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Georgia',serif;background:#fff;color:#1a1a1a;padding:40px 48px}
+    .hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #0D1B2A}
+    .firm{font-size:11px;color:#5a5a5a;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px}
+    .report-title{font-size:22px;font-weight:700;color:#0D1B2A;letter-spacing:-0.3px}
+    .matter-name{font-size:13px;color:#5a5a5a;margin-top:4px}
+    .meta{text-align:right;font-size:11px;color:#8a8a8a;line-height:1.6}
+    .summary{display:flex;gap:18px;margin-bottom:28px}
+    .sum-box{flex:1;background:#f8f5f0;border-radius:8px;padding:14px 18px;border:0.5px solid #d9d4cb}
+    .sum-label{font-size:9px;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-family:sans-serif}
+    .sum-val{font-size:20px;font-weight:700;color:#0D1B2A}
+    table{width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+    thead{background:#0D1B2A;color:#fff}
+    thead th{padding:10px 12px;font-size:10px;text-align:left;letter-spacing:0.5px;text-transform:uppercase;font-family:sans-serif;font-weight:500}
+    tbody tr:last-child td{border-bottom:none}
+    .footer{margin-top:32px;padding-top:14px;border-top:1px solid #d9d4cb;font-size:10px;color:#8a8a8a;display:flex;justify-content:space-between;font-family:sans-serif}
+    @media print{body{padding:28px 32px}.hdr{margin-bottom:24px}}
+  </style></head><body>
+  <div class="hdr">
+    <div>
+      <div class="firm">Dennis Kimani Mutonga Advocate — DKMA</div>
+      <div class="report-title">📬 Email Delivery Report</div>
+      <div class="matter-name">${esc(matterTitle)}</div>
+    </div>
+    <div class="meta">Generated: ${generatedOn}<br>Total emails: ${reports.length}</div>
+  </div>
+  <div class="summary">
+    <div class="sum-box"><div class="sum-label">Emails Sent</div><div class="sum-val">${reports.length}</div></div>
+    <div class="sum-box"><div class="sum-label">Delivered</div><div class="sum-val" style="color:#2D6A4F">${reports.filter(r=>(r.status||'delivered')==='delivered').length}</div></div>
+    <div class="sum-box"><div class="sum-label">Recipients</div><div class="sum-val">${[...new Set(reports.map(r=>r.recipient_email).filter(Boolean))].length}</div></div>
+    <div class="sum-box"><div class="sum-label">Sent By</div><div class="sum-val" style="font-size:13px;padding-top:4px">${[...new Set(reports.map(r=>r.sent_by).filter(Boolean))].join(', ')||'—'}</div></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Document</th><th>Recipient</th><th>Subject</th><th>Sent At</th><th>Sent By</th><th style="text-align:center">Status</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">
+    <span>DKMA Law Firm Management System</span>
+    <span>Confidential — For internal use only</span>
+  </div>
+  <scr'+'ipt>window.onload=function(){window.print();}<\/script>
+  </body></html>`;
+
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const win=window.open(url,'_blank');
+  if(!win)toast('Please allow popups to export PDF.');
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 
 async function quickUploadFiles(files){
