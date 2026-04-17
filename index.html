@@ -6570,7 +6570,9 @@ async function sendDocumentEmail(){
   statusEl.style.color='var(--txt3)';
   statusEl.textContent='Fetching document and sending…';
 
-  const htmlBody=buildDocumentEmailHtml(toName,displayName,message);
+  // ── Generate a unique tracking ID for this email ─────────────────
+  const trackingId=crypto.randomUUID();
+  const htmlBody=buildDocumentEmailHtml(toName,displayName,message,trackingId);
 
   try{
     const{data:{session}}=await sb.auth.getSession();
@@ -6588,7 +6590,8 @@ async function sendDocumentEmail(){
         toName,
         subject:subject||`Document from Dennis Kimani Mutonga Advocate`,
         message,
-        htmlBody
+        htmlBody,
+        trackingId
       })
     });
     const data=await res.json();
@@ -6606,6 +6609,7 @@ async function sendDocumentEmail(){
     const senderName=currentProfile?.full_name||currentUser?.email||'—';
     const sentAt=new Date().toISOString();
     const messageId=data?.id||data?.messageId||data?.message_id||null;
+    const senderIp=data?.senderIp||null; // IP returned by Edge Function
     await sb.from('email_delivery_reports').insert([{
       matter_id:activeMatterId,
       matter_title:matter?.title||'—',
@@ -6617,12 +6621,15 @@ async function sendDocumentEmail(){
       message:message||null,
       sent_by:senderName,
       sent_at:sentAt,
-      status:'delivered'
+      status:'delivered',
+      tracking_id:trackingId,
+      sender_ip:senderIp,
+      opened_at:null
     }]).then(({error})=>{
       if(error)console.warn('[DKMA] Could not save email delivery report:',error.message);
     });
     // ── Auto-save delivery receipt to matter documents ────────────────
-    setTimeout(()=>saveDeliveryReportToMatter(displayName,toName,toEmail,subject,message,senderName,sentAt,messageId),800);
+    setTimeout(()=>saveDeliveryReportToMatter(displayName,toName,toEmail,subject,message,senderName,sentAt,messageId,senderIp,trackingId),800);
     setTimeout(()=>closeModal(),2200);
   }catch(e){
     btn.disabled=false;btn.textContent='📧 Send Document';
@@ -6631,7 +6638,7 @@ async function sendDocumentEmail(){
   }
 }
 
-async function saveDeliveryReportToMatter(docName,toName,toEmail,subject,message,senderName,sentAtIso,messageId){
+async function saveDeliveryReportToMatter(docName,toName,toEmail,subject,message,senderName,sentAtIso,messageId,senderIp,trackingId){
   if(!activeMatterId)return;
   const matter=matters.find(m=>m.id===activeMatterId);
   // Use the actual sent timestamp if provided, otherwise now
@@ -6646,6 +6653,12 @@ async function saveDeliveryReportToMatter(docName,toName,toEmail,subject,message
   const msgBlock=message
     ?`<tr><td class="lbl">Message Body</td><td class="val msg">${esc(message).replace(/\n/g,'<br>')}</td></tr>`
     :`<tr><td class="lbl">Message Body</td><td class="val msg" style="color:#999;font-style:italic;font-family:sans-serif;font-size:11px">No cover message — document only</td></tr>`;
+  const ipRow=senderIp
+    ?`<tr><td class="lbl">Sender IP Address</td><td class="val mono">${esc(senderIp)}</td></tr>`
+    :'';
+  const trackRow=trackingId
+    ?`<tr><td class="lbl">Read-Receipt Tracking</td><td class="val mono" style="font-size:10px">${esc(trackingId)}<br><span style="font-size:9px;color:#999;font-family:sans-serif">Open event logged when recipient loads the tracking pixel embedded in the email</span></td></tr>`
+    :'';
 
   function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -6776,6 +6789,8 @@ async function saveDeliveryReportToMatter(docName,toName,toEmail,subject,message
     <td class="lbl">MIME-Version</td>
     <td class="val mono">1.0</td>
   </tr>
+  ${ipRow}
+  ${trackRow}
 </table>
 
 <!-- COURT NOTICE -->
@@ -6819,9 +6834,13 @@ async function saveDeliveryReportToMatter(docName,toName,toEmail,subject,message
   if(activeMatterTab==='documents')loadMatterDocuments();
 }
 
-function buildDocumentEmailHtml(toName, fileName, personalMessage){
+function buildDocumentEmailHtml(toName, fileName, personalMessage, trackingId){
   const msgBlock = personalMessage
     ? `<p style="margin:0 0 18px 0;font-size:14px;line-height:1.6;color:#212121;">${personalMessage.replace(/\n/g,'<br>')}</p>`
+    : '';
+  // 1×1 transparent tracking pixel — fires when the recipient opens the email
+  const trackingPixel = trackingId
+    ? `<img src="${SUPABASE_URL_EDGE}/functions/v1/track-open?id=${encodeURIComponent(trackingId)}" width="1" height="1" border="0" alt="" style="display:block;border:0;width:1px;height:1px;opacity:0;">`
     : '';
   return `<!DOCTYPE html>
 <html>
@@ -6899,6 +6918,9 @@ function buildDocumentEmailHtml(toName, fileName, personalMessage){
             </p>
           </td>
         </tr>
+
+        <!-- Tracking pixel (invisible, logs email open) -->
+        <tr><td style="line-height:0;font-size:0;">${trackingPixel}</td></tr>
 
       </table>
     </td></tr>
