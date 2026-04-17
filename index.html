@@ -5248,32 +5248,27 @@ function exportDeliveryReportPdf(){
   <scr'+'ipt>window.onload=function(){window.print();}<\/script>
   </body></html>`;
 
-  // Open in a hidden iframe and trigger print dialog — avoids popup blocker
-  // and prevents the raw HTML from showing in a new tab.
-  let printFrame=document.getElementById('_pdf_print_frame');
-  if(printFrame)printFrame.remove();
-  printFrame=document.createElement('iframe');
-  printFrame.id='_pdf_print_frame';
-  printFrame.style.cssText='position:fixed;width:0;height:0;border:none;left:-9999px;top:-9999px';
-  document.body.appendChild(printFrame);
-  printFrame.contentDocument.open();
-  printFrame.contentDocument.write(html);
-  printFrame.contentDocument.close();
-  // Give the iframe time to render before printing
+  // Use a hidden iframe to trigger the print/Save-as-PDF dialog.
+  // This avoids popup blockers and prevents raw HTML from displaying in a new tab.
+  let pf=document.getElementById('_pdf_print_frame');
+  if(pf)pf.remove();
+  pf=document.createElement('iframe');
+  pf.id='_pdf_print_frame';
+  pf.style.cssText='position:fixed;width:0;height:0;border:none;left:-9999px;top:-9999px';
+  document.body.appendChild(pf);
+  pf.contentDocument.open();
+  pf.contentDocument.write(html);
+  pf.contentDocument.close();
   setTimeout(()=>{
-    try{
-      printFrame.contentWindow.focus();
-      printFrame.contentWindow.print();
-    }catch(e){
-      // Fallback: open in new tab if iframe print fails
+    try{ pf.contentWindow.focus(); pf.contentWindow.print(); }
+    catch(e){
       const blob=new Blob([html],{type:'text/html'});
       const url=URL.createObjectURL(blob);
       const win=window.open(url,'_blank');
       if(!win)toast('Please allow popups to export PDF.');
       setTimeout(()=>URL.revokeObjectURL(url),60000);
     }
-    // Clean up frame after print dialog closes
-    setTimeout(()=>{if(printFrame)printFrame.remove();},30000);
+    setTimeout(()=>{if(pf)pf.remove();},30000);
   },600);
 }
 
@@ -6430,10 +6425,25 @@ async function viewDocument(storageName, displayName) {
     const a = document.createElement('a'); a.href = url; a.download = displayName; a.target = '_blank';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
+  const isReceiptHtml = ext === 'html' && storageName.includes('Email_Receipt');
   if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
     body.innerHTML = `<img src="${url}" alt="${esc(displayName)}" style="max-width:100%;max-height:76vh;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
   } else if (ext === 'pdf') {
     body.innerHTML = `<iframe src="${url}" style="width:100%;height:76vh;border:none;display:block"></iframe>`;
+  } else if (isReceiptHtml) {
+    // Receipt files are HTML — they cannot be embedded as PDFs.
+    // Open in new tab; the auto-print script inside triggers the Save-as-PDF dialog.
+    body.innerHTML = `<div class="doc-viewer-nopreview" style="gap:16px">
+      <div style="font-size:44px">📬</div>
+      <div style="font-weight:600;color:var(--txt);font-size:15px">${esc(displayName)}</div>
+      <div style="font-size:12px;color:var(--txt3);max-width:320px;text-align:center;line-height:1.6">
+        This is an Email Service Receipt.<br>
+        Click below to open it — the print dialog will appear automatically so you can <strong>Save as PDF</strong>.
+      </div>
+      <button onclick="window.open('${url}','_blank')" style="margin-top:4px;background:var(--navy);color:#fff;border:none;padding:10px 22px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">
+        Open &amp; Save as PDF
+      </button>
+    </div>`;
   } else {
     body.innerHTML = `<div class="doc-viewer-nopreview">
       <div style="font-size:36px;margin-bottom:16px">📄</div>
@@ -6716,14 +6726,15 @@ async function saveDeliveryReportToMatter(docName,toName,toEmail,subject,message
 <scr'+'ipt>window.onload=function(){window.print();}<\/script>
 </body></html>`;
 
+  // Save as .html with correct contentType.
+  // The document viewer detects the Email_Receipt pattern and shows an
+  // "Open & Print as PDF" button instead of trying to load it as a binary PDF.
   const ts=Date.now();
   const safeName=docName.replace(/[^a-zA-Z0-9._-]/g,'_').replace(/\.[^.]+$/,'');
-  // Save as .html but upload as octet-stream so Supabase forces a download
-  // instead of rendering raw HTML inline when the signed URL is opened.
-  const fileName=`correspondence__Email Delivery__${ts}_mpdf__1_.pdf`;
+  const fileName=`correspondence__Email_Receipt__${ts}__${safeName}.html`;
   const path=`${activeMatterId}/${fileName}`;
-  const blob=new Blob([receiptHtml],{type:'application/octet-stream'});
-  await sb.storage.from(STORAGE_BUCKET).upload(path,blob,{contentType:'application/octet-stream',upsert:false});
+  const blob=new Blob([receiptHtml],{type:'text/html;charset=utf-8'});
+  await sb.storage.from(STORAGE_BUCKET).upload(path,blob,{contentType:'text/html;charset=utf-8',upsert:false});
   // Refresh documents if currently on that tab
   if(activeMatterTab==='documents')loadMatterDocuments();
 }
