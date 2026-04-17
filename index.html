@@ -161,7 +161,7 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .mt-row{display:grid;grid-template-columns:minmax(110px,160px) 2fr 1.4fr 1fr 1fr 1fr 100px;padding:13px 20px;border-bottom:1px solid var(--brd);align-items:center;cursor:pointer;transition:background 0.12s}
 .mt-row:hover{background:var(--cream)}
 .mt-row:last-child{border-bottom:none}
-.mt-cell{font-size:12px;color:var(--txt);min-width:0;overflow:hidden}
+.mt-cell{font-size:12px;color:var(--txt);min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .mt-cell.muted{color:var(--txt3)}
 .mt-cell.bold{font-weight:500}
 .file-no-badge{font-family:monospace;font-size:10px;background:var(--cream2);color:var(--navy);padding:2px 6px;border-radius:4px;font-weight:600;white-space:nowrap;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
@@ -2645,11 +2645,11 @@ function renderMatters(){
     return`<div class="mt-row" onclick="openMatterDetail('${m.id}')">
       <div class="mt-cell"><span class="file-no-badge">${esc(m.file_number||'—')}</span></div>
       <div class="mt-cell bold">${esc(m.title)}</div>
-      <div class="mt-cell muted">${c?esc(c.name):'—'}</div>
+      <div class="mt-cell muted">${c?`<a onclick="event.stopPropagation();openClientProfile('${c.id}')" style="color:var(--navy);cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-color:rgba(13,27,42,0.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block" title="${esc(c.name)}">${esc(c.name)}</a>`:'—'}</div>
       <div class="mt-cell muted">${esc(m.type||'')}</div>
       <div class="mt-cell"><span class="status-pill ${statusClass(m.status)}">${statusLabel(m.status)}</span></div>
       <div class="mt-cell muted">${m.next_date?fmtDate(m.next_date):'—'}</div>
-      <div class="mt-cell bold" style="display:flex;align-items:center;justify-content:space-between;gap:4px">${m.fee?fmtMoney(m.fee):'—'}<div style="display:flex;gap:4px"><button class="op-del" title="Edit matter" onclick="openEditMatter('${m.id}');event.stopPropagation()" style="color:var(--navy);font-size:13px" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️</button><button class="op-del" title="Delete matter" onclick="deleteMatter('${m.id}','${esc(m.title)}',event)">×</button></div></div>
+      <div class="mt-cell bold" style="display:flex;align-items:center;justify-content:space-between;gap:4px;white-space:nowrap"><span style="overflow:hidden;text-overflow:ellipsis;min-width:0">${m.fee?fmtMoney(m.fee):'—'}</span><div style="display:flex;gap:4px;flex-shrink:0"><button class="op-del" title="Edit matter" onclick="openEditMatter('${m.id}');event.stopPropagation()" style="color:var(--navy);font-size:13px" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️</button><button class="op-del" title="Delete matter" onclick="deleteMatter('${m.id}','${esc(m.title)}',event)">×</button></div></div>
     </div>`;
   }).join('');
 }
@@ -2797,7 +2797,7 @@ function renderProfileTab(){
     el.innerHTML=`<div class="card">
       <div class="card-header"><span class="card-title">Matters (${mc.length})</span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openMatterModalForClient('${c.id}')">+ New Matter</button></div>
       ${!mc.length?emptyStateSm('No matters for this client yet.'):mc.map(m=>`
-        <div class="pm-row">
+        <div class="pm-row" onclick="openMatterDetail('${m.id}')" title="Open matter">
           <div style="flex-shrink:0;margin-right:4px"><span class="file-no-badge">${esc(m.file_number||'—')}</span></div>
           <div class="matter-icon civil" style="width:32px;height:32px;font-size:13px;flex-shrink:0">⚖️</div>
           <div class="matter-info">
