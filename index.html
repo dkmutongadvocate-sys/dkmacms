@@ -898,6 +898,9 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
         <div class="matter-detail-tab" onclick="switchMatterTab('updates',this)">
           Updates <span id="matter-updates-count" style="display:none;background:var(--gold);color:var(--navy);font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:4px;vertical-align:middle">0</span>
         </div>
+        <div class="matter-detail-tab" onclick="switchMatterTab('communications',this)">
+          Communications
+        </div>
       </div>
       <div id="matter-detail-content"></div>
     </div>
@@ -4829,6 +4832,8 @@ function switchMatterTab(tab,el){
   if(tab==='documents'){
     document.getElementById('matter-detail-content').innerHTML=`<div class="card" id="docs-card"><div style="padding:40px;text-align:center;color:var(--txt3)">Loading documents…</div></div>`;
     loadMatterDocuments();
+  } else if(tab==='communications'){
+    renderCommunicationsTab();
   } else {
     renderMatterDetailTab();
   }
@@ -4865,7 +4870,7 @@ function renderMatterDetail(){
       ${m.notes?`<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--brd);font-size:13px;color:var(--txt2);line-height:1.6">${esc(m.notes)}</div>`:''}
     </div>`;
   document.querySelectorAll('.matter-detail-tab').forEach((t,i)=>{
-    t.classList.toggle('active',['overview','documents','events','time','invoices','parties','updates'][i]===activeMatterTab);
+    t.classList.toggle('active',['overview','documents','events','time','invoices','parties','updates','communications'][i]===activeMatterTab);
   });
   // Update parties badge
   const mp = parties.filter(p=>p.matter_id===activeMatterId);
@@ -5055,6 +5060,56 @@ function renderDocumentsCard(){
     zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
     zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');quickUploadFiles(e.dataTransfer.files);});
   }
+  // Load and render email delivery log below the documents card
+  loadEmailDeliveryLog();
+}
+
+async function loadEmailDeliveryLog(){
+  const el=document.getElementById('matter-detail-content');
+  if(!el||!activeMatterId)return;
+  const{data,error}=await sb.from('email_delivery_reports')
+    .select('*').eq('matter_id',activeMatterId)
+    .order('sent_at',{ascending:false}).limit(50);
+  // Remove old log card if present
+  const old=document.getElementById('delivery-log-card');
+  if(old)old.remove();
+  const logCard=document.createElement('div');
+  logCard.id='delivery-log-card';
+  logCard.style.marginTop='18px';
+  if(error){
+    // Table may not exist yet — show a setup hint
+    logCard.innerHTML=`<div class="card"><div class="card-header"><span class="card-title">📬 Email Delivery Log</span></div><div style="padding:16px 20px;font-size:12px;color:var(--txt3)">To enable delivery logging, create the <strong>email_delivery_reports</strong> table in Supabase.<br><span style="font-size:11px;background:var(--cream);border-radius:6px;padding:8px 10px;display:inline-block;margin-top:8px;font-family:monospace;line-height:1.7">id uuid pk, matter_id uuid, matter_title text,<br>document_name text, storage_name text,<br>recipient_email text, recipient_name text,<br>subject text, message text,<br>sent_by text, sent_at timestamptz,<br>status text default 'delivered'</span></div></div>`;
+    el.appendChild(logCard);
+    return;
+  }
+  const reports=data||[];
+  logCard.innerHTML=`<div class="card">
+    <div class="card-header" style="background:var(--cream)">
+      <span class="card-title">📬 Email Delivery Log</span>
+      <span style="font-size:11px;color:var(--txt3);margin-left:8px">${reports.length} email${reports.length!==1?'s':''} sent from this matter</span>
+    </div>
+    ${!reports.length
+      ?`<div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">No documents have been emailed from this matter yet.</div>`
+      :reports.map(r=>{
+        const sentDate=r.sent_at?new Date(r.sent_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+        return`<div style="display:flex;gap:12px;align-items:flex-start;padding:12px 20px;border-bottom:1px solid var(--brd)">
+          <div style="width:36px;height:36px;border-radius:8px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📧</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.document_name||'—')}</div>
+            <div style="font-size:11px;color:var(--txt3);margin-top:2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span>To: <strong>${esc(r.recipient_name||r.recipient_email||'—')}</strong> &lt;${esc(r.recipient_email||'')}&gt;</span>
+              <span style="color:var(--brd2)">·</span>
+              <span>${sentDate}</span>
+              <span style="color:var(--brd2)">·</span>
+              <span>By ${esc(r.sent_by||'—')}</span>
+              <span style="background:#EAF3DE;color:#2D6A4F;font-size:9px;padding:1px 7px;border-radius:8px;font-weight:600">✓ ${esc(r.status||'delivered')}</span>
+            </div>
+            ${r.subject?`<div style="font-size:11px;color:var(--txt2);margin-top:3px">Subject: ${esc(r.subject)}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+  </div>`;
+  el.appendChild(logCard);
 }
 
 async function quickUploadFiles(files){
@@ -5452,6 +5507,501 @@ async function deleteMatterUpdate(updateId){
   if(error){toast('Error: '+error.message,true);return;}
   toast('Update deleted.');
   if(activeMatterTab==='updates')loadMatterUpdates();
+}
+
+// ─── COMMUNICATIONS TEMPLATES ─────────────────────────────────────
+// Pre-loaded Kenya Civil Procedure Rules templates
+
+const CPR_TEMPLATES = [
+  {
+    id:'notice_of_service',
+    category:'Service',
+    title:'Notice of Service of Process',
+    icon:'📜',
+    color:'#FCEBEB',
+    textColor:'#A32D2D',
+    description:'Order V CPR — formal notice that originating process has been served on the defendant/respondent.',
+    fields:['defendant','defendant_address','case_number','court','suit_title','date_served','mode_of_service','served_by'],
+    template:(f,m,c)=>`${f.court||'[COURT]'}
+${f.case_number||m.file_number||'[CASE NO.]'}
+
+IN THE MATTER OF ${f.suit_title||m.title||'[SUIT TITLE]'}
+
+NOTICE OF SERVICE
+
+TO: THE REGISTRAR
+
+TAKE NOTICE that on the ${f.date_served||'[DATE]'}, the Plaint/Petition/Originating Summons in the above-mentioned suit was duly served upon ${f.defendant||'[DEFENDANT NAME]'} of ${f.defendant_address||'[ADDRESS]'} by ${f.mode_of_service||'personal service'}.
+
+The service was effected by ${f.served_by||'[NAME OF PROCESS SERVER]'}.
+
+DATED at Nairobi this ______ day of ____________, ${new Date().getFullYear()}.
+
+_______________________________
+${c?.name||'DENNIS KIMANI MUTONGA'}
+ADVOCATE FOR THE PLAINTIFF/PETITIONER
+P.O. Box _____, Nairobi
+Tel: _____ | Email: _____`
+  },
+  {
+    id:'demand_letter',
+    category:'Pre-Litigation',
+    title:'Letter of Demand',
+    icon:'⚠️',
+    color:'#FAEEDA',
+    textColor:'#854F0B',
+    description:'Pre-litigation formal demand giving the respondent opportunity to settle before suit.',
+    fields:['addressee','addressee_address','subject','amount','demand_period','cause_of_action'],
+    template:(f,m,c)=>{
+      const today=new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+      return`Our Ref: ${m.file_number||'DKMA/REF/'+new Date().getFullYear()}
+Date: ${today}
+
+${f.addressee||'[ADDRESSEE NAME]'}
+${f.addressee_address||'[ADDRESS]'}
+
+Dear Sir/Madam,
+
+RE: ${f.subject||m.title||'[SUBJECT OF DEMAND]'}
+
+We act for and on behalf of our client, ${c?.name||'[CLIENT NAME]'}, in respect of the above matter and write to demand as follows:
+
+${f.cause_of_action||'[STATE THE BASIS OF CLAIM — e.g. "Our client is owed the sum of KES [AMOUNT] being principal and interest arising from a loan agreement dated [DATE]. Despite repeated demands, you have neglected and/or refused to settle the said amount."]'}
+
+${f.amount?`TAKE NOTICE that our client demands payment of the sum of KES ${f.amount} (${f.amount} Kenya Shillings) within ${f.demand_period||'fourteen (14) days'} of the date of this letter.`:''}
+
+TAKE FURTHER NOTICE that in default of payment within the stated period, our client shall institute legal proceedings against you without further notice, and you shall be liable for all costs occasioned thereby.
+
+THIS LETTER IS WRITTEN WITHOUT PREJUDICE TO OUR CLIENT'S FULL LEGAL RIGHTS.
+
+Yours faithfully,
+
+_______________________________
+DENNIS KIMANI MUTONGA
+ADVOCATE
+For: Dennis Kimani Mutonga Advocates`;
+    }
+  },
+  {
+    id:'notice_intention_sue',
+    category:'Pre-Litigation',
+    title:'Notice of Intention to Sue',
+    icon:'🔔',
+    color:'#FAEEDA',
+    textColor:'#854F0B',
+    description:'Statutory notice required before suing Government entities under the Government Proceedings Act.',
+    fields:['respondent','respondent_address','nature_of_claim','amount','incident_date'],
+    template:(f,m,c)=>{
+      const today=new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+      return`NOTICE OF INTENTION TO INSTITUTE LEGAL PROCEEDINGS
+(Pursuant to Section 13A of the Government Proceedings Act, Cap 40)
+
+Date: ${today}
+Our Ref: ${m.file_number||'DKMA/REF/'+new Date().getFullYear()}
+
+The Attorney General
+Att. of Kenya/[Relevant Ministry]
+${f.respondent_address||'P.O. Box 40112 – 00100, NAIROBI'}
+
+Dear Sir,
+
+RE: NOTICE OF INTENTION TO SUE — ${c?.name||'[CLIENT NAME]'} v. ${f.respondent||'[RESPONDENT]'}
+
+We act for and on behalf of ${c?.name||'[CLIENT NAME]'} and hereby give you notice of our client's intention to institute legal proceedings against ${f.respondent||'[RESPONDENT]'} in respect of the following:
+
+NATURE OF CLAIM: ${f.nature_of_claim||'[Describe the claim — e.g. negligence, wrongful arrest, breach of contract]'}
+
+DATE OF INCIDENT/CAUSE OF ACTION: ${f.incident_date||'[DATE]'}
+
+PARTICULARS OF LOSS AND DAMAGE:
+1. Special Damages: KES ${f.amount||'[AMOUNT]'}
+2. General Damages: To be assessed
+3. Costs of this suit
+
+You are hereby given thirty (30) days' notice from the date hereof as required by law.
+
+Yours faithfully,
+
+_______________________________
+DENNIS KIMANI MUTONGA
+ADVOCATE FOR THE PLAINTIFF
+Dennis Kimani Mutonga Advocates`;
+    }
+  },
+  {
+    id:'hearing_notice',
+    category:'Court',
+    title:'Notice of Hearing / Mention',
+    icon:'🏛️',
+    color:'#FCEBEB',
+    textColor:'#A32D2D',
+    description:'Notice to the opposing party of a scheduled court hearing, mention or conference.',
+    fields:['respondent_counsel','case_number','court','suit_title','hearing_date','hearing_time','purpose'],
+    template:(f,m,c)=>{
+      const today=new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+      return`Our Ref: ${m.file_number||'DKMA/REF/'+new Date().getFullYear()}
+Date: ${today}
+
+${f.respondent_counsel||'[OPPOSING COUNSEL/RESPONDENT]'}
+
+Dear Sir/Madam,
+
+RE: ${f.suit_title||m.title||'[SUIT TITLE]'}
+    ${f.case_number||m.file_number||'[CASE NO.]'} — ${f.court||m.court||'[COURT]'}
+
+NOTICE OF ${(f.purpose||'HEARING').toUpperCase()}
+
+TAKE NOTICE that the above-mentioned matter is scheduled for ${f.purpose||'hearing'} on ${f.hearing_date||'[DATE]'} at ${f.hearing_time||'[TIME]'} before the Honourable Court at ${f.court||m.court||'[COURT]'}.
+
+Kindly confirm your availability for this date.
+
+Dated this ${today}.
+
+Yours faithfully,
+
+_______________________________
+DENNIS KIMANI MUTONGA
+ADVOCATE FOR THE PLAINTIFF/PETITIONER`;
+    }
+  },
+  {
+    id:'without_prejudice',
+    category:'Settlement',
+    title:'Without Prejudice Settlement Offer',
+    icon:'🤝',
+    color:'#EAF3DE',
+    textColor:'#2D6A4F',
+    description:'Formal settlement offer that cannot be produced in court without consent of both parties.',
+    fields:['respondent_counsel','case_number','offer_amount','offer_terms','acceptance_deadline'],
+    template:(f,m,c)=>{
+      const today=new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+      return`WITHOUT PREJUDICE
+
+Our Ref: ${m.file_number||'DKMA/REF/'+new Date().getFullYear()}
+Date: ${today}
+
+${f.respondent_counsel||'[OPPOSING COUNSEL]'}
+
+Dear Sir/Madam,
+
+RE: ${m.title||'[MATTER TITLE]'} — ${f.case_number||m.file_number||'[CASE NO.]'}
+
+WITHOUT PREJUDICE SETTLEMENT OFFER
+
+We write on a without prejudice basis in an attempt to resolve the above-captioned matter without further recourse to litigation.
+
+Our client is willing to settle all claims in this matter on the following terms:
+
+1. Payment of KES ${f.offer_amount||'[AMOUNT]'} in full and final settlement of all claims.
+${f.offer_terms?'2. '+f.offer_terms:'2. [Any additional terms]'}
+3. Each party to bear its own costs.
+4. Execution of a Deed of Settlement and Discontinuance.
+
+This offer is open for acceptance until ${f.acceptance_deadline||'[DATE — 14 days from today]'}, after which it shall be deemed withdrawn.
+
+THIS LETTER IS WRITTEN WITHOUT PREJUDICE and may not be referred to in any proceedings without the written consent of both parties.
+
+Yours faithfully,
+
+_______________________________
+DENNIS KIMANI MUTONGA
+ADVOCATE FOR THE PLAINTIFF/CLAIMANT`;
+    }
+  },
+  {
+    id:'affidavit_service',
+    category:'Service',
+    title:'Affidavit of Service',
+    icon:'📋',
+    color:'#E6F1FB',
+    textColor:'#185FA5',
+    description:'Sworn affidavit by the process server confirming service of court process — Order V Rule 13 CPR.',
+    fields:['deponent','deponent_id','served_person','served_address','documents_served','date_served','time_served','mode_of_service','case_number','court'],
+    template:(f,m,c)=>`${f.court||m.court||'[COURT]'}
+${f.case_number||m.file_number||'[CASE NO.]'}
+
+${m.title||'[SUIT TITLE]'}
+
+AFFIDAVIT OF SERVICE
+
+I, ${f.deponent||'[DEPONENT FULL NAME]'}, National ID No. ${f.deponent_id||'[ID NO.]'}, Process Server, do hereby make oath and state as follows:
+
+1. THAT I am a Process Server duly authorised to serve court process.
+
+2. THAT on the ${f.date_served||'[DATE]'} at ${f.time_served||'[TIME]'}, I did personally attend at ${f.served_address||'[ADDRESS]'} where I met ${f.served_person||'[NAME OF PERSON SERVED]'} whom I verily believe to be the Defendant/Respondent in the above suit.
+
+3. THAT I did serve upon the said ${f.served_person||'[NAME]'} the following documents: ${f.documents_served||'Plaint, Summons to Enter Appearance and all accompanying documents'}.
+
+4. THAT the service aforesaid was effected by ${f.mode_of_service||'personal service, by delivering to and leaving with the said person a copy of the said process'}.
+
+5. THAT the said person acknowledged receipt of the said documents.
+
+SWORN at NAIROBI
+This ______ day of ____________, ${new Date().getFullYear()}
+
+_______________________________
+DEPONENT
+
+BEFORE ME:
+
+_______________________________
+COMMISSIONER FOR OATHS / MAGISTRATE`
+  },
+  {
+    id:'consent_order',
+    category:'Court',
+    title:'Consent Order / Judgment',
+    icon:'⚖️',
+    color:'#EEEDFE',
+    textColor:'#3C3489',
+    description:'Order made by consent of both parties, to be filed and extracted from court.',
+    fields:['case_number','court','suit_title','plaintiff_counsel','defendant_counsel','terms'],
+    template:(f,m,c)=>{
+      const today=new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+      return`${f.court||m.court||'[COURT]'}
+
+${f.case_number||m.file_number||'[CASE NO.]'}
+
+${f.suit_title||m.title||'[SUIT TITLE]'}
+
+CONSENT ORDER
+
+BY CONSENT of the parties hereto acting by their respective advocates on record:
+
+IT IS HEREBY ORDERED AND DECREED as follows:
+
+${f.terms||`1. [SET OUT AGREED TERMS — e.g.]\n   a) The Defendant shall pay to the Plaintiff the sum of KES [AMOUNT] in full and final settlement.\n   b) Payment to be made by [DATE].\n   c) In default of payment, judgment to be entered for the Plaintiff for the full sum plus costs.\n   d) Each party to bear its own costs of this suit.`}
+
+DATED at ${(m.court||f.court||'Nairobi').split(' ')[0]} this ${today}.
+
+_______________________________               _______________________________
+FOR THE PLAINTIFF/PETITIONER                  FOR THE DEFENDANT/RESPONDENT
+${f.plaintiff_counsel||'Dennis Kimani Mutonga'}              ${f.defendant_counsel||'[Opposing Counsel]'}
+Advocates                                     Advocates
+
+_______________________________
+JUDGE / MAGISTRATE`;
+    }
+  },
+  {
+    id:'instructions_counsel',
+    category:'Instructions',
+    title:'Brief to Counsel / Instructions',
+    icon:'📄',
+    color:'var(--cream2)',
+    textColor:'var(--txt2)',
+    description:'Formal brief instructing counsel on the facts, issues and relief sought.',
+    fields:['instructed_counsel','nature_of_brief','facts','issues','relief','documents_enclosed'],
+    template:(f,m,c)=>{
+      const today=new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+      return`BRIEF TO COUNSEL
+
+Our Ref: ${m.file_number||'DKMA/REF/'+new Date().getFullYear()}
+Date: ${today}
+
+${f.instructed_counsel||'[INSTRUCTED COUNSEL NAME]'}
+Advocate
+[Address]
+
+Dear Counsel,
+
+RE: ${f.nature_of_brief||m.title||'[MATTER TITLE]'}
+    CLIENT: ${c?.name||'[CLIENT NAME]'}
+
+We hereby instruct you to act as Counsel in the above matter and set out below the relevant background facts and instructions.
+
+BACKGROUND FACTS:
+${f.facts||'[Set out the material facts chronologically]'}
+
+ISSUES FOR DETERMINATION:
+${f.issues||'1. [State the legal issues]\n2. [e.g. Whether the Defendant is liable in negligence]\n3. [e.g. What damages, if any, the Plaintiff is entitled to]'}
+
+RELIEF SOUGHT:
+${f.relief||'1. [Set out orders/remedies sought]\n2. Costs of this suit\n3. Any other relief the Honourable Court deems fit'}
+
+DOCUMENTS ENCLOSED:
+${f.documents_enclosed||'1. Copy of [relevant document]\n2. [List all documents being transmitted with the brief]'}
+
+Please acknowledge receipt and advise on prospects.
+
+Yours faithfully,
+
+_______________________________
+DENNIS KIMANI MUTONGA
+ADVOCATE`;
+    }
+  }
+];
+
+function renderCommunicationsTab(){
+  const m=matters.find(x=>x.id===activeMatterId);
+  if(!m)return;
+  const c=clients.find(x=>x.id===m.client_id);
+  const el=document.getElementById('matter-detail-content');
+
+  const catColors={
+    'Service':'#FCEBEB','Pre-Litigation':'#FAEEDA','Court':'#E6F1FB',
+    'Settlement':'#EAF3DE','Instructions':'var(--cream2)'
+  };
+  const cats=[...new Set(CPR_TEMPLATES.map(t=>t.category))];
+
+  el.innerHTML=`
+    <div style="margin-bottom:18px">
+      <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:500;color:var(--txt);margin-bottom:4px">Communication Templates</div>
+      <div style="font-size:12px;color:var(--txt3)">Pre-loaded templates aligned with the Kenya Civil Procedure Rules. Select a template to fill and save as a matter document.</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px" id="comms-template-grid">
+      ${CPR_TEMPLATES.map(t=>`
+        <div class="card" style="cursor:pointer;transition:all 0.15s;border:0.5px solid var(--brd)" onclick="openTemplateComposer('${t.id}')"
+          onmouseover="this.style.borderColor='var(--gold)';this.style.boxShadow='0 2px 12px rgba(184,149,58,0.12)'"
+          onmouseout="this.style.borderColor='var(--brd)';this.style.boxShadow='none'">
+          <div style="padding:16px 18px">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <div style="width:40px;height:40px;border-radius:8px;background:${t.color};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${t.icon}</div>
+              <div style="flex:1">
+                <div style="font-size:11px;font-weight:600;color:${t.textColor};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">${esc(t.category)}</div>
+                <div style="font-family:'Playfair Display',serif;font-size:13px;font-weight:500;color:var(--txt);line-height:1.3">${esc(t.title)}</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--txt3);margin-top:10px;line-height:1.5">${esc(t.description)}</div>
+            <div style="margin-top:12px;text-align:right">
+              <span style="font-size:11px;color:var(--gold);font-weight:500">Use Template →</span>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function openTemplateComposer(templateId){
+  const t=CPR_TEMPLATES.find(x=>x.id===templateId);
+  if(!t)return;
+  const m=matters.find(x=>x.id===activeMatterId);
+  const c=clients.find(x=>x.id===m?.client_id);
+
+  const fieldLabels={
+    defendant:'Defendant / Respondent Name',defendant_address:'Defendant Address',
+    case_number:'Case / Suit Number',court:'Court / Tribunal',suit_title:'Suit Title',
+    date_served:'Date of Service',mode_of_service:'Mode of Service',served_by:'Served By (Name)',
+    addressee:'Addressee Name',addressee_address:'Addressee Address',
+    subject:'Subject / Re:',amount:'Amount (KES)',demand_period:'Demand Period',
+    cause_of_action:'Cause of Action / Particulars of Claim',
+    respondent:'Respondent / Government Entity',respondent_address:'Respondent Address',
+    nature_of_claim:'Nature of Claim',incident_date:'Date of Incident',
+    respondent_counsel:'Opposing Counsel / Respondent',
+    hearing_date:'Hearing Date',hearing_time:'Hearing Time',purpose:'Purpose (Hearing/Mention/Conference)',
+    offer_amount:'Settlement Offer Amount (KES)',offer_terms:'Additional Terms',acceptance_deadline:'Acceptance Deadline',
+    deponent:'Deponent Full Name',deponent_id:'Deponent National ID No.',
+    served_person:'Name of Person Served',served_address:'Address Where Served',
+    documents_served:'Documents Served',time_served:'Time of Service',
+    plaintiff_counsel:'Plaintiff\'s Counsel Name',defendant_counsel:'Defendant\'s Counsel Name',
+    terms:'Agreed Terms (one per line)',
+    instructed_counsel:'Instructed Counsel Name',nature_of_brief:'Nature of Brief',
+    facts:'Background Facts',issues:'Issues for Determination',
+    relief:'Relief Sought',documents_enclosed:'Documents Enclosed (list)'
+  };
+
+  // Smart prefill from matter/client data
+  const prefill={
+    case_number:m?.file_number||'',court:m?.court||'',
+    suit_title:m?.title||'',addressee:c?.name||'',
+    addressee_address:c?.address||c?.postal_address||''
+  };
+
+  const overlay=document.createElement('div');
+  overlay.id='template-composer-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.7);z-index:5000;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto';
+  overlay.innerHTML=`
+    <div style="background:#fff;border-radius:12px;width:100%;max-width:760px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto">
+      <!-- Header -->
+      <div style="background:var(--navy);padding:18px 24px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">${esc(t.category)} Template</div>
+          <div style="font-family:'Playfair Display',serif;font-size:18px;color:#fff;font-weight:500">${t.icon} ${esc(t.title)}</div>
+        </div>
+        <button onclick="document.getElementById('template-composer-overlay').remove()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+      </div>
+      <!-- Body -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;min-height:0">
+        <!-- Left: Fields -->
+        <div style="padding:22px;border-right:1px solid var(--brd);overflow-y:auto;max-height:72vh">
+          <div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:14px">Fill in the details</div>
+          <div id="template-fields" style="display:flex;flex-direction:column;gap:12px">
+            ${t.fields.map(f=>`
+              <div>
+                <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.4px;font-weight:500;margin-bottom:4px">${esc(fieldLabels[f]||f)}</div>
+                ${(f==='cause_of_action'||f==='terms'||f==='facts'||f==='issues'||f==='relief'||f==='documents_enclosed'||f==='offer_terms')
+                  ?`<textarea id="tf-${f}" rows="3" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:8px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none;resize:vertical;line-height:1.5" oninput="updateTemplatePreview('${templateId}')">${esc(prefill[f]||'')}</textarea>`
+                  :`<input id="tf-${f}" type="text" value="${esc(prefill[f]||'')}" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:8px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none" oninput="updateTemplatePreview('${templateId}')"/>`}
+              </div>`).join('')}
+          </div>
+        </div>
+        <!-- Right: Live Preview -->
+        <div style="padding:22px;overflow-y:auto;max-height:72vh;background:var(--cream)">
+          <div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:12px">Live Preview</div>
+          <div id="template-preview" style="font-family:Georgia,serif;font-size:12px;line-height:1.8;color:var(--txt);white-space:pre-wrap;background:#fff;border-radius:8px;padding:18px;border:1px solid var(--brd);min-height:300px"></div>
+        </div>
+      </div>
+      <!-- Footer -->
+      <div style="padding:16px 24px;border-top:1px solid var(--brd);background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="font-size:11px;color:var(--txt3)">Will be saved to matter documents as a text file.</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="document.getElementById('template-composer-overlay').remove()" style="background:transparent;border:1px solid var(--brd2);color:var(--txt2);padding:8px 18px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Cancel</button>
+          <button id="tpl-save-btn" onclick="saveTemplateToMatter('${templateId}')" style="background:var(--navy);color:#fff;border:none;padding:8px 22px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">💾 Save to Matter Docs</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  // Initial preview render
+  updateTemplatePreview(templateId);
+}
+
+function updateTemplatePreview(templateId){
+  const t=CPR_TEMPLATES.find(x=>x.id===templateId);
+  if(!t)return;
+  const m=matters.find(x=>x.id===activeMatterId);
+  const c=clients.find(x=>x.id===m?.client_id);
+  const fields={};
+  t.fields.forEach(f=>{
+    const el=document.getElementById('tf-'+f);
+    if(el)fields[f]=el.value.trim();
+  });
+  const preview=document.getElementById('template-preview');
+  if(preview){
+    try{preview.textContent=t.template(fields,m||{},c||null);}
+    catch(e){preview.textContent='[Preview error: '+e.message+']';}
+  }
+}
+
+async function saveTemplateToMatter(templateId){
+  const t=CPR_TEMPLATES.find(x=>x.id===templateId);
+  if(!t||!activeMatterId){toast('Cannot save — no active matter.',true);return;}
+  const m=matters.find(x=>x.id===activeMatterId);
+  const c=clients.find(x=>x.id===m?.client_id);
+  const fields={};
+  t.fields.forEach(f=>{
+    const el=document.getElementById('tf-'+f);
+    if(el)fields[f]=el.value.trim();
+  });
+  let content;
+  try{content=t.template(fields,m||{},c||null);}
+  catch(e){toast('Template error: '+e.message,true);return;}
+
+  const btn=document.getElementById('tpl-save-btn');
+  btn.disabled=true;btn.textContent='Saving…';
+
+  const blob=new Blob([content],{type:'text/plain'});
+  const ts=Date.now();
+  const safeCat=t.category.replace(/\s+/g,'_');
+  const safeTitle=t.title.replace(/[^a-zA-Z0-9 _-]/g,'').replace(/\s+/g,'_');
+  const fileName=`correspondence__${safeCat}__${ts}_${safeTitle}.txt`;
+  const path=`${activeMatterId}/${fileName}`;
+  const{error}=await sb.storage.from(STORAGE_BUCKET).upload(path,blob,{contentType:'text/plain',upsert:false});
+  btn.disabled=false;btn.textContent='💾 Save to Matter Docs';
+  if(error){toast('Upload failed: '+error.message,true);return;}
+  toast(`"${t.title}" saved to matter documents ✓`);
+  document.getElementById('template-composer-overlay').remove();
+  // Refresh documents if on that tab
+  if(activeMatterTab==='documents')loadMatterDocuments();
 }
 
 
@@ -5856,12 +6406,81 @@ async function sendDocumentEmail(){
     statusEl.style.color='var(--green)';
     statusEl.textContent='✓ Document emailed successfully to '+toEmail;
     toast('Document sent to '+toName+' ✓');
-    setTimeout(()=>closeModal(),2000);
+    // ── Log delivery report to Supabase ──────────────────────────────
+    const matter=matters.find(m=>m.id===activeMatterId);
+    const senderName=currentProfile?.full_name||currentUser?.email||'—';
+    await sb.from('email_delivery_reports').insert([{
+      matter_id:activeMatterId,
+      matter_title:matter?.title||'—',
+      document_name:displayName,
+      storage_name:storageName,
+      recipient_email:toEmail,
+      recipient_name:toName,
+      subject:subject||`Document from Dennis Kimani Mutonga Advocate`,
+      message:message||null,
+      sent_by:senderName,
+      sent_at:new Date().toISOString(),
+      status:'delivered'
+    }]).then(({error})=>{
+      if(error)console.warn('[DKMA] Could not save email delivery report:',error.message);
+    });
+    // ── Auto-save delivery receipt to matter documents ────────────────
+    setTimeout(()=>saveDeliveryReportToMatter(displayName,toName,toEmail,subject,message,senderName),800);
+    setTimeout(()=>closeModal(),2200);
   }catch(e){
     btn.disabled=false;btn.textContent='📧 Send Document';
     statusEl.style.color='var(--red)';
     statusEl.textContent='Error: '+e.message;
   }
+}
+
+async function saveDeliveryReportToMatter(docName,toName,toEmail,subject,message,senderName){
+  if(!activeMatterId)return;
+  const matter=matters.find(m=>m.id===activeMatterId);
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+  const timeStr=now.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
+  const reportText=[
+    '═══════════════════════════════════════════════════════════',
+    '           DKMA — EMAIL DELIVERY REPORT',
+    '═══════════════════════════════════════════════════════════',
+    '',
+    'Matter       : '+(matter?.title||'—'),
+    'File No.     : '+(matter?.file_number||'—'),
+    'Date Sent    : '+dateStr+' at '+timeStr,
+    'Sent By      : '+senderName,
+    '',
+    '───────────────────────────────────────────────────────────',
+    'DOCUMENT TRANSMITTED',
+    '───────────────────────────────────────────────────────────',
+    'Document     : '+docName,
+    'Subject      : '+subject,
+    '',
+    '───────────────────────────────────────────────────────────',
+    'RECIPIENT',
+    '───────────────────────────────────────────────────────────',
+    'Name         : '+toName,
+    'Email        : '+toEmail,
+    '',
+    message?('───────────────────────────────────────────────────────────\nMESSAGE ACCOMPANYING DOCUMENT\n───────────────────────────────────────────────────────────\n'+message+'\n'):'',
+    '───────────────────────────────────────────────────────────',
+    'DELIVERY STATUS : SENT SUCCESSFULLY',
+    '───────────────────────────────────────────────────────────',
+    '',
+    'This is an automatically generated delivery record.',
+    'Dennis Kimani Mutonga Advocates',
+    'www.dkma.co.ke',
+    '═══════════════════════════════════════════════════════════',
+  ].join('\n');
+
+  const blob=new Blob([reportText],{type:'text/plain'});
+  const ts=Date.now();
+  const safeName=docName.replace(/[^a-zA-Z0-9._-]/g,'_').replace(/\.[^.]+$/,'');
+  const fileName=`correspondence__Email Delivery__${ts}_Delivery_Report_${safeName}.txt`;
+  const path=`${activeMatterId}/${fileName}`;
+  await sb.storage.from(STORAGE_BUCKET).upload(path,blob,{contentType:'text/plain',upsert:false});
+  // Refresh documents if currently on that tab
+  if(activeMatterTab==='documents')loadMatterDocuments();
 }
 
 function buildDocumentEmailHtml(toName, fileName, personalMessage){
