@@ -5253,26 +5253,33 @@ function categoryLabel(cat){return{pleading:'Pleading',correspondence:'Correspon
 async function loadMatterDocuments(){
   const card=document.getElementById('docs-card');
   if(!card)return;
-  const{data,error}=await sb.storage.from(STORAGE_BUCKET).list(activeMatterId,{limit:200,offset:0,sortBy:{column:'created_at',order:'desc'}});
-  if(error){
-    card.innerHTML=`<div class="card-header" style="padding:16px 20px"><span class="card-title" style="font-family:'Playfair Display',serif;font-size:14px">Documents</span></div><div style="padding:20px;color:var(--red);font-size:13px">Could not load documents: ${esc(error.message)}<br><div style="margin-top:8px;font-size:11px;color:var(--txt3);background:var(--cream);padding:10px;border-radius:6px">To enable document storage, create a Supabase Storage bucket named <strong>matter-documents</strong> and set it to private. Then add a policy allowing authenticated users to manage files.</div></div>`;
+
+  // Run both fetches in parallel for speed
+  const activeMatter=matters.find(m=>m.id===activeMatterId);
+  const clientId=activeMatter?.client_id||null;
+
+  const [firmResult, clientResult] = await Promise.all([
+    sb.storage.from(STORAGE_BUCKET).list(activeMatterId,{limit:200,offset:0,sortBy:{column:'created_at',order:'desc'}}),
+    clientId
+      ? sb.storage.from(CLIENT_BUCKET).list(clientId,{limit:200,sortBy:{column:'created_at',order:'desc'}})
+      : Promise.resolve({data:null,error:null})
+  ]);
+
+  if(firmResult.error){
+    card.innerHTML=`<div class="card-header" style="padding:16px 20px"><span class="card-title" style="font-family:'Playfair Display',serif;font-size:14px">Documents</span></div><div style="padding:20px;color:var(--red);font-size:13px">Could not load documents: ${esc(firmResult.error.message)}<br><div style="margin-top:8px;font-size:11px;color:var(--txt3);background:var(--cream);padding:10px;border-radius:6px">To enable document storage, create a Supabase Storage bucket named <strong>matter-documents</strong> and set it to private. Then add a policy allowing authenticated users to manage files.</div></div>`;
     return;
   }
-  matterDocuments=(data||[]).filter(d=>d.name!=='.emptyFolderPlaceholder');
 
-  // Also load client uploads linked to this matter
-  const activeMatter=matters.find(m=>m.id===activeMatterId);
+  matterDocuments=(firmResult.data||[]).filter(d=>d.name!=='.emptyFolderPlaceholder');
+
+  // Filter client uploads to only those linked to this matter
   window._matterClientUploads=[];
-  if(activeMatter&&activeMatter.client_id){
-    const{data:clientFiles}=await sb.storage.from(CLIENT_BUCKET).list(activeMatter.client_id,{limit:200,sortBy:{column:'created_at',order:'desc'}});
-    if(clientFiles){
-      window._matterClientUploads=(clientFiles||[]).filter(f=>{
-        if(f.name==='.emptyFolderPlaceholder')return false;
-        const parts=f.name.split('__');
-        // New format: cat__desc__matterId__ts_file  → parts[2] is matterId
-        return parts.length>=4&&parts[2]===activeMatterId;
-      });
-    }
+  if(clientResult.data){
+    window._matterClientUploads=clientResult.data.filter(f=>{
+      if(f.name==='.emptyFolderPlaceholder')return false;
+      const parts=f.name.split('__');
+      return parts.length>=4&&parts[2]===activeMatterId;
+    });
   }
 
   const totalCount=matterDocuments.length+(window._matterClientUploads||[]).length;
