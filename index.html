@@ -2931,37 +2931,51 @@ function renderProfileTab(){
 // Shows firm-uploaded docs (matter-documents bucket, shared__ prefix)
 // AND client-uploaded docs (client-uploads bucket) in one merged view.
 
-async function loadClientDocumentsUnified(clientId, clientName){
+const _clientDocCache = {}; // keyed by clientId
+
+async function loadClientDocumentsUnified(clientId, clientName, force=false){
   const card = document.getElementById('client-docs-unified');
   if(!card) return;
 
-  // 1. Get client matters
+  // Serve from cache if available
+  if(!force && _clientDocCache[clientId]){
+    const c=_clientDocCache[clientId];
+    const badge=document.getElementById('client-doc-badge');
+    const total=c.firmDocs.length+c.clientDocs.length;
+    if(badge){badge.textContent=total;badge.style.display=total>0?'inline':'none';}
+    renderUnifiedDocsCard(card, clientId, c.matters, c.firmDocs, c.clientDocs);
+    return;
+  }
+
   const clientMatters = matters.filter(m => m.client_id === clientId);
 
-  // 2. Fetch firm docs from all client matters in parallel
-  const firmDocsRaw = [];
-  await Promise.all(clientMatters.map(async m => {
-    const{data} = await sb.storage.from(STORAGE_BUCKET).list(m.id, {limit:200, sortBy:{column:'created_at',order:'desc'}});
-    if(data) data.forEach(f => {
-      if(f.name==='.emptyFolderPlaceholder') return;
-      firmDocsRaw.push({...f, _matter: m, _source:'firm'});
-    });
-  }));
+  // All fetches in parallel: one per matter + client uploads
+  const [clientFilesResult, ...matterResults] = await Promise.all([
+    sb.storage.from(CLIENT_BUCKET).list(clientId, {limit:200, sortBy:{column:'created_at',order:'desc'}}),
+    ...clientMatters.map(m => sb.storage.from(STORAGE_BUCKET).list(m.id, {limit:200, sortBy:{column:'created_at',order:'desc'}}).then(r=>({m,r})))
+  ]);
 
-  // 3. Fetch client-uploaded docs
+  const firmDocsRaw = [];
+  matterResults.forEach(({m,r})=>{
+    if(r.data) r.data.forEach(f=>{
+      if(f.name==='.emptyFolderPlaceholder') return;
+      firmDocsRaw.push({...f, _matter:m, _source:'firm'});
+    });
+  });
+
   const clientDocsRaw = [];
-  const{data:clientFiles} = await sb.storage.from(CLIENT_BUCKET).list(clientId, {limit:200, sortBy:{column:'created_at',order:'desc'}});
-  if(clientFiles) clientFiles.forEach(f => {
+  if(clientFilesResult.data) clientFilesResult.data.forEach(f=>{
     if(f.name==='.emptyFolderPlaceholder') return;
     clientDocsRaw.push({...f, _source:'client'});
   });
 
-  // Update badge
+  // Cache result
+  _clientDocCache[clientId]={matters:clientMatters, firmDocs:firmDocsRaw, clientDocs:clientDocsRaw};
+
   const badge = document.getElementById('client-doc-badge');
   const total = firmDocsRaw.length + clientDocsRaw.length;
   if(badge){ badge.textContent=total; badge.style.display = total>0?'inline':'none'; }
 
-  // 4. Render
   renderUnifiedDocsCard(card, clientId, clientMatters, firmDocsRaw, clientDocsRaw);
 }
 
@@ -3110,7 +3124,7 @@ async function toggleShareFromProfile(matterId, storageName, displayName, btn){
   activeMatterId = prev;
   // Refresh the unified view
   const c = clients.find(x=>x.id===activeClientId);
-  if(c) loadClientDocumentsUnified(c.id, c.name);
+  if(c) loadClientDocumentsUnified(c.id, c.name, true); // force refresh after share toggle
 }
 
 // ── View / download files uploaded by the client (client-uploads bucket) ──
@@ -5103,7 +5117,7 @@ function switchMatterTab(tab,el){
   if(el)el.classList.add('active');
   if(tab==='documents'){
     document.getElementById('matter-detail-content').innerHTML=`<div class="card" id="docs-card"><div style="padding:40px;text-align:center;color:var(--txt3)">Loading documents…</div></div>`;
-    loadMatterDocuments();
+    loadMatterDocuments();  // uses cache on repeat visits
   } else if(tab==='communications'){
     renderCommunicationsTab();
   } else {
@@ -5250,14 +5264,27 @@ function docFileIcon(name){
 function fmtFileSize(bytes){if(!bytes)return'—';if(bytes<1024)return bytes+'B';if(bytes<1048576)return(bytes/1024).toFixed(0)+'KB';return(bytes/1048576).toFixed(1)+'MB';}
 function categoryLabel(cat){return{pleading:'Pleading',correspondence:'Correspondence',evidence:'Evidence',contract:'Contract',id:'ID / KYC',finance:'Finance',order:'Court Order',other:'Other'}[cat]||cat||'Document';}
 
-async function loadMatterDocuments(){
+// Cache: avoid re-fetching docs when switching tabs back to documents
+const _docCache = {}; // keyed by matterId
+
+async function loadMatterDocuments(force=false){
   const card=document.getElementById('docs-card');
   if(!card)return;
 
-  // Run both fetches in parallel for speed
+  // Serve from cache if available and not forced
+  if(!force && _docCache[activeMatterId]){
+    const cached=_docCache[activeMatterId];
+    matterDocuments=cached.firmDocs;
+    window._matterClientUploads=cached.clientUploads;
+    document.getElementById('matter-doc-count').textContent=matterDocuments.length+window._matterClientUploads.length;
+    renderDocumentsCard();
+    return;
+  }
+
   const activeMatter=matters.find(m=>m.id===activeMatterId);
   const clientId=activeMatter?.client_id||null;
 
+  // Both fetches in parallel
   const [firmResult, clientResult] = await Promise.all([
     sb.storage.from(STORAGE_BUCKET).list(activeMatterId,{limit:200,offset:0,sortBy:{column:'created_at',order:'desc'}}),
     clientId
@@ -5272,7 +5299,6 @@ async function loadMatterDocuments(){
 
   matterDocuments=(firmResult.data||[]).filter(d=>d.name!=='.emptyFolderPlaceholder');
 
-  // Filter client uploads to only those linked to this matter
   window._matterClientUploads=[];
   if(clientResult.data){
     window._matterClientUploads=clientResult.data.filter(f=>{
@@ -5282,7 +5308,10 @@ async function loadMatterDocuments(){
     });
   }
 
-  const totalCount=matterDocuments.length+(window._matterClientUploads||[]).length;
+  // Store in cache
+  _docCache[activeMatterId]={firmDocs:matterDocuments, clientUploads:window._matterClientUploads};
+
+  const totalCount=matterDocuments.length+window._matterClientUploads.length;
   document.getElementById('matter-doc-count').textContent=totalCount;
   renderDocumentsCard();
 }
@@ -5399,8 +5428,8 @@ function renderDocumentsCard(){
     zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
     zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');quickUploadFiles(e.dataTransfer.files);});
   }
-  // Load and render email delivery log below the documents card
-  loadEmailDeliveryLog();
+  // Lazy-load the email delivery log — don't block doc rendering
+  setTimeout(loadEmailDeliveryLog, 0);
 }
 
 async function loadEmailDeliveryLog(){
@@ -5608,7 +5637,7 @@ async function quickUploadFiles(files){
   const zone=document.getElementById('doc-drop-zone');
   if(zone)zone.innerHTML='<div class="upload-zone-icon">⏳</div><div class="upload-zone-text">Uploading '+files.length+' file(s)…</div>';
   for(const file of Array.from(files)){await uploadSingleFile(file,'other','');}
-  await loadMatterDocuments();
+  await loadMatterDocuments(true);
   toast(files.length+' file'+(files.length>1?'s':'')+' uploaded.');
 }
 
@@ -5803,7 +5832,7 @@ async function uploadDocument(){
     document.getElementById('matter-detail-content').innerHTML=
       `<div class="card" id="docs-card"><div style="padding:40px;text-align:center;color:var(--txt3)">Loading documents…</div></div>`;
     closeModal();
-    await loadMatterDocuments();
+    await loadMatterDocuments(true);
   } else {
     // All failed — let them try again
     btn.textContent='Close';
@@ -5833,7 +5862,7 @@ async function deleteDocument(storageName,displayName){
   const{error}=await sb.storage.from(STORAGE_BUCKET).remove([`${activeMatterId}/${storageName}`]);
   if(error){toast('Delete failed: '+error.message,true);return;}
   toast('Document deleted.');
-  await loadMatterDocuments();
+  await loadMatterDocuments(true);
 }
 
 // Toggle client portal visibility: rename file with/without shared__ prefix
@@ -5853,7 +5882,7 @@ async function toggleShareWithClient(storageName,displayName,btn){
     if(upErr){toast('Could not rename file: '+upErr.message,true);btn.disabled=false;btn.textContent=isShared?'👁 Client':'🔒 Hidden';return;}
     await sb.storage.from(STORAGE_BUCKET).remove([oldPath]);
     toast(isShared?'Document hidden from client portal.':'Document is now visible in client portal ✓');
-    await loadMatterDocuments();
+    await loadMatterDocuments(true);
   }catch(e){toast('Error: '+e.message,true);btn.disabled=false;btn.textContent=isShared?'👁 Client':'🔒 Hidden';}
 }
 
