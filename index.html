@@ -1827,6 +1827,8 @@ function syncMobileBadges(){
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────
+let _appInitialized=false; // guard against duplicate SIGNED_IN boot loops
+
 async function initAuth(){
   // If the hash-check already detected a reset link, do NOT touch the UI —
   // just wire up the listener and return. initAuth must never call showApp()
@@ -1851,9 +1853,16 @@ async function initAuth(){
         showFirmMode('newpassword');
       } else {
         currentUser=session.user;
-        await loadProfile();
-        showApp();
-        loadAll();
+        try{
+          await loadProfile();
+          showApp();
+          loadAll();
+          _appInitialized=true;
+        }catch(bootErr){
+          console.error('[boot] Error during initial load:',bootErr);
+          hideSplash();
+          showAuthScreen();
+        }
       }
     } else {
       showAuthScreen();
@@ -1870,6 +1879,9 @@ async function initAuth(){
     if(event==='SIGNED_IN'&&session){
       // Block auto-login if we are in password recovery mode
       if(window._firmPasswordRecoveryMode){return;}
+      // If the app already booted via getSession() above, this SIGNED_IN is a
+      // duplicate event from Supabase (token refresh, updateUser, etc.) — ignore it
+      if(_appInitialized){return;}
       // Also detect recovery sessions by checking the AMR claim — Supabase sets
       // authenticator method reference to 'recovery' when the user clicked a
       // password-reset link. This catches the race where SIGNED_IN fires before
@@ -1898,12 +1910,20 @@ async function initAuth(){
         return;
       }
       currentUser=session.user;
-      await loadProfile();
-      showApp();
-      loadAll();
+      try{
+        await loadProfile();
+        showApp();
+        loadAll();
+        _appInitialized=true;
+      }catch(bootErr){
+        console.error('[boot] Error during auth state load:',bootErr);
+        hideSplash();
+        showAuthScreen();
+      }
     }
     if(event==='SIGNED_OUT'){
       currentUser=null;currentProfile=null;
+      _appInitialized=false;
       window._firmPasswordRecoveryMode=false;
       clients=[];matters=[];events=[];invoices=[];timeEntries=[];alerts=[];parties=[];
       showAuthScreen();
