@@ -2131,9 +2131,14 @@ async function forceChangePassword(){
 
 // ─── LOAD ALL ─────────────────────────────────────────────────────
 async function loadAll(){
-  await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadTimeEntries(),loadAlerts(),loadParties(),loadInboxMessages(),loadAllProfiles(),loadGazettedHolidays(),loadStaffMessages()]);
-  await loadPanicAlerts();
-  renderDashboard();updateBadges();
+  // ── Phase 1: load only what the dashboard needs, render immediately ──
+  await Promise.all([loadClients(),loadMatters(),loadEvents(),loadInvoices(),loadAlerts()]);
+  renderDashboard(); updateBadges();
+  // ── Phase 2: load everything else in the background ──
+  Promise.all([
+    loadTimeEntries(),loadParties(),loadInboxMessages(),
+    loadAllProfiles(),loadGazettedHolidays(),loadStaffMessages(),loadPanicAlerts()
+  ]).then(()=>{ updateBadges(); });
   // Update parties badge
   const pb=document.getElementById('parties-main-badge');
   if(pb&&parties.length){pb.textContent=parties.length;pb.style.display='';}else if(pb){pb.style.display='none';}
