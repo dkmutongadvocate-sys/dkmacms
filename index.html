@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%230D1B2A'/><text y='320' x='256' font-size='280' text-anchor='middle' font-family='Georgia,serif' fill='%23B8953A'>⚖</text></svg>"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" onerror="document.getElementById('loading-splash').style.display='none';document.body.innerHTML='<div style=\"font-family:sans-serif;padding:40px;text-align:center;color:#a33\"><h2>Library Load Error</h2><p style=\"font-size:14px;margin-top:12px\">The Supabase library failed to load from CDN.<br>Check your internet connection and try again.</p></div>'"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -642,6 +642,38 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 </head>
 <body>
 <!-- LOADING SPLASH (shown on initial load, hidden once auth resolves) -->
+<script>
+// DIAGNOSTIC: runs as soon as this tag is parsed, before any other JS
+window.onerror = function(msg, src, line, col, err) {
+  var splash = document.getElementById('loading-splash');
+  if (splash) splash.style.display = 'none';
+  var d = document.createElement('div');
+  d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;padding:40px;font-family:monospace;font-size:13px;overflow:auto;';
+  d.innerHTML = '<h2 style="color:red;margin-bottom:16px">JS ERROR CAUGHT</h2>'
+    + '<b>Message:</b> ' + msg + '<br><br>'
+    + '<b>Source:</b> ' + src + '<br>'
+    + '<b>Line:</b> ' + line + ', Col: ' + col + '<br><br>'
+    + (err && err.stack ? '<b>Stack:</b><pre>' + err.stack + '</pre>' : '');
+  document.body.appendChild(d);
+  return true; // suppress default handling
+};
+// Also hide splash after 3s no matter what, and report state
+setTimeout(function() {
+  var splash = document.getElementById('loading-splash');
+  if (splash && splash.style.display !== 'none') {
+    splash.style.display = 'none';
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;padding:40px;font-family:monospace;font-size:13px;';
+    d.innerHTML = '<h2 style="color:darkorange;margin-bottom:16px">TIMEOUT: Splash still showing after 3s</h2>'
+      + '<b>supabase defined:</b> ' + (typeof supabase !== "undefined") + '<br>'
+      + '<b>sb defined:</b> ' + (typeof sb !== "undefined") + '<br>'
+      + '<b>initAuth defined:</b> ' + (typeof initAuth !== "undefined") + '<br>'
+      + '<b>SUPABASE_URL:</b> ' + (typeof SUPABASE_URL !== "undefined" ? SUPABASE_URL : "NOT DEFINED") + '<br>'
+      + '<b>currentUser:</b> ' + JSON.stringify(typeof currentUser !== "undefined" ? currentUser : "NOT DEFINED");
+    document.body.appendChild(d);
+  }
+}, 3000);
+</script>
 <div id="loading-splash" style="display:flex;position:fixed;inset:0;background:var(--navy);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px">
   <div style="font-family:'Playfair Display',serif;font-size:24px;color:#fff;font-weight:500">DKMA</div>
   <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:2px;text-transform:uppercase">Law Firm Management</div>
@@ -1666,9 +1698,21 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 // ─── SUPABASE ─────────────────────────────────────────────────────
 const SUPABASE_URL='%%SUPABASE_URL%%';
 const SUPABASE_KEY='%%SUPABASE_ANON_KEY%%';
-if(SUPABASE_URL.includes('%%')||SUPABASE_KEY.includes('%%')){
-  document.body.innerHTML='<div style="font-family:sans-serif;padding:40px;text-align:center;color:#a33"><h2>Configuration Error</h2><p style="margin-top:12px;font-size:14px">Supabase credentials were not injected.<br>Ensure GitHub Actions secrets are set and the workflow has run.</p></div>';
-  throw new Error('Supabase credentials not injected — placeholders still present.');
+
+function _showFatalError(title, msg) {
+  const splash = document.getElementById('loading-splash');
+  if (splash) splash.style.display = 'none';
+  document.body.style.cssText = 'background:#fff;margin:0;padding:0;font-family:sans-serif';
+  document.body.innerHTML = '<div style="padding:60px 40px;text-align:center;max-width:500px;margin:0 auto"><div style="font-size:40px;margin-bottom:20px">⚠️</div><h2 style="color:#a33;font-size:20px;margin-bottom:12px">'+title+'</h2><p style="font-size:14px;color:#555;line-height:1.6">'+msg+'</p></div>';
+}
+
+if(SUPABASE_URL.includes('%%') || SUPABASE_KEY.includes('%%')){
+  _showFatalError('Configuration Error', 'Supabase credentials were not injected into this file.<br><br>Ensure your GitHub Actions secrets (SUPABASE_URL and SUPABASE_ANON_KEY) are set and the deployment workflow has run successfully.');
+  throw new Error('Supabase credentials not injected.');
+}
+if(typeof supabase === 'undefined' || !supabase.createClient){
+  _showFatalError('Library Load Error', 'The Supabase library failed to load from the CDN.<br><br>Check your internet connection and try reloading.');
+  throw new Error('supabase CDN not loaded.');
 }
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{storageKey:'dkma-cms-session'}});
 
@@ -6578,6 +6622,9 @@ function addEventToGCalById(id, btn) {
 // Init GCal once GIS script loads
 window.addEventListener('load', () => { setTimeout(initGCalClient, 800); });
 
+// ─── BOOT ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => { initAuth(); });
+
 // ─── DOCUMENT VIEWER ──────────────────────────────────────────────
 async function viewDocument(storageName, displayName) {
   const path = `${activeMatterId}/${storageName}`;
@@ -7093,7 +7140,9 @@ function buildDocumentEmailHtml(toName, fileName, personalMessage, trackingId){
       </table>
     </td></tr>
   </table>
-
+`;
+}
+</script>
 
 <!-- EDIT MY PROFILE MODAL -->
 <div class="modal-overlay hidden" id="editprofile-overlay" onclick="if(event.target.id==='editprofile-overlay')closeEditProfileModal()">
