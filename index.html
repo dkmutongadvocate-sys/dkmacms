@@ -1571,11 +1571,18 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 
 <!-- EDIT MY PROFILE MODAL -->
 <div class="modal-overlay hidden" id="editprofile-overlay" onclick="if(event.target.id==='editprofile-overlay')closeEditProfileModal()">
-  <div class="modal" style="max-width:440px">
+  <div class="modal" style="max-width:500px">
     <div class="modal-head"><span class="modal-title">Edit My Profile</span><button class="modal-close" onclick="closeEditProfileModal()">×</button></div>
     <div class="modal-body">
+      <div class="section-divider">Personal Information</div>
       <div class="form-row"><label>Full Name</label><input id="ep-name" placeholder="Your full name"/></div>
       <div class="form-two">
+        <div class="form-row"><label>Phone</label><input id="ep-phone" type="tel" placeholder="+254…"/></div>
+        <div class="form-row"><label>Bar Admission / ID No.</label><input id="ep-bar" placeholder="e.g. LSK/ADV/2020/123"/></div>
+      </div>
+      <div class="form-row"><label>Bio / Specialisation</label><textarea id="ep-bio" placeholder="Brief professional bio or areas of specialisation…" style="min-height:70px"></textarea></div>
+      <div class="section-divider">Role &amp; Department</div>
+      <div class="form-two" id="ep-role-dept-row">
         <div class="form-row"><label>Role</label>
           <select id="ep-role">
             <option value="associate">Associate</option>
@@ -1595,8 +1602,18 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
           </select>
         </div>
       </div>
-      <div style="font-size:11px;color:var(--txt3);background:var(--cream);border-radius:6px;padding:10px 13px;line-height:1.5">
+      <div id="ep-role-notice" style="display:none;font-size:11px;color:var(--txt3);background:var(--cream);border-radius:6px;padding:10px 13px;line-height:1.5">
+        🔒 Role and department can only be changed by an Administrator.
+      </div>
+      <div id="ep-admin-notice" style="display:none;font-size:11px;color:var(--txt3);background:var(--cream);border-radius:6px;padding:10px 13px;line-height:1.5">
         ⚠️ If you are the firm's administrator, set your role to <strong>Administrator</strong> here so you have full access.
+      </div>
+      <div class="section-divider">Security</div>
+      <div class="form-row">
+        <label>Change Password <span style="font-size:10px;background:var(--cream2);color:var(--txt3);padding:1px 6px;border-radius:3px;margin-left:4px">Optional</span></label>
+        <input id="ep-newpw" type="password" placeholder="Leave blank to keep current password" style="margin-bottom:8px"/>
+        <input id="ep-newpw-confirm" type="password" placeholder="Confirm new password"/>
+        <div id="ep-pw-error" style="font-size:11px;color:var(--red);min-height:16px;margin-top:4px"></div>
       </div>
     </div>
     <div class="modal-foot">
@@ -1604,6 +1621,67 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
       <button class="btn-primary" id="ep-btn" onclick="saveMyProfile()">Save Profile</button>
     </div>
   </div>
+</div>
+
+<!-- ADMIN/HEAD: MANAGE TEAM MEMBER MODAL -->
+<div class="modal-overlay hidden" id="managemember-overlay" onclick="if(event.target.id==='managemember-overlay')closeManageMemberModal()">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head"><span class="modal-title">Manage Team Member</span><button class="modal-close" onclick="closeManageMemberModal()">×</button></div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--cream);border-radius:8px;margin-bottom:20px;border:0.5px solid var(--brd)">
+        <div id="mm-av" class="client-av av-a" style="width:44px;height:44px;font-size:15px;flex-shrink:0">?</div>
+        <div style="flex:1">
+          <div id="mm-name" style="font-weight:500;font-size:14px;color:var(--txt)">—</div>
+          <div id="mm-meta" style="font-size:11px;color:var(--txt3);margin-top:2px">—</div>
+        </div>
+        <div id="mm-status-badge"></div>
+      </div>
+      <div class="section-divider">Role &amp; Department</div>
+      <div class="form-two">
+        <div class="form-row"><label>Role</label>
+          <select id="mm-role">
+            <option value="associate">Associate</option>
+            <option value="senior">Senior Associate</option>
+            <option value="head">Head of Department</option>
+            <option value="admin">Administrator</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Department</label>
+          <select id="mm-dept">
+            <option value="">None</option>
+            <option>Litigation</option>
+            <option>Conveyancing</option>
+            <option>Family Law</option>
+            <option>Corporate</option>
+            <option>Finance</option>
+          </select>
+        </div>
+      </div>
+      <div class="section-divider" style="margin-top:20px">Account Actions</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button id="mm-suspend-btn" onclick="toggleMemberSuspend()" style="display:flex;align-items:center;gap:12px;background:#FFF8E7;border:1px solid #E8D5A0;border-radius:8px;padding:12px 16px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;width:100%;transition:all 0.12s" onmouseover="this.style.background='#FAEEDA'" onmouseout="this.style.background='#FFF8E7'">
+          <span style="font-size:18px" id="mm-suspend-icon">⏸</span>
+          <div>
+            <div id="mm-suspend-label" style="font-size:13px;font-weight:500;color:#854F0B">Suspend Account</div>
+            <div id="mm-suspend-desc" style="font-size:11px;color:var(--txt3);margin-top:1px">Prevents this user from logging in without deleting their data.</div>
+          </div>
+        </button>
+        <button onclick="deleteMember()" style="display:flex;align-items:center;gap:12px;background:#FCEBEB;border:1px solid #F5C6C6;border-radius:8px;padding:12px 16px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;width:100%;transition:all 0.12s" onmouseover="this.style.background='#f9d5d5'" onmouseout="this.style.background='#FCEBEB'">
+          <span style="font-size:18px">🗑</span>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:#A32D2D">Delete Account</div>
+            <div style="font-size:11px;color:var(--txt3);margin-top:1px">Permanently removes this user. This cannot be undone.</div>
+          </div>
+        </button>
+      </div>
+      <div id="mm-error" style="font-size:12px;color:var(--red);min-height:16px;margin-top:8px"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="closeManageMemberModal()">Cancel</button>
+      <button class="btn-primary" id="mm-save-btn" onclick="saveManageMember()">Save Changes</button>
+    </div>
+  </div>
+</div>
 
 </div><!-- /modal-overlay -->
 </div><!-- /app -->
@@ -3860,19 +3938,24 @@ async function renderTeam(){
   // My profile card
   const p=currentProfile;
   const myEl=document.getElementById('my-profile-panel');
-  const isAdmin=p.role==='admin'||p.role==='head';
+  const isAdmin=p.role==='admin';
+  const isHead=p.role==='head';
+  const canManage=isAdmin||isHead;
   myEl.innerHTML=`
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
       <div class="profile-av ${avColor(p.full_name||'?')}" style="width:52px;height:52px;font-size:18px">${initials(p.full_name||currentUser.email)}</div>
       <div>
         <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500">${esc(p.full_name||currentUser.email)}</div>
         <div style="font-size:11px;color:var(--txt3);margin-top:3px">${esc(currentUser.email)}</div>
+        ${p.phone?`<div style="font-size:11px;color:var(--txt3);margin-top:2px">📞 ${esc(p.phone)}</div>`:''}
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="detail-item"><div class="detail-label">Role</div><div class="detail-val">${roleLabel(p.role)}</div></div>
       <div class="detail-item"><div class="detail-label">Department</div><div class="detail-val">${esc(p.department||'—')}</div></div>
+      ${p.bar_number?`<div class="detail-item" style="grid-column:1/-1"><div class="detail-label">Bar / ID No.</div><div class="detail-val">${esc(p.bar_number)}</div></div>`:''}
     </div>
+    ${p.bio?`<div style="margin-top:12px;font-size:12px;color:var(--txt2);line-height:1.6;padding:10px 14px;background:var(--cream);border-radius:7px;border:0.5px solid var(--brd)">${esc(p.bio)}</div>`:''}
     ${!p.role||p.role==='associate'?`<div style="margin-top:14px;font-size:11px;background:#FAEEDA;color:#854F0B;border-radius:6px;padding:9px 12px;line-height:1.5">Your role shows as <strong>Associate</strong>. If you are an administrator, click <em>Edit Profile</em> above to update your role.</div>`:''}`;
 
   // Team list — show skeleton rows immediately while the query runs
@@ -3886,16 +3969,22 @@ async function renderTeam(){
   const rolePriority={admin:0,head:1,senior:2,associate:3};
   const sorted=[...data].sort((a,b)=>(rolePriority[a.role]||9)-(rolePriority[b.role]||9));
   const roleColors={admin:'av-d',head:'av-e',senior:'av-a',associate:'av-c'};
-  teamEl.innerHTML=sorted.map(m=>`
-    <div class="client-item" style="${isAdmin&&m.id!==currentUser.id?'cursor:pointer':'cursor:default'}" ${isAdmin&&m.id!==currentUser.id?`onclick="openEditMemberRole('${m.id}','${esc(m.full_name||'')}','${m.role||'associate'}','${m.department||''}')"`:''}">
-      <div class="client-av ${roleColors[m.role]||'av-b'}">${initials(m.full_name||'?')}</div>
-      <div>
-        <div class="client-name">${esc(m.full_name||'Unknown')}</div>
-        <div class="client-type">${roleLabel(m.role)}${m.department?' · '+esc(m.department):''}</div>
+  teamEl.innerHTML=sorted.map(m=>{
+    const isSelf=m.id===currentUser.id;
+    const isSuspended=m.status==='suspended';
+    const canClick=canManage&&!isSelf;
+    return`
+    <div class="client-item" style="${canClick?'cursor:pointer':'cursor:default'}" ${canClick?`onclick="openManageMemberModal('${m.id}')"`:''}">
+      <div class="client-av ${isSuspended?'av-b':roleColors[m.role]||'av-b'}" style="${isSuspended?'opacity:0.5;filter:grayscale(1)':''}">${initials(m.full_name||'?')}</div>
+      <div style="flex:1;min-width:0">
+        <div class="client-name" style="${isSuspended?'color:var(--txt3);text-decoration:line-through':''}">${esc(m.full_name||'Unknown')}</div>
+        <div class="client-type">${roleLabel(m.role)}${m.department?' · '+esc(m.department):''}${m.phone?' · '+esc(m.phone):''}</div>
       </div>
-      ${m.id===currentUser.id?`<div class="client-matters" style="background:#EAF3DE;color:#2D6A4F">You</div>`:
-        isAdmin?`<div style="display:flex;gap:6px;align-items:center"><div class="client-matters" style="font-size:9px;color:var(--txt3)">Edit role →</div><button class="op-del" title="Reset password" onclick="resetTeamMemberPassword('${m.id}','${esc(m.full_name||m.email||'')}',event)" style="padding:3px 8px;font-size:10px;border-radius:5px;border:1px solid var(--brd);background:#fff;cursor:pointer;color:var(--txt3)" onmouseover="this.style.background='#FAEEDA';this.style.color='#854F0B'" onmouseout="this.style.background='#fff';this.style.color='var(--txt3)'">🔑 Reset PW</button></div>`:''}
-    </div>`).join('');
+      ${isSelf?`<div class="client-matters" style="background:#EAF3DE;color:#2D6A4F">You</div>`:
+        isSuspended?`<span class="status-pill status-urgent" style="font-size:9px;padding:2px 8px">Suspended</span>`:
+        canClick?`<div style="font-size:9px;color:var(--txt3)">Manage →</div>`:''}
+    </div>`;
+  }).join('');
 }
 
 // ─── ADD USER (Admin) ─────────────────────────────────────────────
@@ -4144,47 +4233,189 @@ async function resetClientPortalPassword(clientId){
 // ─── EDIT MY PROFILE ─────────────────────────────────────────────
 function openEditMyRoleModal(){
   const p=currentProfile;
+  const isAdmin=p?.role==='admin';
   document.getElementById('ep-name').value=p.full_name||'';
+  document.getElementById('ep-phone').value=p.phone||'';
+  document.getElementById('ep-bar').value=p.bar_number||'';
+  document.getElementById('ep-bio').value=p.bio||'';
   document.getElementById('ep-role').value=p.role||'associate';
   document.getElementById('ep-dept').value=p.department||'';
+  document.getElementById('ep-newpw').value='';
+  document.getElementById('ep-newpw-confirm').value='';
+  document.getElementById('ep-pw-error').textContent='';
+  // Role editing: only admins can change their own role freely
+  const roleDeptRow=document.getElementById('ep-role-dept-row');
+  const roleNotice=document.getElementById('ep-role-notice');
+  const adminNotice=document.getElementById('ep-admin-notice');
+  if(isAdmin){
+    roleDeptRow.style.display='';
+    roleNotice.style.display='none';
+    adminNotice.style.display='block';
+    document.getElementById('ep-role').disabled=false;
+    document.getElementById('ep-dept').disabled=false;
+  } else if(!p.role||p.role==='associate'){
+    // No role yet — let them set it (first-time setup)
+    roleDeptRow.style.display='';
+    roleNotice.style.display='none';
+    adminNotice.style.display='block';
+    document.getElementById('ep-role').disabled=false;
+    document.getElementById('ep-dept').disabled=false;
+  } else {
+    // Has a non-admin role — show read-only
+    roleDeptRow.style.display='';
+    roleNotice.style.display='block';
+    adminNotice.style.display='none';
+    document.getElementById('ep-role').disabled=true;
+    document.getElementById('ep-dept').disabled=true;
+  }
   document.getElementById('editprofile-overlay').classList.remove('hidden');
 }
 function closeEditProfileModal(){document.getElementById('editprofile-overlay').classList.add('hidden');}
 
 async function saveMyProfile(){
   const name=document.getElementById('ep-name').value.trim();
-  const role=document.getElementById('ep-role').value;
-  const dept=document.getElementById('ep-dept').value;
+  const phone=document.getElementById('ep-phone').value.trim();
+  const bar=document.getElementById('ep-bar').value.trim();
+  const bio=document.getElementById('ep-bio').value.trim();
+  const roleEl=document.getElementById('ep-role');
+  const deptEl=document.getElementById('ep-dept');
+  const role=roleEl.disabled?currentProfile.role:(roleEl.value||'associate');
+  const dept=deptEl.disabled?currentProfile.department:(deptEl.value||null);
+  const newpw=document.getElementById('ep-newpw').value;
+  const newpwConfirm=document.getElementById('ep-newpw-confirm').value;
+  const pwErr=document.getElementById('ep-pw-error');
+  pwErr.textContent='';
+
+  // Validate password if provided
+  if(newpw){
+    if(newpw.length<8){pwErr.textContent='Password must be at least 8 characters.';return;}
+    if(newpw!==newpwConfirm){pwErr.textContent='Passwords do not match.';return;}
+  }
+
   const btn=document.getElementById('ep-btn');
   btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span>Saving…';
 
+  // Update profile in DB
   const{data,error}=await sb.from('profiles').upsert([{
-    id:currentUser.id,full_name:name||currentUser.email,role,department:dept||null
+    id:currentUser.id,full_name:name||currentUser.email,role,department:dept,
+    phone:phone||null,bar_number:bar||null,bio:bio||null
   }],{onConflict:'id'}).select().single();
 
-  btn.disabled=false;btn.innerHTML='Save Profile';
-  if(error){toast('Error saving profile: '+error.message,true);return;}
-  currentProfile=data||{...currentProfile,full_name:name,role,department:dept||null};
+  if(error){
+    btn.disabled=false;btn.innerHTML='Save Profile';
+    toast('Error saving profile: '+error.message,true);return;
+  }
+
+  // Update password if provided
+  if(newpw){
+    const{error:pwError}=await sb.auth.updateUser({password:newpw});
+    if(pwError){
+      btn.disabled=false;btn.innerHTML='Save Profile';
+      toast('Profile saved but password error: '+pwError.message,true);return;
+    }
+  }
+
+  currentProfile=data||{...currentProfile,full_name:name,role,department:dept,phone:phone||null,bar_number:bar||null,bio:bio||null};
   updateUserUI();
   closeEditProfileModal();
-  toast('Profile updated successfully.');
+  toast('Profile updated successfully.'+(newpw?' Password changed.':''));
   renderTeam();
 }
 
-// ─── EDIT TEAM MEMBER ROLE (Admin) ───────────────────────────────
-function openEditMemberRole(userId,name,currentRole,currentDept){
-  const roleName=roleLabel(currentRole);
-  const newRole=prompt(`Change role for ${name||'this user'}?\n\nCurrent role: ${roleName}\n\nEnter new role:\n  admin → Administrator\n  head → Head of Department\n  senior → Senior Associate\n  associate → Associate`,(currentRole||'associate'));
-  if(!newRole||newRole===currentRole)return;
-  const validRoles=['admin','head','senior','associate'];
-  if(!validRoles.includes(newRole.trim().toLowerCase())){toast('Invalid role. Use: admin, head, senior, or associate.',true);return;}
-  updateMemberRole(userId,newRole.trim().toLowerCase(),name);
+// ─── MANAGE TEAM MEMBER (Admin/Head) ──────────────────────────────
+let _manageMemberId=null;
+let _manageMemberSuspended=false;
+
+function openManageMemberModal(userId){
+  const{data}=window._cachedProfiles||(window._cachedProfiles={data:[]});
+  // Find from cached team data or look up
+  const allProfiles=window._allProfiles||[];
+  // Also try last renderTeam data — fetch fresh
+  sb.from('profiles').select('*').eq('id',userId).single().then(({data:m})=>{
+    if(!m){toast('User not found.',true);return;}
+    _manageMemberId=m.id;
+    _manageMemberSuspended=m.status==='suspended';
+    const roleColors={admin:'av-d',head:'av-e',senior:'av-a',associate:'av-c'};
+    document.getElementById('mm-av').className='client-av '+(roleColors[m.role]||'av-b');
+    document.getElementById('mm-av').style.cssText='width:44px;height:44px;font-size:15px;flex-shrink:0';
+    document.getElementById('mm-av').textContent=initials(m.full_name||'?');
+    document.getElementById('mm-name').textContent=m.full_name||m.email||'Unknown';
+    document.getElementById('mm-meta').textContent=roleLabel(m.role)+(m.department?' · '+m.department:'')+(m.phone?' · '+m.phone:'');
+    const badge=document.getElementById('mm-status-badge');
+    badge.innerHTML=_manageMemberSuspended?'<span class="status-pill status-urgent" style="font-size:9px">Suspended</span>':'<span class="status-pill status-active" style="font-size:9px">Active</span>';
+    document.getElementById('mm-role').value=m.role||'associate';
+    document.getElementById('mm-dept').value=m.department||'';
+    document.getElementById('mm-error').textContent='';
+    // Update suspend button
+    _updateSuspendBtn();
+    document.getElementById('managemember-overlay').classList.remove('hidden');
+  });
 }
 
-async function updateMemberRole(userId,newRole,name){
-  const{error}=await sb.from('profiles').update({role:newRole}).eq('id',userId);
-  if(error){toast('Error updating role: '+error.message,true);return;}
-  toast(`Role updated for ${name||'user'} → ${roleLabel(newRole)}`);
+function _updateSuspendBtn(){
+  const btn=document.getElementById('mm-suspend-btn');
+  const icon=document.getElementById('mm-suspend-icon');
+  const label=document.getElementById('mm-suspend-label');
+  const desc=document.getElementById('mm-suspend-desc');
+  if(_manageMemberSuspended){
+    btn.style.background='#EAF3DE';btn.style.borderColor='#A8D5B0';
+    icon.textContent='▶️';
+    label.style.color='#2D6A4F';label.textContent='Reactivate Account';
+    desc.textContent='Restore this user\'s access to the system.';
+  } else {
+    btn.style.background='#FFF8E7';btn.style.borderColor='#E8D5A0';
+    icon.textContent='⏸';
+    label.style.color='#854F0B';label.textContent='Suspend Account';
+    desc.textContent='Prevents this user from logging in without deleting their data.';
+  }
+}
+
+function closeManageMemberModal(){
+  document.getElementById('managemember-overlay').classList.add('hidden');
+  _manageMemberId=null;
+}
+
+function toggleMemberSuspend(){
+  _manageMemberSuspended=!_manageMemberSuspended;
+  _updateSuspendBtn();
+  const badge=document.getElementById('mm-status-badge');
+  badge.innerHTML=_manageMemberSuspended?'<span class="status-pill status-urgent" style="font-size:9px">Suspended</span>':'<span class="status-pill status-active" style="font-size:9px">Active</span>';
+}
+
+async function saveManageMember(){
+  if(!_manageMemberId)return;
+  const role=document.getElementById('mm-role').value;
+  const dept=document.getElementById('mm-dept').value;
+  const status=_manageMemberSuspended?'suspended':'active';
+  const btn=document.getElementById('mm-save-btn');
+  btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span>Saving…';
+  const{error}=await sb.from('profiles').update({role,department:dept||null,status}).eq('id',_manageMemberId);
+  btn.disabled=false;btn.innerHTML='Save Changes';
+  if(error){document.getElementById('mm-error').textContent='Error: '+error.message;return;}
+  toast('Member updated successfully.');
+  closeManageMemberModal();
+  renderTeam();
+}
+
+async function deleteMember(){
+  if(!_manageMemberId)return;
+  const nameEl=document.getElementById('mm-name');
+  const name=nameEl?nameEl.textContent:'this user';
+  if(!confirm(`Permanently delete ${name}?\n\nThis will remove their profile and cannot be undone. Their matters and time entries will remain in the system.`))return;
+  const btn=document.getElementById('mm-save-btn');
+  btn.disabled=true;
+  // Delete from profiles (auth user deletion requires admin edge function)
+  const{error:profErr}=await sb.from('profiles').delete().eq('id',_manageMemberId);
+  if(profErr){
+    btn.disabled=false;
+    document.getElementById('mm-error').textContent='Error removing profile: '+profErr.message;return;
+  }
+  // Try to delete auth user via edge function (best-effort)
+  try{
+    await callAdminFunction('admin-delete-user',{user_id:_manageMemberId});
+  }catch(e){/* profile already removed — auth user can no longer access data */}
+  toast(name+' has been removed from the team.');
+  closeManageMemberModal();
   renderTeam();
 }
 
