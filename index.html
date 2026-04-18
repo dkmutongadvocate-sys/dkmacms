@@ -4389,9 +4389,26 @@ async function saveManageMember(){
   const status=_manageMemberSuspended?'suspended':'active';
   const btn=document.getElementById('mm-save-btn');
   btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span>Saving…';
+
+  // 1. Update profile row (role, dept, status)
   const{error}=await sb.from('profiles').update({role,department:dept||null,status}).eq('id',_manageMemberId);
+  if(error){
+    btn.disabled=false;btn.innerHTML='Save Changes';
+    document.getElementById('mm-error').textContent='Error: '+error.message;return;
+  }
+
+  // 2. Sync ban state in Supabase Auth (hard blocks the JWT)
+  try{
+    await callAdminFunction('admin-suspend-user',{
+      user_id:_manageMemberId,
+      suspend:_manageMemberSuspended
+    });
+  }catch(e){
+    // Non-fatal — RLS still blocks data access even if auth ban fails
+    console.warn('Auth ban sync failed:',e.message);
+  }
+
   btn.disabled=false;btn.innerHTML='Save Changes';
-  if(error){document.getElementById('mm-error').textContent='Error: '+error.message;return;}
   toast('Member updated successfully.');
   closeManageMemberModal();
   renderTeam();
@@ -4401,20 +4418,31 @@ async function deleteMember(){
   if(!_manageMemberId)return;
   const nameEl=document.getElementById('mm-name');
   const name=nameEl?nameEl.textContent:'this user';
-  if(!confirm(`Permanently delete ${name}?\n\nThis will remove their profile and cannot be undone. Their matters and time entries will remain in the system.`))return;
+  if(!confirm(`Permanently delete ${name}?\n\nThis will remove their profile and Supabase Auth account. This cannot be undone. Their matters and time entries will remain in the system.`))return;
   const btn=document.getElementById('mm-save-btn');
-  btn.disabled=true;
-  // Delete from profiles (auth user deletion requires admin edge function)
-  const{error:profErr}=await sb.from('profiles').delete().eq('id',_manageMemberId);
-  if(profErr){
-    btn.disabled=false;
-    document.getElementById('mm-error').textContent='Error removing profile: '+profErr.message;return;
-  }
-  // Try to delete auth user via edge function (best-effort)
+  const errEl=document.getElementById('mm-error');
+  btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span>Deleting…';
+  errEl.textContent='';
+
+  // 1. Delete from Supabase Auth first (via admin edge function)
   try{
     await callAdminFunction('admin-delete-user',{user_id:_manageMemberId});
-  }catch(e){/* profile already removed — auth user can no longer access data */}
-  toast(name+' has been removed from the team.');
+  }catch(e){
+    // If the auth account doesn't exist, still proceed to clean up the profile row
+    if(!e.message.toLowerCase().includes('not found')){
+      btn.disabled=false;btn.innerHTML='Save Changes';
+      errEl.textContent='Auth deletion failed: '+e.message;return;
+    }
+  }
+
+  // 2. Delete the profile row
+  const{error:profErr}=await sb.from('profiles').delete().eq('id',_manageMemberId);
+  if(profErr){
+    btn.disabled=false;btn.innerHTML='Save Changes';
+    errEl.textContent='Profile deletion failed: '+profErr.message;return;
+  }
+
+  toast(name+' has been permanently removed.');
   closeManageMemberModal();
   renderTeam();
 }
