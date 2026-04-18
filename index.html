@@ -4123,56 +4123,56 @@ async function resetClientPortalPassword(clientId){
 function openEditMyRoleModal(){
   const p=currentProfile;
   const isAdmin=p?.role==='admin';
-  document.getElementById('ep-name').value=p.full_name||'';
-  document.getElementById('ep-phone').value=p.phone||'';
-  document.getElementById('ep-bar').value=p.bar_number||'';
-  document.getElementById('ep-bio').value=p.bio||'';
-  document.getElementById('ep-role').value=p.role||'associate';
-  document.getElementById('ep-dept').value=p.department||'';
-  document.getElementById('ep-newpw').value='';
-  document.getElementById('ep-newpw-confirm').value='';
-  document.getElementById('ep-pw-error').textContent='';
+  document.getElementById('myp-name').value=p.full_name||'';
+  document.getElementById('myp-phone').value=p.phone||'';
+  document.getElementById('myp-bar').value=p.bar_number||'';
+  document.getElementById('myp-bio').value=p.bio||'';
+  document.getElementById('myp-role').value=p.role||'associate';
+  document.getElementById('myp-dept').value=p.department||'';
+  document.getElementById('myp-newpw').value='';
+  document.getElementById('myp-newpw-confirm').value='';
+  document.getElementById('myp-pw-error').textContent='';
   // Role editing: only admins can change their own role freely
-  const roleDeptRow=document.getElementById('ep-role-dept-row');
-  const roleNotice=document.getElementById('ep-role-notice');
-  const adminNotice=document.getElementById('ep-admin-notice');
+  const roleDeptRow=document.getElementById('myp-role-dept-row');
+  const roleNotice=document.getElementById('myp-role-notice');
+  const adminNotice=document.getElementById('myp-admin-notice');
   if(isAdmin){
     roleDeptRow.style.display='';
     roleNotice.style.display='none';
     adminNotice.style.display='block';
-    document.getElementById('ep-role').disabled=false;
-    document.getElementById('ep-dept').disabled=false;
+    document.getElementById('myp-role').disabled=false;
+    document.getElementById('myp-dept').disabled=false;
   } else if(!p.role||p.role==='associate'){
     // No role yet — let them set it (first-time setup)
     roleDeptRow.style.display='';
     roleNotice.style.display='none';
     adminNotice.style.display='block';
-    document.getElementById('ep-role').disabled=false;
-    document.getElementById('ep-dept').disabled=false;
+    document.getElementById('myp-role').disabled=false;
+    document.getElementById('myp-dept').disabled=false;
   } else {
     // Has a non-admin role — show read-only
     roleDeptRow.style.display='';
     roleNotice.style.display='block';
     adminNotice.style.display='none';
-    document.getElementById('ep-role').disabled=true;
-    document.getElementById('ep-dept').disabled=true;
+    document.getElementById('myp-role').disabled=true;
+    document.getElementById('myp-dept').disabled=true;
   }
   document.getElementById('editprofile-overlay').classList.remove('hidden');
 }
 function closeEditProfileModal(){document.getElementById('editprofile-overlay').classList.add('hidden');}
 
 async function saveMyProfile(){
-  const name=document.getElementById('ep-name').value.trim();
-  const phone=document.getElementById('ep-phone').value.trim();
-  const bar=document.getElementById('ep-bar').value.trim();
-  const bio=document.getElementById('ep-bio').value.trim();
-  const roleEl=document.getElementById('ep-role');
-  const deptEl=document.getElementById('ep-dept');
+  const name=document.getElementById('myp-name').value.trim();
+  const phone=document.getElementById('myp-phone').value.trim();
+  const bar=document.getElementById('myp-bar').value.trim();
+  const bio=document.getElementById('myp-bio').value.trim();
+  const roleEl=document.getElementById('myp-role');
+  const deptEl=document.getElementById('myp-dept');
   const role=roleEl.disabled?currentProfile.role:(roleEl.value||'associate');
   const dept=deptEl.disabled?currentProfile.department:(deptEl.value||null);
-  const newpw=document.getElementById('ep-newpw').value;
-  const newpwConfirm=document.getElementById('ep-newpw-confirm').value;
-  const pwErr=document.getElementById('ep-pw-error');
+  const newpw=document.getElementById('myp-newpw').value;
+  const newpwConfirm=document.getElementById('myp-newpw-confirm').value;
+  const pwErr=document.getElementById('myp-pw-error');
   pwErr.textContent='';
 
   // Validate password if provided
@@ -4181,7 +4181,7 @@ async function saveMyProfile(){
     if(newpw!==newpwConfirm){pwErr.textContent='Passwords do not match.';return;}
   }
 
-  const btn=document.getElementById('ep-btn');
+  const btn=document.getElementById('myp-btn');
   btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span>Saving…';
 
   // Update profile in DB
@@ -7081,16 +7081,16 @@ function buildDocumentEmailHtml(toName, fileName, personalMessage, trackingId){
     <div class="modal-head"><span class="modal-title">Edit My Profile</span><button class="modal-close" onclick="closeEditProfileModal()">×</button></div>
     <div class="modal-body">
       <div class="section-divider">Personal Information</div>
-      <div class="form-row"><label>Full Name</label><input id="ep-name" placeholder="Your full name"/></div>
+      <div class="form-row"><label>Full Name</label><input id="myp-name" placeholder="Your full name"/></div>
       <div class="form-two">
-        <div class="form-row"><label>Phone</label><input id="ep-phone" type="tel" placeholder="+254…"/></div>
-        <div class="form-row"><label>Bar Admission / ID No.</label><input id="ep-bar" placeholder="e.g. LSK/ADV/2020/123"/></div>
+        <div class="form-row"><label>Phone</label><input id="myp-phone" type="tel" placeholder="+254…"/></div>
+        <div class="form-row"><label>Bar Admission / ID No.</label><input id="myp-bar" placeholder="e.g. LSK/ADV/2020/123"/></div>
       </div>
-      <div class="form-row"><label>Bio / Specialisation</label><textarea id="ep-bio" placeholder="Brief professional bio or areas of specialisation…" style="min-height:70px"></textarea></div>
+      <div class="form-row"><label>Bio / Specialisation</label><textarea id="myp-bio" placeholder="Brief professional bio or areas of specialisation…" style="min-height:70px"></textarea></div>
       <div class="section-divider">Role &amp; Department</div>
-      <div class="form-two" id="ep-role-dept-row">
+      <div class="form-two" id="myp-role-dept-row">
         <div class="form-row"><label>Role</label>
-          <select id="ep-role">
+          <select id="myp-role">
             <option value="associate">Associate</option>
             <option value="senior">Senior Associate</option>
             <option value="head">Head of Department</option>
@@ -7098,7 +7098,7 @@ function buildDocumentEmailHtml(toName, fileName, personalMessage, trackingId){
           </select>
         </div>
         <div class="form-row"><label>Department</label>
-          <select id="ep-dept">
+          <select id="myp-dept">
             <option value="">None</option>
             <option>Litigation</option>
             <option>Conveyancing</option>
@@ -7108,932 +7108,23 @@ function buildDocumentEmailHtml(toName, fileName, personalMessage, trackingId){
           </select>
         </div>
       </div>
-      <div id="ep-role-notice" style="display:none;font-size:11px;color:var(--txt3);background:var(--cream);border-radius:6px;padding:10px 13px;line-height:1.5">
+      <div id="myp-role-notice" style="display:none;font-size:11px;color:var(--txt3);background:var(--cream);border-radius:6px;padding:10px 13px;line-height:1.5">
         🔒 Role and department can only be changed by an Administrator.
       </div>
-      <div id="ep-admin-notice" style="display:none;font-size:11px;color:var(--txt3);background:var(--cream);border-radius:6px;padding:10px 13px;line-height:1.5">
+      <div id="myp-admin-notice" style="display:none;font-size:11px;color:var(--txt3);background:var(--cream);border-radius:6px;padding:10px 13px;line-height:1.5">
         ⚠️ If you are the firm's administrator, set your role to <strong>Administrator</strong> here so you have full access.
       </div>
       <div class="section-divider">Security</div>
       <div class="form-row">
         <label>Change Password <span style="font-size:10px;background:var(--cream2);color:var(--txt3);padding:1px 6px;border-radius:3px;margin-left:4px">Optional</span></label>
-        <input id="ep-newpw" type="password" placeholder="Leave blank to keep current password" style="margin-bottom:8px"/>
-        <input id="ep-newpw-confirm" type="password" placeholder="Confirm new password"/>
-        <div id="ep-pw-error" style="font-size:11px;color:var(--red);min-height:16px;margin-top:4px"></div>
+        <input id="myp-newpw" type="password" placeholder="Leave blank to keep current password" style="margin-bottom:8px"/>
+        <input id="myp-newpw-confirm" type="password" placeholder="Confirm new password"/>
+        <div id="myp-pw-error" style="font-size:11px;color:var(--red);min-height:16px;margin-top:4px"></div>
       </div>
     </div>
     <div class="modal-foot">
       <button class="btn-secondary" onclick="closeEditProfileModal()">Cancel</button>
-      <button class="btn-primary" id="ep-btn" onclick="saveMyProfile()">Save Profile</button>
-    </div>
-  </div>
-</div>
-
-<!-- ADMIN/HEAD: MANAGE TEAM MEMBER MODAL -->
-<div class="modal-overlay hidden" id="managemember-overlay" onclick="if(event.target.id==='managemember-overlay')closeManageMemberModal()">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-head"><span class="modal-title">Manage Team Member</span><button class="modal-close" onclick="closeManageMemberModal()">×</button></div>
-    <div class="modal-body">
-      <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--cream);border-radius:8px;margin-bottom:20px;border:0.5px solid var(--brd)">
-        <div id="mm-av" class="client-av av-a" style="width:44px;height:44px;font-size:15px;flex-shrink:0">?</div>
-        <div style="flex:1">
-          <div id="mm-name" style="font-weight:500;font-size:14px;color:var(--txt)">—</div>
-          <div id="mm-meta" style="font-size:11px;color:var(--txt3);margin-top:2px">—</div>
-        </div>
-        <div id="mm-status-badge"></div>
-      </div>
-      <div class="section-divider">Role &amp; Department</div>
-      <div class="form-two">
-        <div class="form-row"><label>Role</label>
-          <select id="mm-role">
-            <option value="associate">Associate</option>
-            <option value="senior">Senior Associate</option>
-            <option value="head">Head of Department</option>
-            <option value="admin">Administrator</option>
-          </select>
-        </div>
-        <div class="form-row"><label>Department</label>
-          <select id="mm-dept">
-            <option value="">None</option>
-            <option>Litigation</option>
-            <option>Conveyancing</option>
-            <option>Family Law</option>
-            <option>Corporate</option>
-            <option>Finance</option>
-          </select>
-        </div>
-      </div>
-      <div class="section-divider" style="margin-top:20px">Account Actions</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <button id="mm-suspend-btn" onclick="toggleMemberSuspend()" style="display:flex;align-items:center;gap:12px;background:#FFF8E7;border:1px solid #E8D5A0;border-radius:8px;padding:12px 16px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;width:100%;transition:all 0.12s" onmouseover="this.style.background='#FAEEDA'" onmouseout="this.style.background='#FFF8E7'">
-          <span style="font-size:18px" id="mm-suspend-icon">⏸</span>
-          <div>
-            <div id="mm-suspend-label" style="font-size:13px;font-weight:500;color:#854F0B">Suspend Account</div>
-            <div id="mm-suspend-desc" style="font-size:11px;color:var(--txt3);margin-top:1px">Prevents this user from logging in without deleting their data.</div>
-          </div>
-        </button>
-        <button onclick="deleteMember()" style="display:flex;align-items:center;gap:12px;background:#FCEBEB;border:1px solid #F5C6C6;border-radius:8px;padding:12px 16px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;width:100%;transition:all 0.12s" onmouseover="this.style.background='#f9d5d5'" onmouseout="this.style.background='#FCEBEB'">
-          <span style="font-size:18px">🗑</span>
-          <div>
-            <div style="font-size:13px;font-weight:500;color:#A32D2D">Delete Account</div>
-            <div style="font-size:11px;color:var(--txt3);margin-top:1px">Permanently removes this user. This cannot be undone.</div>
-          </div>
-        </button>
-      </div>
-      <div id="mm-error" style="font-size:12px;color:var(--red);min-height:16px;margin-top:8px"></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn-secondary" onclick="closeManageMemberModal()">Cancel</button>
-      <button class="btn-primary" id="mm-save-btn" onclick="saveManageMember()">Save Changes</button>
-    </div>
-  </div>
-</div>
-
-
-</body>
-</html>`;
-}
-
-// ─── CLIENT INBOX ─────────────────────────────────────────────────
-const CLIENT_BUCKET='client-uploads';
-
-async function loadInboxMessages(){
-  const{data,error}=await sb.from('client_messages').select('*').order('created_at',{ascending:true});
-  if(!error)inboxMessages=data||[];
-  updateInboxBadge();
-}
-
-function updateInboxBadge(){
-  const unread=inboxMessages.filter(m=>m.sender==='client'&&!m.read_by_firm).length;
-  const badge=document.getElementById('inbox-badge');
-  if(badge){badge.textContent=unread;badge.style.display=unread>0?'inline-block':'none';}
-  syncMobileBadges();
-}
-
-function renderInboxThreadList(){
-  const q=(document.getElementById('inbox-search')||{}).value||'';
-  // Only show clients who have at least one message (or are currently active)
-  const clientsWithMsgs=clients.filter(c=>{
-    if(c.id===activeInboxClientId)return true; // keep active client visible
-    return inboxMessages.some(m=>m.client_id===c.id);
-  });
-  const filtered=clientsWithMsgs.filter(c=>!q||c.name.toLowerCase().includes(q.toLowerCase()));
-  // Sort: unread first, then by latest message time
-  filtered.sort((a,b)=>{
-    const aUnread=inboxMessages.filter(m=>m.client_id===a.id&&m.sender==='client'&&!m.read_by_firm).length;
-    const bUnread=inboxMessages.filter(m=>m.client_id===b.id&&m.sender==='client'&&!m.read_by_firm).length;
-    if(bUnread!==aUnread)return bUnread-aUnread;
-    const aLast=inboxMessages.filter(m=>m.client_id===a.id).slice(-1)[0]?.created_at||'';
-    const bLast=inboxMessages.filter(m=>m.client_id===b.id).slice(-1)[0]?.created_at||'';
-    return bLast.localeCompare(aLast);
-  });
-  const countEl=document.getElementById('inbox-client-count');
-  if(countEl)countEl.textContent=filtered.length+' conversation'+(filtered.length!==1?'s':'');
-  const el=document.getElementById('inbox-thread-list');
-  if(!filtered.length){
-    el.innerHTML=q
-      ?'<div class="empty-state-sm">No clients match your search.</div>'
-      :'<div class="empty-state-sm">No messages yet. Clients can message you through the portal.</div>';
-    return;
-  }
-  el.innerHTML=filtered.map(c=>{
-    const msgs=inboxMessages.filter(m=>m.client_id===c.id);
-    const last=msgs[msgs.length-1];
-    const unread=msgs.filter(m=>m.sender==='client'&&!m.read_by_firm).length;
-    const preview=last?(last.sender==='firm'?'You: '+(last.message||''):(last.message||'(file)')):'';
-    const time=last?fmtMsgTime(last.created_at):'';
-    const active=activeInboxClientId===c.id?'active':'';
-    return`<div class="inbox-thread ${active}" onclick="openInboxClient('${c.id}')">
-      <div class="inbox-thread-av ${avColor(c.name)}">${initials(c.name)}</div>
-      <div class="inbox-thread-body">
-        <div class="inbox-thread-name">${esc(c.name)}</div>
-        <div class="inbox-thread-preview">${esc(preview.slice(0,60))}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-        <div class="inbox-thread-time">${time}</div>
-        ${unread>0?`<span class="inbox-unread-badge">${unread}</span>`:''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function fmtMsgTime(ts){
-  if(!ts)return'';
-  const d=new Date(ts),now=new Date();
-  const diffDays=Math.floor((now-d)/86400000);
-  if(diffDays===0)return d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
-  if(diffDays===1)return'Yesterday';
-  if(diffDays<7)return d.toLocaleDateString('en-KE',{weekday:'short'});
-  return d.toLocaleDateString('en-KE',{day:'numeric',month:'short'});
-}
-
-async function openInboxClient(clientId){
-  activeInboxClientId=clientId;
-  activeInboxTab='messages';
-  renderInboxThreadList();
-  await markMessagesRead(clientId);
-  await renderInboxConversation(clientId);
-}
-
-async function markMessagesRead(clientId){
-  const unreadIds=inboxMessages.filter(m=>m.client_id===clientId&&m.sender==='client'&&!m.read_by_firm).map(m=>m.id);
-  if(!unreadIds.length)return;
-  await sb.from('client_messages').update({read_by_firm:true}).in('id',unreadIds);
-  inboxMessages=inboxMessages.map(m=>unreadIds.includes(m.id)?{...m,read_by_firm:true}:m);
-  updateInboxBadge();
-}
-
-async function renderInboxConversation(clientId,{skipFileFetch=false}={}){
-  const c=clients.find(x=>x.id===clientId);
-  if(!c)return;
-  const main=document.getElementById('inbox-main');
-  const msgs=inboxMessages.filter(m=>m.client_id===clientId);
-
-  // Only fetch storage when opening client or switching to Files tab
-  let files=_inboxFilesCache[clientId]||[];
-  if(!skipFileFetch){
-    const{data:fileData}=await sb.storage.from(CLIENT_BUCKET).list(clientId,{limit:100,sortBy:{column:'created_at',order:'desc'}});
-    if(fileData){files=fileData.filter(f=>f.name!=='');_inboxFilesCache[clientId]=files;}
-  }
-
-  main.innerHTML=`
-    <div class="inbox-main-head">
-      <div class="inbox-main-av ${avColor(c.name)}">${initials(c.name)}</div>
-      <div>
-        <div class="inbox-main-name">${esc(c.name)}</div>
-        <div class="inbox-main-sub">${esc(c.email||'—')} · ${matters.filter(m=>m.client_id===clientId).length} matter(s)</div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px">
-        <button class="topbar-btn sec" style="font-size:11px;padding:5px 12px" onclick="showView('client-profile',null);openClientProfile('${clientId}')">View Profile</button>
-      </div>
-    </div>
-    <div class="inbox-tab-bar">
-      <div class="inbox-tab ${activeInboxTab==='messages'?'active':''}" onclick="switchInboxTab('messages','${clientId}')">💬 Messages</div>
-      <div class="inbox-tab ${activeInboxTab==='files'?'active':''}" onclick="switchInboxTab('files','${clientId}')">📁 Uploaded Files <span style="background:var(--cream2);color:var(--txt3);font-size:9px;padding:1px 5px;border-radius:8px;margin-left:3px">${files.length}</span></div>
-    </div>
-    ${activeInboxTab==='messages'?renderMessagesPane(msgs,c,clientId):renderFilesPane(files,clientId)}
-  `;
-  if(activeInboxTab==='messages'){
-    const msgsEl=document.getElementById('inbox-messages-pane');
-    if(msgsEl)msgsEl.scrollTop=msgsEl.scrollHeight;
-    const inp=document.getElementById('inbox-compose-inp');
-    if(inp){
-      inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendInboxMessage(clientId);}});
-    }
-  }
-}
-
-function renderMessagesPane(msgs,c,clientId){
-  const msgsHtml=msgs.length
-    ?msgs.map(m=>_buildMsgBubbleHtml(m,c,clientId)).join('')
-    :`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:13px;padding:40px;text-align:center"><div><div style="font-size:32px;margin-bottom:10px">💬</div>No messages yet.<br>Send a message to start the conversation.</div></div>`;
-  return`<div class="inbox-messages" id="inbox-messages-pane">${msgsHtml}</div>
-    <div class="inbox-compose">
-      <div style="font-size:10px;color:var(--txt3);margin-bottom:7px">Replying to ${esc(c.name)}</div>
-      <div class="inbox-compose-box">
-        <textarea class="inbox-compose-input" id="inbox-compose-inp" placeholder="Type a message…" rows="1"></textarea>
-        <button class="inbox-compose-send" id="inbox-send-btn" onclick="sendInboxMessage('${clientId}')">Send</button>
-      </div>
-    </div>`;
-}
-
-function renderFilesPane(files,clientId){
-  if(!files.length)return`<div class="inbox-empty-state"><div class="inbox-empty-state-icon">📁</div><div style="font-weight:500;color:var(--txt2)">No files uploaded yet</div><div>Files the client uploads via the portal will appear here.</div></div>`;
-  return`<div class="inbox-files-list">${files.map(f=>{
-    const parts=f.name.split('__');
-    const displayName=parts.length>=3?parts.slice(2).join('__'):f.name;
-    const category=parts[0]||'other';
-    const desc=parts[1]||'';
-    const size=f.metadata?.size?fmtFileSize(f.metadata.size):'—';
-    const date=f.created_at?fmtDate(f.created_at):'—';
-    return`<div class="inbox-file-row">
-      <div class="inbox-file-icon" style="background:var(--cream)">${docIconEmoji(displayName)}</div>
-      <div class="inbox-file-info">
-        <div class="inbox-file-name">${esc(displayName)}</div>
-        <div class="inbox-file-meta">${esc(categoryLabel(category))}${desc?' · '+esc(desc):''} · ${size} · ${date}</div>
-      </div>
-      <div class="inbox-file-actions">
-        <button class="filter-btn" style="font-size:11px;padding:4px 11px" onclick="viewClientFile('${clientId}','${esc(f.name)}','${esc(displayName)}')">View</button>
-        <button class="filter-btn" style="font-size:11px;padding:4px 11px" onclick="downloadClientFile('${clientId}','${esc(f.name)}','${esc(displayName)}')">⬇</button>
-      </div>
-    </div>`;
-  }).join('')}</div>`;
-}
-
-function switchInboxTab(tab,clientId){
-  activeInboxTab=tab;
-  renderInboxConversation(clientId,{skipFileFetch:tab==='messages'});
-}
-
-async function sendInboxMessage(clientId){
-  const inp=document.getElementById('inbox-compose-inp');
-  const msg=(inp?.value||'').trim();
-  if(!msg)return;
-  const btn=document.getElementById('inbox-send-btn');
-  if(btn){btn.disabled=true;btn.textContent='Sending…';}
-  // Optimistic — show bubble immediately
-  const optimistic={id:'_tmp_'+Date.now(),client_id:clientId,sender:'firm',message:msg,read_by_firm:true,read_by_client:false,created_at:new Date().toISOString()};
-  inboxMessages=[...inboxMessages,optimistic];
-  if(inp)inp.value='';
-  const c=clients.find(x=>x.id===clientId);
-  if(c){
-    const msgsEl=document.getElementById('inbox-messages-pane');
-    if(msgsEl){msgsEl.insertAdjacentHTML('beforeend',_buildMsgBubbleHtml(optimistic,c,clientId));msgsEl.scrollTop=msgsEl.scrollHeight;}
-  }
-  renderInboxThreadList();
-  const{data,error}=await sb.from('client_messages').insert([{
-    client_id:clientId,sender:'firm',message:msg,read_by_firm:true,read_by_client:false
-  }]).select().single();
-  if(btn){btn.disabled=false;btn.textContent='Send';}
-  if(error){
-    inboxMessages=inboxMessages.filter(m=>m.id!==optimistic.id);
-    const msgsEl=document.getElementById('inbox-messages-pane');
-    if(msgsEl){const tmp=msgsEl.querySelector(`[data-msg-id="${optimistic.id}"]`);if(tmp)tmp.remove();}
-    renderInboxThreadList();
-    toast('Failed to send: '+error.message,true);
-    if(inp)inp.value=msg;
-    return;
-  }
-  inboxMessages=inboxMessages.map(m=>m.id===optimistic.id?(data||optimistic):m);
-  const msgsEl=document.getElementById('inbox-messages-pane');
-  if(msgsEl){const tmp=msgsEl.querySelector(`[data-msg-id="${optimistic.id}"]`);if(tmp&&data)tmp.setAttribute('data-msg-id',String(data.id));}
-  renderInboxThreadList();
-}
-
-async function viewClientFile(clientId,storageName,displayName){
-  const path=`${clientId}/${storageName}`;
-  const{data,error}=await sb.storage.from(CLIENT_BUCKET).createSignedUrl(path,600);
-  if(error){toast('Could not open file.',true);return;}
-  const url=data.signedUrl;
-  const ext=(storageName.split('.').pop()||'').toLowerCase();
-  const overlay=document.getElementById('doc-viewer-overlay');
-  document.getElementById('doc-viewer-filename').textContent=displayName;
-  document.getElementById('doc-viewer-dl-btn').onclick=()=>{
-    const a=document.createElement('a');a.href=url;a.download=displayName;a.target='_blank';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-  };
-  const body=document.getElementById('doc-viewer-body');
-  if(['jpg','jpeg','png','gif','webp'].includes(ext)){
-    body.innerHTML=`<img src="${url}" style="max-width:100%;max-height:76vh;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
-  } else if(ext==='pdf'){
-    body.innerHTML=`<iframe src="${url}" style="width:100%;height:76vh;border:none;display:block"></iframe>`;
-  } else {
-    body.innerHTML=`<div class="doc-viewer-nopreview"><div style="font-size:36px;margin-bottom:16px">📄</div><div style="font-weight:500;color:var(--txt);margin-bottom:8px">${esc(displayName)}</div><div>Preview not available. Use Download to open.</div></div>`;
-  }
-  overlay.classList.remove('hidden');
-}
-
-async function downloadClientFile(clientId,storageName,displayName){
-  const path=`${clientId}/${storageName}`;
-  const{data,error}=await sb.storage.from(CLIENT_BUCKET).createSignedUrl(path,300);
-  if(error){toast('Could not download file.',true);return;}
-  const a=document.createElement('a');a.href=data.signedUrl;a.download=displayName;a.target='_blank';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-}
-
-function docIconEmoji(name){
-  const ext=(name||'').split('.').pop().toLowerCase();
-  if(ext==='pdf')return'📄';
-  if(['doc','docx'].includes(ext))return'📝';
-  if(['xls','xlsx','csv'].includes(ext))return'📊';
-  if(['jpg','jpeg','png','gif','webp'].includes(ext))return'🖼️';
-  return'📎';
-}
-
-function categoryLabel(cat){
-  return{pleading:'Pleading',correspondence:'Correspondence',evidence:'Evidence',contract:'Contract',id:'ID / KYC',finance:'Finance',order:'Court Order',other:'Other'}[cat]||cat||'Document';
-}
-
-function fmtFileSize(b){
-  if(!b)return'—';
-  if(b<1024)return b+'B';
-  if(b<1048576)return(b/1024).toFixed(0)+'KB';
-  return(b/1048576).toFixed(1)+'MB';
-}
-
-// ─── INIT ─────────────────────────────────────────────────────────
-
-// ─── EVENT DETAIL MODAL ───────────────────────────────────────────
-let _activeDetailEventId = null;
-
-
-function openDayEvents(day, evs, hols=[]) {
-  // Build a combined list for display
-  const items=[];
-  hols.forEach(h=>items.push({type:'holiday',name:h}));
-  evs.forEach((e,i)=>items.push({type:'event',e,idx:i}));
-  if(items.length===1&&items[0].type==='event'){openEventDetail(items[0].e.id);return;}
-  if(items.length===1&&items[0].type==='holiday'){
-    alert('🇰🇪 '+items[0].name+'\n\nPublic Holiday — Kenya');return;
-  }
-  const lines=items.map((it,i)=>
-    it.type==='holiday'?`${i+1}. 🇰🇪 ${it.name} (Holiday)`:`${i+1}. ${it.e.title}`
-  ).join('\n');
-  const choice=prompt('Events on this day — enter number to view:\n\n'+lines);
-  const idx=parseInt(choice)-1;
-  if(!isNaN(idx)&&items[idx]){
-    const it=items[idx];
-    if(it.type==='event')openEventDetail(it.e.id);
-    else alert('🇰🇪 '+it.name+'\n\nPublic Holiday — Kenya');
-  }
-}
-function openEventDetail(eventId) {
-  const e = events.find(ev => ev.id === eventId);
-  if (!e) return;
-  _activeDetailEventId = eventId;
-  const typeLabels = {court:'Court',client:'Client Meeting',deadline:'Deadline',internal:'Internal',adr:'Arbitration / ADR'};
-  const typeColors = {court:'#A32D2D',client:'#185FA5',deadline:'#854F0B',internal:'var(--navy)',adr:'#3C3489'};
-  document.getElementById('ev-detail-type').textContent = typeLabels[e.type] || e.type || '';
-  document.getElementById('ev-detail-title').textContent = e.title || '—';
-  // Build detail rows
-  const matter = matters.find(m => m.id === e.matter_id);
-  const rows = [];
-  const row = (icon, label, val) => val ? `
-    <div style="display:flex;gap:12px;align-items:flex-start">
-      <div style="width:32px;height:32px;border-radius:8px;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${icon}</div>
-      <div><div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">${label}</div><div style="font-size:13px;color:var(--txt);font-weight:500">${val}</div></div>
-    </div>` : '';
-  const d = parseDateLocal(e.event_date);
-  const dateStr = d.toLocaleDateString('en-KE', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  rows.push(row('📅', 'Date', dateStr));
-  if (e.event_time) rows.push(row('⏰', 'Time', e.event_time));
-  if (e.location) rows.push(row('📍', 'Location / Court', esc(e.location)));
-  if (matter) rows.push(row('⚖️', 'Related Matter', esc(matter.title)));
-  if (e.notes) rows.push(row('📝', 'Notes', esc(e.notes)));
-  if (e.meeting_link) {
-    const platform=detectMeetingPlatform(e.meeting_link);
-    const iconMap={'Zoom':'📹','Microsoft Teams':'💻','Google Meet':'🟢','Whereby':'🎥','Webex':'📞','Video Meeting':'🔗'};
-    const ic=iconMap[platform]||'🔗';
-    rows.push(`
-    <div style="display:flex;gap:12px;align-items:flex-start">
-      <div style="width:32px;height:32px;border-radius:8px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${ic}</div>
-      <div><div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">${platform}</div><a href="${esc(e.meeting_link)}" target="_blank" rel="noopener" style="font-size:13px;color:#185FA5;font-weight:500;word-break:break-all">Join Meeting →</a></div>
-    </div>`);
-  }
-  document.getElementById('ev-detail-body').innerHTML = rows.join('') || '<div style="color:var(--txt3);font-size:13px">No additional details.</div>';
-  document.getElementById('event-detail-overlay').classList.remove('hidden');
-}
-
-function closeEventDetail() {
-  document.getElementById('event-detail-overlay').classList.add('hidden');
-  _activeDetailEventId = null;
-}
-
-function editEventFromDetail() {
-  const e = events.find(ev => ev.id === _activeDetailEventId);
-  if (!e) return;
-  closeEventDetail();
-  // Pre-fill the event modal
-  openModal('event');
-  setTimeout(() => {
-    document.getElementById('ev-title').value = e.title || '';
-    document.getElementById('ev-date').value = e.event_date || '';
-    document.getElementById('ev-time').value = e.event_time || '';
-    document.getElementById('ev-type').value = e.type || 'internal';
-    document.getElementById('ev-location').value = e.location || '';
-    document.getElementById('ev-notes').value = e.notes || '';
-    document.getElementById('ev-meeting-link').value = e.meeting_link || '';
-    updateMeetingLinkIcon(e.meeting_link||'');
-    if (e.matter_id) document.getElementById('ev-matter').value = e.matter_id;
-    // Mark as edit mode
-    const btn = document.getElementById('save-event-btn');
-    btn.textContent = 'Update Event';
-    btn.onclick = () => updateEvent(e.id);
-  }, 60);
-}
-
-async function updateEvent(eventId) {
-  const title = document.getElementById('ev-title').value.trim();
-  const date = document.getElementById('ev-date').value;
-  if (!title || !date) { toast('Title and date are required.', true); return; }
-  const payload = {
-    title, event_date: date,
-    event_time: document.getElementById('ev-time').value || null,
-    type: document.getElementById('ev-type').value,
-    matter_id: document.getElementById('ev-matter').value || null,
-    location: document.getElementById('ev-location').value.trim() || null,
-    meeting_link: document.getElementById('ev-meeting-link').value.trim() || null,
-    notes: document.getElementById('ev-notes').value.trim() || null,
-  };
-  const { error } = await sb.from('events').update(payload).eq('id', eventId);
-  if (error) { toast('Error updating event: ' + error.message, true); return; }
-  // Restore save button
-  const btn = document.getElementById('save-event-btn');
-  btn.textContent = 'Save Event';
-  btn.onclick = saveEventWithGCal;
-  await loadEvents(); renderCalendar(); renderDashboard();
-  closeModal();
-  toast('Event updated.');
-}
-
-async function deleteEventFromDetail() {
-  const e = events.find(ev => ev.id === _activeDetailEventId);
-  if (!e) return;
-  if (!confirm('Delete "' + (e.title || 'this event') + '"?')) return;
-  closeEventDetail();
-  await deleteEvent(e.id, e.title, { stopPropagation: () => {} });
-}
-
-// ─── FORCED PASSWORD RESET VIA URL HASH ───────────────────────────
-// If the redirect URL contains #reset-password, show the new password
-// form immediately — before any auth events fire. This is the most
-// reliable way to intercept a password-reset link.
-(function checkResetHash(){
-  const hash=window.location.hash||'';
-  const params=new URLSearchParams(window.location.search);
-  // Supabase also appends type=recovery as a query param in some flows
-  const isReset=hash.includes('reset-password')||params.get('type')==='recovery';
-  if(isReset){
-    window._firmPasswordRecoveryMode=true;
-    // Show auth screen in new-password mode immediately
-    document.getElementById('auth-screen').style.display='flex';
-    document.getElementById('app-shell').style.display='none';
-    showFirmMode('newpassword');
-    const s=document.getElementById('loading-splash');if(s)s.style.display='none';
-    // Clean the hash from the URL bar so a refresh doesn't re-trigger
-    history.replaceState(null,'',window.location.pathname+window.location.search);
-  }
-})();
-
-// ─── STAFF INBOX ──────────────────────────────────────────────────
-let staffMessages = [];
-let activeStaffThreadUserId = null;
-let allProfiles = [];
-
-async function loadStaffMessages(){
-  if(!currentUser)return;
-  const{data,error}=await sb.from('staff_messages')
-    .select('*')
-    .or(`from_user.eq.${currentUser.id},to_user.eq.${currentUser.id}`)
-    .order('created_at',{ascending:true});
-  if(!error)staffMessages=data||[];
-  updateStaffInboxBadge();
-  if(activeStaffThreadUserId)renderStaffConversation(activeStaffThreadUserId);
-}
-
-function updateStaffInboxBadge(){
-  const unread=staffMessages.filter(m=>m.to_user===currentUser?.id&&!m.read).length;
-  const badge=document.getElementById('staff-inbox-badge');
-  if(badge){badge.textContent=unread;badge.style.display=unread>0?'inline-block':'none';}
-  syncMobileBadges();
-}
-
-async function ensureAllProfilesLoaded(){
-  if(allProfiles.length)return;
-  const{data}=await sb.from('profiles').select('*').order('full_name');
-  allProfiles=data||[];
-  window._allProfiles=allProfiles;
-}
-
-function getStaffThreads(){
-  // Group messages into threads by conversation partner
-  const threads={};
-  staffMessages.forEach(m=>{
-    const partnerId=m.from_user===currentUser?.id?m.to_user:m.from_user;
-    const partnerName=m.from_user===currentUser?.id?m.to_name:m.from_name;
-    if(!threads[partnerId]){threads[partnerId]={userId:partnerId,name:partnerName||'Unknown',messages:[],unread:0};}
-    threads[partnerId].messages.push(m);
-    if(m.to_user===currentUser?.id&&!m.read)threads[partnerId].unread++;
-  });
-  // Sort by last message time
-  return Object.values(threads).sort((a,b)=>{
-    const la=a.messages[a.messages.length-1]?.created_at||'';
-    const lb=b.messages[b.messages.length-1]?.created_at||'';
-    return lb.localeCompare(la);
-  });
-}
-
-function renderStaffInboxList(){
-  const q=(document.getElementById('staff-inbox-search')||{}).value?.toLowerCase()||'';
-  const threads=getStaffThreads().filter(t=>!q||t.name.toLowerCase().includes(q));
-  const el=document.getElementById('staff-inbox-thread-list');
-  if(!el)return;
-  if(!threads.length){
-    el.innerHTML=`<div class="empty-state-sm" style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">No conversations yet.<br>Click "New Message" to start one.</div>`;
-    return;
-  }
-  el.innerHTML=threads.map(t=>{
-    const last=t.messages[t.messages.length-1];
-    const lastText=last?last.body:'';
-    const lastTime=last?fmtRelativeTime(last.created_at):'';
-    const isActive=t.userId===activeStaffThreadUserId;
-    return`<div class="inbox-thread-item${isActive?' active':''}" onclick="openStaffThread('${t.userId}')" style="padding:12px 16px;border-bottom:1px solid var(--brd);cursor:pointer;background:${isActive?'var(--cream)':'#fff'};transition:background 0.12s">
-      <div style="display:flex;align-items:center;gap:9px">
-        <div style="width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${initials(t.name)}</div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:12px;font-weight:${t.unread?600:500};color:var(--txt)">${esc(t.name)}</div>
-            <div style="font-size:9px;color:var(--txt3)">${lastTime}</div>
-          </div>
-          <div style="font-size:11px;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">${esc(lastText.slice(0,50))}</div>
-        </div>
-        ${t.unread?`<div style="width:16px;height:16px;background:#E2443A;color:#fff;border-radius:50%;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${t.unread}</div>`:''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function fmtRelativeTime(isoStr){
-  if(!isoStr)return'';
-  const now=new Date();const d=new Date(isoStr);
-  const diff=Math.floor((now-d)/1000);
-  if(diff<60)return'just now';
-  if(diff<3600)return Math.floor(diff/60)+'m ago';
-  if(diff<86400)return Math.floor(diff/3600)+'h ago';
-  return d.toLocaleDateString('en-KE',{day:'numeric',month:'short'});
-}
-
-async function openStaffThread(userId){
-  activeStaffThreadUserId=userId;
-  // Mark messages as read
-  const unread=staffMessages.filter(m=>m.from_user===userId&&m.to_user===currentUser?.id&&!m.read);
-  if(unread.length){
-    await sb.from('staff_messages').update({read:true}).in('id',unread.map(m=>m.id));
-    unread.forEach(m=>m.read=true);
-    updateStaffInboxBadge();
-  }
-  renderStaffInboxList();
-  renderStaffConversation(userId);
-  // Show conversation panel
-  const placeholder=document.getElementById('staff-inbox-placeholder');
-  const conv=document.getElementById('staff-inbox-conversation');
-  if(placeholder)placeholder.style.display='none';
-  if(conv){conv.style.display='flex';}
-}
-
-function renderStaffConversation(userId){
-  // Find partner profile
-  const profile=allProfiles.find(p=>p.id===userId);
-  const thread=getStaffThreads().find(t=>t.userId===userId);
-  const name=thread?.name||profile?.full_name||'Staff Member';
-  const role=profile?roleLabel(profile.role)+(profile.department?' · '+profile.department:''):'';
-  const nameEl=document.getElementById('staff-conv-name');
-  const roleEl=document.getElementById('staff-conv-role');
-  if(nameEl)nameEl.textContent=name;
-  if(roleEl)roleEl.textContent=role;
-  const msgs=staffMessages.filter(m=>(m.from_user===userId&&m.to_user===currentUser?.id)||(m.from_user===currentUser?.id&&m.to_user===userId));
-  const msgsEl=document.getElementById('staff-inbox-messages');
-  if(!msgsEl)return;
-  if(!msgs.length){
-    msgsEl.innerHTML=`<div style="text-align:center;color:var(--txt3);font-size:12px;padding:20px">Start the conversation below.</div>`;
-    return;
-  }
-  msgsEl.innerHTML=msgs.map(m=>{
-    const isMe=m.from_user===currentUser?.id;
-    const time=new Date(m.created_at).toLocaleString('en-KE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
-    return`<div style="display:flex;flex-direction:column;align-items:${isMe?'flex-end':'flex-start'};gap:2px">
-      <div style="max-width:72%;padding:9px 13px;border-radius:10px;font-size:12px;line-height:1.6;${isMe?'background:var(--navy);color:#fff;border-top-right-radius:3px':'background:#fff;border:1px solid var(--brd);color:var(--txt);border-top-left-radius:3px'}">${esc(m.body)}</div>
-      <div style="font-size:9px;color:var(--txt3)">${isMe?'You':''}${!isMe?esc(m.from_name||''):''}  · ${time}</div>
-    </div>`;
-  }).join('');
-  msgsEl.scrollTop=msgsEl.scrollHeight;
-}
-
-async function sendStaffMessage(){
-  const input=document.getElementById('staff-reply-input');
-  if(!input)return;
-  const body=input.value.trim();
-  if(!body||!activeStaffThreadUserId)return;
-  const myName=currentProfile?.full_name||currentUser?.email||'—';
-  const toProfile=allProfiles.find(p=>p.id===activeStaffThreadUserId);
-  const toName=toProfile?.full_name||toProfile?.email||'Staff';
-  const{data,error}=await sb.from('staff_messages').insert([{
-    from_user:currentUser.id,to_user:activeStaffThreadUserId,
-    body,read:false,from_name:myName,to_name:toName
-  }]).select().single();
-  if(error){toast('Failed to send: '+error.message,true);return;}
-  staffMessages.push(data);
-  input.value='';
-  renderStaffConversation(activeStaffThreadUserId);
-  renderStaffInboxList();
-}
-
-async function openNewStaffMessageModal(){
-  await ensureAllProfilesLoaded();
-  const others=allProfiles.filter(p=>p.id!==currentUser?.id);
-  const overlay=document.createElement('div');
-  overlay.id='new-staff-msg-overlay';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px';
-  overlay.innerHTML=`
-    <div style="background:#fff;border-radius:12px;width:100%;max-width:440px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-      <div style="background:var(--navy);padding:18px 22px;display:flex;align-items:center;justify-content:space-between">
-        <div style="font-family:'Playfair Display',serif;font-size:17px;color:#fff;font-weight:500">New Staff Message</div>
-        <button onclick="document.getElementById('new-staff-msg-overlay').remove()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
-      </div>
-      <div style="padding:22px;display:flex;flex-direction:column;gap:14px">
-        <div>
-          <label style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;font-weight:500">To</label>
-          <select id="nsm-to" style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none;background:#fff">
-            <option value="">Select staff member…</option>
-            ${others.map(p=>`<option value="${p.id}">${esc(p.full_name||p.email||'Unknown')} — ${roleLabel(p.role)}${p.department?' ('+esc(p.department)+')':''}</option>`).join('')}
-          </select>
-        </div>
-        <div>
-          <label style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;font-weight:500">Message</label>
-          <textarea id="nsm-body" placeholder="Type your message…" style="width:100%;border:1px solid var(--brd);border-radius:7px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);outline:none;resize:none;min-height:80px;line-height:1.5"></textarea>
-        </div>
-        <div id="nsm-error" style="font-size:12px;color:var(--red);min-height:16px"></div>
-        <div style="display:flex;gap:10px">
-          <button onclick="sendNewStaffMessage()" style="flex:1;background:var(--navy);color:#fff;border:none;padding:10px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Send Message</button>
-          <button onclick="document.getElementById('new-staff-msg-overlay').remove()" style="padding:10px 18px;border:1px solid var(--brd);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;background:transparent;color:var(--txt2)">Cancel</button>
-        </div>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
-}
-
-async function sendNewStaffMessage(){
-  const toId=document.getElementById('nsm-to')?.value;
-  const body=document.getElementById('nsm-body')?.value.trim();
-  const errEl=document.getElementById('nsm-error');
-  if(!toId){if(errEl)errEl.textContent='Please select a recipient.';return;}
-  if(!body){if(errEl)errEl.textContent='Please enter a message.';return;}
-  const myName=currentProfile?.full_name||currentUser?.email||'—';
-  const toProfile=allProfiles.find(p=>p.id===toId);
-  const toName=toProfile?.full_name||toProfile?.email||'Staff';
-  const{data,error}=await sb.from('staff_messages').insert([{
-    from_user:currentUser.id,to_user:toId,
-    body,read:false,from_name:myName,to_name:toName
-  }]).select().single();
-  if(error){if(errEl)errEl.textContent='Failed: '+error.message;return;}
-  document.getElementById('new-staff-msg-overlay')?.remove();
-  staffMessages.push(data);
-  activeStaffThreadUserId=toId;
-  await ensureAllProfilesLoaded();
-  renderStaffInboxList();
-  // Open the conversation
-  const placeholder=document.getElementById('staff-inbox-placeholder');
-  const conv=document.getElementById('staff-inbox-conversation');
-  if(placeholder)placeholder.style.display='none';
-  if(conv)conv.style.display='flex';
-  renderStaffConversation(toId);
-  toast('Message sent to '+toName+' ✓');
-}
-
-// ─── PTT (Push-to-Talk) REQUESTS (SOS Panel) ─────────────────────
-let pttRequests = [];
-
-async function loadPttRequests(){
-  const{data,error}=await sb.from('ptt_requests').select('*').eq('resolved',false).order('created_at',{ascending:false});
-  if(!error)pttRequests=data||[];
-  renderPttRequests();
-}
-
-function renderPttRequests(){
-  const el=document.getElementById('ptt-requests-list');
-  if(!el)return;
-  if(!pttRequests.length){
-    el.innerHTML='<div class="empty-state"><p>No active speak requests. When a client sends a PTT request it appears here.</p></div>';
-    return;
-  }
-  el.innerHTML=pttRequests.map(r=>{
-    const since=fmtRelativeTime(r.created_at);
-    const client=clients.find(c=>c.id===r.client_id);
-    const phone=client?.phone||'';
-    return`<div style="padding:14px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:flex-start;gap:14px;background:${r.acknowledged?'var(--cream)':'#FFF5F5'}">
-      <span style="font-size:22px;flex-shrink:0">${r.acknowledged?'📞':'🔴'}</span>
-      <div style="flex:1">
-        <div style="font-weight:600;font-size:13px;color:var(--txt)">${esc(r.client_name||'Unknown Client')}</div>
-        ${r.note?`<div style="font-size:11px;color:var(--txt2);margin-top:2px;line-height:1.5">"${esc(r.note)}"</div>`:''}
-        <div style="font-size:10px;color:var(--txt3);margin-top:3px">${since} · Wants to speak with the firm</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-        ${phone?`<a href="tel:${esc(phone)}" style="font-size:11px;background:var(--green);color:#fff;padding:5px 12px;border-radius:6px;text-decoration:none;text-align:center;font-weight:500">📞 Call</a>`:''}
-        ${!r.acknowledged?`<button onclick="acknowledgePtt('${r.id}')" style="font-size:11px;background:var(--gold);color:var(--navy);border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:500;font-family:'DM Sans',sans-serif">✓ Acknowledge</button>`:''}
-        <button onclick="resolvePtt('${r.id}')" style="font-size:11px;background:var(--cream2);color:var(--txt2);border:1px solid var(--brd);padding:5px 12px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif">Resolve</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-async function acknowledgePtt(id){
-  await sb.from('ptt_requests').update({acknowledged:true}).eq('id',id);
-  const req=pttRequests.find(r=>r.id===id);
-  if(req)req.acknowledged=true;
-  renderPttRequests();
-  toast('PTT request acknowledged.');
-}
-
-async function resolvePtt(id){
-  await sb.from('ptt_requests').update({resolved:true}).eq('id',id);
-  pttRequests=pttRequests.filter(r=>r.id!==id);
-  renderPttRequests();
-  toast('PTT request resolved.');
-}
-
-initAuth();
-</script>
-
-
-<!-- EVENT DETAIL OVERLAY -->
-<div class="doc-viewer-overlay hidden" id="event-detail-overlay" onclick="if(event.target===this)closeEventDetail()" style="align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:12px;width:100%;max-width:500px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-    <div style="background:var(--navy);padding:20px 24px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div id="ev-detail-type" style="font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px"></div>
-        <div id="ev-detail-title" style="font-family:'Playfair Display',serif;font-size:18px;color:#fff;font-weight:500"></div>
-      </div>
-      <button onclick="closeEventDetail()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0">×</button>
-    </div>
-    <div style="padding:24px">
-      <div id="ev-detail-body" style="display:flex;flex-direction:column;gap:14px"></div>
-      <div style="display:flex;gap:8px;margin-top:24px;justify-content:flex-end">
-        <button onclick="editEventFromDetail()" class="topbar-btn sec" style="font-size:12px">✏️ Edit</button>
-        <button onclick="deleteEventFromDetail()" class="topbar-btn" style="font-size:12px;background:#a33">🗑 Delete</button>
-        <button onclick="closeEventDetail()" class="topbar-btn" style="font-size:12px">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- DOCUMENT VIEWER OVERLAY -->
-<div class="doc-viewer-overlay hidden" id="doc-viewer-overlay" onclick="if(event.target===this)closeDocViewer()">
-  <div class="doc-viewer-bar">
-    <span style="font-size:16px">📄</span>
-    <span class="doc-viewer-title" id="doc-viewer-filename">Document</span>
-    <button id="doc-viewer-dl-btn" class="doc-btn" style="font-size:11px;padding:4px 12px">⬇ Download</button>
-    <button onclick="closeDocViewer()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--txt3);line-height:1;padding:0 4px;margin-left:4px">×</button>
-  </div>
-  <div class="doc-viewer-body" id="doc-viewer-body"></div>
-</div>
-
-
-<!-- PWA INSTALL BANNER -->
-<div id="pwa-install-banner">
-  <div class="pwa-modal">
-    <button class="pwa-modal-close" onclick="dismissPwaBanner()" aria-label="Close">×</button>
-    <div class="pwa-modal-icon">💻</div>
-    <div class="pwa-modal-title">Install DKMA CMS</div>
-    <div class="pwa-modal-sub">Run the CMS as a standalone app — faster access, no browser tabs, works offline.</div>
-    <div class="pwa-modal-actions">
-      <button class="pwa-install-btn" onclick="triggerPwaInstall()">Install App</button>
-      <button class="pwa-dismiss-btn" onclick="dismissPwaBanner()">Not now</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ── SERVICE WORKER REGISTRATION (CMS) ─────────────────────────────
-if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js', {scope: './' })
-      .then(reg => { console.log('[DKMA CMS] SW registered:', reg.scope); window._swReg = reg; })
-      .catch(err => console.warn('[DKMA CMS] SW failed:', err));
-  });
-}
-
-// ── PWA INSTALL PROMPT (CMS) ──────────────────────────────────────
-let _deferredInstallPrompt = null;
-const _pwaInstallKey = 'dkma-cms-pwa-dismissed';
-
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  _deferredInstallPrompt = e;
-  if(!sessionStorage.getItem(_pwaInstallKey)){
-    setTimeout(showPwaBanner, 5000);
-  }
-});
-
-window.addEventListener('appinstalled', () => {
-  hidePwaBanner();
-  _deferredInstallPrompt = null;
-  toast('CMS installed as app! Launch it from your taskbar or desktop.');
-});
-
-function showPwaBanner(){
-  if(window.matchMedia('(display-mode: standalone)').matches) return;
-  const b = document.getElementById('pwa-install-banner');
-  if(b) b.classList.add('show');
-}
-function hidePwaBanner(){
-  const b = document.getElementById('pwa-install-banner');
-  if(b) b.classList.remove('show');
-}
-function dismissPwaBanner(){
-  hidePwaBanner();
-  sessionStorage.setItem(_pwaInstallKey, '1');
-}
-async function triggerPwaInstall(){
-  if(!_deferredInstallPrompt){
-    showCmsIosInstallGuide();
-    return;
-  }
-  _deferredInstallPrompt.prompt();
-  const { outcome } = await _deferredInstallPrompt.userChoice;
-  if(outcome === 'accepted') hidePwaBanner();
-  _deferredInstallPrompt = null;
-}
-function showCmsIosInstallGuide(){
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(13,27,42,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:14px;padding:28px;max-width:420px;width:100%">
-      <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);margin-bottom:10px">💻 Install DKMA CMS</div>
-      <div style="font-size:13px;color:var(--txt2);line-height:1.6;margin-bottom:16px">For the best experience, use <strong>Google Chrome</strong> on desktop or Android. Then click the install icon <strong>⊕</strong> in the address bar, or open Chrome menu → <strong>Install DKMA CMS</strong>.</div>
-      <div style="background:var(--cream);border-radius:8px;padding:14px;font-size:12px;color:var(--txt3);line-height:1.6">
-        On <strong>Windows/Mac</strong>: Chrome address bar → ⊕ icon → Install<br>
-        On <strong>Android</strong>: Chrome menu (⋮) → Add to Home Screen<br>
-        On <strong>iPhone/iPad</strong>: Safari → Share → Add to Home Screen
-      </div>
-      <button onclick="this.closest('div[style*=fixed]').remove()" style="margin-top:18px;width:100%;background:var(--navy);color:#fff;border:none;padding:11px;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Got it</button>
-    </div>`;
-  document.body.appendChild(overlay);
-}
-</script>
-
-
-
-<!-- EDIT MY PROFILE MODAL -->
-<div class="modal-overlay hidden" id="editprofile-overlay" onclick="if(event.target.id==='editprofile-overlay')closeEditProfileModal()">
-  <div class="modal" style="max-width:500px">
-    <div class="modal-head"><span class="modal-title">Edit My Profile</span><button class="modal-close" onclick="closeEditProfileModal()">×</button></div>
-    <div class="modal-body">
-      <div class="section-divider">Personal Information</div>
-      <div class="form-row"><label>Full Name</label><input id="ep-name" placeholder="Your full name"/></div>
-      <div class="form-two">
-        <div class="form-row"><label>Phone</label><input id="ep-phone" type="tel" placeholder="+254…"/></div>
-        <div class="form-row"><label>Bar Admission / ID No.</label><input id="ep-bar" placeholder="e.g. LSK/ADV/2020/123"/></div>
-      </div>
-      <div class="form-row"><label>Bio / Specialisation</label><textarea id="ep-bio" placeholder="Brief professional bio or areas of specialisation…" style="min-height:70px"></textarea></div>
-      <div class="section-divider">Role &amp; Department</div>
-      <div class="form-two" id="ep-role-dept-row">
-        <div class="form-row"><label>Role</label>
-          <select id="ep-role">
-            <option value="associate">Associate</option>
-            <option value="senior">Senior Associate</option>
-            <option value="head">Head of Department</option>
-            <option value="admin">Administrator</option>
-          </select>
-        </div>
-        <div class="form-row"><label>Department</label>
-          <select id="ep-dept">
-            <option value="">None</option>
-            <option>Litigation</option>
-            <option>Conveyancing</option>
-            <option>Family Law</option>
-            <option>Corporate</option>
-            <option>Finance</option>
-          </select>
-        </div>
-      </div>
-      <div id="ep-role-notice" style="display:none;font-size:11px;color:var(--txt3);background:var(--cream);border-radius:6px;padding:10px 13px;line-height:1.5">
-        🔒 Role and department can only be changed by an Administrator.
-      </div>
-      <div id="ep-admin-notice" style="display:none;font-size:11px;color:var(--txt3);background:var(--cream);border-radius:6px;padding:10px 13px;line-height:1.5">
-        ⚠️ If you are the firm's administrator, set your role to <strong>Administrator</strong> here so you have full access.
-      </div>
-      <div class="section-divider">Security</div>
-      <div class="form-row">
-        <label>Change Password <span style="font-size:10px;background:var(--cream2);color:var(--txt3);padding:1px 6px;border-radius:3px;margin-left:4px">Optional</span></label>
-        <input id="ep-newpw" type="password" placeholder="Leave blank to keep current password" style="margin-bottom:8px"/>
-        <input id="ep-newpw-confirm" type="password" placeholder="Confirm new password"/>
-        <div id="ep-pw-error" style="font-size:11px;color:var(--red);min-height:16px;margin-top:4px"></div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn-secondary" onclick="closeEditProfileModal()">Cancel</button>
-      <button class="btn-primary" id="ep-btn" onclick="saveMyProfile()">Save Profile</button>
+      <button class="btn-primary" id="myp-btn" onclick="saveMyProfile()">Save Profile</button>
     </div>
   </div>
 </div>
