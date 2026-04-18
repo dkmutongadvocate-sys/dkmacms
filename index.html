@@ -3033,19 +3033,37 @@ function renderUnifiedDocsCard(card, clientId, clientMatters, firmDocs, clientDo
     <div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">No firm documents for this client's matters yet.</div>`;
   }
 
-  // ── Section: Client-uploaded documents ──
+  // ── Section: Client-uploaded documents — grouped by matter ──
   html += `<div style="padding:8px 20px 4px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.8px;font-weight:500;background:var(--cream);border-bottom:1px solid var(--brd);margin-top:4px">📤 Uploaded by Client (${clientDocs.length})</div>`;
   if(clientDocs.length){
-    clientDocs.forEach(f => {
-      const parts = f.name.split('__');
-      const dName = parts.length>=3 ? parts.slice(2).join('__') : f.name;
-      const cat = parts[0]||'other'; const desc = parts[1]||'';
-      const size = fmtFileSize(f.metadata?.size);
-      const dateStr = fmtDocDate(f.created_at);
-      const actions = `
-        <button class="doc-btn view-btn" onclick="viewClientFile('${clientId}','${esc(f.name)}','${esc(dName)}')">👁</button>
-        <button class="doc-btn" onclick="downloadClientFile('${clientId}','${esc(f.name)}','${esc(dName)}')">⬇</button>`;
-      html += docRow(f.name, dName, size, dateStr, cat, desc, '', 'client', actions);
+    // Decode and group by matter
+    const uploadsByMatter={};
+    clientDocs.forEach(f=>{
+      const parts=f.name.split('__');
+      let matterId='general', dName=f.name, cat='other', desc='';
+      // New format: {cat}__{desc}__{matterId}__{ts}_{filename}
+      if(parts.length>=4){cat=parts[0];desc=parts[1];matterId=parts[2]||'general';dName=parts.slice(3).join('__');}
+      // Legacy format: {cat}__{desc}__{ts}_{filename}
+      else if(parts.length>=3){cat=parts[0];desc=parts[1];dName=parts.slice(2).join('__');}
+      const tsM=dName.match(/^\d+_(.+)$/);if(tsM)dName=tsM[1];
+      if(!uploadsByMatter[matterId])uploadsByMatter[matterId]={files:[]};
+      uploadsByMatter[matterId].files.push({...f,_dName:dName,_cat:cat,_desc:desc});
+    });
+
+    Object.entries(uploadsByMatter).forEach(([mid,grp])=>{
+      const matterObj=mid!=='general'?clientMatters.find(m=>m.id===mid):null;
+      const groupLabel=matterObj
+        ? `<div style="padding:6px 20px;font-size:11px;font-weight:500;color:var(--txt2);background:rgba(184,149,58,0.06);border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:6px">📁 <span>${esc(matterObj.title)}</span><span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:8px;font-weight:500;margin-left:4px">Client Upload</span></div>`
+        : `<div style="padding:6px 20px;font-size:11px;font-weight:500;color:var(--txt3);background:var(--cream);border-bottom:1px solid var(--brd)">General / No Matter Linked</div>`;
+      html+=groupLabel;
+      grp.files.forEach(f=>{
+        const size=fmtFileSize(f.metadata?.size);
+        const dateStr=fmtDocDate(f.created_at);
+        const actions=`
+          <button class="doc-btn view-btn" onclick="viewClientFile('${clientId}','${esc(f.name)}','${esc(f._dName)}')">👁</button>
+          <button class="doc-btn" onclick="downloadClientFile('${clientId}','${esc(f.name)}','${esc(f._dName)}')">⬇</button>`;
+        html+=docRow(f.name,f._dName,size,dateStr,f._cat,f._desc,matterObj?.title||'','client',actions);
+      });
     });
   } else {
     html += `<div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">Client has not uploaded any files yet.</div>`;
@@ -3095,6 +3113,35 @@ async function toggleShareFromProfile(matterId, storageName, displayName, btn){
   if(c) loadClientDocumentsUnified(c.id, c.name);
 }
 
+// ── View / download files uploaded by the client (client-uploads bucket) ──
+async function viewClientFile(clientId, storageName, displayName){
+  const path=`${clientId}/${storageName}`;
+  const{data,error}=await sb.storage.from(CLIENT_BUCKET).createSignedUrl(path,600);
+  if(error){toast('Could not open file.',true);return;}
+  const url=data.signedUrl;
+  const ext=(storageName.split('.').pop()||'').toLowerCase();
+  const overlay=document.getElementById('doc-viewer-overlay');
+  document.getElementById('doc-viewer-filename').textContent=displayName;
+  document.getElementById('doc-viewer-dl-btn').onclick=()=>{
+    const a=document.createElement('a');a.href=url;a.download=displayName;a.target='_blank';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  };
+  const body=document.getElementById('doc-viewer-body');
+  if(['jpg','jpeg','png','gif','webp'].includes(ext)){
+    body.innerHTML=`<img src="${url}" style="max-width:100%;max-height:76vh;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
+  } else if(ext==='pdf'){
+    body.innerHTML=`<iframe src="${url}" style="width:100%;height:76vh;border:none;display:block"></iframe>`;
+  } else {
+    body.innerHTML=`<div class="doc-viewer-nopreview"><div style="font-size:36px;margin-bottom:16px">📄</div><div style="font-weight:500;color:var(--txt);margin-bottom:8px">${esc(displayName)}</div><div>Preview not available. Use Download.</div></div>`;
+  }
+  overlay.classList.remove('hidden');
+}
+
+async function downloadClientFile(clientId, storageName, displayName){
+  const path=`${clientId}/${storageName}`;
+  const{data,error}=await sb.storage.from(CLIENT_BUCKET).createSignedUrl(path,300);
+  if(error){toast('Could not download.',true);return;}
+  const a=document.createElement('a');a.href=data.signedUrl;a.download=displayName;a.target='_blank';document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
 
 // ─── BROWSER NOTIFICATIONS ────────────────────────────────────────
 // Requests permission once after login, then fires native notifications
@@ -5212,7 +5259,24 @@ async function loadMatterDocuments(){
     return;
   }
   matterDocuments=(data||[]).filter(d=>d.name!=='.emptyFolderPlaceholder');
-  document.getElementById('matter-doc-count').textContent=matterDocuments.length;
+
+  // Also load client uploads linked to this matter
+  const activeMatter=matters.find(m=>m.id===activeMatterId);
+  window._matterClientUploads=[];
+  if(activeMatter&&activeMatter.client_id){
+    const{data:clientFiles}=await sb.storage.from(CLIENT_BUCKET).list(activeMatter.client_id,{limit:200,sortBy:{column:'created_at',order:'desc'}});
+    if(clientFiles){
+      window._matterClientUploads=(clientFiles||[]).filter(f=>{
+        if(f.name==='.emptyFolderPlaceholder')return false;
+        const parts=f.name.split('__');
+        // New format: cat__desc__matterId__ts_file  → parts[2] is matterId
+        return parts.length>=4&&parts[2]===activeMatterId;
+      });
+    }
+  }
+
+  const totalCount=matterDocuments.length+(window._matterClientUploads||[]).length;
+  document.getElementById('matter-doc-count').textContent=totalCount;
   renderDocumentsCard();
 }
 
@@ -5274,6 +5338,49 @@ function renderDocumentsCard(){
     });
     html+=`</div><div style="padding:10px 20px;border-top:1px solid var(--brd);text-align:right"><button class="filter-btn" style="font-size:11px" onclick="openDocumentUploadModal()">+ Upload More</button></div>`;
   }
+
+  // ── Client-uploaded docs for this matter ──
+  const clientUploads=window._matterClientUploads||[];
+  if(clientUploads.length){
+    html+=`<div style="padding:10px 20px 4px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.8px;font-weight:500;background:var(--cream);border-top:2px solid var(--brd2);border-bottom:1px solid var(--brd)">
+      📤 Uploaded by Client (${clientUploads.length})
+    </div>`;
+    const activeMatter=matters.find(m=>m.id===activeMatterId);
+    const clientId=activeMatter?.client_id||'';
+    clientUploads.forEach(f=>{
+      const parts=f.name.split('__');
+      let dName=f.name,cat='',desc='';
+      if(parts.length>=4){cat=parts[0];desc=parts[1];dName=parts.slice(3).join('__');}
+      const tsM=dName.match(/^\d+_(.+)$/);if(tsM)dName=tsM[1];
+      const{icon,cls}=docFileIcon(dName);
+      const meta=f.metadata||{};
+      const dateStr=f.created_at?new Date(f.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):'';
+      const safeName=esc(f.name);
+      const safeDisplay=esc(dName);
+      html+=`<div class="doc-row" style="background:rgba(24,95,165,0.02)">
+        <div class="doc-icon ${cls}">${icon}</div>
+        <div class="doc-info">
+          <div class="doc-name" title="${safeDisplay}">${safeDisplay}</div>
+          <div class="doc-meta">
+            <span style="background:#E6F1FB;color:#185FA5;font-size:9px;padding:1px 6px;border-radius:6px;font-weight:600;margin-right:4px">Client Upload</span>
+            ${dateStr}${desc?' · '+esc(desc):''}
+          </div>
+        </div>
+        <div style="flex-shrink:0;min-width:90px">
+          ${cat?`<span class="status-pill" style="background:var(--cream2);color:var(--txt2);font-size:9px">${esc(categoryLabel(cat))}</span>`:'<span style="font-size:11px;color:var(--txt3)">—</span>'}
+        </div>
+        <div style="flex-shrink:0;min-width:60px;font-size:11px;color:var(--txt3)">${fmtFileSize(meta.size)}</div>
+        <div class="doc-actions">
+          <button class="doc-btn view-btn" onclick="viewClientFile('${esc(clientId)}','${safeName}','${safeDisplay}')">👁 View</button>
+          <button class="doc-btn" onclick="downloadClientFile('${esc(clientId)}','${safeName}','${safeDisplay}')">⬇</button>
+        </div>
+      </div>`;
+    });
+  } else if(docs.length){
+    // Subtle note when there are firm docs but no client uploads for this matter
+    html+=`<div style="padding:8px 20px;font-size:11px;color:var(--txt3);border-top:1px solid var(--brd);background:var(--cream)">📤 No client uploads for this matter.</div>`;
+  }
+
   card.innerHTML=html;
   // Setup drop zone interactions
   const zone=document.getElementById('doc-drop-zone');
