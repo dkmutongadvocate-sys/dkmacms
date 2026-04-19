@@ -7457,8 +7457,7 @@ async function loadStaffMessages(){
   if(!error){
     staffMessages=data||[];
   } else {
-    // Table may not exist yet — fail silently, staff inbox shows empty state
-    console.warn('[DKMA] staff_messages table not found:',error.message);
+    console.warn('[DKMA] staff_messages load error:',error.message);
     staffMessages=[];
   }
 }
@@ -7482,9 +7481,9 @@ function renderStaffInboxList(){
   }
   const threads=profiles.filter(p=>!q||(p.full_name||p.email||'').toLowerCase().includes(q)).map(p=>{
     const myId=currentUser?.id;
-    const msgs=staffMessages.filter(m=>(m.sender_id===myId&&m.recipient_id===p.id)||(m.sender_id===p.id&&m.recipient_id===myId));
+    const msgs=staffMessages.filter(m=>(m.from_user===myId&&m.to_user===p.id)||(m.from_user===p.id&&m.to_user===myId));
     const last=msgs[msgs.length-1];
-    const unread=msgs.filter(m=>m.sender_id===p.id&&!m.read_by_recipient).length;
+    const unread=msgs.filter(m=>m.from_user===p.id&&!m.read).length;
     return{p,last,unread,ts:last?last.created_at:p.created_at||''};
   });
   threads.sort((a,b)=>{
@@ -7495,7 +7494,7 @@ function renderStaffInboxList(){
   if(!threads.length){listEl.innerHTML='<div class="empty-state-sm">No staff found.</div>';return;}
   listEl.innerHTML=threads.map(({p,last,unread})=>{
     const isActive=activeStaffThreadId===p.id;
-    const preview=last?(last.message||last.content||''):'No messages yet';
+    const preview=last?(last.body||''):'No messages yet';
     const role=p.role?p.role.charAt(0).toUpperCase()+p.role.slice(1):'Staff';
     return`<div class="inbox-thread${isActive?' active':''}" onclick="openStaffThread('${p.id}')">
       <div class="inbox-thread-av" style="background:var(--navy);color:#fff">${initials(p.full_name||p.email||'?')}</div>
@@ -7510,7 +7509,7 @@ function renderStaffInboxList(){
     </div>`;
   }).join('');
   // Update staff inbox badge
-  const totalUnread=staffMessages.filter(m=>m.recipient_id===currentUser?.id&&!m.read_by_recipient).length;
+  const totalUnread=staffMessages.filter(m=>m.to_user===currentUser?.id&&!m.read).length;
   const badge=document.getElementById('staff-inbox-badge');
   const diBadge=document.getElementById('di-staff-inbox-badge');
   if(badge)badge.textContent=totalUnread||'';
@@ -7534,18 +7533,18 @@ async function openStaffThread(profileId){
   if(roleEl)roleEl.textContent=(p.role||'Staff')+' · '+(p.department||'DKMA');
   const msgsEl=document.getElementById('staff-inbox-messages');
   if(!msgsEl)return;
-  const msgs=staffMessages.filter(m=>(m.sender_id===myId&&m.recipient_id===profileId)||(m.sender_id===profileId&&m.recipient_id===myId));
+  const msgs=staffMessages.filter(m=>(m.from_user===myId&&m.to_user===profileId)||(m.from_user===profileId&&m.to_user===myId));
   if(!msgs.length){
     msgsEl.innerHTML='<div style="text-align:center;color:var(--txt3);font-size:12px;padding:40px 20px">No messages yet. Send the first one below.</div>';
   } else {
     msgsEl.innerHTML=msgs.map(m=>{
-      const isMe=m.sender_id===myId;
-      const senderProfile=isMe?currentProfile:(window._allProfiles||[]).find(x=>x.id===m.sender_id);
-      const sName=senderProfile?.full_name||'Staff';
+      const isMe=m.from_user===myId;
+      const senderProfile=isMe?currentProfile:(window._allProfiles||[]).find(x=>x.id===m.from_user);
+      const sName=m.from_name||(senderProfile?.full_name)||'Staff';
       return`<div class="inbox-msg ${isMe?'from-firm':'from-client'}" data-msg-id="${m.id}">
         <div class="inbox-msg-av" style="background:${isMe?'var(--navy)':'var(--cream2)'};color:${isMe?'#fff':'var(--txt)'}">${initials(sName)}</div>
         <div class="inbox-msg-content">
-          ${(m.message||m.content)?`<div class="inbox-msg-bubble">${esc(m.message||m.content)}</div>`:''}
+          ${m.body?`<div class="inbox-msg-bubble">${esc(m.body)}</div>`:''}
           <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
         </div>
       </div>`;
@@ -7553,10 +7552,10 @@ async function openStaffThread(profileId){
   }
   msgsEl.scrollTop=msgsEl.scrollHeight;
   // Mark as read
-  const unread=msgs.filter(m=>m.sender_id===profileId&&!m.read_by_recipient);
+  const unread=msgs.filter(m=>m.from_user===profileId&&!m.read);
   if(unread.length){
-    await sb.from('staff_messages').update({read_by_recipient:true}).eq('sender_id',profileId).eq('recipient_id',myId).eq('read_by_recipient',false);
-    staffMessages=staffMessages.map(m=>m.sender_id===profileId&&m.recipient_id===myId?{...m,read_by_recipient:true}:m);
+    await sb.from('staff_messages').update({read:true}).eq('from_user',profileId).eq('to_user',myId).eq('read',false);
+    staffMessages=staffMessages.map(m=>m.from_user===profileId&&m.to_user===myId?{...m,read:true}:m);
     renderStaffInboxList();
   }
 }
@@ -7570,10 +7569,13 @@ async function sendStaffMessage(){
   if(!msg)return;
   inp.value='';
   const myId=currentUser?.id;
-  const tmp={id:'_tmp_'+Date.now(),sender_id:myId,recipient_id:activeStaffThreadId,message:msg,created_at:new Date().toISOString(),read_by_recipient:false};
+  const myName=currentProfile?.full_name||currentUser?.email||'Staff';
+  const recipient=(window._allProfiles||[]).find(p=>p.id===activeStaffThreadId);
+  const toName=recipient?.full_name||recipient?.email||'Staff';
+  const tmp={id:'_tmp_'+Date.now(),from_user:myId,to_user:activeStaffThreadId,body:msg,created_at:new Date().toISOString(),read:false,from_name:myName,to_name:toName};
   staffMessages.push(tmp);
   openStaffThread(activeStaffThreadId);
-  const{data,error}=await sb.from('staff_messages').insert({sender_id:myId,recipient_id:activeStaffThreadId,message:msg,read_by_recipient:false}).select().single();
+  const{data,error}=await sb.from('staff_messages').insert({from_user:myId,to_user:activeStaffThreadId,body:msg,read:false,from_name:myName,to_name:toName}).select().single();
   if(error){toast('Send failed: '+error.message,true);staffMessages=staffMessages.filter(m=>m.id!==tmp.id);return;}
   staffMessages=staffMessages.map(m=>m.id===tmp.id?data:m);
   renderStaffInboxList();
