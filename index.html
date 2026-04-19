@@ -8118,5 +8118,16 @@ function refreshAppDropdowns(){
 // Dropdowns are refreshed via loadAll() on boot — no setTimeout needed
 </script>
 
+<!-- ═══════════════ DOCUMENT VIEWER OVERLAY ═══════════════ -->
+<div class="doc-viewer-overlay hidden" id="doc-viewer-overlay" onclick="if(event.target===this)closeDocViewer()">
+  <div class="doc-viewer-bar" style="width:100%;max-width:920px">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;color:var(--txt3)"><path d="M2 3h12M2 6h8M2 9h10M2 12h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <span class="doc-viewer-title" id="doc-viewer-filename">Document</span>
+    <button id="doc-viewer-dl-btn" style="background:var(--navy);color:#fff;border:none;padding:5px 14px;border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap;margin-left:auto">⬇ Download</button>
+    <button onclick="closeDocViewer()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--txt3);line-height:1;padding:0 4px;margin-left:8px">×</button>
+  </div>
+  <div class="doc-viewer-body" id="doc-viewer-body"></div>
+</div>
+
 </body>
 </html>
