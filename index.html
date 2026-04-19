@@ -2515,7 +2515,7 @@ function _buildMsgBubbleHtml(m,c,clientId){
   return`<div class="inbox-msg ${isClient?'from-client':'from-firm'}" data-msg-id="${m.id}">
     ${av}
     <div class="inbox-msg-content">
-      ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
+      ${(m.content||m.message)?`<div class="inbox-msg-bubble">${esc(m.content||m.message)}</div>`:''}
       ${fileHtml}
       <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
     </div>
@@ -7495,7 +7495,7 @@ function renderStaffInboxList(){
   if(!threads.length){listEl.innerHTML='<div class="empty-state-sm">No staff found.</div>';return;}
   listEl.innerHTML=threads.map(({p,last,unread})=>{
     const isActive=activeStaffThreadId===p.id;
-    const preview=last?(last.message||''):'No messages yet';
+    const preview=last?(last.content||last.message||''):'No messages yet';
     const role=p.role?p.role.charAt(0).toUpperCase()+p.role.slice(1):'Staff';
     return`<div class="inbox-thread${isActive?' active':''}" onclick="openStaffThread('${p.id}')">
       <div class="inbox-thread-av" style="background:var(--navy);color:#fff">${initials(p.full_name||p.email||'?')}</div>
@@ -7545,7 +7545,7 @@ async function openStaffThread(profileId){
       return`<div class="inbox-msg ${isMe?'from-firm':'from-client'}" data-msg-id="${m.id}">
         <div class="inbox-msg-av" style="background:${isMe?'var(--navy)':'var(--cream2)'};color:${isMe?'#fff':'var(--txt)'}">${initials(sName)}</div>
         <div class="inbox-msg-content">
-          ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
+          ${(m.content||m.message)?`<div class="inbox-msg-bubble">${esc(m.content||m.message)}</div>`:''}
           <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
         </div>
       </div>`;
@@ -7570,10 +7570,10 @@ async function sendStaffMessage(){
   if(!msg)return;
   inp.value='';
   const myId=currentUser?.id;
-  const tmp={id:'_tmp_'+Date.now(),sender_id:myId,recipient_id:activeStaffThreadId,message:msg,created_at:new Date().toISOString(),read_by_recipient:false};
+  const tmp={id:'_tmp_'+Date.now(),sender_id:myId,recipient_id:activeStaffThreadId,content:msg,created_at:new Date().toISOString(),read_by_recipient:false};
   staffMessages.push(tmp);
   openStaffThread(activeStaffThreadId);
-  const{data,error}=await sb.from('staff_messages').insert({sender_id:myId,recipient_id:activeStaffThreadId,message:msg,read_by_recipient:false}).select().single();
+  const{data,error}=await sb.from('staff_messages').insert({sender_id:myId,recipient_id:activeStaffThreadId,content:msg,read_by_recipient:false}).select().single();
   if(error){toast('Send failed: '+error.message,true);staffMessages=staffMessages.filter(m=>m.id!==tmp.id);return;}
   staffMessages=staffMessages.map(m=>m.id===tmp.id?data:m);
   renderStaffInboxList();
@@ -7632,7 +7632,7 @@ function renderInboxThreadList(){
     const last=msgs[msgs.length-1];
     const unread=msgs.filter(m=>m.sender==='client'&&!m.read_by_firm).length;
     return{c,last,unread,ts:last?last.created_at:c.created_at};
-  }).filter(t=>!q||t.last);
+  }).filter(t=>t.last); // only show clients who have at least one message
   threadClients.sort((a,b)=>{
     if(a.unread&&!b.unread)return-1;
     if(!a.unread&&b.unread)return 1;
@@ -7640,7 +7640,7 @@ function renderInboxThreadList(){
   });
   if(countEl)countEl.textContent=threadClients.length+' client'+(threadClients.length!==1?'s':'');
   if(!threadClients.length){
-    el.innerHTML='<div class="empty-state-sm">No clients found.</div>';
+    el.innerHTML=`<div class="empty-state-sm">${q?'No matching conversations.':'No client messages yet. Conversations will appear here when clients send messages.'}</div>`;
     return;
   }
   el.innerHTML=threadClients.map(({c,last,unread})=>{
