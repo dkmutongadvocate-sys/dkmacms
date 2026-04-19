@@ -816,6 +816,10 @@ setTimeout(function() {
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.209 1.791-4 4-4s4 1.791 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 9c1.657 0 3 1.343 3 3v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></svg>
       <span>Team</span>
     </div>
+    <div class="nav-item admin-only" onclick="showView('firm-settings',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" fill="currentColor" opacity=".7"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <span>Firm Settings</span>
+    </div>
   </div>
   <div class="sidebar-footer">
     <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08)">
@@ -1223,6 +1227,60 @@ setTimeout(function() {
       </div>
     </div>
 
+
+    <!-- FIRM SETTINGS -->
+    <div class="view" id="view-firm-settings">
+      <div class="profile-tabs" style="margin-bottom:20px">
+        <div class="profile-tab active" id="fstab-contact" onclick="switchFirmTab('contact')">Contact &amp; Address</div>
+        <div class="profile-tab" id="fstab-mattertypes" onclick="switchFirmTab('mattertypes')">Matter Types</div>
+        <div class="profile-tab" id="fstab-departments" onclick="switchFirmTab('departments')">Departments</div>
+      </div>
+      <div class="profile-panel active" id="fspanel-contact">
+        <div class="card" style="max-width:680px">
+          <div class="card-header"><span class="card-title">Firm Contact &amp; Location</span></div>
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+            <div class="form-row"><label>Firm Name</label><input id="fs-firm-name" placeholder="e.g. DKMA Advocates LLP"/></div>
+            <div class="form-row"><label>Physical Address</label><textarea id="fs-physical" placeholder="e.g. 4th Floor, ABC House, Kimathi Street, Nairobi" style="min-height:64px;width:100%;border:1px solid var(--brd);border-radius:7px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;resize:vertical"></textarea></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <div class="form-row"><label>Postal Address</label><input id="fs-postal" placeholder="e.g. P.O. Box 12345-00100, Nairobi"/></div>
+              <div class="form-row"><label>Phone Number(s)</label><input id="fs-phone" placeholder="e.g. +254 700 000 000"/></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <div class="form-row"><label>Email</label><input id="fs-email" type="email" placeholder="e.g. info@dkma.co.ke"/></div>
+              <div class="form-row"><label>Website</label><input id="fs-website" placeholder="e.g. https://dkma.co.ke"/></div>
+            </div>
+            <div class="form-row"><label>LSK / Registration No.</label><input id="fs-reg" placeholder="e.g. LSK/FIRM/2010/001"/></div>
+          </div>
+          <div style="padding:14px 24px;border-top:1px solid var(--brd);display:flex;justify-content:flex-end">
+            <button class="btn-primary" id="fs-contact-btn" onclick="saveFirmContact()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+      <div class="profile-panel" id="fspanel-mattertypes">
+        <div class="card" style="max-width:560px">
+          <div class="card-header">
+            <span class="card-title">Matter / Practice Area Types</span>
+            <button class="card-action" onclick="addFirmListItem('mattertypes')">+ Add Type</button>
+          </div>
+          <div id="fs-mattertypes-list" style="padding:8px 0;min-height:60px"></div>
+          <div style="padding:14px 24px;border-top:1px solid var(--brd);display:flex;justify-content:flex-end">
+            <button class="btn-primary" id="fs-mattertypes-btn" onclick="saveFirmList('mattertypes')">Save Changes</button>
+          </div>
+        </div>
+      </div>
+      <div class="profile-panel" id="fspanel-departments">
+        <div class="card" style="max-width:560px">
+          <div class="card-header">
+            <span class="card-title">Departments</span>
+            <button class="card-action" onclick="addFirmListItem('departments')">+ Add Department</button>
+          </div>
+          <div id="fs-departments-list" style="padding:8px 0;min-height:60px"></div>
+          <div style="padding:14px 24px;border-top:1px solid var(--brd);display:flex;justify-content:flex-end">
+            <button class="btn-primary" id="fs-departments-btn" onclick="saveFirmList('departments')">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -1794,7 +1852,7 @@ function partyTypePill(role){
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────
-const viewTitles={dashboard:'Dashboard',sos:'SOS Alerts',matters:'Matters',clients:'Clients','client-profile':'Client Profile','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox','staff-inbox':'Staff Inbox'};
+const viewTitles={dashboard:'Dashboard',sos:'SOS Alerts',matters:'Matters',clients:'Clients','client-profile':'Client Profile','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox','staff-inbox':'Staff Inbox','firm-settings':'Firm Settings'};
 function showView(id,el,fromMobile){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
@@ -1821,6 +1879,7 @@ function showView(id,el,fromMobile){
   if(id==='sos'){loadPanicAlerts();loadPttRequests();}
   if(id==='dashboard')renderDashboard();
   if(id==='team')renderTeam();
+  if(id==='firm-settings')loadFirmSettings();
   if(id==='inbox'){renderInboxThreadList();}
   if(id==='staff-inbox'){
     const listEl=document.getElementById('staff-inbox-thread-list');
@@ -7872,8 +7931,119 @@ async function ackPttRequest(id){
       <button class="btn-primary" id="mm-save-btn" onclick="saveManageMember()">Save Changes</button>
     </div>
   </div>
+  </div>
 </div>
 
+
+<!-- ═══════════════ FIRM SETTINGS ═══════════════ -->
+<script>
+const DEFAULT_MATTER_TYPES=['Civil Litigation','Conveyancing','Family Law','Criminal','Probate & Succession','ADR','Data Protection','Contract Law','Employment','Immigration'];
+const DEFAULT_DEPARTMENTS=['Litigation','Conveyancing','Family Law','Corporate','Finance'];
+let firmContact={};
+let firmMatterTypes=[...DEFAULT_MATTER_TYPES];
+let firmDepartments=[...DEFAULT_DEPARTMENTS];
+
+function switchFirmTab(tab){
+  ['contact','mattertypes','departments'].forEach(t=>{
+    document.getElementById('fstab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('fspanel-'+t).classList.toggle('active',t===tab);
+  });
+}
+
+async function loadFirmSettings(){
+  try{
+    const{data,error}=await sb.from('firm_settings').select('key,value');
+    if(error) throw error;
+    const map={};
+    (data||[]).forEach(r=>{map[r.key]=r.value;});
+    firmContact=map;
+    ['firm_name','physical','postal','phone','email','website','reg'].forEach(f=>{
+      const el=document.getElementById('fs-'+f.replace('_','-'));
+      if(el) el.value=map['contact_'+f]||'';
+    });
+    if(map['matter_types']){try{firmMatterTypes=JSON.parse(map['matter_types']);}catch(e){firmMatterTypes=[...DEFAULT_MATTER_TYPES];}}
+    else{firmMatterTypes=[...DEFAULT_MATTER_TYPES];}
+    if(map['departments']){try{firmDepartments=JSON.parse(map['departments']);}catch(e){firmDepartments=[...DEFAULT_DEPARTMENTS];}}
+    else{firmDepartments=[...DEFAULT_DEPARTMENTS];}
+  }catch(e){console.warn('[DKMA] firm_settings:',e.message);}
+  renderFirmList('mattertypes');
+  renderFirmList('departments');
+}
+
+async function upsertFirmSetting(key,value){
+  const{error}=await sb.from('firm_settings').upsert({key,value},{onConflict:'key'});
+  if(error) throw error;
+}
+
+async function saveFirmContact(){
+  const btn=document.getElementById('fs-contact-btn');
+  btn.disabled=true;btn.textContent='Saving...';
+  try{
+    const fields={contact_firm_name:document.getElementById('fs-firm-name').value.trim(),contact_physical:document.getElementById('fs-physical').value.trim(),contact_postal:document.getElementById('fs-postal').value.trim(),contact_phone:document.getElementById('fs-phone').value.trim(),contact_email:document.getElementById('fs-email').value.trim(),contact_website:document.getElementById('fs-website').value.trim(),contact_reg:document.getElementById('fs-reg').value.trim()};
+    for(const[k,v] of Object.entries(fields)) await upsertFirmSetting(k,v);
+    toast('Firm contact saved.');
+  }catch(e){toast('Save failed: '+e.message,true);}
+  btn.disabled=false;btn.textContent='Save Changes';
+}
+
+function renderFirmList(type){
+  const listEl=document.getElementById('fs-'+type+'-list');
+  if(!listEl) return;
+  const items=type==='mattertypes'?firmMatterTypes:firmDepartments;
+  if(!items.length){listEl.innerHTML='<div style="padding:16px 20px;font-size:12px;color:var(--txt3)">No items yet. Click \u201c+ Add\u201d above.</div>';return;}
+  listEl.innerHTML=items.map((item,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 20px;border-bottom:1px solid var(--brd)"><input value="${item.replace(/"/g,'&quot;')}" oninput="updateFirmListItem('${type}',${i},this.value)" onfocus="this.style.borderColor='var(--navy)'" onblur="this.style.borderColor='var(--brd)'" style="flex:1;border:1px solid var(--brd);border-radius:6px;padding:6px 10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;color:var(--txt);transition:border-color 0.15s"/><button onclick="removeFirmListItem('${type}',${i})" style="width:28px;height:28px;border:1px solid var(--brd);border-radius:6px;background:#fff;cursor:pointer;font-size:16px;color:var(--txt3);flex-shrink:0;transition:all 0.12s" onmouseover="this.style.background='#FCEBEB';this.style.color='#A33'" onmouseout="this.style.background='#fff';this.style.color='var(--txt3)'">×</button></div>`).join('');
+}
+
+function updateFirmListItem(type,idx,val){if(type==='mattertypes')firmMatterTypes[idx]=val;else firmDepartments[idx]=val;}
+
+function addFirmListItem(type){
+  if(type==='mattertypes')firmMatterTypes.push('');else firmDepartments.push('');
+  renderFirmList(type);
+  const items=type==='mattertypes'?firmMatterTypes:firmDepartments;
+  const inputs=document.querySelectorAll('#fs-'+type+'-list input');
+  if(inputs.length) inputs[inputs.length-1].focus();
+}
+
+function removeFirmListItem(type,idx){
+  if(type==='mattertypes')firmMatterTypes.splice(idx,1);else firmDepartments.splice(idx,1);
+  renderFirmList(type);
+}
+
+async function saveFirmList(type){
+  const btn=document.getElementById('fs-'+type+'-btn');
+  btn.disabled=true;btn.textContent='Saving...';
+  const raw=type==='mattertypes'?firmMatterTypes:firmDepartments;
+  const deduped=[...new Set(raw.map(s=>s.trim()).filter(Boolean))];
+  if(type==='mattertypes')firmMatterTypes=deduped;else firmDepartments=deduped;
+  renderFirmList(type);
+  try{
+    await upsertFirmSetting(type==='mattertypes'?'matter_types':'departments',JSON.stringify(deduped));
+    refreshAppDropdowns();
+    toast((type==='mattertypes'?'Matter types':'Departments')+' saved.');
+  }catch(e){toast('Save failed: '+e.message,true);}
+  btn.disabled=false;btn.textContent='Save Changes';
+}
+
+function refreshAppDropdowns(){
+  ['m-type','c-area'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    const cur=sel.value;
+    sel.innerHTML=firmMatterTypes.map(t=>`<option${t===cur?' selected':''}>${t.replace(/</g,'&lt;')}</option>`).join('');
+  });
+  ['myp-dept','mm-dept'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    const cur=sel.value;
+    sel.innerHTML='<option value="">None</option>'+firmDepartments.map(d=>`<option${d===cur?' selected':''}>${d.replace(/</g,'&lt;')}</option>`).join('');
+  });
+}
+
+// Auto-load firm settings on boot and refresh dropdowns
+setTimeout(async()=>{
+  try{await loadFirmSettings();refreshAppDropdowns();}catch(e){}
+},1800);
+</script>
 
 </body>
 </html>
