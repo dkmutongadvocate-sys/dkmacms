@@ -5390,33 +5390,48 @@ async function loadMatterDocuments(force=false){
 
   window._matterClientUploads=[];
   window._generalClientUploads=[];
-  if(clientResult&&!clientResult.error&&clientResult.data){
-    console.log('[DKMA] Client uploads found:',clientResult.data.length,'for clientId:',clientId,'activeMatterId:',activeMatterId);
-    clientResult.data.forEach(f=>{
+
+  // ── Diagnostic: if subfolder returned 0 files, try listing bucket root
+  // to detect whether the client portal stores files flat vs in a clientId/ subfolder.
+  let clientFiles = clientResult&&!clientResult.error&&clientResult.data ? clientResult.data : [];
+  if(clientId && clientFiles.length===0){
+    console.warn('[DKMA] client-uploads subfolder "'+clientId+'" returned 0 files. Trying bucket root to check structure...');
+    try{
+      const rootList = await sb.storage.from(CLIENT_BUCKET).list('',{limit:50,sortBy:{column:'created_at',order:'desc'}});
+      if(rootList.data&&rootList.data.length){
+        console.warn('[DKMA] Bucket root contains:',rootList.data.map(f=>f.name));
+        console.warn('[DKMA] ↳ If you see the clientId UUID as a folder name, the structure is correct but RLS is blocking the admin from listing it.');
+        console.warn('[DKMA] ↳ If files appear flat (no subfolder), the client portal is not saving under clientId/ — update the portal upload path.');
+      } else {
+        console.warn('[DKMA] Bucket root also empty — bucket may be truly empty, or RLS is blocking all reads for this admin session.');
+        console.warn('[DKMA] ↳ Fix: In Supabase → Storage → Policies → client-uploads, add a SELECT policy for role=admin.');
+      }
+    }catch(diagErr){console.warn('[DKMA] Diagnostic root list failed:',diagErr.message);}
+  }
+
+  if(clientFiles.length){
+    console.log('[DKMA] Client uploads found:',clientFiles.length,'for clientId:',clientId,'activeMatterId:',activeMatterId);
+    clientFiles.forEach(f=>{
       if(f.name==='.emptyFolderPlaceholder')return;
-      console.log('[DKMA] File:',f.name);
       const parts=f.name.split('__');
-      console.log('[DKMA] Parts:',parts,'length:',parts.length,'parts[2]:',parts[2]);
       // New format: cat__desc__matterId__ts_filename (parts[2] is UUID or 'general')
+      // Old format: cat__desc__ts_filename (3 parts — matter unknown)
       if(parts.length>=4){
         if(parts[2]===activeMatterId){
-          console.log('[DKMA] -> Matched to matter');
+          console.log('[DKMA] -> Matched to matter:',f.name);
           window._matterClientUploads.push(f);
-        } else if(parts[2]==='general'||parts[2]===''){
-          console.log('[DKMA] -> General upload');
-          window._generalClientUploads.push(f);
         } else {
-          console.log('[DKMA] -> Unmatched matterId:',parts[2],'expected:',activeMatterId);
+          // General, empty, or different matter — show under "General Uploads" so nothing is hidden
+          console.log('[DKMA] -> General/unmatched (parts[2]='+parts[2]+'):',f.name);
           window._generalClientUploads.push(f);
         }
       } else {
-        // Old format (pre-fix): cat__desc__ts_filename — matter unknown
-        console.log('[DKMA] -> Old format, treating as general');
+        console.log('[DKMA] -> Old format, treating as general:',f.name);
         window._generalClientUploads.push(f);
       }
     });
   } else {
-    console.log('[DKMA] No client uploads. clientResult:',clientResult);
+    console.log('[DKMA] No client uploads visible. clientResult:',clientResult);
   }
 
   // Store in cache
