@@ -7495,7 +7495,7 @@ function renderStaffInboxList(){
   if(!threads.length){listEl.innerHTML='<div class="empty-state-sm">No staff found.</div>';return;}
   listEl.innerHTML=threads.map(({p,last,unread})=>{
     const isActive=activeStaffThreadId===p.id;
-    const preview=last?(last.content||last.message||''):'No messages yet';
+    const preview=last?(last.message||last.content||''):'No messages yet';
     const role=p.role?p.role.charAt(0).toUpperCase()+p.role.slice(1):'Staff';
     return`<div class="inbox-thread${isActive?' active':''}" onclick="openStaffThread('${p.id}')">
       <div class="inbox-thread-av" style="background:var(--navy);color:#fff">${initials(p.full_name||p.email||'?')}</div>
@@ -7545,7 +7545,7 @@ async function openStaffThread(profileId){
       return`<div class="inbox-msg ${isMe?'from-firm':'from-client'}" data-msg-id="${m.id}">
         <div class="inbox-msg-av" style="background:${isMe?'var(--navy)':'var(--cream2)'};color:${isMe?'#fff':'var(--txt)'}">${initials(sName)}</div>
         <div class="inbox-msg-content">
-          ${(m.content||m.message)?`<div class="inbox-msg-bubble">${esc(m.content||m.message)}</div>`:''}
+          ${(m.message||m.content)?`<div class="inbox-msg-bubble">${esc(m.message||m.content)}</div>`:''}
           <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
         </div>
       </div>`;
@@ -7570,10 +7570,10 @@ async function sendStaffMessage(){
   if(!msg)return;
   inp.value='';
   const myId=currentUser?.id;
-  const tmp={id:'_tmp_'+Date.now(),sender_id:myId,recipient_id:activeStaffThreadId,content:msg,created_at:new Date().toISOString(),read_by_recipient:false};
+  const tmp={id:'_tmp_'+Date.now(),sender_id:myId,recipient_id:activeStaffThreadId,message:msg,created_at:new Date().toISOString(),read_by_recipient:false};
   staffMessages.push(tmp);
   openStaffThread(activeStaffThreadId);
-  const{data,error}=await sb.from('staff_messages').insert({sender_id:myId,recipient_id:activeStaffThreadId,content:msg,read_by_recipient:false}).select().single();
+  const{data,error}=await sb.from('staff_messages').insert({sender_id:myId,recipient_id:activeStaffThreadId,message:msg,read_by_recipient:false}).select().single();
   if(error){toast('Send failed: '+error.message,true);staffMessages=staffMessages.filter(m=>m.id!==tmp.id);return;}
   staffMessages=staffMessages.map(m=>m.id===tmp.id?data:m);
   renderStaffInboxList();
