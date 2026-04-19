@@ -5094,6 +5094,7 @@ async function updateClient(clientId){
 let activeMatterId=null,activeMatterTab='overview';
 let matterDocuments=[];
 const STORAGE_BUCKET='matter-documents';
+const CLIENT_BUCKET='client-uploads';
 
 function openMatterDetail(matterId){
   activeMatterId=matterId;
@@ -5276,7 +5277,8 @@ async function loadMatterDocuments(force=false){
     const cached=_docCache[activeMatterId];
     matterDocuments=cached.firmDocs;
     window._matterClientUploads=cached.clientUploads;
-    document.getElementById('matter-doc-count').textContent=matterDocuments.length+window._matterClientUploads.length;
+    const countEl=document.getElementById('matter-doc-count');
+    if(countEl)countEl.textContent=matterDocuments.length+window._matterClientUploads.length;
     renderDocumentsCard();
     return;
   }
@@ -5284,23 +5286,43 @@ async function loadMatterDocuments(force=false){
   const activeMatter=matters.find(m=>m.id===activeMatterId);
   const clientId=activeMatter?.client_id||null;
 
-  // Both fetches in parallel
-  const [firmResult, clientResult] = await Promise.all([
-    sb.storage.from(STORAGE_BUCKET).list(activeMatterId,{limit:200,offset:0,sortBy:{column:'created_at',order:'desc'}}),
-    clientId
-      ? sb.storage.from(CLIENT_BUCKET).list(clientId,{limit:200,sortBy:{column:'created_at',order:'desc'}})
-      : Promise.resolve({data:null,error:null})
-  ]);
+  // Timeout helper — prevents UI hanging forever if Supabase is slow
+  function withTimeout(promise,ms=12000){
+    return Promise.race([promise,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Request timed out')),ms))]);
+  }
+
+  let firmResult,clientResult;
+  try{
+    [firmResult,clientResult]=await withTimeout(Promise.all([
+      sb.storage.from(STORAGE_BUCKET).list(activeMatterId,{limit:200,offset:0,sortBy:{column:'created_at',order:'desc'}}),
+      clientId
+        ? sb.storage.from(CLIENT_BUCKET).list(clientId,{limit:200,sortBy:{column:'created_at',order:'desc'}})
+        : Promise.resolve({data:null,error:null})
+    ]));
+  }catch(e){
+    card.innerHTML=`<div class="card-header" style="padding:16px 20px"><span class="card-title" style="font-family:'Playfair Display',serif;font-size:14px">Documents</span></div>
+      <div style="padding:20px;color:var(--red);font-size:13px">
+        ${e.message==='Request timed out'?'Documents took too long to load. Check your connection and try again.':'Could not load documents: '+esc(e.message)}
+        <div style="margin-top:12px"><button class="topbar-btn" style="font-size:12px" onclick="loadMatterDocuments(true)">↻ Retry</button></div>
+      </div>`;
+    return;
+  }
 
   if(firmResult.error){
-    card.innerHTML=`<div class="card-header" style="padding:16px 20px"><span class="card-title" style="font-family:'Playfair Display',serif;font-size:14px">Documents</span></div><div style="padding:20px;color:var(--red);font-size:13px">Could not load documents: ${esc(firmResult.error.message)}<br><div style="margin-top:8px;font-size:11px;color:var(--txt3);background:var(--cream);padding:10px;border-radius:6px">To enable document storage, create a Supabase Storage bucket named <strong>matter-documents</strong> and set it to private. Then add a policy allowing authenticated users to manage files.</div></div>`;
+    card.innerHTML=`<div class="card-header" style="padding:16px 20px"><span class="card-title" style="font-family:'Playfair Display',serif;font-size:14px">Documents</span></div>
+      <div style="padding:20px;color:var(--red);font-size:13px">Could not load documents: ${esc(firmResult.error.message)}
+        <br><div style="margin-top:8px;font-size:11px;color:var(--txt3);background:var(--cream);padding:10px;border-radius:6px">
+          Ensure a Supabase Storage bucket named <strong>matter-documents</strong> exists (private) with a policy allowing authenticated users to manage files.
+        </div>
+        <div style="margin-top:12px"><button class="topbar-btn" style="font-size:12px" onclick="loadMatterDocuments(true)">↻ Retry</button></div>
+      </div>`;
     return;
   }
 
   matterDocuments=(firmResult.data||[]).filter(d=>d.name!=='.emptyFolderPlaceholder');
 
   window._matterClientUploads=[];
-  if(clientResult.data){
+  if(clientResult&&!clientResult.error&&clientResult.data){
     window._matterClientUploads=clientResult.data.filter(f=>{
       if(f.name==='.emptyFolderPlaceholder')return false;
       const parts=f.name.split('__');
@@ -5309,10 +5331,11 @@ async function loadMatterDocuments(force=false){
   }
 
   // Store in cache
-  _docCache[activeMatterId]={firmDocs:matterDocuments, clientUploads:window._matterClientUploads};
+  _docCache[activeMatterId]={firmDocs:matterDocuments,clientUploads:window._matterClientUploads};
 
   const totalCount=matterDocuments.length+window._matterClientUploads.length;
-  document.getElementById('matter-doc-count').textContent=totalCount;
+  const countEl=document.getElementById('matter-doc-count');
+  if(countEl)countEl.textContent=totalCount;
   renderDocumentsCard();
 }
 
@@ -7289,6 +7312,449 @@ function buildDocumentEmailHtml(toName, fileName, personalMessage, trackingId){
     </td></tr>
   </table>
 `;
+}
+</script>
+
+<!-- ═══════════════ MISSING FUNCTIONS FIX 2 ═══════════════ -->
+<script>
+// ─── fmtMsgTime — relative/short timestamp for messages ──────────
+function fmtMsgTime(ts){
+  if(!ts)return'';
+  const d=new Date(ts);
+  if(isNaN(d))return'';
+  const now=new Date();
+  const diff=now-d;
+  if(diff<60000)return'Just now';
+  if(diff<3600000)return Math.floor(diff/60000)+'m ago';
+  if(diff<86400000)return d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
+  if(diff<604800000)return d.toLocaleDateString('en-KE',{weekday:'short'})+' '+d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
+  return d.toLocaleDateString('en-KE',{day:'numeric',month:'short'});
+}
+
+// ─── docIconEmoji — file type icon for inbox message attachments ──
+function docIconEmoji(name){
+  if(!name)return'📎';
+  const ext=(name.split('.').pop()||'').toLowerCase();
+  const map={pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📋',pptx:'📋',
+             jpg:'🖼',jpeg:'🖼',png:'🖼',gif:'🖼',webp:'🖼',svg:'🖼',
+             zip:'🗜',rar:'🗜','7z':'🗜',mp4:'🎬',mov:'🎬',mp3:'🎵',
+             txt:'📃',csv:'📊',html:'🌐',json:'📦'};
+  return map[ext]||'📎';
+}
+
+// ─── viewClient — alias used in parties view ─────────────────────
+function viewClient(clientId){
+  openClientProfile(clientId);
+}
+
+// ─── openEventDetail — open event edit modal pre-filled ──────────
+function openEventDetail(eventId){
+  const ev=events.find(e=>e.id===eventId);
+  if(!ev)return;
+  openModal('event');
+  setTimeout(()=>{
+    const t=document.getElementById('ev-title');
+    const d=document.getElementById('ev-date');
+    const tm=document.getElementById('ev-time');
+    const ty=document.getElementById('ev-type');
+    const m=document.getElementById('ev-matter');
+    const l=document.getElementById('ev-location');
+    const n=document.getElementById('ev-notes');
+    const ml=document.getElementById('ev-meeting-link');
+    if(t)t.value=ev.title||'';
+    if(d)d.value=ev.event_date||'';
+    if(tm)tm.value=ev.event_time||'';
+    if(ty)ty.value=ev.type||'court';
+    if(m)m.value=ev.matter_id||'';
+    if(l)l.value=ev.location||'';
+    if(n)n.value=ev.notes||'';
+    if(ml){ml.value=ev.meeting_link||'';if(typeof updateMeetingLinkIcon==='function')updateMeetingLinkIcon(ml.value);}
+    // Switch save button to update mode
+    const btn=document.getElementById('save-event-btn');
+    if(btn){
+      const title=document.querySelector('#modal-event .modal-title');
+      if(title)title.textContent='Edit Event';
+      btn.textContent='Update Event';
+      btn.onclick=async()=>{
+        const payload={
+          title:document.getElementById('ev-title').value.trim(),
+          event_date:document.getElementById('ev-date').value,
+          event_time:document.getElementById('ev-time').value||null,
+          type:document.getElementById('ev-type').value,
+          matter_id:document.getElementById('ev-matter').value||null,
+          location:document.getElementById('ev-location').value.trim()||null,
+          notes:document.getElementById('ev-notes').value.trim()||null,
+          meeting_link:document.getElementById('ev-meeting-link')?.value.trim()||null,
+        };
+        if(!payload.title||!payload.event_date){toast('Title and date are required.',true);return;}
+        btn.disabled=true;btn.textContent='Saving…';
+        const{error}=await sb.from('events').update(payload).eq('id',eventId);
+        btn.disabled=false;btn.textContent='Update Event';
+        if(error){toast('Error: '+error.message,true);return;}
+        Object.assign(ev,payload);
+        toast('Event updated.');
+        closeModal();
+        renderCalendar();
+        if(typeof renderDashboard==='function')renderDashboard();
+        if(typeof updateBadges==='function')updateBadges();
+      };
+    }
+  },50);
+}
+
+// ─── openDayEvents — show a popup with multiple events on one day ─
+function openDayEvents(dateObj, evs, hols){
+  const existing=document.getElementById('_day-events-popup');
+  if(existing)existing.remove();
+  const d=dateObj;
+  const dateStr=d.toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const popup=document.createElement('div');
+  popup.id='_day-events-popup';
+  popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3000;display:flex;align-items:center;justify-content:center';
+  popup.onclick=e=>{if(e.target===popup)popup.remove();};
+  let inner=`<div style="background:#fff;border-radius:12px;width:min(440px,92vw);max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.18)">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:500">${esc(dateStr)}</div>
+      <button onclick="document.getElementById('_day-events-popup').remove()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--txt3);line-height:1">×</button>
+    </div>`;
+  if(hols.length){
+    hols.forEach(h=>{
+      inner+=`<div style="padding:12px 20px;border-bottom:1px solid var(--brd);display:flex;gap:12px;align-items:center">
+        <div style="font-size:20px">🇰🇪</div>
+        <div><div style="font-size:13px;font-weight:500;color:var(--txt)">${esc(h.name)}</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:2px">Public Holiday</div></div>
+      </div>`;
+    });
+  }
+  if(evs.length){
+    const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal','adr':'tag-client'};
+    evs.forEach(ev=>{
+      const m=matters.find(x=>x.id===ev.matter_id);
+      inner+=`<div style="padding:12px 20px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''" onclick="document.getElementById('_day-events-popup').remove();openEventDetail('${ev.id}')">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:500;color:var(--txt)">${esc(ev.title)}</div>
+            <div style="font-size:11px;color:var(--txt3);margin-top:2px">${ev.event_time?ev.event_time+' · ':''}${esc(ev.location||m?.title||'')}</div>
+          </div>
+          <span class="upcoming-tag ${tc[ev.type]||'tag-internal'}" style="margin-top:2px;flex-shrink:0">${statusLabel(ev.type)}</span>
+        </div>
+      </div>`;
+    });
+  }
+  inner+=`<div style="padding:12px 20px"><button onclick="document.getElementById('_day-events-popup').remove();openModal('event')" class="topbar-btn" style="width:100%;font-size:12px">+ Add Event This Day</button></div></div>`;
+  popup.innerHTML=inner;
+  document.body.appendChild(popup);
+}
+
+// ─── Staff Messages state ─────────────────────────────────────────
+let staffMessages=[];
+let activeStaffThreadId=null; // profile id of the other person
+
+// ─── loadStaffMessages ────────────────────────────────────────────
+async function loadStaffMessages(){
+  const{data,error}=await sb.from('staff_messages')
+    .select('*').order('created_at',{ascending:true}).limit(500);
+  if(!error){
+    staffMessages=data||[];
+  } else {
+    // Table may not exist yet — fail silently, staff inbox shows empty state
+    console.warn('[DKMA] staff_messages table not found:',error.message);
+    staffMessages=[];
+  }
+}
+
+// ─── ensureAllProfilesLoaded ──────────────────────────────────────
+async function ensureAllProfilesLoaded(){
+  if(window._allProfiles&&window._allProfiles.length)return;
+  const{data}=await sb.from('profiles').select('*').order('full_name');
+  window._allProfiles=data||[];
+}
+
+// ─── renderStaffInboxList ─────────────────────────────────────────
+function renderStaffInboxList(){
+  const listEl=document.getElementById('staff-inbox-thread-list');
+  if(!listEl)return;
+  const q=(document.getElementById('staff-inbox-search')||{value:''}).value.toLowerCase();
+  const profiles=(window._allProfiles||[]).filter(p=>p.id!==currentUser?.id);
+  if(!profiles.length){
+    listEl.innerHTML='<div class="empty-state-sm">No other staff members found.</div>';
+    return;
+  }
+  const threads=profiles.filter(p=>!q||(p.full_name||p.email||'').toLowerCase().includes(q)).map(p=>{
+    const myId=currentUser?.id;
+    const msgs=staffMessages.filter(m=>(m.sender_id===myId&&m.recipient_id===p.id)||(m.sender_id===p.id&&m.recipient_id===myId));
+    const last=msgs[msgs.length-1];
+    const unread=msgs.filter(m=>m.sender_id===p.id&&!m.read_by_recipient).length;
+    return{p,last,unread,ts:last?last.created_at:p.created_at||''};
+  });
+  threads.sort((a,b)=>{
+    if(a.unread&&!b.unread)return-1;
+    if(!a.unread&&b.unread)return 1;
+    return(b.ts||'').localeCompare(a.ts||'');
+  });
+  if(!threads.length){listEl.innerHTML='<div class="empty-state-sm">No staff found.</div>';return;}
+  listEl.innerHTML=threads.map(({p,last,unread})=>{
+    const isActive=activeStaffThreadId===p.id;
+    const preview=last?(last.message||''):'No messages yet';
+    const role=p.role?p.role.charAt(0).toUpperCase()+p.role.slice(1):'Staff';
+    return`<div class="inbox-thread${isActive?' active':''}" onclick="openStaffThread('${p.id}')">
+      <div class="inbox-thread-av" style="background:var(--navy);color:#fff">${initials(p.full_name||p.email||'?')}</div>
+      <div class="inbox-thread-body">
+        <div class="inbox-thread-name">${esc(p.full_name||p.email||'Unknown')}</div>
+        <div class="inbox-thread-preview">${esc(preview.slice(0,55))}</div>
+      </div>
+      ${last?`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div class="inbox-thread-time">${fmtMsgTime(last.created_at)}</div>
+        ${unread?`<div class="inbox-unread-badge">${unread}</div>`:''}
+      </div>`:''}
+    </div>`;
+  }).join('');
+  // Update staff inbox badge
+  const totalUnread=staffMessages.filter(m=>m.recipient_id===currentUser?.id&&!m.read_by_recipient).length;
+  const badge=document.getElementById('staff-inbox-badge');
+  const diBadge=document.getElementById('di-staff-inbox-badge');
+  if(badge)badge.textContent=totalUnread||'';
+  if(diBadge)diBadge.textContent=totalUnread||'';
+}
+
+// ─── openStaffThread ──────────────────────────────────────────────
+async function openStaffThread(profileId){
+  activeStaffThreadId=profileId;
+  renderStaffInboxList();
+  const p=(window._allProfiles||[]).find(x=>x.id===profileId);
+  if(!p)return;
+  const myId=currentUser?.id;
+  const convEl=document.getElementById('staff-inbox-conversation');
+  const phEl=document.getElementById('staff-inbox-placeholder');
+  if(phEl)phEl.style.display='none';
+  if(convEl){convEl.style.display='flex';}
+  const nameEl=document.getElementById('staff-conv-name');
+  const roleEl=document.getElementById('staff-conv-role');
+  if(nameEl)nameEl.textContent=p.full_name||p.email||'Unknown';
+  if(roleEl)roleEl.textContent=(p.role||'Staff')+' · '+(p.department||'DKMA');
+  const msgsEl=document.getElementById('staff-inbox-messages');
+  if(!msgsEl)return;
+  const msgs=staffMessages.filter(m=>(m.sender_id===myId&&m.recipient_id===profileId)||(m.sender_id===profileId&&m.recipient_id===myId));
+  if(!msgs.length){
+    msgsEl.innerHTML='<div style="text-align:center;color:var(--txt3);font-size:12px;padding:40px 20px">No messages yet. Send the first one below.</div>';
+  } else {
+    msgsEl.innerHTML=msgs.map(m=>{
+      const isMe=m.sender_id===myId;
+      const senderProfile=isMe?currentProfile:(window._allProfiles||[]).find(x=>x.id===m.sender_id);
+      const sName=senderProfile?.full_name||'Staff';
+      return`<div class="inbox-msg ${isMe?'from-firm':'from-client'}" data-msg-id="${m.id}">
+        <div class="inbox-msg-av" style="background:${isMe?'var(--navy)':'var(--cream2)'};color:${isMe?'#fff':'var(--txt)'}">${initials(sName)}</div>
+        <div class="inbox-msg-content">
+          ${m.message?`<div class="inbox-msg-bubble">${esc(m.message)}</div>`:''}
+          <div class="inbox-msg-time">${fmtMsgTime(m.created_at)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+  // Mark as read
+  const unread=msgs.filter(m=>m.sender_id===profileId&&!m.read_by_recipient);
+  if(unread.length){
+    await sb.from('staff_messages').update({read_by_recipient:true}).eq('sender_id',profileId).eq('recipient_id',myId).eq('read_by_recipient',false);
+    staffMessages=staffMessages.map(m=>m.sender_id===profileId&&m.recipient_id===myId?{...m,read_by_recipient:true}:m);
+    renderStaffInboxList();
+  }
+}
+
+// ─── sendStaffMessage ─────────────────────────────────────────────
+async function sendStaffMessage(){
+  if(!activeStaffThreadId){toast('Select a recipient first.',true);return;}
+  const inp=document.getElementById('staff-reply-input');
+  if(!inp)return;
+  const msg=inp.value.trim();
+  if(!msg)return;
+  inp.value='';
+  const myId=currentUser?.id;
+  const tmp={id:'_tmp_'+Date.now(),sender_id:myId,recipient_id:activeStaffThreadId,message:msg,created_at:new Date().toISOString(),read_by_recipient:false};
+  staffMessages.push(tmp);
+  openStaffThread(activeStaffThreadId);
+  const{data,error}=await sb.from('staff_messages').insert({sender_id:myId,recipient_id:activeStaffThreadId,message:msg,read_by_recipient:false}).select().single();
+  if(error){toast('Send failed: '+error.message,true);staffMessages=staffMessages.filter(m=>m.id!==tmp.id);return;}
+  staffMessages=staffMessages.map(m=>m.id===tmp.id?data:m);
+  renderStaffInboxList();
+}
+
+// ─── openNewStaffMessageModal — pick a recipient and start thread ─
+function openNewStaffMessageModal(){
+  const existing=document.getElementById('_new-staff-msg-popup');
+  if(existing)existing.remove();
+  const profiles=(window._allProfiles||[]).filter(p=>p.id!==currentUser?.id);
+  const popup=document.createElement('div');
+  popup.id='_new-staff-msg-popup';
+  popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:3000;display:flex;align-items:center;justify-content:center';
+  popup.onclick=e=>{if(e.target===popup)popup.remove();};
+  popup.innerHTML=`<div style="background:#fff;border-radius:12px;width:min(400px,90vw);box-shadow:0 8px 40px rgba(0,0,0,0.18)">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:500">New Message</div>
+      <button onclick="document.getElementById('_new-staff-msg-popup').remove()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--txt3)">×</button>
+    </div>
+    <div style="padding:16px 20px">
+      <div style="font-size:12px;color:var(--txt3);margin-bottom:10px">Choose a staff member to message:</div>
+      ${profiles.length
+        ? profiles.map(p=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''" onclick="document.getElementById('_new-staff-msg-popup').remove();openStaffThread('${p.id}')">
+            <div class="inbox-thread-av" style="background:var(--navy);color:#fff;width:34px;height:34px;flex-shrink:0">${initials(p.full_name||p.email||'?')}</div>
+            <div><div style="font-size:13px;font-weight:500;color:var(--txt)">${esc(p.full_name||p.email||'Unknown')}</div>
+            <div style="font-size:11px;color:var(--txt3)">${esc(p.role||'Staff')}${p.department?' · '+esc(p.department):''}</div></div>
+          </div>`).join('')
+        : '<div style="text-align:center;color:var(--txt3);font-size:12px;padding:20px">No other staff members found.</div>'}
+    </div>
+  </div>`;
+  document.body.appendChild(popup);
+}
+</script>
+
+<!-- ═══════════════ MISSING FUNCTIONS FIX ═══════════════ -->
+<script>
+// ─── loadInboxMessages ────────────────────────────────────────────
+async function loadInboxMessages(){
+  const{data,error}=await sb.from('client_messages')
+    .select('*').order('created_at',{ascending:true}).limit(500);
+  if(!error)inboxMessages=data||[];
+  updateBadges();
+}
+
+// ─── renderInboxThreadList ────────────────────────────────────────
+function renderInboxThreadList(){
+  const el=document.getElementById('inbox-thread-list');
+  const countEl=document.getElementById('inbox-client-count');
+  if(!el)return;
+  const q=(document.getElementById('inbox-search')||{value:''}).value.toLowerCase();
+  const threadClients=clients.filter(c=>{
+    if(q&&!c.name.toLowerCase().includes(q))return false;
+    return true;
+  }).map(c=>{
+    const msgs=inboxMessages.filter(m=>m.client_id===c.id);
+    const last=msgs[msgs.length-1];
+    const unread=msgs.filter(m=>m.sender==='client'&&!m.read_by_firm).length;
+    return{c,last,unread,ts:last?last.created_at:c.created_at};
+  }).filter(t=>!q||t.last);
+  threadClients.sort((a,b)=>{
+    if(a.unread&&!b.unread)return-1;
+    if(!a.unread&&b.unread)return 1;
+    return(b.ts||'').localeCompare(a.ts||'');
+  });
+  if(countEl)countEl.textContent=threadClients.length+' client'+(threadClients.length!==1?'s':'');
+  if(!threadClients.length){
+    el.innerHTML='<div class="empty-state-sm">No clients found.</div>';
+    return;
+  }
+  el.innerHTML=threadClients.map(({c,last,unread})=>{
+    const preview=last?(last.file_name?'📎 '+last.file_name:last.message||''):'No messages yet';
+    const isActive=activeInboxClientId===c.id;
+    return`<div class="inbox-thread${isActive?' active':''}" onclick="selectInboxClient('${c.id}')">
+      <div class="inbox-thread-av ${avColor(c.name)}">${initials(c.name)}</div>
+      <div class="inbox-thread-body">
+        <div class="inbox-thread-name">${esc(c.name)}</div>
+        <div class="inbox-thread-preview">${esc(preview.slice(0,60))}</div>
+      </div>
+      ${last?`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div class="inbox-thread-time">${fmtMsgTime(last.created_at)}</div>
+        ${unread?`<div class="inbox-unread-badge">${unread}</div>`:''}
+      </div>`:''}
+    </div>`;
+  }).join('');
+  // Update inbox unread badge
+  const totalUnread=inboxMessages.filter(m=>m.sender==='client'&&!m.read_by_firm).length;
+  const badge=document.getElementById('inbox-badge');
+  const diBadge=document.getElementById('di-inbox-badge');
+  if(badge)badge.textContent=totalUnread||'';
+  if(diBadge)diBadge.textContent=totalUnread||'';
+}
+
+// ─── selectInboxClient ────────────────────────────────────────────
+async function selectInboxClient(clientId){
+  activeInboxClientId=clientId;
+  renderInboxThreadList();
+  renderInboxConversation(clientId);
+  // Mark messages read
+  const unread=inboxMessages.filter(m=>m.client_id===clientId&&m.sender==='client'&&!m.read_by_firm);
+  if(unread.length){
+    await sb.from('client_messages').update({read_by_firm:true}).eq('client_id',clientId).eq('sender','client').eq('read_by_firm',false);
+    inboxMessages=inboxMessages.map(m=>m.client_id===clientId&&m.sender==='client'?{...m,read_by_firm:true}:m);
+    renderInboxThreadList();
+    updateBadges();
+  }
+}
+
+// ─── renderInboxConversation ──────────────────────────────────────
+async function renderInboxConversation(clientId,opts={}){
+  const c=clients.find(x=>x.id===clientId);
+  const mainEl=document.getElementById('inbox-main');
+  if(!c||!mainEl)return;
+  const msgs=inboxMessages.filter(m=>m.client_id===clientId);
+  mainEl.innerHTML=`
+    <div class="inbox-main-head">
+      <div class="inbox-main-av ${avColor(c.name)}">${initials(c.name)}</div>
+      <div>
+        <div class="inbox-main-name">${esc(c.name)}</div>
+        <div class="inbox-main-sub">${esc(c.type||'')}${c.phone?' · '+esc(c.phone):''}</div>
+      </div>
+      <button class="topbar-btn sec" style="margin-left:auto;font-size:11px" onclick="openClientProfile('${clientId}')">View Profile</button>
+    </div>
+    <div class="inbox-messages" id="inbox-messages-pane">
+      ${msgs.length
+        ? msgs.map(m=>_buildMsgBubbleHtml(m,c,clientId)).join('')
+        : '<div style="text-align:center;color:var(--txt3);font-size:12px;padding:40px 20px">No messages yet. The client can send messages from the client portal.</div>'}
+    </div>
+    <div style="padding:14px 16px;border-top:1px solid var(--brd);display:flex;gap:10px;align-items:center;background:#fff;flex-shrink:0">
+      <input id="inbox-reply-input" placeholder="Type a reply…"
+        style="flex:1;border:1px solid var(--brd);border-radius:8px;padding:9px 13px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;color:var(--txt)"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendInboxMessage('${clientId}');}"/>
+      <button class="topbar-btn gold" style="font-size:12px;padding:8px 16px" onclick="sendInboxMessage('${clientId}')">Send</button>
+    </div>`;
+  const pane=document.getElementById('inbox-messages-pane');
+  if(pane)pane.scrollTop=pane.scrollHeight;
+}
+
+// ─── sendInboxMessage ─────────────────────────────────────────────
+async function sendInboxMessage(clientId){
+  const inp=document.getElementById('inbox-reply-input');
+  if(!inp)return;
+  const msg=inp.value.trim();
+  if(!msg)return;
+  inp.value='';
+  const tmp={id:'_tmp_'+Date.now(),client_id:clientId,message:msg,sender:'firm',created_at:new Date().toISOString(),read_by_firm:true};
+  _appendMsgBubble(tmp,clientId);
+  const{error}=await sb.from('client_messages').insert({client_id:clientId,message:msg,sender:'firm',read_by_firm:true});
+  if(error){toast('Send failed: '+error.message,true);return;}
+  await loadInboxMessages();
+  renderInboxThreadList();
+}
+
+// ─── loadPttRequests ──────────────────────────────────────────────
+async function loadPttRequests(){
+  const el=document.getElementById('ptt-requests-list');
+  if(!el)return;
+  const{data,error}=await sb.from('ptt_requests')
+    .select('*').order('created_at',{ascending:false}).limit(50);
+  if(error||!data||!data.length){
+    el.innerHTML='<div class="empty-state"><p>No speak requests. When a client sends a PTT request it appears here.</p></div>';
+    return;
+  }
+  el.innerHTML=data.map(r=>{
+    const c=clients.find(x=>x.id===r.client_id);
+    const isPending=r.status==='pending';
+    return`<div style="padding:12px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:14px">
+      <div class="matter-icon civil" style="background:${isPending?'#EAF3DE':'var(--cream2)'}">📢</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500;color:var(--txt)">${c?esc(c.name):'Unknown Client'}</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:2px">${r.note?esc(r.note):'Speak request'} · ${fmtMsgTime(r.created_at)}</div>
+      </div>
+      <span class="status-pill ${isPending?'status-pending':'status-closed'}">${isPending?'Pending':'Done'}</span>
+      ${isPending?`<button class="topbar-btn" style="font-size:11px;padding:5px 12px;background:var(--green)" onclick="ackPttRequest('${r.id}')">✓ Done</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ─── ackPttRequest ────────────────────────────────────────────────
+async function ackPttRequest(id){
+  await sb.from('ptt_requests').update({status:'done'}).eq('id',id);
+  loadPttRequests();
 }
 </script>
 
