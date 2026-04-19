@@ -2196,7 +2196,8 @@ async function loadAll(){
   // ── Phase 2: load everything else in the background ──
   Promise.all([
     loadTimeEntries(),loadParties(),loadInboxMessages(),
-    loadAllProfiles(),loadGazettedHolidays(),loadStaffMessages(),loadPanicAlerts()
+    loadAllProfiles(),loadGazettedHolidays(),loadStaffMessages(),loadPanicAlerts(),
+    loadFirmSettings().then(()=>refreshAppDropdowns())
   ]).then(()=>{ updateBadges(); });
   // Update parties badge
   const pb=document.getElementById('parties-main-badge');
@@ -3820,7 +3821,7 @@ function renderCalendar(){
     el.addEventListener('click',()=>{
       if(hols.length||evs.length){
         if(evs.length===1&&!hols.length) openEventDetail(evs[0].id);
-        else if(evs.length>1||hols.length) openDayEvents(d,evs,hols);
+        else if(evs.length>1||hols.length) openDayEvents(new Date(calYear,calMonth,d),evs,hols);
       }
     });
     g.appendChild(el);
@@ -8039,10 +8040,7 @@ function refreshAppDropdowns(){
   });
 }
 
-// Auto-load firm settings on boot and refresh dropdowns
-setTimeout(async()=>{
-  try{await loadFirmSettings();refreshAppDropdowns();}catch(e){}
-},1800);
+// Dropdowns are refreshed via loadAll() on boot — no setTimeout needed
 </script>
 
 </body>
