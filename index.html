@@ -5337,6 +5337,7 @@ async function loadMatterDocuments(force=false){
     const cached=_docCache[activeMatterId];
     matterDocuments=cached.firmDocs;
     window._matterClientUploads=cached.clientUploads;
+    window._generalClientUploads=cached.generalUploads||[];
     const countEl=document.getElementById('matter-doc-count');
     if(countEl)countEl.textContent=matterDocuments.length+window._matterClientUploads.length;
     renderDocumentsCard();
@@ -5382,16 +5383,24 @@ async function loadMatterDocuments(force=false){
   matterDocuments=(firmResult.data||[]).filter(d=>d.name!=='.emptyFolderPlaceholder');
 
   window._matterClientUploads=[];
+  window._generalClientUploads=[];
   if(clientResult&&!clientResult.error&&clientResult.data){
-    window._matterClientUploads=clientResult.data.filter(f=>{
-      if(f.name==='.emptyFolderPlaceholder')return false;
+    clientResult.data.forEach(f=>{
+      if(f.name==='.emptyFolderPlaceholder')return;
       const parts=f.name.split('__');
-      return parts.length>=4&&parts[2]===activeMatterId;
+      // New format: cat__desc__matterId__ts_filename (parts[2] is UUID or 'general')
+      if(parts.length>=4){
+        if(parts[2]===activeMatterId) window._matterClientUploads.push(f);
+        else if(parts[2]==='general'||parts[2]==='') window._generalClientUploads.push(f);
+      } else {
+        // Old format (pre-fix): cat__desc__ts_filename — matter unknown
+        window._generalClientUploads.push(f);
+      }
     });
   }
 
   // Store in cache
-  _docCache[activeMatterId]={firmDocs:matterDocuments,clientUploads:window._matterClientUploads};
+  _docCache[activeMatterId]={firmDocs:matterDocuments,clientUploads:window._matterClientUploads,generalUploads:window._generalClientUploads};
 
   const totalCount=matterDocuments.length+window._matterClientUploads.length;
   const countEl=document.getElementById('matter-doc-count');
@@ -5460,44 +5469,92 @@ function renderDocumentsCard(){
 
   // ── Client-uploaded docs for this matter ──
   const clientUploads=window._matterClientUploads||[];
+  const activeMatterForClient=matters.find(m=>m.id===activeMatterId);
+  const clientIdForUploads=activeMatterForClient?.client_id||'';
   if(clientUploads.length){
-    html+=`<div style="padding:10px 20px 4px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.8px;font-weight:500;background:var(--cream);border-top:2px solid var(--brd2);border-bottom:1px solid var(--brd)">
-      📤 Uploaded by Client (${clientUploads.length})
-    </div>`;
-    const activeMatter=matters.find(m=>m.id===activeMatterId);
-    const clientId=activeMatter?.client_id||'';
+    html+=`<div style="border-top:2px solid var(--brd2);margin-top:4px">
+      <div style="padding:12px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;background:var(--cream)">
+        <div>
+          <span style="font-family:'Playfair Display',serif;font-size:13px;font-weight:500">📤 Uploaded by Client</span>
+          <span style="font-size:11px;color:var(--txt3);margin-left:8px">Files sent by the client for this matter</span>
+        </div>
+        <span style="font-size:11px;color:var(--txt3)">${clientUploads.length} file${clientUploads.length!==1?'s':''}</span>
+      </div>`;
     clientUploads.forEach(f=>{
       const parts=f.name.split('__');
       let dName=f.name,cat='',desc='';
       if(parts.length>=4){cat=parts[0];desc=parts[1];dName=parts.slice(3).join('__');}
+      else if(parts.length===3){cat=parts[0];desc=parts[1];dName=parts.slice(2).join('__');}
       const tsM=dName.match(/^\d+_(.+)$/);if(tsM)dName=tsM[1];
       const{icon,cls}=docFileIcon(dName);
       const meta=f.metadata||{};
+      const size=fmtFileSize(meta.size);
       const dateStr=f.created_at?new Date(f.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):'';
       const safeName=esc(f.name);
       const safeDisplay=esc(dName);
-      html+=`<div class="doc-row" style="background:rgba(24,95,165,0.02)">
+      const catLabel=cat?categoryLabel(cat):'';
+      const metaParts=[catLabel,size,dateStr,desc?esc(desc):''].filter(Boolean).join(' · ');
+      html+=`<div class="doc-row" style="background:#fff">
         <div class="doc-icon ${cls}">${icon}</div>
         <div class="doc-info">
           <div class="doc-name" title="${safeDisplay}">${safeDisplay}</div>
           <div class="doc-meta">
-            <span style="background:#E6F1FB;color:#185FA5;font-size:9px;padding:1px 6px;border-radius:6px;font-weight:600;margin-right:4px">Client Upload</span>
-            ${dateStr}${desc?' · '+esc(desc):''}
+            <span style="background:#E6F1FB;color:#185FA5;font-size:9px;padding:1px 6px;border-radius:6px;font-weight:600;margin-right:5px">Client</span>${metaParts}
           </div>
         </div>
-        <div style="flex-shrink:0;min-width:90px">
-          ${cat?`<span class="status-pill" style="background:var(--cream2);color:var(--txt2);font-size:9px">${esc(categoryLabel(cat))}</span>`:'<span style="font-size:11px;color:var(--txt3)">—</span>'}
-        </div>
-        <div style="flex-shrink:0;min-width:60px;font-size:11px;color:var(--txt3)">${fmtFileSize(meta.size)}</div>
         <div class="doc-actions">
-          <button class="doc-btn view-btn" onclick="viewClientFile('${esc(clientId)}','${safeName}','${safeDisplay}')">👁 View</button>
-          <button class="doc-btn" onclick="downloadClientFile('${esc(clientId)}','${safeName}','${safeDisplay}')">⬇</button>
+          <button class="doc-btn view-btn" onclick="viewClientFile('${esc(clientIdForUploads)}','${safeName}','${safeDisplay}')">👁 View</button>
+          <button class="doc-btn" onclick="downloadClientFile('${esc(clientIdForUploads)}','${safeName}','${safeDisplay}')">⬇</button>
         </div>
       </div>`;
     });
+    html+=`</div>`;
   } else if(docs.length){
-    // Subtle note when there are firm docs but no client uploads for this matter
-    html+=`<div style="padding:8px 20px;font-size:11px;color:var(--txt3);border-top:1px solid var(--brd);background:var(--cream)">📤 No client uploads for this matter.</div>`;
+    html+=`<div style="padding:10px 20px;font-size:11px;color:var(--txt3);border-top:1px solid var(--brd);background:var(--cream)">📤 No client uploads for this matter yet.</div>`;
+  }
+
+  // ── General / unlinked client uploads ──
+  const generalUploads=window._generalClientUploads||[];
+  if(generalUploads.length){
+    const activeMatterGen=matters.find(m=>m.id===activeMatterId);
+    const clientIdGen=activeMatterGen?.client_id||'';
+    html+=`<div style="border-top:2px solid var(--brd2);margin-top:4px">
+      <div style="padding:12px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;background:var(--cream)">
+        <div>
+          <span style="font-family:'Playfair Display',serif;font-size:13px;font-weight:500">📤 Client General Uploads</span>
+          <span style="font-size:11px;color:var(--txt3);margin-left:8px">Not linked to a specific matter</span>
+        </div>
+        <span style="font-size:11px;color:var(--txt3)">${generalUploads.length} file${generalUploads.length!==1?'s':''}</span>
+      </div>`;
+    generalUploads.forEach(f=>{
+      const parts=f.name.split('__');
+      let dName=f.name,cat='',desc='';
+      if(parts.length>=4){cat=parts[0];desc=parts[1];dName=parts.slice(3).join('__');}
+      else if(parts.length===3){cat=parts[0];desc=parts[1];dName=parts.slice(2).join('__');}
+      const tsM=dName.match(/^\d+_(.+)$/);if(tsM)dName=tsM[1];
+      const{icon,cls}=docFileIcon(dName);
+      const meta=f.metadata||{};
+      const size=fmtFileSize(meta.size);
+      const dateStr=f.created_at?new Date(f.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):'';
+      const safeName=esc(f.name);
+      const safeDisplay=esc(dName);
+      const catLabel=cat?categoryLabel(cat):'';
+      const metaParts=[catLabel,size,dateStr].filter(Boolean).join(' · ');
+      html+=`<div class="doc-row" style="background:#fff">
+        <div class="doc-icon ${cls}">${icon}</div>
+        <div class="doc-info">
+          <div class="doc-name" title="${safeDisplay}">${safeDisplay}</div>
+          <div class="doc-meta">
+            <span style="background:#FAEEDA;color:#854F0B;font-size:9px;padding:1px 6px;border-radius:6px;font-weight:600;margin-right:5px">General</span>${metaParts}
+          </div>
+        </div>
+        <div class="doc-actions">
+          <button class="doc-btn view-btn" onclick="viewClientFile('${esc(clientIdGen)}','${safeName}','${safeDisplay}')">👁 View</button>
+          <button class="doc-btn" onclick="downloadClientFile('${esc(clientIdGen)}','${safeName}','${safeDisplay}')">⬇</button>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
   }
 
   card.innerHTML=html;
