@@ -3190,8 +3190,9 @@ async function toggleShareFromProfile(matterId, storageName, displayName, btn){
 // ── View / download files uploaded by the client (client-uploads bucket) ──
 async function viewClientFile(clientId, storageName, displayName){
   const path=`${clientId}/${storageName}`;
+  console.log('[DKMA] viewClientFile clientId:',clientId,'storageName:',storageName,'path:',path);
   const{data,error}=await sb.storage.from(CLIENT_BUCKET).createSignedUrl(path,600);
-  if(error){toast('Could not open file.',true);return;}
+  if(error){console.error('[DKMA] signedUrl error:',error);toast('Could not open file: '+error.message,true);return;}
   const url=data.signedUrl;
   const ext=(storageName.split('.').pop()||'').toLowerCase();
   const overlay=document.getElementById('doc-viewer-overlay');
@@ -3212,8 +3213,9 @@ async function viewClientFile(clientId, storageName, displayName){
 
 async function downloadClientFile(clientId, storageName, displayName){
   const path=`${clientId}/${storageName}`;
+  console.log('[DKMA] downloadClientFile clientId:',clientId,'storageName:',storageName,'path:',path);
   const{data,error}=await sb.storage.from(CLIENT_BUCKET).createSignedUrl(path,300);
-  if(error){toast('Could not download.',true);return;}
+  if(error){console.error('[DKMA] download error:',error);toast('Could not download: '+error.message,true);return;}
   const a=document.createElement('a');a.href=data.signedUrl;a.download=displayName;a.target='_blank';document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
@@ -5338,6 +5340,7 @@ async function loadMatterDocuments(force=false){
     matterDocuments=cached.firmDocs;
     window._matterClientUploads=cached.clientUploads;
     window._generalClientUploads=cached.generalUploads||[];
+    window._matterClientId=cached.clientId||'';
     const countEl=document.getElementById('matter-doc-count');
     if(countEl)countEl.textContent=matterDocuments.length+window._matterClientUploads.length;
     renderDocumentsCard();
@@ -5382,25 +5385,42 @@ async function loadMatterDocuments(force=false){
 
   matterDocuments=(firmResult.data||[]).filter(d=>d.name!=='.emptyFolderPlaceholder');
 
+  // Store clientId so renderDocumentsCard can use it reliably
+  window._matterClientId=clientId||'';
+
   window._matterClientUploads=[];
   window._generalClientUploads=[];
   if(clientResult&&!clientResult.error&&clientResult.data){
+    console.log('[DKMA] Client uploads found:',clientResult.data.length,'for clientId:',clientId,'activeMatterId:',activeMatterId);
     clientResult.data.forEach(f=>{
       if(f.name==='.emptyFolderPlaceholder')return;
+      console.log('[DKMA] File:',f.name);
       const parts=f.name.split('__');
+      console.log('[DKMA] Parts:',parts,'length:',parts.length,'parts[2]:',parts[2]);
       // New format: cat__desc__matterId__ts_filename (parts[2] is UUID or 'general')
       if(parts.length>=4){
-        if(parts[2]===activeMatterId) window._matterClientUploads.push(f);
-        else if(parts[2]==='general'||parts[2]==='') window._generalClientUploads.push(f);
+        if(parts[2]===activeMatterId){
+          console.log('[DKMA] -> Matched to matter');
+          window._matterClientUploads.push(f);
+        } else if(parts[2]==='general'||parts[2]===''){
+          console.log('[DKMA] -> General upload');
+          window._generalClientUploads.push(f);
+        } else {
+          console.log('[DKMA] -> Unmatched matterId:',parts[2],'expected:',activeMatterId);
+          window._generalClientUploads.push(f);
+        }
       } else {
         // Old format (pre-fix): cat__desc__ts_filename — matter unknown
+        console.log('[DKMA] -> Old format, treating as general');
         window._generalClientUploads.push(f);
       }
     });
+  } else {
+    console.log('[DKMA] No client uploads. clientResult:',clientResult);
   }
 
   // Store in cache
-  _docCache[activeMatterId]={firmDocs:matterDocuments,clientUploads:window._matterClientUploads,generalUploads:window._generalClientUploads};
+  _docCache[activeMatterId]={firmDocs:matterDocuments,clientUploads:window._matterClientUploads,generalUploads:window._generalClientUploads,clientId:window._matterClientId};
 
   const totalCount=matterDocuments.length+window._matterClientUploads.length;
   const countEl=document.getElementById('matter-doc-count');
@@ -5469,8 +5489,7 @@ function renderDocumentsCard(){
 
   // ── Client-uploaded docs for this matter ──
   const clientUploads=window._matterClientUploads||[];
-  const activeMatterForClient=matters.find(m=>m.id===activeMatterId);
-  const clientIdForUploads=activeMatterForClient?.client_id||'';
+  const clientIdForUploads=window._matterClientId||'';
   if(clientUploads.length){
     html+=`<div style="border-top:2px solid var(--brd2);margin-top:4px">
       <div style="padding:12px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;background:var(--cream)">
@@ -5516,8 +5535,7 @@ function renderDocumentsCard(){
   // ── General / unlinked client uploads ──
   const generalUploads=window._generalClientUploads||[];
   if(generalUploads.length){
-    const activeMatterGen=matters.find(m=>m.id===activeMatterId);
-    const clientIdGen=activeMatterGen?.client_id||'';
+    const clientIdGen=window._matterClientId||'';
     html+=`<div style="border-top:2px solid var(--brd2);margin-top:4px">
       <div style="padding:12px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;background:var(--cream)">
         <div>
