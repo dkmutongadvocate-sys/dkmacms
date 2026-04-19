@@ -3011,7 +3011,8 @@ async function loadClientDocumentsUnified(clientId, clientName, force=false){
 
   // All fetches in parallel: one per matter + client uploads
   const [clientFilesResult, ...matterResults] = await Promise.all([
-    sb.storage.from(CLIENT_BUCKET).list(clientId, {limit:200, sortBy:{column:'created_at',order:'desc'}}),
+    // General client uploads (no matter) live under client-general/{clientId}/ in matter-documents
+    sb.storage.from(STORAGE_BUCKET).list('client-general/'+clientId, {limit:200, sortBy:{column:'created_at',order:'desc'}}),
     ...clientMatters.map(m => sb.storage.from(STORAGE_BUCKET).list(m.id, {limit:200, sortBy:{column:'created_at',order:'desc'}}).then(r=>({m,r})))
   ]);
 
@@ -3188,11 +3189,12 @@ async function toggleShareFromProfile(matterId, storageName, displayName, btn){
 }
 
 // ── View / download files uploaded by the client (client-uploads bucket) ──
-async function viewClientFile(clientId, storageName, displayName){
-  const path=`${clientId}/${storageName}`;
-  console.log('[DKMA] viewClientFile clientId:',clientId,'storageName:',storageName,'path:',path);
-  const{data,error}=await sb.storage.from(CLIENT_BUCKET).createSignedUrl(path,600);
-  if(error){console.error('[DKMA] signedUrl error:',error);toast('Could not open file: '+error.message,true);return;}
+// viewClientFile / downloadClientFile — now routes through matter-documents (STORAGE_BUCKET)
+// folder param is the storage folder (matterId or client-general/clientId)
+async function viewClientFile(folder, storageName, displayName){
+  const path=`${folder}/${storageName}`;
+  const{data,error}=await sb.storage.from(STORAGE_BUCKET).createSignedUrl(path,600);
+  if(error){toast('Could not open file: '+error.message,true);return;}
   const url=data.signedUrl;
   const ext=(storageName.split('.').pop()||'').toLowerCase();
   const overlay=document.getElementById('doc-viewer-overlay');
@@ -3211,11 +3213,10 @@ async function viewClientFile(clientId, storageName, displayName){
   overlay.classList.remove('hidden');
 }
 
-async function downloadClientFile(clientId, storageName, displayName){
-  const path=`${clientId}/${storageName}`;
-  console.log('[DKMA] downloadClientFile clientId:',clientId,'storageName:',storageName,'path:',path);
-  const{data,error}=await sb.storage.from(CLIENT_BUCKET).createSignedUrl(path,300);
-  if(error){console.error('[DKMA] download error:',error);toast('Could not download: '+error.message,true);return;}
+async function downloadClientFile(folder, storageName, displayName){
+  const path=`${folder}/${storageName}`;
+  const{data,error}=await sb.storage.from(STORAGE_BUCKET).createSignedUrl(path,300);
+  if(error){toast('Could not download: '+error.message,true);return;}
   const a=document.createElement('a');a.href=data.signedUrl;a.download=displayName;a.target='_blank';document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
@@ -3402,7 +3403,7 @@ async function pollNewClientFiles(){
   // Check recent client uploads across all active clients
   const activeClients = clients.slice(0, 30); // limit to avoid too many requests
   for(const c of activeClients){
-    const{data} = await sb.storage.from(CLIENT_BUCKET).list(c.id, {limit:10, sortBy:{column:'created_at',order:'desc'}});
+    const{data} = await sb.storage.from(STORAGE_BUCKET).list('client-general/'+c.id, {limit:10, sortBy:{column:'created_at',order:'desc'}});
     if(!data) continue;
     const recentFiles = data.filter(f => {
       if(f.name==='.emptyFolderPlaceholder') return false;
@@ -5156,7 +5157,7 @@ async function updateClient(clientId){
 let activeMatterId=null,activeMatterTab='overview';
 let matterDocuments=[];
 const STORAGE_BUCKET='matter-documents';
-const CLIENT_BUCKET='client-uploads';
+// CLIENT_BUCKET removed — client uploads now go into matter-documents (STORAGE_BUCKET) under client__ prefix
 
 function openMatterDetail(matterId){
   activeMatterId=matterId;
@@ -5339,8 +5340,7 @@ async function loadMatterDocuments(force=false){
     const cached=_docCache[activeMatterId];
     matterDocuments=cached.firmDocs;
     window._matterClientUploads=cached.clientUploads;
-    window._generalClientUploads=cached.generalUploads||[];
-    window._matterClientId=cached.clientId||'';
+    window._generalClientUploads=[];
     const countEl=document.getElementById('matter-doc-count');
     if(countEl)countEl.textContent=matterDocuments.length+window._matterClientUploads.length;
     renderDocumentsCard();
@@ -5355,14 +5355,11 @@ async function loadMatterDocuments(force=false){
     return Promise.race([promise,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Request timed out')),ms))]);
   }
 
-  let firmResult,clientResult;
+  let firmResult;
   try{
-    [firmResult,clientResult]=await withTimeout(Promise.all([
-      sb.storage.from(STORAGE_BUCKET).list(activeMatterId,{limit:200,offset:0,sortBy:{column:'created_at',order:'desc'}}),
-      clientId
-        ? sb.storage.from(CLIENT_BUCKET).list(clientId,{limit:200,sortBy:{column:'created_at',order:'desc'}})
-        : Promise.resolve({data:null,error:null})
-    ]));
+    firmResult=await withTimeout(
+      sb.storage.from(STORAGE_BUCKET).list(activeMatterId,{limit:200,offset:0,sortBy:{column:'created_at',order:'desc'}})
+    );
   }catch(e){
     card.innerHTML=`<div class="card-header" style="padding:16px 20px"><span class="card-title" style="font-family:'Playfair Display',serif;font-size:14px">Documents</span></div>
       <div style="padding:20px;color:var(--red);font-size:13px">
@@ -5383,7 +5380,11 @@ async function loadMatterDocuments(force=false){
     return;
   }
 
-  matterDocuments=(firmResult.data||[]).filter(d=>d.name!=='.emptyFolderPlaceholder');
+  const allMatterFiles=(firmResult.data||[]).filter(d=>d.name!=='.emptyFolderPlaceholder');
+  // Separate firm docs from client-uploaded ones (client__ prefix)
+  matterDocuments=allMatterFiles.filter(d=>!d.name.startsWith('client__'));
+  // Client uploads in this matter folder
+  const clientUploadsInMatter=allMatterFiles.filter(d=>d.name.startsWith('client__'));
 
   // Store clientId so renderDocumentsCard can use it reliably
   window._matterClientId=clientId||'';
@@ -5391,51 +5392,15 @@ async function loadMatterDocuments(force=false){
   window._matterClientUploads=[];
   window._generalClientUploads=[];
 
-  // ── Diagnostic: if subfolder returned 0 files, try listing bucket root
-  // to detect whether the client portal stores files flat vs in a clientId/ subfolder.
-  let clientFiles = clientResult&&!clientResult.error&&clientResult.data ? clientResult.data : [];
-  if(clientId && clientFiles.length===0){
-    console.warn('[DKMA] client-uploads subfolder "'+clientId+'" returned 0 files. Trying bucket root to check structure...');
-    try{
-      const rootList = await sb.storage.from(CLIENT_BUCKET).list('',{limit:50,sortBy:{column:'created_at',order:'desc'}});
-      if(rootList.data&&rootList.data.length){
-        console.warn('[DKMA] Bucket root contains:',rootList.data.map(f=>f.name));
-        console.warn('[DKMA] ↳ If you see the clientId UUID as a folder name, the structure is correct but RLS is blocking the admin from listing it.');
-        console.warn('[DKMA] ↳ If files appear flat (no subfolder), the client portal is not saving under clientId/ — update the portal upload path.');
-      } else {
-        console.warn('[DKMA] Bucket root also empty — bucket may be truly empty, or RLS is blocking all reads for this admin session.');
-        console.warn('[DKMA] ↳ Fix: In Supabase → Storage → Policies → client-uploads, add a SELECT policy for role=admin.');
-      }
-    }catch(diagErr){console.warn('[DKMA] Diagnostic root list failed:',diagErr.message);}
-  }
-
-  if(clientFiles.length){
-    console.log('[DKMA] Client uploads found:',clientFiles.length,'for clientId:',clientId,'activeMatterId:',activeMatterId);
-    clientFiles.forEach(f=>{
-      if(f.name==='.emptyFolderPlaceholder')return;
-      const parts=f.name.split('__');
-      // New format: cat__desc__matterId__ts_filename (parts[2] is UUID or 'general')
-      // Old format: cat__desc__ts_filename (3 parts — matter unknown)
-      if(parts.length>=4){
-        if(parts[2]===activeMatterId){
-          console.log('[DKMA] -> Matched to matter:',f.name);
-          window._matterClientUploads.push(f);
-        } else {
-          // General, empty, or different matter — show under "General Uploads" so nothing is hidden
-          console.log('[DKMA] -> General/unmatched (parts[2]='+parts[2]+'):',f.name);
-          window._generalClientUploads.push(f);
-        }
-      } else {
-        console.log('[DKMA] -> Old format, treating as general:',f.name);
-        window._generalClientUploads.push(f);
-      }
-    });
-  } else {
-    console.log('[DKMA] No client uploads visible. clientResult:',clientResult);
-  }
+  // Client uploads now live in matter-documents/{matterId}/client__{...}
+  // They were already split out from allMatterFiles above — just use them directly
+  window._matterClientUploads=clientUploadsInMatter;
+  // No separate "general" bucket anymore — general uploads live under client-general/{clientId}/
+  // which is a different folder, not loaded here (shown in client profile view instead)
+  console.log('[DKMA] Client uploads in this matter:',clientUploadsInMatter.length);
 
   // Store in cache
-  _docCache[activeMatterId]={firmDocs:matterDocuments,clientUploads:window._matterClientUploads,generalUploads:window._generalClientUploads,clientId:window._matterClientId};
+  _docCache[activeMatterId]={firmDocs:matterDocuments,clientUploads:window._matterClientUploads};
 
   const totalCount=matterDocuments.length+window._matterClientUploads.length;
   const countEl=document.getElementById('matter-doc-count');
@@ -5502,9 +5467,8 @@ function renderDocumentsCard(){
     html+=`</div><div style="padding:10px 20px;border-top:1px solid var(--brd);text-align:right"><button class="filter-btn" style="font-size:11px" onclick="openDocumentUploadModal()">+ Upload More</button></div>`;
   }
 
-  // ── Client-uploaded docs for this matter ──
+  // ── Client-uploaded docs for this matter (client__ prefix, same matter-documents bucket) ──
   const clientUploads=window._matterClientUploads||[];
-  const clientIdForUploads=window._matterClientId||'';
   if(clientUploads.length){
     html+=`<div style="border-top:2px solid var(--brd2);margin-top:4px">
       <div style="padding:12px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;background:var(--cream)">
@@ -5515,10 +5479,11 @@ function renderDocumentsCard(){
         <span style="font-size:11px;color:var(--txt3)">${clientUploads.length} file${clientUploads.length!==1?'s':''}</span>
       </div>`;
     clientUploads.forEach(f=>{
+      // Format: client__{category}__{description}__{timestamp}_{filename}
       const parts=f.name.split('__');
       let dName=f.name,cat='',desc='';
-      if(parts.length>=4){cat=parts[0];desc=parts[1];dName=parts.slice(3).join('__');}
-      else if(parts.length===3){cat=parts[0];desc=parts[1];dName=parts.slice(2).join('__');}
+      if(parts.length>=4){cat=parts[1];desc=parts[2];dName=parts.slice(3).join('__');}
+      else if(parts.length>=3){cat=parts[1];desc=parts[2];dName=f.name;}
       const tsM=dName.match(/^\d+_(.+)$/);if(tsM)dName=tsM[1];
       const{icon,cls}=docFileIcon(dName);
       const meta=f.metadata||{};
@@ -5527,67 +5492,24 @@ function renderDocumentsCard(){
       const safeName=esc(f.name);
       const safeDisplay=esc(dName);
       const catLabel=cat?categoryLabel(cat):'';
-      const metaParts=[catLabel,size,dateStr,desc?esc(desc):''].filter(Boolean).join(' · ');
+      const metaParts=[catLabel,size,dateStr,desc?esc(desc.replace(/_/g,' ')):''].filter(Boolean).join(' · ');
       html+=`<div class="doc-row" style="background:#fff">
         <div class="doc-icon ${cls}">${icon}</div>
         <div class="doc-info">
           <div class="doc-name" title="${safeDisplay}">${safeDisplay}</div>
           <div class="doc-meta">
-            <span style="background:#E6F1FB;color:#185FA5;font-size:9px;padding:1px 6px;border-radius:6px;font-weight:600;margin-right:5px">Client</span>${metaParts}
+            <span style="background:#E6F1FB;color:#185FA5;font-size:9px;padding:1px 6px;border-radius:6px;font-weight:600;margin-right:5px">Client Upload</span>${metaParts}
           </div>
         </div>
         <div class="doc-actions">
-          <button class="doc-btn view-btn" onclick="viewClientFile('${esc(clientIdForUploads)}','${safeName}','${safeDisplay}')">👁 View</button>
-          <button class="doc-btn" onclick="downloadClientFile('${esc(clientIdForUploads)}','${safeName}','${safeDisplay}')">⬇</button>
+          <button class="doc-btn view-btn" onclick="viewDocument('${safeName}','${safeDisplay}')">👁 View</button>
+          <button class="doc-btn" onclick="downloadDocument('${safeName}')">⬇</button>
         </div>
       </div>`;
     });
     html+=`</div>`;
   } else if(docs.length){
     html+=`<div style="padding:10px 20px;font-size:11px;color:var(--txt3);border-top:1px solid var(--brd);background:var(--cream)">📤 No client uploads for this matter yet.</div>`;
-  }
-
-  // ── General / unlinked client uploads ──
-  const generalUploads=window._generalClientUploads||[];
-  if(generalUploads.length){
-    const clientIdGen=window._matterClientId||'';
-    html+=`<div style="border-top:2px solid var(--brd2);margin-top:4px">
-      <div style="padding:12px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;background:var(--cream)">
-        <div>
-          <span style="font-family:'Playfair Display',serif;font-size:13px;font-weight:500">📤 Client General Uploads</span>
-          <span style="font-size:11px;color:var(--txt3);margin-left:8px">Not linked to a specific matter</span>
-        </div>
-        <span style="font-size:11px;color:var(--txt3)">${generalUploads.length} file${generalUploads.length!==1?'s':''}</span>
-      </div>`;
-    generalUploads.forEach(f=>{
-      const parts=f.name.split('__');
-      let dName=f.name,cat='',desc='';
-      if(parts.length>=4){cat=parts[0];desc=parts[1];dName=parts.slice(3).join('__');}
-      else if(parts.length===3){cat=parts[0];desc=parts[1];dName=parts.slice(2).join('__');}
-      const tsM=dName.match(/^\d+_(.+)$/);if(tsM)dName=tsM[1];
-      const{icon,cls}=docFileIcon(dName);
-      const meta=f.metadata||{};
-      const size=fmtFileSize(meta.size);
-      const dateStr=f.created_at?new Date(f.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):'';
-      const safeName=esc(f.name);
-      const safeDisplay=esc(dName);
-      const catLabel=cat?categoryLabel(cat):'';
-      const metaParts=[catLabel,size,dateStr].filter(Boolean).join(' · ');
-      html+=`<div class="doc-row" style="background:#fff">
-        <div class="doc-icon ${cls}">${icon}</div>
-        <div class="doc-info">
-          <div class="doc-name" title="${safeDisplay}">${safeDisplay}</div>
-          <div class="doc-meta">
-            <span style="background:#FAEEDA;color:#854F0B;font-size:9px;padding:1px 6px;border-radius:6px;font-weight:600;margin-right:5px">General</span>${metaParts}
-          </div>
-        </div>
-        <div class="doc-actions">
-          <button class="doc-btn view-btn" onclick="viewClientFile('${esc(clientIdGen)}','${safeName}','${safeDisplay}')">👁 View</button>
-          <button class="doc-btn" onclick="downloadClientFile('${esc(clientIdGen)}','${safeName}','${safeDisplay}')">⬇</button>
-        </div>
-      </div>`;
-    });
-    html+=`</div>`;
   }
 
   card.innerHTML=html;
