@@ -1472,6 +1472,13 @@ setTimeout(function() {
         <div style="font-size:10px;color:var(--txt3);margin-top:4px">Paste a Zoom, Teams, Google Meet or any video call link.</div>
       </div>
       <div class="form-row"><label>Notes</label><textarea id="ev-notes" placeholder="Any additional details…" style="min-height:60px"></textarea></div>
+      <div class="form-row" style="margin-bottom:0">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none">
+          <input type="checkbox" id="ev-portal-visible" style="width:15px;height:15px;accent-color:var(--navy);cursor:pointer"/>
+          <span>Show this event in the client portal <span style="font-size:10px;background:#EAF3DE;color:#2D6A4F;padding:1px 7px;border-radius:3px;font-weight:500;margin-left:2px">Visible to Client</span></span>
+        </label>
+        <div style="font-size:10px;color:var(--txt3);margin-top:4px;margin-left:25px">When checked, this event will appear on the client's portal Events tab.</div>
+      </div>
     </div>
     <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" id="save-event-btn" onclick="saveEventWithGCal()">Save Event</button></div>
   </div>
@@ -1744,6 +1751,10 @@ setTimeout(function() {
     <div class="drawer-item admin-only" id="di-team" onclick="showView('team',null,true);closeDrawer()">
       <svg viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.209 1.791-4 4-4s4 1.791 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 9c1.657 0 3 1.343 3 3v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></svg>
       Team
+    </div>
+    <div class="drawer-item admin-only" id="di-firm-settings" onclick="showView('firm-settings',null,true);closeDrawer()">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.4"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Firm Settings
     </div>
   </div>
   <div class="drawer-footer">
@@ -2631,6 +2642,21 @@ async function deleteEvent(id,title,e){
   toast('Event deleted.');
   renderCalendar();renderDashboard();updateBadges();
   if(activeMatterId)renderMatterDetailTab();
+}
+async function toggleEventPortalVisible(id, btn){
+  const ev=events.find(e=>e.id===id);
+  if(!ev)return;
+  const newVal=!ev.portal_visible;
+  btn.disabled=true;
+  const{error}=await sb.from('events').update({portal_visible:newVal}).eq('id',id);
+  btn.disabled=false;
+  if(error){toast('Error: '+error.message,true);return;}
+  ev.portal_visible=newVal;
+  btn.textContent=newVal?'👁 Portal':'🔒 Hidden';
+  btn.title=newVal?'Visible in client portal — click to hide':'Hidden from client portal — click to show';
+  btn.style.borderColor=newVal?'var(--green)':'var(--brd2)';
+  btn.style.color=newVal?'var(--green)':'var(--txt3)';
+  toast(newVal?'Event now visible in client portal.':'Event hidden from client portal.');
 }
 async function deleteInvoice(id,no,e){
   e&&e.stopPropagation();
@@ -3942,6 +3968,7 @@ function renderCalendar(){
       <span class="upcoming-tag ${tc['court']==='tag-court'?tc[e.type]||'tag-internal':tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span>${gcalAddBtnHtml(e.id)}
     </div>
     <button class="op-del" title="Delete event" onclick="event.stopPropagation();deleteEvent('${e.id}','${esc(e.title)}',event)">×</button>
+    <button title="${e.portal_visible?'Visible in client portal — click to hide':'Hidden from client portal — click to show'}" onclick="event.stopPropagation();toggleEventPortalVisible('${e.id}',this)" style="background:none;border:1px solid ${e.portal_visible?'var(--green)':'var(--brd2)'};border-radius:5px;padding:3px 7px;font-size:10px;cursor:pointer;color:${e.portal_visible?'var(--green)':'var(--txt3)'};margin-left:4px;font-family:'DM Sans',sans-serif;flex-shrink:0;transition:all 0.15s" data-eid="${e.id}">${e.portal_visible?'👁 Portal':'🔒 Hidden'}</button>
   </div>`;}).join('');
   }
   if(!html) html=emptyState('No events or holidays this month.');
@@ -5021,6 +5048,7 @@ async function saveEvent(){
     location:document.getElementById('ev-location').value.trim()||null,
     meeting_link:document.getElementById('ev-meeting-link').value.trim()||null,
     notes:document.getElementById('ev-notes').value.trim()||null,
+    portal_visible:document.getElementById('ev-portal-visible')?.checked||false,
     created_by:currentUser?.id||null,
     created_by_name:currentProfile?.full_name||currentUser?.email||null,
   };
@@ -6099,6 +6127,7 @@ async function loadMatterUpdates(){
           <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
             <div style="width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${initials(profName)}</div>
             <span style="font-size:11px;color:var(--txt3)">${esc(profName)}</span>
+            <button title="${u.portal_visible?'Visible in client portal — click to hide':'Hidden from client portal — click to show'}" onclick="toggleUpdatePortalVisible('${u.id}',this)" style="margin-left:6px;background:none;border:1px solid ${u.portal_visible?'var(--green)':'var(--brd2)'};border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;color:${u.portal_visible?'var(--green)':'var(--txt3)'};font-family:'DM Sans',sans-serif;transition:all 0.15s">${u.portal_visible?'👁 Portal':'🔒 Hidden'}</button>
           </div>
         </div>
         <button class="op-del" title="Delete update" onclick="deleteMatterUpdate('${u.id}')">×</button>
@@ -6136,9 +6165,15 @@ function openAddUpdateModal(){
           <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;font-weight:500">Details</div>
           <textarea id="upd-details" rows="4" placeholder="Describe what happened, what was filed, what was agreed, next steps…" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none;resize:vertical;line-height:1.6"></textarea>
         </div>
-        <div style="margin-bottom:20px;background:var(--cream);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--txt2);display:flex;align-items:center;gap:9px">
-          <div style="width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${initials(authorName)}</div>
-          <div>Recorded by <strong>${esc(authorName)}</strong></div>
+        <div style="margin-bottom:20px;background:var(--cream);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--txt2);display:flex;align-items:flex-start;gap:9px;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:9px;width:100%">
+            <div style="width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${initials(authorName)}</div>
+            <div>Recorded by <strong>${esc(authorName)}</strong></div>
+          </div>
+          <label style="display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;margin-top:4px">
+            <input type="checkbox" id="upd-portal-visible" style="width:14px;height:14px;accent-color:var(--navy);cursor:pointer"/>
+            <span style="font-size:12px;color:var(--txt2)">Show this update in the client portal <span style="font-size:10px;background:#EAF3DE;color:#2D6A4F;padding:1px 6px;border-radius:3px;font-weight:500">Visible to Client</span></span>
+          </label>
         </div>
         <div id="upd-error" style="font-size:12px;color:var(--red);min-height:16px;margin-bottom:10px"></div>
         <div style="display:flex;gap:10px;justify-content:flex-end">
@@ -6167,6 +6202,7 @@ async function saveMatterUpdate(authorName){
     update_type:type,
     details,
     updated_by:authorName||currentProfile?.full_name||currentUser?.email||'—',
+    portal_visible:document.getElementById('upd-portal-visible')?.checked||false,
   }]);
   btn.disabled=false;btn.textContent='Save Update';
   if(error){errEl.textContent='Error: '+error.message;return;}
@@ -6182,6 +6218,18 @@ async function deleteMatterUpdate(updateId){
   if(error){toast('Error: '+error.message,true);return;}
   toast('Update deleted.');
   if(activeMatterTab==='updates')loadMatterUpdates();
+}
+async function toggleUpdatePortalVisible(updateId, btn){
+  const newVal=btn.textContent.trim().startsWith('🔒');
+  btn.disabled=true;
+  const{error}=await sb.from('matter_updates').update({portal_visible:newVal}).eq('id',updateId);
+  btn.disabled=false;
+  if(error){toast('Error: '+error.message,true);return;}
+  btn.textContent=newVal?'👁 Portal':'🔒 Hidden';
+  btn.title=newVal?'Visible in client portal — click to hide':'Hidden from client portal — click to show';
+  btn.style.borderColor=newVal?'var(--green)':'var(--brd2)';
+  btn.style.color=newVal?'var(--green)':'var(--txt3)';
+  toast(newVal?'Update now visible in client portal.':'Update hidden from client portal.');
 }
 
 // ─── COMMUNICATIONS TEMPLATES ─────────────────────────────────────
@@ -7505,6 +7553,9 @@ function openEventDetail(eventId){
     if(l)l.value=ev.location||'';
     if(n)n.value=ev.notes||'';
     if(ml){ml.value=ev.meeting_link||'';if(typeof updateMeetingLinkIcon==='function')updateMeetingLinkIcon(ml.value);}
+    // Restore portal_visible checkbox
+    const pv=document.getElementById('ev-portal-visible');
+    if(pv)pv.checked=!!ev.portal_visible;
     // Show who added this event
     let evMeta=document.getElementById('ev-added-by-row');
     if(!evMeta){
@@ -7535,6 +7586,7 @@ function openEventDetail(eventId){
           location:document.getElementById('ev-location').value.trim()||null,
           notes:document.getElementById('ev-notes').value.trim()||null,
           meeting_link:document.getElementById('ev-meeting-link')?.value.trim()||null,
+          portal_visible:document.getElementById('ev-portal-visible')?.checked||false,
         };
         if(!payload.title||!payload.event_date){toast('Title and date are required.',true);return;}
         btn.disabled=true;btn.textContent='Saving…';
