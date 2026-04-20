@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>DKMA — Law Firm Management</title>
 <meta name="theme-color" content="#0D1B2A"/>
 <meta name="mobile-web-app-capable" content="yes"/>
@@ -364,6 +364,35 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .doc-viewer-body img{max-width:100%;max-height:100%;object-fit:contain;display:block;margin:auto;padding:20px}
 .doc-viewer-nopreview{padding:48px 20px;text-align:center;color:var(--txt3);font-size:13px;line-height:1.7}
 
+/* ── DOC VIEWER: MOBILE PORTRAIT ────────────────────────────────── */
+@media(max-width:640px) and (orientation:portrait){
+  .doc-viewer-overlay{padding:0}
+  .doc-viewer-bar{border-radius:0;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));position:sticky;top:0;z-index:1}
+  .doc-viewer-body{border-radius:0;height:calc(100dvh - 45px - env(safe-area-inset-top));max-width:100%}
+  .doc-viewer-title{font-size:12px}
+}
+
+/* ── DOC VIEWER: MOBILE LANDSCAPE ───────────────────────────────── */
+@media(max-height:500px) and (orientation:landscape){
+  .doc-viewer-overlay{padding:0;flex-direction:row;align-items:stretch}
+  .doc-viewer-bar{
+    flex-direction:column;align-items:flex-start;justify-content:space-between;
+    border-radius:0;border-right:1px solid var(--brd);border-bottom:none;
+    width:auto;max-width:none;min-width:52px;padding:10px 8px;gap:10px;
+    writing-mode:vertical-rl;/* rotated label */
+    padding-left:calc(8px + env(safe-area-inset-left));
+  }
+  .doc-viewer-title{writing-mode:vertical-rl;text-overflow:ellipsis;max-height:120px;font-size:11px}
+  .doc-viewer-body{
+    border-radius:0;height:100dvh;width:100%;
+    max-width:none;flex:1;
+    padding-right:env(safe-area-inset-right);
+  }
+  #doc-viewer-dl-btn{writing-mode:horizontal-tb;font-size:10px;padding:4px 8px;margin-left:0;margin-top:auto}
+  .doc-viewer-bar > button:last-of-type{writing-mode:horizontal-tb;margin-left:0;margin-top:0}
+  .doc-viewer-nopreview{padding:20px 16px}
+}
+
 /* AUTH */
 #auth-screen input:focus{border-color:var(--navy)!important;outline:none}
 .admin-only{display:none}
@@ -609,6 +638,31 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
   .stats-grid{grid-template-columns:1fr}
   .card-header{flex-direction:column;align-items:flex-start;gap:6px}
   .modal{max-height:96vh}
+}
+
+/* ── LANDSCAPE PHONE ─────────────────────────────────────────────── */
+@media(max-height:500px) and (orientation:landscape){
+  /* Compact topbar */
+  .topbar{height:44px;padding:0 12px}
+  .topbar-title{font-size:13px}
+  .content{padding:10px}
+
+  /* Sidebar becomes slimmer rail */
+  .sidebar{width:180px}
+  .nav-item{padding:7px 14px;font-size:12px}
+  .nav-label{font-size:8px;padding:6px 14px 2px}
+  .logo{padding:14px 14px 12px}
+  .logo-name{font-size:11px}
+
+  /* Modals — full screen on landscape phone */
+  .modal{border-radius:0;position:fixed;inset:0;max-height:100dvh;max-width:100vw;width:100vw}
+  .modal-overlay{padding:0;align-items:stretch}
+
+  /* Stats grids — horizontal on landscape */
+  .stats-grid{grid-template-columns:repeat(4,1fr)}
+
+  /* Drawer — narrow */
+  .hamburger-drawer{width:220px}
 }
 
 /* ── PWA INSTALL MODAL ───────────────────────────────────────────── */
@@ -3199,13 +3253,13 @@ async function viewMatterDocFromProfile(matterId, storageName, displayName){
   };
   const body = document.getElementById('doc-viewer-body');
   if(['jpg','jpeg','png','gif','webp'].includes(ext)){
-    body.innerHTML=`<img src="${url}" style="max-width:100%;max-height:76vh;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
+    body.innerHTML=`<img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
   } else if(ext==='pdf'){
-    body.innerHTML=`<iframe src="${url}" style="width:100%;height:76vh;border:none;display:block"></iframe>`;
+    body.innerHTML=`<iframe src="${url}" style="width:100%;height:100%;min-height:300px;border:none;display:block;flex:1"></iframe>`;
   } else {
     body.innerHTML=`<div class="doc-viewer-nopreview"><div style="font-size:36px;margin-bottom:16px">📄</div><div style="font-weight:500;color:var(--txt);margin-bottom:8px">${esc(displayName)}</div><div>Preview not available. Use Download.</div></div>`;
   }
-  overlay.classList.remove('hidden');
+  _openDocViewerBase(overlay);
 }
 
 async function downloadMatterDocFromProfile(matterId, storageName, displayName){
@@ -3242,13 +3296,13 @@ async function viewClientFile(folder, storageName, displayName){
   };
   const body=document.getElementById('doc-viewer-body');
   if(['jpg','jpeg','png','gif','webp'].includes(ext)){
-    body.innerHTML=`<img src="${url}" style="max-width:100%;max-height:76vh;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
+    body.innerHTML=`<img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
   } else if(ext==='pdf'){
-    body.innerHTML=`<iframe src="${url}" style="width:100%;height:76vh;border:none;display:block"></iframe>`;
+    body.innerHTML=`<iframe src="${url}" style="width:100%;height:100%;min-height:300px;border:none;display:block;flex:1"></iframe>`;
   } else {
     body.innerHTML=`<div class="doc-viewer-nopreview"><div style="font-size:36px;margin-bottom:16px">📄</div><div style="font-weight:500;color:var(--txt);margin-bottom:8px">${esc(displayName)}</div><div>Preview not available. Use Download.</div></div>`;
   }
-  overlay.classList.remove('hidden');
+  _openDocViewerBase(overlay);
 }
 
 async function downloadClientFile(folder, storageName, displayName){
@@ -6958,7 +7012,24 @@ window.addEventListener('load', () => { setTimeout(initGCalClient, 800); });
 // ─── BOOT ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => { initAuth(); });
 
-// ─── DOCUMENT VIEWER ──────────────────────────────────────────────
+// ── ORIENTATION / RESIZE: keep viewer body height in sync (Android fix) ──
+(function(){
+  function syncViewerHeight(){
+    const body = document.getElementById('doc-viewer-body');
+    if(!body) return;
+    const overlay = document.getElementById('doc-viewer-overlay');
+    if(!overlay || overlay.classList.contains('hidden')) return;
+    // In landscape, body fills full screen; in portrait, account for bar height
+    const bar = overlay.querySelector('.doc-viewer-bar');
+    const barH = bar ? bar.offsetHeight : 45;
+    const isLandscape = window.innerWidth > window.innerHeight;
+    body.style.height = isLandscape ? '100dvh' : `calc(${window.innerHeight}px - ${barH}px)`;
+  }
+  window.addEventListener('resize', syncViewerHeight);
+  screen.orientation && screen.orientation.addEventListener('change', syncViewerHeight);
+})();
+
+
 async function viewDocument(storageName, displayName) {
   const path = `${activeMatterId}/${storageName}`;
   const { data, error } = await sb.storage.from(STORAGE_BUCKET).createSignedUrl(path, 600);
@@ -6975,9 +7046,9 @@ async function viewDocument(storageName, displayName) {
   };
   const isReceiptHtml = ext === 'html' && storageName.includes('Email_Receipt');
   if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
-    body.innerHTML = `<img src="${url}" alt="${esc(displayName)}" style="max-width:100%;max-height:76vh;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
+    body.innerHTML = `<img src="${url}" alt="${esc(displayName)}" style="max-width:100%;max-height:100%;object-fit:contain;display:block;margin:auto;padding:20px"/>`;
   } else if (ext === 'pdf') {
-    body.innerHTML = `<iframe src="${url}" style="width:100%;height:76vh;border:none;display:block"></iframe>`;
+    body.innerHTML = `<iframe src="${url}" style="width:100%;height:100%;min-height:300px;border:none;display:block;flex:1"></iframe>`;
   } else if (isReceiptHtml) {
     // Receipt files are HTML — fetch content and render locally so print works correctly.
     body.innerHTML = `<div class="doc-viewer-nopreview" style="gap:16px">
@@ -7019,12 +7090,26 @@ async function viewDocument(storageName, displayName) {
       <div>Preview not available for this file type.<br>Use the Download button to open it.</div>
     </div>`;
   }
-  overlay.classList.remove('hidden');
+  _openDocViewerBase(overlay);
 }
 function closeDocViewer() {
   const overlay = document.getElementById('doc-viewer-overlay');
   overlay.classList.add('hidden');
   document.getElementById('doc-viewer-body').innerHTML = '';
+  document.body.style.overflow = '';
+}
+// Prevent body scroll while doc viewer is open
+function _openDocViewerBase(overlay) {
+  overlay.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  // Sync height immediately for Android
+  requestAnimationFrame(() => {
+    const body = document.getElementById('doc-viewer-body');
+    const bar = overlay.querySelector('.doc-viewer-bar');
+    if(!body || !bar) return;
+    const isLandscape = window.innerWidth > window.innerHeight;
+    body.style.height = isLandscape ? '100dvh' : `calc(${window.innerHeight}px - ${bar.offsetHeight}px)`;
+  });
 }
 
 // ─── EMAIL DOCUMENT ───────────────────────────────────────────────
