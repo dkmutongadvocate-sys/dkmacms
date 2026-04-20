@@ -1447,7 +1447,7 @@ setTimeout(function() {
     <div class="modal-body">
       <div class="form-row"><label>Event Title</label><input id="ev-title" placeholder="e.g. Hearing — Kamau v. Wanjiku"/></div>
       <div class="form-two">
-        <div class="form-row"><label>Date</label><input type="date" id="ev-date"/></div>
+        <div class="form-row"><label>Date</label><input type="date" id="ev-date" onchange="checkDateAvailability(this.value)"/><div id="ev-date-check" style="margin-top:6px;display:none"></div></div>
         <div class="form-row"><label>Time</label><input type="time" id="ev-time"/></div>
       </div>
       <div class="form-two">
@@ -3888,7 +3888,7 @@ function renderCalendar(){
   // Firm events section
   if(meList.length){
     if(holidaysThisMonth.length) html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd);border-top:1px solid var(--brd);margin-top:4px">Firm Events</div>`;
-    html+=meList.map(e=>{const d=parseDateLocal(e.event_date);return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventDetail('${e.id}')"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div><span class="upcoming-tag ${tc['court']==='tag-court'?tc[e.type]||'tag-internal':tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span>${gcalAddBtnHtml(e.id)}</div><button class="op-del" title="Delete event" onclick="event.stopPropagation();deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('');
+    html+=meList.map(e=>{const d=parseDateLocal(e.event_date);const addedBy=e.created_by_name?`<span style="font-size:9px;color:var(--txt3);margin-top:2px;display:block">Added by ${esc(e.created_by_name)}</span>`:'';return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventDetail('${e.id}')"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div>${addedBy}<span class="upcoming-tag ${tc['court']==='tag-court'?tc[e.type]||'tag-internal':tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span>${gcalAddBtnHtml(e.id)}</div><button class="op-del" title="Delete event" onclick="event.stopPropagation();deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('');
   }
   if(!html) html=emptyState('No events or holidays this month.');
   listEl.innerHTML=html;
@@ -4965,6 +4965,8 @@ async function saveEvent(){
     location:document.getElementById('ev-location').value.trim()||null,
     meeting_link:document.getElementById('ev-meeting-link').value.trim()||null,
     notes:document.getElementById('ev-notes').value.trim()||null,
+    created_by:currentUser?.id||null,
+    created_by_name:currentProfile?.full_name||currentUser?.email||null,
   };
   const{data,error}=await sb.from('events').insert([payload]).select();
   setLoading('save-event-btn',false,'Save Event');
@@ -6798,6 +6800,8 @@ async function syncFromGCal() {
         type: 'internal',
         location: item.location || null,
         notes: item.description ? item.description.slice(0, 500) : null,
+        created_by: currentUser?.id||null,
+        created_by_name: currentProfile?.full_name||currentUser?.email||null,
       };
       const { data: newEv, error } = await sb.from('events').insert([payload]).select();
       if (!error && newEv && newEv[0]) {
@@ -7436,13 +7440,25 @@ function openEventDetail(eventId){
     const n=document.getElementById('ev-notes');
     const ml=document.getElementById('ev-meeting-link');
     if(t)t.value=ev.title||'';
-    if(d)d.value=ev.event_date||'';
+    if(d){d.value=ev.event_date||'';if(ev.event_date)checkDateAvailability(ev.event_date);}
     if(tm)tm.value=ev.event_time||'';
     if(ty)ty.value=ev.type||'court';
     if(m)m.value=ev.matter_id||'';
     if(l)l.value=ev.location||'';
     if(n)n.value=ev.notes||'';
     if(ml){ml.value=ev.meeting_link||'';if(typeof updateMeetingLinkIcon==='function')updateMeetingLinkIcon(ml.value);}
+    // Show who added this event
+    let evMeta=document.getElementById('ev-added-by-row');
+    if(!evMeta){
+      evMeta=document.createElement('div');
+      evMeta.id='ev-added-by-row';
+      evMeta.style.cssText='font-size:11px;color:var(--txt3);padding:8px 0 0;display:flex;align-items:center;gap:6px';
+      const modalFooter=document.querySelector('#modal-event .modal-footer')||document.querySelector('#modal-event .form-row:last-of-type');
+      if(modalFooter)modalFooter.parentNode.insertBefore(evMeta,modalFooter);
+    }
+    evMeta.innerHTML=ev.created_by_name
+      ? '<span style="background:var(--cream2);padding:2px 8px;border-radius:6px;font-size:10px">👤 Added by '+esc(ev.created_by_name)+'</span>'
+      : '';
     // Switch save button to update mode
     const btn=document.getElementById('save-event-btn');
     if(btn){
@@ -8166,11 +8182,13 @@ function parseIcs(rawText){
     if(!date) return;
 
     const tl = title.toLowerCase();
-    let type = 'Other';
-    if(/hearing|court|tribunal/.test(tl))        type = 'Court Hearing';
-    else if(/meeting|consult|conference/.test(tl)) type = 'Client Meeting';
-    else if(/deadline|filing|submission/.test(tl)) type = 'Filing Deadline';
-    else if(/mediation|arbitration|adr/.test(tl))  type = 'ADR Session';
+    // Must match exact values in events_type_check constraint:
+    // court | client | deadline | internal | adr
+    let type = 'court'; // default — safest fallback that passes the constraint
+    if(/meeting|consult|conference|interview/.test(tl)) type = 'client';
+    else if(/deadline|filing|submission|lodge/.test(tl)) type = 'deadline';
+    else if(/internal|staff|team|office/.test(tl))      type = 'internal';
+    else if(/mediation|arbitration|adr|tribunal/.test(tl)) type = 'adr';
 
     evList.push({ title, event_date: date, event_time: time||null, type,
                   location: loc||null, notes: desc||null, _uid: uid });
@@ -8214,11 +8232,14 @@ function renderIcsModal(){
     _icsParsed.length + ' event' + (_icsParsed.length!==1?'s':'') + ' parsed · select which to import';
 
   const typeColors = {
-    'Court Hearing':    'background:#FCEBEB;color:#A32D2D',
-    'Client Meeting':   'background:#E6F1FB;color:#185FA5',
-    'Filing Deadline':  'background:#FAEEDA;color:#854F0B',
-    'ADR Session':      'background:#EEEDFE;color:#3C3489',
-    'Other':            'background:var(--cream2);color:var(--txt2)',
+    'court':    'background:#FCEBEB;color:#A32D2D',
+    'client':   'background:#E6F1FB;color:#185FA5',
+    'deadline': 'background:#FAEEDA;color:#854F0B',
+    'adr':      'background:#EEEDFE;color:#3C3489',
+    'internal': 'background:var(--cream2);color:var(--txt2)',
+  };
+  const typeLabels = {
+    'court':'Court','client':'Client Meeting','deadline':'Deadline','adr':'ADR / Arbitration','internal':'Internal'
   };
 
   const multiFile = new Set(_icsParsed.map(e=>e._file)).size > 1;
@@ -8251,7 +8272,7 @@ function renderIcsModal(){
       +     '<span style="font-size:13px;font-weight:500;color:var(--txt)">' + esc(ev.title) + '</span>' + fileBadge + dupBadge
       +   '</div>'
       +   '<div style="font-size:11px;color:var(--txt3);display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-      +     '<span style="font-size:9px;padding:2px 7px;border-radius:8px;font-weight:500;' + tc + '">' + esc(ev.type) + '</span>'
+      +     '<span style="font-size:9px;padding:2px 7px;border-radius:8px;font-weight:500;' + tc + '">' + esc(typeLabels[ev.type]||ev.type) + '</span>'
       +     '<span>\uD83D\uDCC5 ' + ev.event_date + timePart + '</span>'
       +     (ev.location ? '<span>' + locPart + '</span>' : '')
       +   '</div>'
@@ -8290,7 +8311,9 @@ async function importSelectedIcsEvents(){
   const toInsert = [..._icsSelected].map(function(i){
     const ev = _icsParsed[i];
     return { title: ev.title, event_date: ev.event_date, event_time: ev.event_time||null,
-             type: ev.type, location: ev.location||null, notes: ev.notes||null, matter_id: ev._matterId||null };
+             type: ev.type, location: ev.location||null, notes: ev.notes||null, matter_id: ev._matterId||null,
+             created_by: currentUser?.id||null,
+             created_by_name: (currentProfile?.full_name||currentUser?.email||null) };
   });
 
   const { data, error } = await sb.from('events').insert(toInsert).select();
@@ -8308,6 +8331,132 @@ function closeIcsModal(){
   document.getElementById('ics-modal-overlay').style.display = 'none';
   _icsParsed = []; _icsSelected = new Set();
 }
+
+</script>
+
+<script>
+// ══════════════════════════════════════════════
+// DATE AVAILABILITY CHECKER
+// Fires when the ev-date field changes in the
+// Add / Edit Event modal. Checks:
+//   1. Weekend (Sat/Sun)
+//   2. Kenyan public holiday (static + Islamic)
+//   3. Gazetted / ad-hoc holiday
+//   4. Existing firm events on that day
+// ══════════════════════════════════════════════
+
+function checkDateAvailability(dateStr){
+  const panel = document.getElementById('ev-date-check');
+  if(!panel) return;
+  if(!dateStr){ panel.style.display='none'; return; }
+
+  const date = parseDateLocal(dateStr);
+  const dow  = date.getDay(); // 0=Sun, 6=Sat
+  const issues   = []; // blockers — red
+  const warnings = []; // soft warnings — amber
+  const info     = []; // informational — blue
+
+  // ── 1. Weekend ──
+  if(dow === 0) issues.push({ icon:'📅', text:'Sunday — courts and most offices are closed.' });
+  if(dow === 6) issues.push({ icon:'📅', text:'Saturday — courts are closed; consider if this is intentional.' });
+
+  // ── 2. Kenyan public holidays ──
+  const year = date.getFullYear();
+  const staticHols = getKenyanHolidays(year);
+  const matchedStatic = staticHols.filter(h => h.date === dateStr);
+  matchedStatic.forEach(h => {
+    const label = h.estimated ? h.name + ' (estimated — subject to moon sighting)' : h.name;
+    issues.push({ icon: h.islamic ? '☪️' : '🇰🇪', text: label + ' — public holiday.' });
+  });
+
+  // ── 3. Gazetted / ad-hoc holidays ──
+  const matchedGaz = (gazettedHolidays||[]).filter(h => h.date === dateStr);
+  matchedGaz.forEach(h => {
+    const typeLabels = { gazetted:'Gazetted Holiday', election:'Election Day', mourning:'National Mourning', proclamation:'Presidential Proclamation', other:'Ad-hoc Holiday' };
+    issues.push({ icon:'📋', text: h.name + ' — ' + (typeLabels[h.type]||'Holiday') + '.' });
+  });
+
+  // ── 4. Existing events on this day ──
+  const sameDay = (events||[]).filter(e => e.event_date === dateStr);
+  if(sameDay.length){
+    const eventType = document.getElementById('ev-type')?.value || '';
+    sameDay.forEach(e => {
+      const timeStr = e.event_time ? ' at ' + e.event_time : '';
+      const matterObj = (matters||[]).find(m => m.id === e.matter_id);
+      const matterStr = matterObj ? ' (' + matterObj.title + ')' : '';
+      const msg = '"' + e.title + '"' + timeStr + matterStr;
+      // Court events on same day as another court event = stronger warning
+      if(eventType === 'court' && e.type === 'court'){
+        warnings.push({ icon:'⚠️', text:'Court clash: ' + msg + ' is already scheduled.' });
+      } else {
+        info.push({ icon:'📌', text:'Existing event: ' + msg + '.' });
+      }
+    });
+  }
+
+  // ── Render the panel ──
+  if(!issues.length && !warnings.length && !info.length){
+    panel.style.display = 'block';
+    panel.innerHTML = '<div style="display:flex;align-items:center;gap:7px;padding:8px 11px;background:#EAF3DE;border-radius:7px;border:1px solid #c3ddb4">'
+      + '<span style="font-size:14px">✅</span>'
+      + '<span style="font-size:12px;color:#2D6A4F;font-weight:500">Date looks clear — no conflicts found.</span>'
+      + '</div>';
+    return;
+  }
+
+  let html = '';
+
+  // Blockers
+  issues.forEach(function(it){
+    html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 11px;background:#FEF2F2;border-radius:7px;border:1px solid #FECACA;margin-bottom:5px">'
+      + '<span style="font-size:14px;flex-shrink:0">' + it.icon + '</span>'
+      + '<div style="flex:1">'
+      +   '<div style="font-size:11px;font-weight:700;color:#991B1B;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:1px">Conflict</div>'
+      +   '<div style="font-size:12px;color:#7F1D1D">' + esc(it.text) + '</div>'
+      + '</div></div>';
+  });
+
+  // Warnings
+  warnings.forEach(function(it){
+    html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 11px;background:#FFFBEB;border-radius:7px;border:1px solid #FDE68A;margin-bottom:5px">'
+      + '<span style="font-size:14px;flex-shrink:0">' + it.icon + '</span>'
+      + '<div style="flex:1">'
+      +   '<div style="font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:1px">Warning</div>'
+      +   '<div style="font-size:12px;color:#78350F">' + esc(it.text) + '</div>'
+      + '</div></div>';
+  });
+
+  // Info
+  info.forEach(function(it){
+    html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 11px;background:#EFF6FF;border-radius:7px;border:1px solid #BFDBFE;margin-bottom:5px">'
+      + '<span style="font-size:14px;flex-shrink:0">' + it.icon + '</span>'
+      + '<div style="flex:1">'
+      +   '<div style="font-size:11px;font-weight:700;color:#1E40AF;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:1px">Note</div>'
+      +   '<div style="font-size:12px;color:#1E3A8A">' + esc(it.text) + '</div>'
+      + '</div></div>';
+  });
+
+  panel.style.display = 'block';
+  panel.innerHTML = html;
+}
+
+// Also re-run check when type changes (court vs client affects clash severity)
+document.addEventListener('change', function(e){
+  if(e.target && e.target.id === 'ev-type'){
+    const dateVal = document.getElementById('ev-date')?.value;
+    if(dateVal) checkDateAvailability(dateVal);
+  }
+});
+
+// Clear the panel when the modal closes
+const _origCloseModal = typeof closeModal === 'function' ? closeModal : null;
+// Patch: clear panel whenever modal closes
+document.addEventListener('click', function(e){
+  if(e.target && (e.target.classList.contains('modal-close') || e.target.classList.contains('btn-secondary'))){
+    const panel = document.getElementById('ev-date-check');
+    if(panel){ panel.style.display='none'; panel.innerHTML=''; }
+  }
+});
 
 </script>
 
