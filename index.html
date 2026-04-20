@@ -1016,7 +1016,9 @@ setTimeout(function() {
           <div class="cal-grid" id="cal-grid"></div>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Events This Month</span><div style="display:flex;gap:6px;align-items:center"><button id="gcal-sync-btn" class="topbar-btn sec" style="font-size:11px;padding:5px 12px;display:flex;align-items:center;gap:5px" onclick="handleGCalAuth()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg><span id="gcal-btn-label">Connect Google Cal</span></button><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('event')">+ Add Event</button></div></div>
+          <div class="card-header"><span class="card-title">Events This Month</span><div style="display:flex;gap:6px;align-items:center"><button id="gcal-sync-btn" class="topbar-btn sec" style="font-size:11px;padding:5px 12px;display:flex;align-items:center;gap:5px" onclick="handleGCalAuth()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg><span id="gcal-btn-label">Connect Google Cal</span></button><button class="topbar-btn sec" style="font-size:11px;padding:5px 12px;white-space:nowrap" onclick="document.getElementById('ics-file-input').click()">📅 Import .ics</button>
+<input type="file" id="ics-file-input" accept=".ics,text/calendar" multiple style="display:none" onchange="handleIcsFileSelect(event)"/>
+<button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('event')">+ Add Event</button></div></div>
           <div id="cal-events-list"><div class="empty-state"><p>No events this month.</p></div></div>
         </div>
       </div>
@@ -7948,6 +7950,38 @@ async function ackPttRequest(id){
 </div>
 
 
+<!-- ═══════════════ ICS IMPORT MODAL ═══════════════ -->
+<div id="ics-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(13,27,42,0.65);z-index:2000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:12px;width:100%;max-width:680px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.2);overflow:hidden">
+    <!-- Header -->
+    <div style="padding:18px 22px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500">Import Calendar Events</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:2px" id="ics-modal-subtitle">Preview events before importing</div>
+      </div>
+      <button onclick="closeIcsModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--txt3);line-height:1;padding:0 4px">×</button>
+    </div>
+    <!-- Summary bar -->
+    <div id="ics-summary-bar" style="display:none;padding:10px 22px;background:var(--cream);border-bottom:1px solid var(--brd);font-size:12px;color:var(--txt2);display:flex;gap:18px;flex-shrink:0">
+      <span id="ics-stat-total"></span>
+      <span id="ics-stat-new" style="color:var(--green);font-weight:500"></span>
+      <span id="ics-stat-dup" style="color:var(--txt3)"></span>
+    </div>
+    <!-- Event list -->
+    <div style="flex:1;overflow-y:auto;padding:0" id="ics-event-list"></div>
+    <!-- Footer -->
+    <div style="padding:14px 22px;border-top:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;background:#fff">
+      <div style="font-size:11px;color:var(--txt3)">
+        <span id="ics-selected-count">0</span> event(s) selected
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeIcsModal()" class="topbar-btn sec" style="font-size:12px">Cancel</button>
+        <button id="ics-import-btn" onclick="importSelectedIcsEvents()" class="topbar-btn gold" style="font-size:12px;min-width:130px">⬇ Import Selected</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ FIRM SETTINGS ═══════════════ -->
 <script>
 const DEFAULT_MATTER_TYPES=['Civil Litigation','Conveyancing','Family Law','Criminal','Probate & Succession','ADR','Data Protection','Contract Law','Employment','Immigration'];
@@ -8065,6 +8099,217 @@ function refreshAppDropdowns(){
   </div>
   <div class="doc-viewer-body" id="doc-viewer-body"></div>
 </div>
+
+</script>
+
+<script>
+// ══════════════════════════════════════════════
+// ICS IMPORT — parse .ics files and bulk-insert
+// ══════════════════════════════════════════════
+
+let _icsParsed = [];
+let _icsSelected = new Set();
+
+async function handleIcsFileSelect(e){
+  const files = [...e.target.files];
+  e.target.value = '';
+  if(!files.length) return;
+  _icsParsed = [];
+  _icsSelected = new Set();
+
+  for(const file of files){
+    const text = await file.text();
+    const parsed = parseIcs(text);
+    parsed.forEach(ev => _icsParsed.push({...ev, _file: file.name}));
+  }
+
+  if(!_icsParsed.length){ toast('No events found in the selected file(s).', true); return; }
+
+  const existingKeys = new Set(events.map(e => (e.title||'').toLowerCase() + '_' + e.event_date));
+  _icsParsed.forEach((ev, i) => {
+    ev._isDup = existingKeys.has((ev.title||'').toLowerCase() + '_' + ev.event_date);
+    if(!ev._isDup) _icsSelected.add(i);
+  });
+
+  renderIcsModal();
+  document.getElementById('ics-modal-overlay').style.display = 'flex';
+}
+
+function parseIcs(rawText){
+  const evList = [];
+  // Unfold RFC 5545 line continuations (CRLF + whitespace = continuation)
+  const text = rawText
+    .replace(/\r\n[ \t]/g, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n');
+
+  const blocks = text.split(/BEGIN:VEVENT/i).slice(1);
+
+  blocks.forEach(block => {
+    const endIdx = block.indexOf('END:VEVENT');
+    if(endIdx < 0) return;
+    const body = block.slice(0, endIdx);
+
+    function prop(name){
+      const re = new RegExp('^' + name + '(?:;[^:]*)?:(.*)$', 'mi');
+      const m = body.match(re);
+      return m ? m[1].trim() : '';
+    }
+
+    const title   = unescapeIcs(prop('SUMMARY')) || '(No title)';
+    const dtstart = prop('DTSTART');
+    const loc     = unescapeIcs(prop('LOCATION'));
+    const desc    = unescapeIcs(prop('DESCRIPTION'));
+    const uid     = prop('UID');
+
+    const { date, time } = parseIcsDt(dtstart);
+    if(!date) return;
+
+    const tl = title.toLowerCase();
+    let type = 'Other';
+    if(/hearing|court|tribunal/.test(tl))        type = 'Court Hearing';
+    else if(/meeting|consult|conference/.test(tl)) type = 'Client Meeting';
+    else if(/deadline|filing|submission/.test(tl)) type = 'Filing Deadline';
+    else if(/mediation|arbitration|adr/.test(tl))  type = 'ADR Session';
+
+    evList.push({ title, event_date: date, event_time: time||null, type,
+                  location: loc||null, notes: desc||null, _uid: uid });
+  });
+
+  return evList;
+}
+
+function parseIcsDt(dt){
+  if(!dt) return { date: '', time: '' };
+  // DATE-TIME: 20240315T090000Z or 20240315T090000
+  const dtm = dt.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})/);
+  if(dtm) return { date: dtm[1]+'-'+dtm[2]+'-'+dtm[3], time: dtm[4]+':'+dtm[5] };
+  // DATE only: 20240315
+  const dm = dt.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if(dm)  return { date: dm[1]+'-'+dm[2]+'-'+dm[3], time: '' };
+  return { date: '', time: '' };
+}
+
+function unescapeIcs(str){
+  if(!str) return '';
+  return str
+    .replace(/\\n/g, ' ')
+    .replace(/\\,/g, ',')
+    .replace(/\\;/g, ';')
+    .replace(/\\\\/g, '\\')
+    .trim();
+}
+
+function renderIcsModal(){
+  const newCount = _icsParsed.filter(e => !e._isDup).length;
+  const dupCount = _icsParsed.filter(e =>  e._isDup).length;
+
+  const bar = document.getElementById('ics-summary-bar');
+  bar.style.display = 'flex';
+  document.getElementById('ics-stat-total').textContent = _icsParsed.length + ' event' + (_icsParsed.length!==1?'s':'') + ' found';
+  document.getElementById('ics-stat-new').textContent   = newCount + ' new';
+  document.getElementById('ics-stat-dup').textContent   = dupCount ? dupCount + ' already exist' : '';
+  document.getElementById('ics-selected-count').textContent = _icsSelected.size;
+  document.getElementById('ics-modal-subtitle').textContent =
+    _icsParsed.length + ' event' + (_icsParsed.length!==1?'s':'') + ' parsed · select which to import';
+
+  const typeColors = {
+    'Court Hearing':    'background:#FCEBEB;color:#A32D2D',
+    'Client Meeting':   'background:#E6F1FB;color:#185FA5',
+    'Filing Deadline':  'background:#FAEEDA;color:#854F0B',
+    'ADR Session':      'background:#EEEDFE;color:#3C3489',
+    'Other':            'background:var(--cream2);color:var(--txt2)',
+  };
+
+  const multiFile = new Set(_icsParsed.map(e=>e._file)).size > 1;
+  const allNewChecked = newCount > 0 && _icsParsed.filter(e=>!e._isDup).every((e,_,arr)=>_icsSelected.has(_icsParsed.indexOf(e)));
+
+  let html = '<div style="padding:10px 20px;border-bottom:1px solid var(--brd);background:var(--cream);display:flex;align-items:center;gap:10px">'
+    + '<input type="checkbox" id="ics-select-all"' + (allNewChecked?' checked':'') + ' onchange="icsToggleAll(this.checked)" style="width:15px;height:15px;accent-color:var(--navy);cursor:pointer"/>'
+    + '<label for="ics-select-all" style="font-size:11px;color:var(--txt2);cursor:pointer;user-select:none">Select all new events</label>'
+    + '<span style="margin-left:auto;font-size:11px;color:var(--txt3)">Assign matter (optional)</span>'
+    + '</div>';
+
+  _icsParsed.forEach(function(ev, i){
+    const checked = _icsSelected.has(i);
+    const isDup   = ev._isDup;
+    const tc      = typeColors[ev.type] || typeColors['Other'];
+    const timePart = ev.event_time ? ' &middot; ' + ev.event_time : '';
+    const locPart  = ev.location   ? ' &middot; \uD83D\uDCCD ' + esc(ev.location) : '';
+    const fileBadge = multiFile ? '<span style="font-size:9px;background:var(--cream2);padding:1px 5px;border-radius:4px;margin-left:6px">' + esc(ev._file) + '</span>' : '';
+    const dupBadge  = isDup ? '<span style="font-size:9px;background:#FAEEDA;color:#854F0B;padding:1px 6px;border-radius:6px;font-weight:600">Already exists</span>' : '';
+
+    const matterOpts = matters.map(function(m){
+      const label = ((m.file_number ? m.file_number + ' \u00b7 ' : '') + m.title).slice(0,32);
+      return '<option value="' + m.id + '"' + (ev._matterId===m.id?' selected':'') + '>' + esc(label) + '</option>';
+    }).join('');
+
+    html += '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 20px;border-bottom:1px solid var(--brd);background:' + (isDup?'var(--cream)':'#fff') + ';opacity:' + (isDup?'0.6':'1') + '">'
+      + '<input type="checkbox"' + (checked?' checked':'') + (isDup?' disabled title="Already exists"':'') + ' onchange="icsToggleOne(' + i + ',this.checked)" style="width:15px;height:15px;margin-top:2px;accent-color:var(--navy);cursor:' + (isDup?'not-allowed':'pointer') + ';flex-shrink:0"/>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">'
+      +     '<span style="font-size:13px;font-weight:500;color:var(--txt)">' + esc(ev.title) + '</span>' + fileBadge + dupBadge
+      +   '</div>'
+      +   '<div style="font-size:11px;color:var(--txt3);display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      +     '<span style="font-size:9px;padding:2px 7px;border-radius:8px;font-weight:500;' + tc + '">' + esc(ev.type) + '</span>'
+      +     '<span>\uD83D\uDCC5 ' + ev.event_date + timePart + '</span>'
+      +     (ev.location ? '<span>' + locPart + '</span>' : '')
+      +   '</div>'
+      +   (ev.notes ? '<div style="font-size:11px;color:var(--txt3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\uD83D\uDCDD ' + esc((ev.notes||'').slice(0,120)) + (ev.notes.length>120?'\u2026':'') + '</div>' : '')
+      + '</div>'
+      + '<select onchange="icsSetMatter(' + i + ',this.value)"'
+      +   ' style="font-size:11px;border:1px solid var(--brd);border-radius:6px;padding:4px 7px;color:var(--txt);font-family:\'DM Sans\',sans-serif;background:#fff;flex-shrink:0;max-width:160px"'
+      +   (isDup?' disabled':'') + '>'
+      +   '<option value="">No matter</option>' + matterOpts
+      + '</select>'
+      + '</div>';
+  });
+
+  document.getElementById('ics-event-list').innerHTML = html;
+}
+
+function icsToggleAll(checked){
+  _icsParsed.forEach(function(ev, i){ if(!ev._isDup){ if(checked) _icsSelected.add(i); else _icsSelected.delete(i); }});
+  renderIcsModal();
+}
+
+function icsToggleOne(i, checked){
+  if(checked) _icsSelected.add(i); else _icsSelected.delete(i);
+  document.getElementById('ics-selected-count').textContent = _icsSelected.size;
+}
+
+function icsSetMatter(i, matterId){
+  _icsParsed[i]._matterId = matterId || null;
+}
+
+async function importSelectedIcsEvents(){
+  if(!_icsSelected.size){ toast('No events selected.', true); return; }
+  const btn = document.getElementById('ics-import-btn');
+  btn.disabled = true; btn.textContent = 'Importing\u2026';
+
+  const toInsert = [..._icsSelected].map(function(i){
+    const ev = _icsParsed[i];
+    return { title: ev.title, event_date: ev.event_date, event_time: ev.event_time||null,
+             type: ev.type, location: ev.location||null, notes: ev.notes||null, matter_id: ev._matterId||null };
+  });
+
+  const { data, error } = await sb.from('events').insert(toInsert).select();
+  btn.disabled = false; btn.innerHTML = '\u2B07 Import Selected';
+
+  if(error){ toast('Import failed: ' + error.message, true); return; }
+
+  events = [...events, ...(data||[])].sort(function(a,b){ return new Date(a.event_date)-new Date(b.event_date); });
+  closeIcsModal();
+  renderCalendar(); renderDashboard(); updateBadges();
+  toast('\u2713 ' + (data||[]).length + ' event' + ((data||[]).length!==1?'s':'') + ' imported successfully!');
+}
+
+function closeIcsModal(){
+  document.getElementById('ics-modal-overlay').style.display = 'none';
+  _icsParsed = []; _icsSelected = new Set();
+}
+
+</script>
 
 </body>
 </html>
