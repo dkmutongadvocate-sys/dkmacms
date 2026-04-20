@@ -1446,8 +1446,16 @@ setTimeout(function() {
     <div class="modal-head"><span class="modal-title">Add Calendar Event</span><button class="modal-close" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <div class="form-row"><label>Event Title</label><input id="ev-title" placeholder="e.g. Hearing — Kamau v. Wanjiku"/></div>
-      <div class="form-two">
-        <div class="form-row"><label>Date</label><input type="date" id="ev-date" onchange="checkDateAvailability(this.value)"/><div id="ev-date-check" style="margin-top:6px;display:none"></div></div>
+      <div class="form-three" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="form-row">
+          <label>Start Date</label>
+          <input type="date" id="ev-date" onchange="onEvDateChange()"/>
+          <div id="ev-date-check" style="margin-top:6px;display:none"></div>
+        </div>
+        <div class="form-row">
+          <label>End Date <span style="font-size:10px;color:var(--txt3);font-weight:400">(optional)</span></label>
+          <input type="date" id="ev-end-date" onchange="onEvEndDateChange()"/>
+        </div>
         <div class="form-row"><label>Time</label><input type="time" id="ev-time"/></div>
       </div>
       <div class="form-two">
@@ -3775,8 +3783,25 @@ function renderCalendar(){
   const today=new Date();
 
   // Build event map keyed by day-of-month
+  // Multi-day events (event_end_date set) appear on every day in their range
   const me={};
-  events.forEach(e=>{const d=parseDateLocal(e.event_date);if(d.getFullYear()===calYear&&d.getMonth()===calMonth){const day=d.getDate();if(!me[day])me[day]=[];me[day].push(e);}});
+  const monthStart=new Date(calYear,calMonth,1);
+  const monthEnd=new Date(calYear,calMonth+1,0);
+  events.forEach(e=>{
+    const start=parseDateLocal(e.event_date);
+    const end=e.event_end_date?parseDateLocal(e.event_end_date):start;
+    // Clamp to this month for iteration
+    const iterStart=start<monthStart?monthStart:start;
+    const iterEnd=end>monthEnd?monthEnd:end;
+    for(let cur=new Date(iterStart);cur<=iterEnd;cur.setDate(cur.getDate()+1)){
+      if(cur.getFullYear()===calYear&&cur.getMonth()===calMonth){
+        const day=cur.getDate();
+        if(!me[day])me[day]=[];
+        // Avoid duplicate if event already added (single-day events)
+        if(!me[day].find(x=>x.id===e.id))me[day].push(e);
+      }
+    }
+  });
 
   // Build holiday map for this month — static + gazetted DB holidays merged
   const allHolidays=getKenyanHolidays(calYear);
@@ -3833,7 +3858,14 @@ function renderCalendar(){
   }
 
   // Sidebar events list — firm events this month
-  const meList=events.filter(e=>{const d=parseDateLocal(e.event_date);return d.getFullYear()===calYear&&d.getMonth()===calMonth;});
+  // Include events that start this month OR span into this month
+  const _mS=new Date(calYear,calMonth,1);
+  const _mE=new Date(calYear,calMonth+1,0);
+  const meList=events.filter(e=>{
+    const s=parseDateLocal(e.event_date);
+    const en=e.event_end_date?parseDateLocal(e.event_end_date):s;
+    return s<=_mE&&en>=_mS;
+  });
   meList.sort((a,b)=>{const da=parseDateLocal(a.event_date)-parseDateLocal(b.event_date);if(da!==0)return da;return(a.event_time||'').localeCompare(b.event_time||'');});
 
   // Holidays this month for the sidebar
@@ -3888,7 +3920,29 @@ function renderCalendar(){
   // Firm events section
   if(meList.length){
     if(holidaysThisMonth.length) html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd);border-top:1px solid var(--brd);margin-top:4px">Firm Events</div>`;
-    html+=meList.map(e=>{const d=parseDateLocal(e.event_date);const addedBy=e.created_by_name?`<span style="font-size:9px;color:var(--txt3);margin-top:2px;display:block">Added by ${esc(e.created_by_name)}</span>`:'';return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventDetail('${e.id}')"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}</div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}</div></div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}</div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div>${addedBy}<span class="upcoming-tag ${tc['court']==='tag-court'?tc[e.type]||'tag-internal':tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span>${gcalAddBtnHtml(e.id)}</div><button class="op-del" title="Delete event" onclick="event.stopPropagation();deleteEvent('${e.id}','${esc(e.title)}',event)">×</button></div>`;}).join('');
+    html+=meList.map(e=>{
+  const d=parseDateLocal(e.event_date);
+  const addedBy=e.created_by_name?`<span style="font-size:9px;color:var(--txt3);margin-top:2px;display:block">Added by ${esc(e.created_by_name)}</span>`:'';
+  const isMultiDay=!!e.event_end_date&&e.event_end_date>e.event_date;
+  const dateLabel=isMultiDay
+    ?`${d.getDate()} ${d.toLocaleString('en',{month:'short'})} – ${parseDateLocal(e.event_end_date).getDate()} ${parseDateLocal(e.event_end_date).toLocaleString('en',{month:'short'})}`
+    :`${d.getDate()}`;
+  const monthLabel=isMultiDay?'':d.toLocaleString('en',{month:'short'});
+  const spanBadge=isMultiDay?`<span style="font-size:9px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px">Multi-day</span>`:'';
+  return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventDetail('${e.id}')">
+    <div class="upcoming-date" style="${isMultiDay?'width:auto;min-width:40px;padding-right:4px':''}">
+      ${isMultiDay
+        ?`<div style="font-size:11px;font-weight:500;color:var(--navy);white-space:nowrap">${dateLabel}</div>`
+        :`<div class="upcoming-day">${dateLabel}</div><div class="upcoming-month">${monthLabel}</div>`}
+    </div>
+    <div class="upcoming-body" style="flex:1">
+      <div class="upcoming-title">${esc(e.title)}${spanBadge}</div>
+      <div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}</div>
+      ${addedBy}
+      <span class="upcoming-tag ${tc['court']==='tag-court'?tc[e.type]||'tag-internal':tc[e.type]||'tag-internal'}">${statusLabel(e.type)}</span>${gcalAddBtnHtml(e.id)}
+    </div>
+    <button class="op-del" title="Delete event" onclick="event.stopPropagation();deleteEvent('${e.id}','${esc(e.title)}',event)">×</button>
+  </div>`;}).join('');
   }
   if(!html) html=emptyState('No events or holidays this month.');
   listEl.innerHTML=html;
@@ -4958,8 +5012,10 @@ async function saveEvent(){
   const date=document.getElementById('ev-date').value;
   if(!title||!date){toast('Please enter event title and date.',true);return null;}
   setLoading('save-event-btn',true,'Save Event');
+  const endDate=document.getElementById('ev-end-date')?.value||null;
   const payload={
-    title,event_date:date,event_time:document.getElementById('ev-time').value||null,
+    title,event_date:date,event_end_date:endDate&&endDate>date?endDate:null,
+    event_time:document.getElementById('ev-time').value||null,
     type:document.getElementById('ev-type').value,
     matter_id:document.getElementById('ev-matter').value||null,
     location:document.getElementById('ev-location').value.trim()||null,
@@ -7441,6 +7497,8 @@ function openEventDetail(eventId){
     const ml=document.getElementById('ev-meeting-link');
     if(t)t.value=ev.title||'';
     if(d){d.value=ev.event_date||'';if(ev.event_date)checkDateAvailability(ev.event_date);}
+    const ed=document.getElementById('ev-end-date');
+    if(ed)ed.value=ev.event_end_date||'';
     if(tm)tm.value=ev.event_time||'';
     if(ty)ty.value=ev.type||'court';
     if(m)m.value=ev.matter_id||'';
@@ -7466,9 +7524,11 @@ function openEventDetail(eventId){
       if(title)title.textContent='Edit Event';
       btn.textContent='Update Event';
       btn.onclick=async()=>{
+        const _updEnd=document.getElementById('ev-end-date')?.value||null;
         const payload={
           title:document.getElementById('ev-title').value.trim(),
           event_date:document.getElementById('ev-date').value,
+          event_end_date:_updEnd&&_updEnd>document.getElementById('ev-date').value?_updEnd:null,
           event_time:document.getElementById('ev-time').value||null,
           type:document.getElementById('ev-type').value,
           matter_id:document.getElementById('ev-matter').value||null,
@@ -8345,61 +8405,98 @@ function closeIcsModal(){
 //   4. Existing firm events on that day
 // ══════════════════════════════════════════════
 
-function checkDateAvailability(dateStr){
+function onEvDateChange(){
+  const startVal=document.getElementById('ev-date')?.value;
+  const endEl=document.getElementById('ev-end-date');
+  // Ensure end date >= start date
+  if(endEl&&startVal){if(endEl.value&&endEl.value<startVal)endEl.value=startVal;endEl.min=startVal;}
+  checkDateAvailability(startVal);
+}
+
+function onEvEndDateChange(){
+  const startVal=document.getElementById('ev-date')?.value||'';
+  const endVal=document.getElementById('ev-end-date')?.value||'';
+  if(endVal&&startVal&&endVal<startVal){
+    document.getElementById('ev-end-date').value=startVal;
+    toast('End date cannot be before start date.',true);
+    return;
+  }
+  checkDateAvailability(startVal,endVal);
+}
+
+function checkDateAvailability(dateStr,endDateStr){
   const panel = document.getElementById('ev-date-check');
   if(!panel) return;
   if(!dateStr){ panel.style.display='none'; return; }
+  endDateStr=endDateStr||document.getElementById('ev-end-date')?.value||'';
+
+  // Build list of all dates in the range to check
+  const datesToCheck=[];
+  const start=parseDateLocal(dateStr);
+  const end=endDateStr&&endDateStr>dateStr?parseDateLocal(endDateStr):start;
+  for(let cur=new Date(start);cur<=end;cur.setDate(cur.getDate()+1)){
+    const y=cur.getFullYear(),m=String(cur.getMonth()+1).padStart(2,'0'),d=String(cur.getDate()).padStart(2,'0');
+    datesToCheck.push(y+'-'+m+'-'+d);
+  }
 
   const date = parseDateLocal(dateStr);
   const dow  = date.getDay(); // 0=Sun, 6=Sat
   const issues   = []; // blockers — red
   const warnings = []; // soft warnings — amber
   const info     = []; // informational — blue
+  const seenEvents = new Set(); // dedupe multi-day event clashes
 
-  // ── 1. Weekend ──
-  if(dow === 0) issues.push({ icon:'📅', text:'Sunday — courts and most offices are closed.' });
-  if(dow === 6) issues.push({ icon:'📅', text:'Saturday — courts are closed; consider if this is intentional.' });
+  // Check every date in the range
+  datesToCheck.forEach(function(ds){
+    const dt=parseDateLocal(ds);
+    const dw=dt.getDay();
+    const yr=dt.getFullYear();
+    const dayLabel=datesToCheck.length>1?' ('+ds+')':'';
 
-  // ── 2. Kenyan public holidays ──
-  const year = date.getFullYear();
-  const staticHols = getKenyanHolidays(year);
-  const matchedStatic = staticHols.filter(h => h.date === dateStr);
-  matchedStatic.forEach(h => {
-    const label = h.estimated ? h.name + ' (estimated — subject to moon sighting)' : h.name;
-    issues.push({ icon: h.islamic ? '☪️' : '🇰🇪', text: label + ' — public holiday.' });
-  });
+    // ── 1. Weekend ──
+    if(dw===0) issues.push({icon:'📅',text:'Sunday'+dayLabel+' — courts and most offices are closed.'});
+    if(dw===6) issues.push({icon:'📅',text:'Saturday'+dayLabel+' — courts are closed; consider if this is intentional.'});
 
-  // ── 3. Gazetted / ad-hoc holidays ──
-  const matchedGaz = (gazettedHolidays||[]).filter(h => h.date === dateStr);
-  matchedGaz.forEach(h => {
-    const typeLabels = { gazetted:'Gazetted Holiday', election:'Election Day', mourning:'National Mourning', proclamation:'Presidential Proclamation', other:'Ad-hoc Holiday' };
-    issues.push({ icon:'📋', text: h.name + ' — ' + (typeLabels[h.type]||'Holiday') + '.' });
-  });
+    // ── 2. Kenyan public holidays ──
+    const staticHols=getKenyanHolidays(yr);
+    staticHols.filter(h=>h.date===ds).forEach(function(h){
+      const label=(h.estimated?h.name+' (estimated — subject to moon sighting)':h.name)+dayLabel;
+      issues.push({icon:h.islamic?'☪️':'🇰🇪',text:label+' — public holiday.'});
+    });
 
-  // ── 4. Existing events on this day ──
-  const sameDay = (events||[]).filter(e => e.event_date === dateStr);
-  if(sameDay.length){
-    const eventType = document.getElementById('ev-type')?.value || '';
-    sameDay.forEach(e => {
-      const timeStr = e.event_time ? ' at ' + e.event_time : '';
-      const matterObj = (matters||[]).find(m => m.id === e.matter_id);
-      const matterStr = matterObj ? ' (' + matterObj.title + ')' : '';
-      const msg = '"' + e.title + '"' + timeStr + matterStr;
-      // Court events on same day as another court event = stronger warning
-      if(eventType === 'court' && e.type === 'court'){
-        warnings.push({ icon:'⚠️', text:'Court clash: ' + msg + ' is already scheduled.' });
-      } else {
-        info.push({ icon:'📌', text:'Existing event: ' + msg + '.' });
+    // ── 3. Gazetted / ad-hoc holidays ──
+    (gazettedHolidays||[]).filter(h=>h.date===ds).forEach(function(h){
+      const typeLabels={gazetted:'Gazetted Holiday',election:'Election Day',mourning:'National Mourning',proclamation:'Presidential Proclamation',other:'Ad-hoc Holiday'};
+      issues.push({icon:'📋',text:h.name+dayLabel+' — '+(typeLabels[h.type]||'Holiday')+'.'});
+    });
+
+    // ── 4. Existing events on this day ──
+    const eventType=document.getElementById('ev-type')?.value||'';
+    (events||[]).forEach(function(e){
+      if(seenEvents.has(e.id))return;
+      const eStart=e.event_date,eEnd=e.event_end_date||e.event_date;
+      if(ds>=eStart&&ds<=eEnd){
+        seenEvents.add(e.id);
+        const timeStr=e.event_time?' at '+e.event_time:'';
+        const matterObj=(matters||[]).find(m=>m.id===e.matter_id);
+        const matterStr=matterObj?' ('+matterObj.title+')':'';
+        const msg='"'+e.title+'"'+timeStr+matterStr;
+        if(eventType==='court'&&e.type==='court'){
+          warnings.push({icon:'⚠️',text:'Court clash: '+msg+' is already scheduled.'});
+        } else {
+          info.push({icon:'📌',text:'Existing event: '+msg+'.'});
+        }
       }
     });
-  }
+  });
 
   // ── Render the panel ──
+  const rangeLabel=datesToCheck.length>1?' across this '+datesToCheck.length+'-day range':'';
   if(!issues.length && !warnings.length && !info.length){
     panel.style.display = 'block';
     panel.innerHTML = '<div style="display:flex;align-items:center;gap:7px;padding:8px 11px;background:#EAF3DE;border-radius:7px;border:1px solid #c3ddb4">'
       + '<span style="font-size:14px">✅</span>'
-      + '<span style="font-size:12px;color:#2D6A4F;font-weight:500">Date looks clear — no conflicts found.</span>'
+      + '<span style="font-size:12px;color:#2D6A4F;font-weight:500">Date looks clear — no conflicts found'+rangeLabel+'.</span>'
       + '</div>';
     return;
   }
