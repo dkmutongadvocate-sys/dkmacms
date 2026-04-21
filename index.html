@@ -1412,301 +1412,420 @@ setTimeout(function() {
 
     <!-- ════ FEE CALCULATOR VIEW ════ -->
     <div class="view" id="view-fee-calc">
-      <div class="fee-hero-cms">
-        <div>
-          <div class="fee-hero-cms-title">⚖ Advocates Fee Calculator</div>
-          <div class="fee-hero-cms-sub">Advocates (Remuneration) Order — Laws of Kenya (L.N. 64/1962, as amended L.N. 35/2014 &amp; L.N. 45/2014)</div>
-        </div>
-        <button class="topbar-btn gold" onclick="showAROTool()" style="font-size:11px;padding:6px 14px;white-space:nowrap">⚙ Update ARO Rates</button>
+      <div class="fee-hero" style="padding:12px 14px;background:linear-gradient(135deg,var(--navy) 0%,#1a2d42 100%);border-radius:10px;color:#fff;margin-bottom:18px">
+        <div class="fee-hero-title" style="font-size:15px;font-weight:700;margin-bottom:3px;color:#fff">⚖ Advocates Fee Calculator</div>
+        <div class="fee-hero-sub" style="font-size:11px;opacity:.75">Advocates (Remuneration) Order — L.N. 64/1962, as amended L.N. 35/2014 &amp; L.N. 45/2014. All fees are minimum scale fees exclusive of VAT (16%) and disbursements.</div>
       </div>
-      <div class="fee-disclaimer-cms"><strong>Note:</strong> These are minimum prescribed fees. An advocate may charge more by written agreement with the client but <em>not less</em> than the scale fee. All amounts are exclusive of VAT (16%) and disbursements (stamp duty, court fees, searches). Figures are drawn from the current ARO schedule — use the "Update ARO Rates" tool if the Order is amended.</div>
-      <div class="fee-grid-cms">
 
-        <!-- SCHEDULE 1 — SALE/PURCHASE -->
-        <div class="fee-card-cms">
-          <div class="fee-card-hd-cms">
-            <div class="fee-card-icon-cms" style="background:#2D6A4F"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-            <div><div class="fee-card-title-cms">Sale / Purchase of Land</div><div class="fee-card-sub-cms">Schedule 1 — Land Act 2012</div></div>
+      <!-- COMPACT CALCULATOR PANEL -->
+      <div class="fee-card" style="max-width:560px;background:#fff;border-radius:10px;border:0.5px solid var(--brd);overflow:hidden">
+        <div class="fee-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:9px">
+
+          <!-- Category selector -->
+          <div class="fee-row" style="display:flex;flex-direction:column;gap:3px">
+            <div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Category</div>
+            <select class="fee-sel" id="fc-cat" onchange="feeShowPanel()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+              <optgroup label="─ Conveyancing &amp; Property ─">
+                <option value="sale">Sale / Purchase of Land (Sch. 1)</option>
+                <option value="lease">Lease / Tenancy Agreement (Sch. 2)</option>
+                <option value="mortgage">Mortgage / Charge Creation (Sch. 1 — 2nd scale)</option>
+              </optgroup>
+              <optgroup label="─ Litigation ─">
+                <option value="hc">High Court Litigation (Sch. 6)</option>
+                <option value="mc">Magistrates Court Litigation (Sch. 7)</option>
+                <option value="elrc">ELRC / ELC Litigation (Sch. 6 basis)</option>
+              </optgroup>
+              <optgroup label="─ Family &amp; Succession ─">
+                <option value="divorce">Divorce / Judicial Separation (Marriage Act 2014)</option>
+                <option value="custody">Child Custody / Maintenance (Children Act 2022)</option>
+                <option value="matrimonial">Matrimonial Property Division (MPA 2013)</option>
+                <option value="probate">Probate &amp; Administration of Estate (Sch. 10)</option>
+                <option value="succession_dispute">Contested Succession / Family Division HC</option>
+              </optgroup>
+              <optgroup label="─ Commercial ─">
+                <option value="debt">Non-Contentious Debt Collection (Sch. 5)</option>
+                <option value="company">Company &amp; Business Registration (Sch. 3)</option>
+                <option value="trademark">Trademark / IP (Sch. 4)</option>
+                <option value="arbitration">Arbitration (Arbitration Act, Cap. 49)</option>
+              </optgroup>
+              <optgroup label="─ Criminal ─">
+                <option value="criminal_hc">Criminal — High Court / Sessions</option>
+                <option value="criminal_mc">Criminal — Magistrates Court</option>
+              </optgroup>
+              <optgroup label="─ Miscellaneous Applications ─">
+                <option value="misc_app">Miscellaneous Application / Chamber Summons</option>
+                <option value="injunction">Injunction / Conservatory Order</option>
+                <option value="judicial_review">Judicial Review / Constitutional Petition</option>
+                <option value="stamping">Stamping of Documents (Stamp Duty Act)</option>
+              </optgroup>
+            </select>
           </div>
-          <div class="fee-body-cms">
-            <div class="fee-row-cms"><div class="fee-label-cms">Consideration / Value (KES)</div><input class="fee-input-cms" id="cms-s1-val" type="number" placeholder="e.g. 10,000,000" oninput="cmsCalcS1()"/></div>
-            <div class="fee-row-cms"><div class="fee-label-cms">Acting for</div>
-              <select class="fee-sel-cms" id="cms-s1-role" onchange="cmsCalcS1()">
-                <option value="both">Both vendor &amp; purchaser</option>
-                <option value="vendor">Vendor only</option>
-                <option value="purchaser">Purchaser only</option>
-              </select></div>
-            <div class="fee-row-cms"><div class="fee-label-cms">Agreement for sale prepared?</div>
-              <select class="fee-sel-cms" id="cms-s1-agr" onchange="cmsCalcS1()">
-                <option value="yes">Yes — full scale fee</option>
-                <option value="no">No — vendor fee reduced by 1/3</option>
-              </select></div>
-            <div class="fee-result-cms" id="cms-s1-result">
-              <div class="fee-result-label-cms">Minimum Scale Fee</div>
-              <div class="fee-result-main-cms" id="cms-s1-main"></div>
-              <div class="fee-result-bd-cms" id="cms-s1-bd"></div>
-              <div class="fee-note-cms">Excl. VAT (16%), stamp duty (4% residential / 2% commercial), Land Registry and search fees.</div>
+
+          <!-- SALE / PURCHASE -->
+          <div id="fp-sale" class="fee-panel" style="display:flex;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Consideration / Value (KES)</div><input class="fee-input" id="s1-val" type="number" placeholder="e.g. 10,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Acting for</div>
+                <select class="fee-sel" id="s1-role" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                  <option value="both">Both parties</option>
+                  <option value="vendor">Vendor only</option>
+                  <option value="purchaser">Purchaser only</option>
+                </select>
+              </div>
+              <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Agreement for sale?</div>
+                <select class="fee-sel" id="s1-agr" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                  <option value="yes">Yes (full fee)</option>
+                  <option value="no">No (vendor −1/3)</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- SCHEDULE 2 — LEASE -->
-        <div class="fee-card-cms">
-          <div class="fee-card-hd-cms">
-            <div class="fee-card-icon-cms" style="background:#185FA5"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
-            <div><div class="fee-card-title-cms">Lease / Tenancy Agreement</div><div class="fee-card-sub-cms">Schedule 2 — Landlord &amp; Tenant Acts</div></div>
-          </div>
-          <div class="fee-body-cms">
-            <div class="fee-row-cms"><div class="fee-label-cms">Annual Rent (KES)</div><input class="fee-input-cms" id="cms-s2-rent" type="number" placeholder="e.g. 1,200,000" oninput="cmsCalcS2()"/></div>
-            <div class="fee-row-cms"><div class="fee-label-cms">Role</div>
-              <select class="fee-sel-cms" id="cms-s2-role" onchange="cmsCalcS2()">
+          <!-- LEASE -->
+          <div id="fp-lease" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Annual Rent (KES)</div><input class="fee-input" id="s2-rent" type="number" placeholder="e.g. 1,200,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Role</div>
+              <select class="fee-sel" id="s2-role" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="lessor">Lessor's advocate (preparing)</option>
-                <option value="lessee">Lessee's advocate (perusing)</option>
-              </select></div>
-            <div class="fee-result-cms" id="cms-s2-result">
-              <div class="fee-result-label-cms">Minimum Scale Fee</div>
-              <div class="fee-result-main-cms" id="cms-s2-main"></div>
-              <div class="fee-result-bd-cms" id="cms-s2-bd"></div>
-              <div class="fee-note-cms">Lessee's advocate is entitled to 50% of lessor's fee. Stamp duty &amp; registration fees billed separately.</div>
+                <option value="lessee">Lessee's advocate (perusing — 50%)</option>
+              </select>
             </div>
           </div>
-        </div>
 
-        <!-- MORTGAGE / CHARGE -->
-        <div class="fee-card-cms">
-          <div class="fee-card-hd-cms">
-            <div class="fee-card-icon-cms" style="background:#993C1D"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
-            <div><div class="fee-card-title-cms">Mortgage / Charge</div><div class="fee-card-sub-cms">Schedule 1 (2nd Scale)</div></div>
-          </div>
-          <div class="fee-body-cms">
-            <div class="fee-row-cms"><div class="fee-label-cms">Secured Amount (KES)</div><input class="fee-input-cms" id="cms-s1b-val" type="number" placeholder="e.g. 15,000,000" oninput="cmsCalcS1b()"/></div>
-            <div class="fee-row-cms"><div class="fee-label-cms">Role</div>
-              <select class="fee-sel-cms" id="cms-s1b-role" onchange="cmsCalcS1b()">
-                <option value="grantee">Grantee's advocate (lender) — full scale</option>
-                <option value="grantor">Grantor's advocate (borrower) — 50%</option>
-                <option value="both">Both grantee &amp; grantor</option>
-              </select></div>
-            <div class="fee-result-cms" id="cms-s1b-result">
-              <div class="fee-result-label-cms">Minimum Scale Fee</div>
-              <div class="fee-result-main-cms" id="cms-s1b-main"></div>
-              <div class="fee-result-bd-cms" id="cms-s1b-bd"></div>
-              <div class="fee-note-cms">Grantor typically pays both sets of fees (para 9, Sch. 1). VAT 16% applies.</div>
+          <!-- MORTGAGE -->
+          <div id="fp-mortgage" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Secured Amount (KES)</div><input class="fee-input" id="s1b-val" type="number" placeholder="e.g. 15,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Role</div>
+              <select class="fee-sel" id="s1b-role" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="grantee">Lender's advocate (full scale)</option>
+                <option value="grantor">Borrower's advocate (50%)</option>
+                <option value="both">Both parties</option>
+              </select>
             </div>
           </div>
-        </div>
 
-        <!-- HIGH COURT -->
-        <div class="fee-card-cms">
-          <div class="fee-card-hd-cms">
-            <div class="fee-card-icon-cms" style="background:#534AB7"><svg viewBox="0 0 24 24"><path d="M18 3a3 3 0 00-3 3v12a3 3 0 003 3 3 3 0 003-3 3 3 0 00-3-3H6a3 3 0 00-3 3 3 3 0 003 3 3 3 0 003-3V6a3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3h12a3 3 0 003-3 3 3 0 00-3-3z"/></svg></div>
-            <div><div class="fee-card-title-cms">High Court Litigation</div><div class="fee-card-sub-cms">Schedule 6 — Civil Procedure Act</div></div>
-          </div>
-          <div class="fee-body-cms">
-            <div class="fee-row-cms"><div class="fee-label-cms">Value of Claim (KES)</div><input class="fee-input-cms" id="cms-s6-val" type="number" placeholder="e.g. 2,000,000" oninput="cmsCalcS6()"/></div>
-            <div class="fee-row-cms"><div class="fee-label-cms">Proceeding type</div>
-              <select class="fee-sel-cms" id="cms-s6-type" onchange="cmsCalcS6()">
-                <option value="undefended">Undefended / no appearance (65% of 1b)</option>
-                <option value="summary">Summary determination (75% of 1b)</option>
-                <option value="settled_pre">Settled before 1st hearing (85% of 1b)</option>
-                <option value="uncontested">Contested — no defence (scale 1a)</option>
-                <option value="contested">Fully contested — defence filed (scale 1b)</option>
-              </select></div>
-            <div class="fee-row-cms"><div class="fee-label-cms">Costs basis</div>
-              <select class="fee-sel-cms" id="cms-s6-basis" onchange="cmsCalcS6()">
-                <option value="pp">Party &amp; party (standard)</option>
-                <option value="ac">Advocate &amp; client (+50%)</option>
-              </select></div>
-            <div class="fee-result-cms" id="cms-s6-result">
-              <div class="fee-result-label-cms">Minimum Instruction Fee</div>
-              <div class="fee-result-main-cms" id="cms-s6-main"></div>
-              <div class="fee-result-bd-cms" id="cms-s6-bd"></div>
-              <div class="fee-note-cms">Instruction fee only. Additional: drawing (KES 250/folio), perusing (KES 70/folio), attendances (KES 1,000/15 min), letters (KES 300). Senior counsel +50%.</div>
+          <!-- HIGH COURT -->
+          <div id="fp-hc" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Value of Claim (KES)</div><input class="fee-input" id="s6-val" type="number" placeholder="e.g. 2,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Proceeding type</div>
+                <select class="fee-sel" id="s6-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                  <option value="contested">Fully contested (scale 1b)</option>
+                  <option value="uncontested">Uncontested / no defence (scale 1a)</option>
+                  <option value="settled_pre">Settled before 1st hearing (85% 1b)</option>
+                  <option value="summary">Summary determination (75% 1b)</option>
+                  <option value="undefended">Undefended / no appearance (65% 1b)</option>
+                </select>
+              </div>
+              <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Costs basis</div>
+                <select class="fee-sel" id="s6-basis" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                  <option value="pp">Party &amp; party</option>
+                  <option value="ac">Advocate &amp; client (+50%)</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- MAGISTRATES COURT -->
-        <div class="fee-card-cms">
-          <div class="fee-card-hd-cms">
-            <div class="fee-card-icon-cms" style="background:#5F5E5A"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-            <div><div class="fee-card-title-cms">Magistrates Court</div><div class="fee-card-sub-cms">Schedule 7 — Lower and Higher Scale</div></div>
-          </div>
-          <div class="fee-body-cms">
-            <div class="fee-row-cms"><div class="fee-label-cms">Value of Claim (KES)</div><input class="fee-input-cms" id="cms-s7-val" type="number" placeholder="e.g. 500,000" oninput="cmsCalcS7()"/></div>
-            <div class="fee-row-cms"><div class="fee-label-cms">Scale</div>
-              <select class="fee-sel-cms" id="cms-s7-scale" onchange="cmsCalcS7()">
+          <!-- MAGISTRATES COURT -->
+          <div id="fp-mc" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Value of Claim (KES)</div><input class="fee-input" id="s7-val" type="number" placeholder="e.g. 500,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Scale</div>
+              <select class="fee-sel" id="s7-scale" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="lower">Lower scale (standard)</option>
                 <option value="higher">Higher scale (complex / opposed)</option>
-              </select></div>
-            <div class="fee-result-cms" id="cms-s7-result">
-              <div class="fee-result-label-cms">Minimum Instruction Fee</div>
-              <div class="fee-result-main-cms" id="cms-s7-main"></div>
-              <div class="fee-result-bd-cms" id="cms-s7-bd"></div>
-              <div class="fee-note-cms">For claims over KES 2,000,000: fee at 2M + 25% of excess.</div>
+              </select>
             </div>
           </div>
-        </div>
 
-        <!-- PROBATE & ESTATE -->
-        <div class="fee-card-cms">
-          <div class="fee-card-hd-cms">
-            <div class="fee-card-icon-cms" style="background:#993556"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
-            <div><div class="fee-card-title-cms">Probate &amp; Administration</div><div class="fee-card-sub-cms">Schedule 10 — Law of Succession Act</div></div>
+          <!-- ELRC / ELC -->
+          <div id="fp-elrc" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Value of Claim / Salary Claimed (KES)</div><input class="fee-input" id="selrc-val" type="number" placeholder="e.g. 1,200,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Court</div>
+              <select class="fee-sel" id="selrc-court" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="elrc">Employment &amp; Labour Relations Court (ELRC)</option>
+                <option value="elc">Environment &amp; Land Court (ELC)</option>
+              </select>
+            </div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Proceeding type</div>
+              <select class="fee-sel" id="selrc-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="contested">Fully contested</option>
+                <option value="uncontested">Uncontested</option>
+                <option value="settled_pre">Settled before 1st hearing</option>
+              </select>
+            </div>
           </div>
-          <div class="fee-body-cms">
-            <div class="fee-row-cms"><div class="fee-label-cms">Gross Estate Value (KES)</div><input class="fee-input-cms" id="cms-s10-val" type="number" placeholder="e.g. 5,000,000" oninput="cmsCalcS10()"/></div>
-            <div class="fee-row-cms"><div class="fee-label-cms">Matter type</div>
-              <select class="fee-sel-cms" id="cms-s10-type" onchange="cmsCalcS10()">
+
+          <!-- DIVORCE -->
+          <div id="fp-divorce" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Type of matter</div>
+              <select class="fee-sel" id="sdiv-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="uncontested">Uncontested divorce (consent)</option>
+                <option value="contested">Contested divorce</option>
+                <option value="judicial_sep">Judicial separation</option>
+                <option value="nullity">Nullity of marriage</option>
+              </select>
+            </div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Property / estate involved? (KES)</div><input class="fee-input" id="sdiv-val" type="number" placeholder="0 if none" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+          </div>
+
+          <!-- CUSTODY -->
+          <div id="fp-custody" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Application type</div>
+              <select class="fee-sel" id="scust-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="custody_consent">Custody / care &amp; control (consent)</option>
+                <option value="custody_contested">Custody (contested)</option>
+                <option value="maintenance">Maintenance / child support order</option>
+                <option value="adoption">Adoption (Children Act 2022)</option>
+                <option value="guardianship">Guardianship order</option>
+                <option value="variation">Variation of existing order</option>
+              </select>
+            </div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Monthly maintenance / value involved (KES)</div><input class="fee-input" id="scust-val" type="number" placeholder="e.g. 50,000/month" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+          </div>
+
+          <!-- MATRIMONIAL -->
+          <div id="fp-matrimonial" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Net matrimonial property value (KES)</div><input class="fee-input" id="smat-val" type="number" placeholder="e.g. 8,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Matter type</div>
+              <select class="fee-sel" id="smat-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="consent">Consent / settlement (out of court)</option>
+                <option value="contested">Contested division (High Court)</option>
+                <option value="antenuptial">Antenuptial contract (drafting)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- PROBATE -->
+          <div id="fp-probate" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Gross Estate Value (KES)</div><input class="fee-input" id="s10-val" type="number" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Matter type</div>
+              <select class="fee-sel" id="s10-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="grant">Grant of probate / letters of administration</option>
                 <option value="admin">Full estate administration</option>
-              </select></div>
-            <div class="fee-result-cms" id="cms-s10-result">
-              <div class="fee-result-label-cms">Minimum Scale Fee</div>
-              <div class="fee-result-main-cms" id="cms-s10-main"></div>
-              <div class="fee-result-bd-cms" id="cms-s10-bd"></div>
-              <div class="fee-note-cms">Court filing fees, ad fees, and stamp duty on assents are separate disbursements.</div>
+                <option value="small">Small estate (summary — s.73 LSA, ≤ KES 100k)</option>
+              </select>
             </div>
           </div>
-        </div>
 
-        <!-- DEBT COLLECTION (Schedule 5) -->
-        <div class="fee-card-cms">
-          <div class="fee-card-hd-cms">
-            <div class="fee-card-icon-cms" style="background:var(--gold)"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-            <div><div class="fee-card-title-cms">Non-Contentious Debt Collection</div><div class="fee-card-sub-cms">Schedule 5, Para 7 — Inclusive scale</div></div>
+          <!-- SUCCESSION DISPUTE -->
+          <div id="fp-succession_dispute" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Disputed estate value (KES)</div><input class="fee-input" id="ssucc-val" type="number" placeholder="e.g. 10,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Stage</div>
+              <select class="fee-sel" id="ssucc-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="contested">Fully contested (High Court Family Division)</option>
+                <option value="settled">Settled / consent orders</option>
+              </select>
+            </div>
           </div>
-          <div class="fee-body-cms">
-            <div class="fee-row-cms"><div class="fee-label-cms">Debt Amount (KES)</div><input class="fee-input-cms" id="cms-s5-val" type="number" placeholder="e.g. 800,000" oninput="cmsCalcS5()"/></div>
-            <div class="fee-row-cms"><div class="fee-label-cms">Stage reached</div>
-              <select class="fee-sel-cms" id="cms-s5-stage" onchange="cmsCalcS5()">
+
+          <!-- DEBT -->
+          <div id="fp-debt" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Debt Amount (KES)</div><input class="fee-input" id="s5-val" type="number" placeholder="e.g. 800,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Stage reached</div>
+              <select class="fee-sel" id="s5-stage" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="demand">Demand letter only (50% of scale)</option>
                 <option value="full">Full non-contentious recovery</option>
-              </select></div>
-            <div class="fee-result-cms" id="cms-s5-result">
-              <div class="fee-result-label-cms">Minimum Scale Fee</div>
-              <div class="fee-result-main-cms" id="cms-s5-main"></div>
-              <div class="fee-result-bd-cms" id="cms-s5-bd"></div>
-              <div class="fee-note-cms">If proceedings are filed, Schedule 5 inclusive scale does not apply — revert to Sch. 6/7. VAT 16% applies.</div>
+              </select>
             </div>
           </div>
-        </div>
 
-        <!-- COMPANY / TRADEMARK -->
-        <div class="fee-card-cms">
-          <div class="fee-card-hd-cms">
-            <div class="fee-card-icon-cms" style="background:var(--navy)"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg></div>
-            <div><div class="fee-card-title-cms">Company Formation / Trademark</div><div class="fee-card-sub-cms">Schedules 3 &amp; 4 — Companies Act 2015</div></div>
-          </div>
-          <div class="fee-body-cms">
-            <div class="fee-row-cms"><div class="fee-label-cms">Matter type</div>
-              <select class="fee-sel-cms" id="cms-s3-type" onchange="cmsCalcS3()">
-                <option value="company_local">Company incorporation (local)</option>
+          <!-- COMPANY -->
+          <div id="fp-company" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Matter type</div>
+              <select class="fee-sel" id="s3-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="company_local">Company incorporation (private limited)</option>
                 <option value="company_foreign">Foreign company registration</option>
-                <option value="tm_one">Trademark — single class</option>
-                <option value="tm_two">Trademark — 2nd mark (same proprietor)</option>
-                <option value="tm_renew">Trademark renewal (1 class)</option>
-                <option value="tm_assign">Trademark assignment (1 mark)</option>
-              </select></div>
-            <div class="fee-result-cms show" id="cms-s3-result">
-              <div class="fee-result-label-cms">Minimum Scale Fee</div>
-              <div class="fee-result-main-cms" id="cms-s3-main">KES 60,000</div>
-              <div class="fee-result-bd-cms" id="cms-s3-bd"><div class="fee-br-cms"><span>Company incorporation (Schedule 3)</span><span>KES 60,000</span></div></div>
-              <div class="fee-note-cms">KRA filing fees and government levies are separate disbursements.</div>
+                <option value="llp">LLP registration</option>
+                <option value="amendment">Amendment of M&amp;A / change of directors</option>
+              </select>
             </div>
           </div>
-        </div>
 
-      </div><!-- /fee-grid-cms -->
-
-      <!-- ── ARO UPDATE TOOL ── -->
-      <div class="aro-section" id="aro-tool" style="display:none">
-        <div class="aro-hd">
-          <div>
-            <div class="aro-hd-title">⚙ Update ARO Rate Tables</div>
-            <div class="aro-hd-sub">Use when the Advocates (Remuneration) Order is amended by Legal Notice. Changes are saved to localStorage for this device.</div>
-          </div>
-          <button class="topbar-btn" onclick="document.getElementById('aro-tool').style.display='none'" style="font-size:11px;padding:5px 12px">Hide</button>
-        </div>
-        <div class="aro-body">
-          <div style="font-size:12px;color:var(--txt2);line-height:1.6;background:var(--cream);padding:10px 12px;border-radius:7px;border:1px solid var(--brd)">
-            Amend the rate parameters below to match the latest Order. These override the default figures built into the calculator. Click <strong>Apply &amp; Save</strong> — all fee calculations will immediately reflect the new rates without needing to reload.
+          <!-- TRADEMARK -->
+          <div id="fp-trademark" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Matter type</div>
+              <select class="fee-sel" id="s4-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="tm_one">TM application — 1 mark, 1 class</option>
+                <option value="tm_two">TM — 2nd mark, same proprietor</option>
+                <option value="tm_renew">TM renewal (1 class)</option>
+                <option value="tm_assign">TM assignment (1 mark)</option>
+                <option value="patent">Patent application (Industrial Property Act)</option>
+                <option value="copyright">Copyright registration / assignment</option>
+              </select>
+            </div>
           </div>
 
-          <div style="font-family:'Playfair Display',serif;font-size:12px;font-weight:500;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-top:4px">Schedule 1 — Land Sale &amp; Purchase</div>
-          <div class="aro-grid">
-            <div class="aro-field"><div class="aro-lbl">Minimum Fee (KES)</div><input class="aro-inp" id="aro-s1-min" type="number" placeholder="35000"/></div>
-            <div class="aro-field"><div class="aro-lbl">Band 1 rate (≤5M) %</div><input class="aro-inp" id="aro-s1-r1" type="number" step="0.001" placeholder="2"/></div>
-            <div class="aro-field"><div class="aro-lbl">Band 2 rate (5M–100M) %</div><input class="aro-inp" id="aro-s1-r2" type="number" step="0.001" placeholder="1.5"/></div>
-            <div class="aro-field"><div class="aro-lbl">Band 3 rate (100M–250M) %</div><input class="aro-inp" id="aro-s1-r3" type="number" step="0.001" placeholder="1.25"/></div>
-            <div class="aro-field"><div class="aro-lbl">Band 4 rate (250M–1B) %</div><input class="aro-inp" id="aro-s1-r4" type="number" step="0.001" placeholder="1"/></div>
-            <div class="aro-field"><div class="aro-lbl">Band 5 rate (&gt;1B) %</div><input class="aro-inp" id="aro-s1-r5" type="number" step="0.001" placeholder="0.1"/></div>
+          <!-- ARBITRATION -->
+          <div id="fp-arbitration" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Amount in Dispute (KES)</div><input class="fee-input" id="sarb-val" type="number" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Arbitration type</div>
+              <select class="fee-sel" id="sarb-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="domestic">Domestic (NCIA / ad hoc)</option>
+                <option value="international">International arbitration</option>
+                <option value="enforcement">Enforcement of award (s.36 Arb. Act)</option>
+              </select>
+            </div>
           </div>
 
-          <div style="font-family:'Playfair Display',serif;font-size:12px;font-weight:500;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">Schedule 5 — Debt Collection</div>
-          <div class="aro-grid">
-            <div class="aro-field"><div class="aro-lbl">Band 1 rate (≤100K) %</div><input class="aro-inp" id="aro-s5-r1" type="number" step="0.01" placeholder="10"/></div>
-            <div class="aro-field"><div class="aro-lbl">Band 2 rate (100K–500K) %</div><input class="aro-inp" id="aro-s5-r2" type="number" step="0.01" placeholder="5"/></div>
-            <div class="aro-field"><div class="aro-lbl">Band 3 rate (500K–2M) %</div><input class="aro-inp" id="aro-s5-r3" type="number" step="0.01" placeholder="3"/></div>
-            <div class="aro-field"><div class="aro-lbl">Band 4 rate (&gt;2M) %</div><input class="aro-inp" id="aro-s5-r4" type="number" step="0.01" placeholder="1.5"/></div>
-            <div class="aro-field"><div class="aro-lbl">Demand letter only (%)</div><input class="aro-inp" id="aro-s5-demand" type="number" step="1" placeholder="50"/></div>
-            <div class="aro-field"><div class="aro-lbl">Min. demand fee (KES)</div><input class="aro-inp" id="aro-s5-min-demand" type="number" placeholder="1000"/></div>
+          <!-- CRIMINAL HC -->
+          <div id="fp-criminal_hc" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Offence / charge type</div>
+              <select class="fee-sel" id="scrihc-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="murder">Murder / manslaughter</option>
+                <option value="robbery">Robbery with violence / Sch. 1 offence</option>
+                <option value="sexual">Sexual offence (Sexual Offences Act 2006)</option>
+                <option value="corruption">Corruption / POCAMLA</option>
+                <option value="other_hc">Other High Court criminal matter</option>
+              </select>
+            </div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Stage</div>
+              <select class="fee-sel" id="scrihc-stage" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="full_trial">Full trial</option>
+                <option value="plea">Plea / guilty plea (early)</option>
+                <option value="bail">Bail application only</option>
+                <option value="appeal">Criminal appeal</option>
+              </select>
+            </div>
           </div>
 
-          <div style="font-family:'Playfair Display',serif;font-size:12px;font-weight:500;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">Schedule 3/4 — Fixed Fees (KES)</div>
-          <div class="aro-grid">
-            <div class="aro-field"><div class="aro-lbl">Company incorporation</div><input class="aro-inp" id="aro-s3-company" type="number" placeholder="60000"/></div>
-            <div class="aro-field"><div class="aro-lbl">Trademark — 1 class</div><input class="aro-inp" id="aro-s3-tm1" type="number" placeholder="42000"/></div>
-            <div class="aro-field"><div class="aro-lbl">Trademark — 2nd mark</div><input class="aro-inp" id="aro-s3-tm2" type="number" placeholder="29000"/></div>
-            <div class="aro-field"><div class="aro-lbl">Trademark renewal</div><input class="aro-inp" id="aro-s3-tmr" type="number" placeholder="25000"/></div>
+          <!-- CRIMINAL MC -->
+          <div id="fp-criminal_mc" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Offence category</div>
+              <select class="fee-sel" id="scrimc-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="traffic">Traffic / minor offence</option>
+                <option value="theft">Theft / obtaining by false pretences</option>
+                <option value="assault">Assault / affray</option>
+                <option value="other_mc">Other Magistrates Court criminal</option>
+              </select>
+            </div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Stage</div>
+              <select class="fee-sel" id="scrimc-stage" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="full_trial">Full trial</option>
+                <option value="plea">Guilty plea / TIC</option>
+                <option value="bail">Bail application</option>
+              </select>
+            </div>
           </div>
 
-          <div style="font-family:'Playfair Display',serif;font-size:12px;font-weight:500;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">VAT Rate</div>
-          <div class="aro-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
-            <div class="aro-field"><div class="aro-lbl">Current VAT rate (%)</div><input class="aro-inp" id="aro-vat" type="number" step="0.1" placeholder="16"/></div>
-            <div class="aro-field"><div class="aro-lbl">Legal Notice / Amendment reference</div><input class="aro-inp" id="aro-ref" type="text" placeholder="e.g. L.N. 12/2025"/></div>
+          <!-- MISC APP -->
+          <div id="fp-misc_app" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Application type</div>
+              <select class="fee-sel" id="smisc-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="chamber_summons">Chamber summons (Or. 40 CPR)</option>
+                <option value="originating_summons">Originating summons (Or. 36 CPR)</option>
+                <option value="notice_motion">Notice of motion</option>
+                <option value="statutory_demand">Statutory demand (Insolvency Act)</option>
+                <option value="garnishee">Garnishee proceedings (Or. 23 CPR)</option>
+                <option value="execution">Execution / attachment proceedings</option>
+                <option value="default_judgment">Default judgment application</option>
+                <option value="review">Application for review / setting aside</option>
+              </select>
+            </div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Amount involved (KES)</div><input class="fee-input" id="smisc-val" type="number" placeholder="e.g. 1,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
           </div>
 
-          <div id="aro-msg" class="aro-msg"></div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
-            <button class="topbar-btn gold" onclick="aroApply()" style="font-size:12px">Apply &amp; Save Changes</button>
-            <button class="topbar-btn sec" onclick="aroReset()" style="font-size:12px">Reset to Defaults</button>
+          <!-- INJUNCTION -->
+          <div id="fp-injunction" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Injunction type</div>
+              <select class="fee-sel" id="sinj-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="interlocutory">Interlocutory injunction (Or. 26 CPR)</option>
+                <option value="mareva">Mareva / freezing order</option>
+                <option value="anton_piller">Anton Piller / search order</option>
+                <option value="conservatory">Conservatory order (constitutional petition)</option>
+                <option value="stay">Stay of execution</option>
+              </select>
+            </div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Approximate subject matter value (KES)</div><input class="fee-input" id="sinj-val" type="number" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
           </div>
+
+          <!-- JUDICIAL REVIEW -->
+          <div id="fp-judicial_review" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Matter type</div>
+              <select class="fee-sel" id="sjr-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="judicial_review">Judicial review (Or. 53 CPR / FAAA 2015)</option>
+                <option value="constitutional_petition">Constitutional petition (Art. 22 CoK)</option>
+                <option value="coa_appeal">Court of Appeal (CoA Rules 2010)</option>
+                <option value="sc_appeal">Supreme Court (SC Rules 2020)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- STAMPING -->
+          <div id="fp-stamping" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Document type</div>
+              <select class="fee-sel" id="sstamp-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
+                <option value="conveyance">Conveyance / transfer of land (4%)</option>
+                <option value="lease_stamp">Lease — stamp duty</option>
+                <option value="share_transfer">Share transfer (1%)</option>
+                <option value="debenture">Debenture (0.1%)</option>
+              </select>
+            </div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Instrument value (KES)</div><input class="fee-input" id="sstamp-val" type="number" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+          </div>
+
+          <!-- RESULT BOX -->
+          <div id="fc-result" style="margin-top:2px;background:rgba(184,149,58,0.08);border:0.5px solid var(--gold);border-radius:8px;padding:12px 16px;display:none">
+            <div id="fc-result-label" style="font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Minimum Scale Fee</div>
+            <div id="fc-main" style="font-size:22px;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif"></div>
+            <div id="fc-bd" style="margin-top:8px;border-top:0.5px solid rgba(184,149,58,0.3);padding-top:7px;display:flex;flex-direction:column;gap:3px"></div>
+            <div id="fc-note" style="font-size:10px;color:var(--txt3);line-height:1.5;margin-top:6px;padding-top:6px;border-top:0.5px solid var(--brd)"></div>
+          </div>
+
         </div>
       </div>
 
+      <div style="margin-top:14px;padding:10px 14px;background:var(--cream);border-radius:8px;border:1px solid var(--brd);font-size:11px;color:var(--txt3);line-height:1.6">
+        All figures are <strong>minimum scale fees</strong> under the Advocates (Remuneration) Order. VAT at 16%, court filing fees, stamp duty, and disbursements are charged separately. Family law and criminal fees shown are typical ranges based on Schedule 6 instruction fee principles and established practice. An advocate and client may agree higher fees in writing (para. 3 of the Order).
+      </div>
     </div><!-- /view-fee-calc -->
 
     <!-- ════ DOCUMENT REPORTS VIEW ════ -->
     <div class="view" id="view-view-reports">
       <div class="reports-hero">
         <div class="reports-hero-title">📄 Document Reports</div>
-        <div class="reports-hero-sub">All document generators from the DKMA practice system. Click any card to fill in details and generate a print-ready document — right here in the CMS.</div>
+        <div class="reports-hero-sub">DKMA practice document templates — click any card to open the document builder. All documents are generated instantly, no internet required.</div>
       </div>
 
       <div class="reports-section">
         <div class="reports-section-title">Affidavits &amp; Sworn Statements</div>
         <div class="reports-grid">
-          <div class="report-card" onclick="openReport('General Affidavit')">
+          <div class="report-card" onclick="openDocGen('affidavit')">
             <div class="report-icon" style="background:#FBEAF0">📜</div>
             <div class="report-info">
               <div class="report-name">General Affidavit</div>
-              <div class="report-desc">Standard sworn statement for general use before a Commissioner for Oaths</div>
+              <div class="report-desc">Standard sworn statement — AFFMASTER / AFFIDAVIT forms. Oaths &amp; Statutory Declarations Act (Cap. 15)</div>
               <span class="report-badge rb-affidavit">Affidavit</span>
             </div>
           </div>
-          <div class="report-card" onclick="openReport('Affidavit_CustMarrDecl')">
+          <div class="report-card" onclick="openDocGen('affidavit')">
             <div class="report-icon" style="background:#FBEAF0">💍</div>
             <div class="report-info">
               <div class="report-name">Affidavit — Marriage Declaration</div>
-              <div class="report-desc">Custom marriage declaration affidavit — confirms marital status before an authority</div>
+              <div class="report-desc">Custom marriage declaration — Affidavit_CustMarrDecl / Affcustmar form</div>
               <span class="report-badge rb-affidavit">Affidavit</span>
             </div>
           </div>
-          <div class="report-card" onclick="openReport('Affidavit_LostPP')">
+          <div class="report-card" onclick="openDocGen('affidavit')">
             <div class="report-icon" style="background:#FBEAF0">🪪</div>
             <div class="report-info">
-              <div class="report-name">Affidavit — Lost Passport / PP</div>
-              <div class="report-desc">Statutory affidavit to support a replacement passport or lost document application</div>
+              <div class="report-name">Affidavit — Lost Passport</div>
+              <div class="report-desc">Replacement passport / lost document — Affidavit_LostPP / AfflostPP / LOSTPP form</div>
+              <span class="report-badge rb-affidavit">Affidavit</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('stat-dec')">
+            <div class="report-icon" style="background:#E6F1FB">📋</div>
+            <div class="report-info">
+              <div class="report-name">Statutory Declaration</div>
+              <div class="report-desc">Solemn declaration — ENTRY / DOCRCVD form. Oaths &amp; Statutory Declarations Act (Cap. 15)</div>
+              <span class="report-badge rb-affidavit">Sworn Statement</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('affidavit-service')">
+            <div class="report-icon" style="background:#E6F1FB">📬</div>
+            <div class="report-info">
+              <div class="report-name">Affidavit of Service</div>
+              <div class="report-desc">Service of process confirmation — RECEIVEDOCSS / tbl_rcvd form</div>
               <span class="report-badge rb-affidavit">Affidavit</span>
             </div>
           </div>
@@ -1716,28 +1835,66 @@ setTimeout(function() {
       <div class="reports-section">
         <div class="reports-section-title">Court &amp; Litigation</div>
         <div class="reports-grid">
-          <div class="report-card" onclick="openReport('Court')">
+          <div class="report-card" onclick="openDocGen('notice-motion')">
             <div class="report-icon" style="background:#FCEBEB">⚖️</div>
             <div class="report-info">
-              <div class="report-name">Court Document</div>
-              <div class="report-desc">Formal court filing — pleadings, applications, and related court paperwork</div>
+              <div class="report-name">Notice of Motion / Court Application</div>
+              <div class="report-desc">Court filing — maps to court form in DKMA. Civil Procedure Rules 2010</div>
               <span class="report-badge rb-court">Litigation</span>
             </div>
           </div>
-          <div class="report-card" onclick="openReport('AUTHORIZATION')">
+          <div class="report-card" onclick="openDocGen('chamber-summons')">
+            <div class="report-icon" style="background:#FCEBEB">🏛️</div>
+            <div class="report-info">
+              <div class="report-name">Chamber Summons</div>
+              <div class="report-desc">Interlocutory application — Or. 40 CPR. Maps to deary / CGAPPOITNM form</div>
+              <span class="report-badge rb-court">Litigation</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('plaint')">
+            <div class="report-icon" style="background:#FCEBEB">📝</div>
+            <div class="report-info">
+              <div class="report-name">Plaint</div>
+              <div class="report-desc">Civil claim originating process — Civil Procedure Act (Cap. 21)</div>
+              <span class="report-badge rb-court">Litigation</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('poa-specific')">
             <div class="report-icon" style="background:#EAF3DE">✅</div>
             <div class="report-info">
-              <div class="report-name">Authorization</div>
-              <div class="report-desc">Written authority document authorising an agent or representative to act</div>
+              <div class="report-name">Authorization / Power of Attorney</div>
+              <div class="report-desc">Written authority — AUTHORIZATION / AUTHORIZATIONL form. Powers of Attorney Act (Cap. 53)</div>
               <span class="report-badge rb-access">Authority</span>
             </div>
           </div>
-          <div class="report-card" onclick="openReport('APPOINTMENT')">
+          <div class="report-card" onclick="openDocGen('service-agreement')">
             <div class="report-icon" style="background:#E6F1FB">📅</div>
             <div class="report-info">
-              <div class="report-name">Appointment Letter</div>
-              <div class="report-desc">Formal letter of appointment — clients, advisors, agents, or officers</div>
+              <div class="report-name">Appointment / Service Letter</div>
+              <div class="report-desc">Letter of appointment — maps to APPT / APPOITNM / CGAPPOITNM form</div>
               <span class="report-badge rb-admin">Admin</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reports-section">
+        <div class="reports-section-title">Conveyancing &amp; Property</div>
+        <div class="reports-grid">
+          <div class="report-card" onclick="openDocGen('sale-agreement')">
+            <div class="report-icon" style="background:#FFF0CC">🤝</div>
+            <div class="report-info">
+              <div class="report-name">Sale Agreement</div>
+              <div class="report-desc">Formal sale agreement — SALEAGMT / SALEGAMT form. Land Act 2012</div>
+              <span class="report-badge rb-debt">Conveyancing</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('lease')">
+            <div class="report-icon" style="background:#FFF0CC">🏠</div>
+            <div class="report-info">
+              <div class="report-name">Lease Agreement</div>
+              <div class="report-desc">Lease / tenancy — maps to SCOLLECT / ClassDetails form. Land Act 2012</div>
+              <span class="report-badge rb-debt">Conveyancing</span>
             </div>
           </div>
         </div>
@@ -1746,35 +1903,27 @@ setTimeout(function() {
       <div class="reports-section">
         <div class="reports-section-title">Finance &amp; Debt Recovery</div>
         <div class="reports-grid">
-          <div class="report-card" onclick="openReport('STATEMENT')">
+          <div class="report-card" onclick="openDocGen('demand-letter')">
             <div class="report-icon" style="background:#EAF3DE">📊</div>
             <div class="report-info">
-              <div class="report-name">Client Statement</div>
-              <div class="report-desc">Account statement showing invoices, payments received, and outstanding balances</div>
+              <div class="report-name">Client Statement / Demand</div>
+              <div class="report-desc">Account statement or demand notice — STATEMENT / STATEMENTTY form</div>
               <span class="report-badge rb-finance">Finance</span>
             </div>
           </div>
-          <div class="report-card" onclick="openReport('RECPPP')">
+          <div class="report-card" onclick="openDocGen('demand-letter')">
             <div class="report-icon" style="background:#EAF3DE">🧾</div>
             <div class="report-info">
               <div class="report-name">Payment Receipt</div>
-              <div class="report-desc">Official receipt for fees and disbursements received from a client</div>
+              <div class="report-desc">Fee receipt — RECPPP / RCPT form. Records fees and disbursements received</div>
               <span class="report-badge rb-finance">Finance</span>
-            </div>
-          </div>
-          <div class="report-card" onclick="openReport('SaleAgrmt-main')">
-            <div class="report-icon" style="background:#FFF0CC">🤝</div>
-            <div class="report-info">
-              <div class="report-name">Sale Agreement</div>
-              <div class="report-desc">Formal agreement for sale of land, property, or assets — principal document</div>
-              <span class="report-badge rb-debt">Conveyancing</span>
             </div>
           </div>
           <div class="report-card" onclick="openDebtRecovery('100K')">
             <div class="report-icon" style="background:#FFF0CC">📬</div>
             <div class="report-info">
               <div class="report-name">Debt Recovery — Under KES 100K</div>
-              <div class="report-desc">Demand / recovery letter for debts up to KES 100,000 (Schedule 5 scale)</div>
+              <div class="report-desc">Demand / recovery letter. Schedule 5 scale — up to KES 100,000</div>
               <span class="report-badge rb-debt">Debt Recovery</span>
             </div>
           </div>
@@ -1790,7 +1939,7 @@ setTimeout(function() {
             <div class="report-icon" style="background:#FFF0CC">📬</div>
             <div class="report-info">
               <div class="report-name">Debt Recovery — KES 500K–2M</div>
-              <div class="report-desc">Formal demand letter for debts between KES 500,000 and KES 2,000,000</div>
+              <div class="report-desc">Demand letter for debts between KES 500,000 and KES 2,000,000</div>
               <span class="report-badge rb-debt">Debt Recovery</span>
             </div>
           </div>
@@ -1798,8 +1947,30 @@ setTimeout(function() {
             <div class="report-icon" style="background:#FCEBEB">📬</div>
             <div class="report-info">
               <div class="report-name">Debt Recovery — Over KES 2M</div>
-              <div class="report-desc">High-value debt recovery notice for amounts exceeding KES 2,000,000</div>
+              <div class="report-desc">High-value debt recovery — amounts exceeding KES 2,000,000</div>
               <span class="report-badge rb-court">High Value</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reports-section">
+        <div class="reports-section-title">HR &amp; Staff Documents</div>
+        <div class="reports-grid">
+          <div class="report-card" onclick="openDocGen('employment-contract')">
+            <div class="report-icon" style="background:#E6F1FB">🪪</div>
+            <div class="report-info">
+              <div class="report-name">Employment Contract</div>
+              <div class="report-desc">Staff employment contract — UserDetails / staffuser / staffer form. Employment Act 2007</div>
+              <span class="report-badge rb-id">HR</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('board-resolution')">
+            <div class="report-icon" style="background:#EEEDFE">📋</div>
+            <div class="report-info">
+              <div class="report-name">Board Resolution</div>
+              <div class="report-desc">Company board resolution — maps to SIGNAGE / SIGNDOC form. Companies Act 2015</div>
+              <span class="report-badge rb-admin">Corporate</span>
             </div>
           </div>
         </div>
@@ -1808,20 +1979,20 @@ setTimeout(function() {
       <div class="reports-section">
         <div class="reports-section-title">Received Documents &amp; Admin</div>
         <div class="reports-grid">
-          <div class="report-card" onclick="openReport('DIGIRECEIVE')">
+          <div class="report-card" onclick="openDocGen('stat-dec')">
             <div class="report-icon" style="background:#E6F1FB">📥</div>
             <div class="report-info">
-              <div class="report-name">Digital Document Receipt</div>
-              <div class="report-desc">Acknowledgement stamp and receipt for documents received at the firm</div>
+              <div class="report-name">Document Receipt Acknowledgement</div>
+              <div class="report-desc">Digital acknowledgement for documents received — tblReceived / tbl_rcvd / RECEIVEDOCSS form</div>
               <span class="report-badge rb-admin">Admin</span>
             </div>
           </div>
-          <div class="report-card" onclick="openReport('EmployeeID')">
-            <div class="report-icon" style="background:#E6F1FB">🪪</div>
+          <div class="report-card" onclick="openDocGen('demand-letter')">
+            <div class="report-icon" style="background:#EAF3DE">📩</div>
             <div class="report-info">
-              <div class="report-name">Employee ID Card</div>
-              <div class="report-desc">Staff identification card with photo, name, designation, and expiry</div>
-              <span class="report-badge rb-id">HR</span>
+              <div class="report-name">Demand / Notice Letter</div>
+              <div class="report-desc">Formal notice or demand — maps to letter / Namep form</div>
+              <span class="report-badge rb-admin">Correspondence</span>
             </div>
           </div>
         </div>
@@ -9172,57 +9343,139 @@ document.addEventListener('click', function(e){
 });
 
 // ══════════════════════════════════════════════════════════════════
-// FEE CALCULATOR — Advocates (Remuneration) Order
+// FEE CALCULATOR — Advocates (Remuneration) Order (LexAI engine)
 // L.N. 64/1962 as amended by L.N. 35/2014 & L.N. 45/2014
-// ARO rates are stored in localStorage under 'dkma_aro_rates'
-// so they persist across sessions on this device.
 // ══════════════════════════════════════════════════════════════════
 
-// ── Default ARO rate tables (current Order) ──
+function fmtKES(n){return 'KES '+Math.round(n).toLocaleString('en-KE');}
+
+function scheduleOneSaleFee(v){
+  let fee=Math.max(Math.min(v,5000000)*0.02,35000);
+  if(v>5000000)fee+=(Math.min(v,100000000)-5000000)*0.015;
+  if(v>100000000)fee+=(Math.min(v,250000000)-100000000)*0.0125;
+  if(v>250000000)fee+=(Math.min(v,1000000000)-250000000)*0.01;
+  if(v>1000000000)fee+=(v-1000000000)*0.001;
+  return fee;
+}
+function scheduleTwoLeaseFee(r){
+  if(r<=500000)return Math.max(r*0.15,20000);
+  if(r<=3000000)return Math.max(500000*0.15,20000)+(r-500000)*0.03;
+  return Math.max(500000*0.15,20000)+(3000000-500000)*0.03+(r-3000000)*0.01;
+}
+function scheduleMortgageFee(v){
+  let fee=Math.max(Math.min(v,2500000)*0.02,28000);
+  if(v>2500000)fee+=(Math.min(v,5000000)-2500000)*0.0175;
+  if(v>5000000)fee+=(Math.min(v,100000000)-5000000)*0.01;
+  if(v>100000000)fee+=(Math.min(v,250000000)-100000000)*0.0075;
+  if(v>250000000)fee+=(Math.min(v,1000000000)-250000000)*0.0015;
+  if(v>1000000000)fee+=(v-1000000000)*0.001;
+  return fee;
+}
+function schedSixBase_1a(v){
+  if(v<=500000)return 45000;if(v<=750000)return 65000;if(v<=1000000)return 75000;
+  if(v<=20000000)return 75000+(v-1000000)*0.0175;
+  return 75000+(20000000-1000000)*0.0175+(v-20000000)*0.015;
+}
+function schedSixBase_1b(v){
+  if(v<=500000)return 75000;if(v<=750000)return 90000;if(v<=1000000)return 120000;
+  if(v<=20000000)return 120000+(v-1000000)*0.02;
+  return 120000+(20000000-1000000)*0.02+(v-20000000)*0.015;
+}
+function calcS7fee(v,scale){
+  const bands=[[0,50000,10000,15000],[50000,100000,15000,30000],[100000,200000,30000,40000],[200000,500000,45000,65000],[500000,1000000,65000,90000],[1000000,2000000,90000,120000]];
+  for(const[lo,hi,low,high] of bands){if(v>lo&&v<=hi)return scale==='lower'?low:high;}
+  if(v>2000000)return(scale==='lower'?120000:120000)+(v-2000000)*0.25;
+  return scale==='lower'?10000:15000;
+}
+
+function feeShowPanel(){
+  const cat=document.getElementById('fc-cat').value;
+  document.querySelectorAll('.fee-panel').forEach(p=>p.style.display='none');
+  const panel=document.getElementById('fp-'+cat);
+  if(panel)panel.style.display='flex';
+  const res=document.getElementById('fc-result');
+  if(res)res.style.display='none';
+  calcFee();
+}
+
+function row(label,amt){return `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--txt2);padding:2px 0"><span>${label}</span><span>${fmtKES(amt)}</span></div>`;}
+function rowTotal(label,amt){return `<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--txt);border-top:0.5px solid var(--brd);padding-top:4px;margin-top:2px"><span>${label}</span><span>${fmtKES(amt)}</span></div>`;}
+
+function calcFee(){
+  const catEl=document.getElementById('fc-cat');if(!catEl)return;
+  const cat=catEl.value;
+  const res=document.getElementById('fc-result');if(!res)return;
+  const g=id=>{const el=document.getElementById(id);return el?el.value:null;};
+  const gn=id=>{const v=parseFloat(document.getElementById(id)?.value);return isNaN(v)?0:v;};
+  let fee=0,rows='',note='',label='Minimum Scale Fee';
+  try{
+    if(cat==='sale'){const v=gn('s1-val');if(!v){res.style.display='none';return;}const role=g('s1-role'),agr=g('s1-agr');const base=scheduleOneSaleFee(v);let vFee=agr==='no'?base*(2/3):base,pFee=base,total=0;if(role==='vendor'||role==='both'){rows+=row('Vendor advocate fee',vFee);total+=vFee;}if(role==='purchaser'||role==='both'){rows+=row('Purchaser advocate fee',pFee);total+=pFee;}if(role==='both')rows+=rowTotal('Total (both sides)',total);else total=role==='vendor'?vFee:pFee;fee=total;note='Excl. VAT (16%), stamp duty (4% residential/2% commercial), Land Registry fees & searches.';}
+    else if(cat==='lease'){const r=gn('s2-rent');if(!r){res.style.display='none';return;}const role=g('s2-role');const base=scheduleTwoLeaseFee(r);fee=role==='lessee'?base*0.5:base;rows=row(role==='lessor'?'Lessor (preparing)':'Lessee (perusing — 50%)',fee);note='Stamp duty on leases + registration fees are separate. VAT 16% applies.';}
+    else if(cat==='mortgage'){const v=gn('s1b-val');if(!v){res.style.display='none';return;}const role=g('s1b-role');const grantee=scheduleMortgageFee(v),grantor=grantee*0.5;if(role==='grantee'){fee=grantee;rows=row("Lender's advocate (full scale)",grantee);}else if(role==='grantor'){fee=grantor;rows=row("Borrower's advocate (50%)",grantor);}else{fee=grantee+grantor;rows=row("Lender's advocate",grantee)+row("Borrower's advocate (50%)",grantor)+rowTotal('Total',fee);}note="Grantor typically pays both sides (para 9, Sch. 1). VAT 16% applies.";}
+    else if(cat==='hc'){const v=gn('s6-val');if(!v){res.style.display='none';return;}const type=g('s6-type'),basis=g('s6-basis');const map={contested:[schedSixBase_1b(v),'Fully contested (scale 1b)'],uncontested:[schedSixBase_1a(v),'Uncontested — no defence (scale 1a)'],settled_pre:[schedSixBase_1b(v)*0.85,'Settled before 1st hearing (85% 1b)'],summary:[schedSixBase_1b(v)*0.75,'Summary determination (75% 1b)'],undefended:[schedSixBase_1b(v)*0.65,'Undefended (65% 1b)']};const[base,lbl]=map[type]||map.contested;fee=basis==='ac'?base*1.5:base;rows=row(lbl,base)+(basis==='ac'?row('A&C uplift (+50%)',base*0.5)+rowTotal('A&C fee',fee):'');label='Minimum Instruction Fee';note='Add: drawing KES 250/folio, perusing KES 70/folio, attendances KES 1,000/15 min, letters KES 300.';}
+    else if(cat==='mc'){const v=gn('s7-val');if(!v){res.style.display='none';return;}fee=calcS7fee(v,g('s7-scale'));rows=row(g('s7-scale')==='lower'?'Lower scale':'Higher scale',fee);label='Minimum Instruction Fee';note='For amounts over KES 2,000,000: fee as for KES 2m + 25% of excess. VAT 16% applies.';}
+    else if(cat==='elrc'){const v=gn('selrc-val');if(!v){res.style.display='none';return;}const court=g('selrc-court'),type=g('selrc-type');let base=schedSixBase_1b(v);if(type==='settled_pre')base*=0.85;else if(type==='uncontested')base=schedSixBase_1a(v);fee=base;rows=row((court==='elrc'?'ELRC':'ELC')+' — '+{contested:'Contested',uncontested:'Uncontested',settled_pre:'Settled pre-hearing'}[type],fee);label='Minimum Instruction Fee';note='ELRC exclusive jurisdiction. Mandatory mediation. 3-year limitation (s.90 EA).';}
+    else if(cat==='divorce'){const v=gn('sdiv-val'),type=g('sdiv-type');const base={uncontested:75000,contested:150000,judicial_sep:100000,nullity:120000}[type]||75000;fee=v>0?Math.max(base,schedSixBase_1b(v)*0.5):base;rows=row({uncontested:'Uncontested divorce',contested:'Contested divorce',judicial_sep:'Judicial separation',nullity:'Nullity petition'}[type],fee);note='Marriage Act 2014. Property division — Matrimonial Property Act 2013.';}
+    else if(cat==='custody'){const v=gn('scust-val'),type=g('scust-type');const annual=v*12;const base={custody_consent:50000,custody_contested:120000,maintenance:Math.max(annual*0.15,40000),adoption:120000,guardianship:80000,variation:50000}[type]||50000;fee=base;rows=row({custody_consent:'Custody (consent)',custody_contested:'Custody (contested)',maintenance:'Maintenance order',adoption:'Adoption',guardianship:'Guardianship',variation:'Variation'}[type],fee);note='Children Act 2022 — best interests paramount (s.4).';}
+    else if(cat==='matrimonial'){const v=gn('smat-val');if(!v){res.style.display='none';return;}const type=g('smat-type');const base=type==='antenuptial'?45000:type==='consent'?scheduleOneSaleFee(v)*0.5:schedSixBase_1b(v);fee=base;rows=row({consent:'Consent settlement',contested:'Contested division (HC)',antenuptial:'Antenuptial contract'}[type],fee);note='MPA 2013 — equal contribution presumption (s.7/8).';}
+    else if(cat==='probate'){const v=gn('s10-val');if(!v){res.style.display='none';return;}const type=g('s10-type');if(type==='small'){fee=15000;rows=row('Small estate (s.73 LSA ≤ KES 100k)',fee);}else{const full=scheduleOneSaleFee(v);fee=type==='admin'?full:full*0.6;rows=row(type==='admin'?'Full estate administration':'Grant only (approx. 60%)',fee);}note='Law of Succession Act (Cap. 160). Court fees & stamp duty on assents are disbursements.';}
+    else if(cat==='succession_dispute'){const v=gn('ssucc-val');if(!v){res.style.display='none';return;}const type=g('ssucc-type');fee=type==='settled'?schedSixBase_1b(v)*0.85:schedSixBase_1b(v);rows=row(type==='settled'?'Consent orders / settled':'Contested succession (HC Family Division)',fee);note='HC Family Division has exclusive jurisdiction over contested succession.';}
+    else if(cat==='debt'){const v=gn('s5-val');if(!v){res.style.display='none';return;}const stage=g('s5-stage');let base=v<=100000?v*0.10:v<=500000?10000+(v-100000)*0.05:v<=2000000?50000+(v-500000)*0.03:100000+(v-2000000)*0.015;fee=stage==='demand'?Math.max(base*0.5,1000):base;rows=row(stage==='demand'?'Demand letter only (50%, min KES 1,000)':'Full non-contentious recovery',fee);note='If court proceedings commence, Sch. 5 scale no longer applies — revert to Sch. 6/7.';}
+    else if(cat==='company'){const map={company_local:['Company incorporation (private ltd)',60000],company_foreign:['Foreign company registration',60000],llp:['LLP registration',45000],amendment:['Amendment of M&A / directors',25000]};const[lbl,f]=map[g('s3-type')]||map.company_local;fee=f;rows=row(lbl,fee);note='BRS e-Citizen filing fees, KRA PIN, and government levies are separate. VAT 16% applies.';}
+    else if(cat==='trademark'){const map={tm_one:['TM application — 1 mark, 1 class',42000],tm_two:['TM — 2nd mark, same proprietor',29000],tm_renew:['TM renewal — 1 class',25000],tm_assign:['TM assignment — 1 mark',25000],patent:['Patent application (IPA 2001)',55000],copyright:['Copyright registration / assignment',30000]};const[lbl,f]=map[g('s4-type')]||map.tm_one;fee=f;rows=row(lbl,fee);note='KIPI government fees are separate. Madrid Protocol fees apply for international TM.';}
+    else if(cat==='arbitration'){const v=gn('sarb-val');if(!v){res.style.display='none';return;}const type=g('sarb-type');const base=type==='enforcement'?Math.max(schedSixBase_1b(v)*0.5,50000):type==='international'?Math.max(schedSixBase_1b(v)*1.25,150000):schedSixBase_1b(v);fee=base;rows=row({domestic:'Domestic arbitration (NCIA / ad hoc)',international:'International arbitration',enforcement:'Enforcement of award (s.36 Arb. Act)'}[type],fee);note='Arbitration Act (Cap. 49) — UNCITRAL Model Law. NCIA institutional fees are separate.';}
+    else if(cat==='criminal_hc'){const type=g('scrihc-type'),stage=g('scrihc-stage');const bF={murder:{full_trial:200000,plea:100000,bail:30000,appeal:100000},robbery:{full_trial:150000,plea:80000,bail:25000,appeal:80000},sexual:{full_trial:150000,plea:80000,bail:25000,appeal:80000},corruption:{full_trial:180000,plea:90000,bail:30000,appeal:100000},other_hc:{full_trial:120000,plea:70000,bail:20000,appeal:75000}};fee=(bF[type]||bF.other_hc)[stage]||120000;rows=row({murder:'Murder/manslaughter',robbery:'Robbery with violence',sexual:'Sexual offence (SOA 2006)',corruption:'Corruption/POCAMLA',other_hc:'Other HC criminal'}[type]+' — '+{full_trial:'Full trial',plea:'Guilty plea',bail:'Bail application',appeal:'Criminal appeal'}[stage],fee);note='Criminal fees based on established practice. Schedule 1 offences bailed by HC only.';}
+    else if(cat==='criminal_mc'){const type=g('scrimc-type'),stage=g('scrimc-stage');const bF={traffic:{full_trial:20000,plea:10000,bail:8000},theft:{full_trial:50000,plea:25000,bail:12000},assault:{full_trial:40000,plea:20000,bail:10000},other_mc:{full_trial:45000,plea:22000,bail:10000}};fee=(bF[type]||bF.other_mc)[stage]||30000;rows=row({traffic:'Traffic/minor',theft:'Theft/false pretences',assault:'Assault/affray',other_mc:'Other MC criminal'}[type]+' — '+{full_trial:'Full trial',plea:'Guilty plea',bail:'Bail application'}[stage],fee);note='Schedule 7 principles apply. Appeals to the High Court.';}
+    else if(cat==='misc_app'){const v=gn('smisc-val');const aF={chamber_summons:30000,originating_summons:35000,notice_motion:40000,statutory_demand:25000,garnishee:35000,execution:30000,default_judgment:25000,review:35000};const type=g('smisc-type');let base=aF[type]||30000;if(v>500000)base=Math.max(base,schedSixBase_1b(v)*0.3);fee=base;rows=row({chamber_summons:'Chamber summons (Or. 40 CPR)',originating_summons:'Originating summons (Or. 36)',notice_motion:'Notice of motion',statutory_demand:'Statutory demand (Insolvency Act)',garnishee:'Garnishee proceedings (Or. 23)',execution:'Execution / attachment',default_judgment:'Default judgment',review:'Review / setting aside'}[type],fee);note='Court filing fees (HC — KES 5,000+; MC — KES 500–2,000) are separate disbursements.';}
+    else if(cat==='injunction'){const v=gn('sinj-val');const type=g('sinj-type');const base={interlocutory:50000,mareva:75000,anton_piller:80000,conservatory:60000,stay:35000}[type]||50000;fee=v>0?Math.max(base,schedSixBase_1b(v)*0.35):base;rows=row({interlocutory:'Interlocutory injunction (Or. 26 CPR)',mareva:'Mareva / freezing order',anton_piller:'Anton Piller / search order',conservatory:'Conservatory order (constitutional)',stay:'Stay of execution'}[type],fee);note='Giella v Cassman Brown [1973]: prima facie case, balance of convenience, status quo.';}
+    else if(cat==='judicial_review'){const type=g('sjr-type');const fees={judicial_review:100000,constitutional_petition:120000,coa_appeal:100000,sc_appeal:150000};fee=fees[type]||100000;rows=row({judicial_review:'Judicial review (Or. 53 / FAAA 2015)',constitutional_petition:'Constitutional petition (Art. 22 CoK)',coa_appeal:'Court of Appeal (CoA Rules 2010)',sc_appeal:'Supreme Court (SC Rules 2020)'}[type],fee);note='JR — leave required (ex parte, arguable case, within 6 months). SC — certification required (Art. 163(4)(b)).';}
+    else if(cat==='stamping'){const v=gn('sstamp-val');if(!v){res.style.display='none';return;}const type=g('sstamp-type');const rates={conveyance:0.04,lease_stamp:0.01,share_transfer:0.01,debenture:0.001};const labels={conveyance:'Conveyance / transfer (4%)',lease_stamp:'Lease — stamp duty (1%)',share_transfer:'Share transfer (1%)',debenture:'Debenture (0.1%)'};fee=v*(rates[type]||0.04);rows=row(labels[type],fee);label='Stamp Duty Payable';note='Stamp Duty Act (Cap. 480). Must be stamped before admissible in evidence.';}
+    if(fee>0){document.getElementById('fc-main').textContent=fmtKES(fee);document.getElementById('fc-bd').innerHTML=rows;document.getElementById('fc-note').textContent=note;document.getElementById('fc-result-label').textContent=label;res.style.display='block';}else{res.style.display='none';}
+  }catch(e){if(res)res.style.display='none';}
+}
+
+// Legacy CMS aliases (keep so any stray calls in HTML don't break)
+function cmsCalcS1(){calcFee();}function cmsCalcS2(){calcFee();}function cmsCalcS1b(){calcFee();}
+function cmsCalcS6(){calcFee();}function cmsCalcS7(){calcFee();}function cmsCalcS10(){calcFee();}
+function cmsCalcS5(){calcFee();}function cmsCalcS3(){calcFee();}
+function calcS1(){calcFee();}function calcS2(){calcFee();}function calcS6(){calcFee();}
+function calcS7(){calcFee();}function calcS10(){calcFee();}function calcS5(){calcFee();}
+
+// ── Advocates (Remuneration) Order — default rates ──
+// Schedule 1 (conveyancing / sale / purchase)
+// Schedule 5 (debt collection)
+// Schedule 3/4 (company & trademark)
+// All monetary values in KES; rates as decimals.
 const ARO_DEFAULTS = {
-  // Schedule 1: Sale/Purchase of Land — cumulative bands
-  s1_min:   35000,
-  s1_r1:    0.02,    // ≤ 5M
-  s1_r2:    0.015,   // 5M – 100M
-  s1_r3:    0.0125,  // 100M – 250M
-  s1_r4:    0.01,    // 250M – 1B
-  s1_r5:    0.001,   // > 1B
-
-  // Schedule 5: Debt Collection
-  s5_r1:          0.10,   // ≤ 100K
-  s5_r2:          0.05,   // 100K – 500K
-  s5_r3:          0.03,   // 500K – 2M
-  s5_r4:          0.015,  // > 2M
-  s5_demand_pct:  0.50,   // demand letter = 50% of scale
-  s5_min_demand:  1000,   // minimum demand-letter fee
-
-  // Schedule 3/4: Fixed fees (KES)
-  s3_company_local:  60000,
-  s3_company_foreign:60000,
-  s3_tm_one:         42000,
-  s3_tm_two:         29000,
-  s3_tm_renew:       25000,
-  s3_tm_assign:      25000,
-
+  ref: 'Legal Notice No. 17 of 2014',
+  // Schedule 1 — conveyancing bands
+  s1_min:          5000,
+  s1_r1:           0.015,    // first KES 5 000 000
+  s1_r2:           0.0075,   // KES 5 000 001 – 100 000 000
+  s1_r3:           0.005,    // KES 100 000 001 – 250 000 000
+  s1_r4:           0.003,    // KES 250 000 001 – 1 000 000 000
+  s1_r5:           0.002,    // above KES 1 000 000 000
+  // Schedule 5 — debt collection bands
+  s5_r1:           0.10,     // first KES 100 000
+  s5_r2:           0.08,     // KES 100 001 – 500 000
+  s5_r3:           0.06,     // KES 500 001 – 2 000 000
+  s5_r4:           0.04,     // above KES 2 000 000
+  s5_demand_pct:   0.50,     // demand letter = 50 % of collection fee
+  s5_min_demand:   5000,
+  // Schedule 3 — company / LLP
+  s3_company_local:   60000,
+  s3_company_foreign: 60000,
+  // Schedule 4 — trademarks
+  s3_tm_one:    20000,
+  s3_tm_two:    15000,
+  s3_tm_renew:  15000,
+  s3_tm_assign: 15000,
   // VAT
-  vat: 0.16,
-
-  // Legal Notice reference (informational)
-  ref: 'L.N. 35/2014 & L.N. 45/2014'
+  vat: 0.16
 };
 
-// Live rates — start from defaults, then overlay any saved overrides
+// Working copy — overwritten by aroLoad() / aroApply() / aroReset()
 let ARO = Object.assign({}, ARO_DEFAULTS);
-
-function aroLoad() {
-  try {
-    const saved = localStorage.getItem('dkma_aro_rates');
-    if (saved) ARO = Object.assign({}, ARO_DEFAULTS, JSON.parse(saved));
-  } catch(e) { /* ignore */ }
-}
-aroLoad();
-
-function cmsKES(n){ return 'KES ' + Math.round(n).toLocaleString('en-KE'); }
 
 // ── Show / hide ARO tool ──
 function showAROTool() {
@@ -9305,6 +9558,21 @@ function aroReset() {
   const sub = document.querySelector('.fee-hero-cms-sub');
   if(sub) sub.textContent = 'Advocates (Remuneration) Order — Laws of Kenya (' + ARO_DEFAULTS.ref + ')';
   aroShowMsg('✓ Rates reset to published defaults (' + ARO_DEFAULTS.ref + ').', 'ok');
+}
+
+// Load & apply any previously saved ARO overrides from localStorage
+function aroLoad() {
+  try {
+    const saved = localStorage.getItem('dkma_aro_rates');
+    if (!saved) return;
+    const updates = JSON.parse(saved);
+    ARO = Object.assign({}, ARO_DEFAULTS, updates);
+    // Reflect custom ref in the hero subtitle if present
+    if (updates.ref && updates.ref !== ARO_DEFAULTS.ref) {
+      const sub = document.querySelector('.fee-hero-cms-sub');
+      if (sub) sub.textContent = 'Advocates (Remuneration) Order — ' + ARO.ref + ' ⚠ Custom rates applied';
+    }
+  } catch(e) { /* corrupt storage — leave defaults */ }
 }
 
 function aroShowMsg(txt, type) {
