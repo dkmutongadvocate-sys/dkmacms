@@ -1793,23 +1793,23 @@ setTimeout(function() {
             <div class="report-icon" style="background:#FBEAF0">📜</div>
             <div class="report-info">
               <div class="report-name">General Affidavit</div>
-              <div class="report-desc">Standard sworn statement — AFFMASTER / AFFIDAVIT forms. Oaths &amp; Statutory Declarations Act (Cap. 15)</div>
+              <div class="report-desc">Standard sworn statement — AFFMASTER / AFFIDAVIT. Oaths &amp; Statutory Declarations Act (Cap. 15)</div>
               <span class="report-badge rb-affidavit">Affidavit</span>
             </div>
           </div>
-          <div class="report-card" onclick="openDocGen('affidavit')">
+          <div class="report-card" onclick="openDocGen('affidavit-custmarr')">
             <div class="report-icon" style="background:#FBEAF0">💍</div>
             <div class="report-info">
               <div class="report-name">Affidavit — Marriage Declaration</div>
-              <div class="report-desc">Custom marriage declaration — Affidavit_CustMarrDecl / Affcustmar form</div>
+              <div class="report-desc">Custom marriage declaration — Affidavit_CustMarrDecl / Affcustmar</div>
               <span class="report-badge rb-affidavit">Affidavit</span>
             </div>
           </div>
-          <div class="report-card" onclick="openDocGen('affidavit')">
+          <div class="report-card" onclick="openDocGen('affidavit-lostpp')">
             <div class="report-icon" style="background:#FBEAF0">🪪</div>
             <div class="report-info">
               <div class="report-name">Affidavit — Lost Passport</div>
-              <div class="report-desc">Replacement passport / lost document — Affidavit_LostPP / AfflostPP / LOSTPP form</div>
+              <div class="report-desc">Replacement passport / lost document — Affidavit_LostPP / AfflostPP / LOSTPP</div>
               <span class="report-badge rb-affidavit">Affidavit</span>
             </div>
           </div>
@@ -1817,7 +1817,7 @@ setTimeout(function() {
             <div class="report-icon" style="background:#E6F1FB">📋</div>
             <div class="report-info">
               <div class="report-name">Statutory Declaration</div>
-              <div class="report-desc">Solemn declaration — ENTRY / DOCRCVD form. Oaths &amp; Statutory Declarations Act (Cap. 15)</div>
+              <div class="report-desc">Solemn declaration — STAT1. Oaths &amp; Statutory Declarations Act (Cap. 15)</div>
               <span class="report-badge rb-affidavit">Sworn Statement</span>
             </div>
           </div>
@@ -1825,7 +1825,7 @@ setTimeout(function() {
             <div class="report-icon" style="background:#E6F1FB">📬</div>
             <div class="report-info">
               <div class="report-name">Affidavit of Service</div>
-              <div class="report-desc">Service of process confirmation — RECEIVEDOCSS / tbl_rcvd form</div>
+              <div class="report-desc">Service of process confirmation — SUBAFF. Civil Procedure Rules 2010</div>
               <span class="report-badge rb-affidavit">Affidavit</span>
             </div>
           </div>
@@ -1833,46 +1833,38 @@ setTimeout(function() {
       </div>
 
       <div class="reports-section">
-        <div class="reports-section-title">Court &amp; Litigation</div>
+        <div class="reports-section-title">Authority &amp; Administration</div>
         <div class="reports-grid">
-          <div class="report-card" onclick="openDocGen('notice-motion')">
-            <div class="report-icon" style="background:#FCEBEB">⚖️</div>
-            <div class="report-info">
-              <div class="report-name">Notice of Motion / Court Application</div>
-              <div class="report-desc">Court filing — maps to court form in DKMA. Civil Procedure Rules 2010</div>
-              <span class="report-badge rb-court">Litigation</span>
-            </div>
-          </div>
-          <div class="report-card" onclick="openDocGen('chamber-summons')">
-            <div class="report-icon" style="background:#FCEBEB">🏛️</div>
-            <div class="report-info">
-              <div class="report-name">Chamber Summons</div>
-              <div class="report-desc">Interlocutory application — Or. 40 CPR. Maps to deary / CGAPPOITNM form</div>
-              <span class="report-badge rb-court">Litigation</span>
-            </div>
-          </div>
-          <div class="report-card" onclick="openDocGen('plaint')">
-            <div class="report-icon" style="background:#FCEBEB">📝</div>
-            <div class="report-info">
-              <div class="report-name">Plaint</div>
-              <div class="report-desc">Civil claim originating process — Civil Procedure Act (Cap. 21)</div>
-              <span class="report-badge rb-court">Litigation</span>
-            </div>
-          </div>
-          <div class="report-card" onclick="openDocGen('poa-specific')">
+          <div class="report-card" onclick="openDocGen('authorization')">
             <div class="report-icon" style="background:#EAF3DE">✅</div>
             <div class="report-info">
-              <div class="report-name">Authorization / Power of Attorney</div>
-              <div class="report-desc">Written authority — AUTHORIZATION / AUTHORIZATIONL form. Powers of Attorney Act (Cap. 53)</div>
+              <div class="report-name">Authorization</div>
+              <div class="report-desc">Written authority — AUTHORIZATION form. Powers of Attorney Act (Cap. 53)</div>
               <span class="report-badge rb-access">Authority</span>
             </div>
           </div>
-          <div class="report-card" onclick="openDocGen('service-agreement')">
+          <div class="report-card" onclick="openDocGen('appointment')">
             <div class="report-icon" style="background:#E6F1FB">📅</div>
             <div class="report-info">
               <div class="report-name">Appointment / Service Letter</div>
-              <div class="report-desc">Letter of appointment — maps to APPT / APPOITNM / CGAPPOITNM form</div>
+              <div class="report-desc">Letter of appointment — APPOINTMENT report</div>
               <span class="report-badge rb-admin">Admin</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('lettersign')">
+            <div class="report-icon" style="background:#EDE9E2">✉️</div>
+            <div class="report-info">
+              <div class="report-name">Letter / Correspondence</div>
+              <div class="report-desc">Signed firm letter — LETTERSIGN / pLETTERSIGN report</div>
+              <span class="report-badge rb-admin">Correspondence</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('legal-opinion')">
+            <div class="report-icon" style="background:#EAF3DE">⚖️</div>
+            <div class="report-info">
+              <div class="report-name">Legal Opinion</div>
+              <div class="report-desc">Formal legal opinion — Legal Opinion report</div>
+              <span class="report-badge rb-admin">Opinion</span>
             </div>
           </div>
         </div>
@@ -1885,15 +1877,15 @@ setTimeout(function() {
             <div class="report-icon" style="background:#FFF0CC">🤝</div>
             <div class="report-info">
               <div class="report-name">Sale Agreement</div>
-              <div class="report-desc">Formal sale agreement — SALEAGMT / SALEGAMT form. Land Act 2012</div>
+              <div class="report-desc">Formal sale agreement — SALEAGM / SaleAgrmt-main / SaleAgrmt-01/-02/-03. Land Act 2012</div>
               <span class="report-badge rb-debt">Conveyancing</span>
             </div>
           </div>
-          <div class="report-card" onclick="openDocGen('lease')">
+          <div class="report-card" onclick="openDocGen('client-power')">
             <div class="report-icon" style="background:#FFF0CC">🏠</div>
             <div class="report-info">
-              <div class="report-name">Lease Agreement</div>
-              <div class="report-desc">Lease / tenancy — maps to SCOLLECT / ClassDetails form. Land Act 2012</div>
+              <div class="report-name">Client Power of Attorney</div>
+              <div class="report-desc">Power of attorney for property transactions — Client Power report</div>
               <span class="report-badge rb-debt">Conveyancing</span>
             </div>
           </div>
@@ -1901,20 +1893,28 @@ setTimeout(function() {
       </div>
 
       <div class="reports-section">
-        <div class="reports-section-title">Finance &amp; Debt Recovery</div>
+        <div class="reports-section-title">Finance &amp; Accounts</div>
         <div class="reports-grid">
-          <div class="report-card" onclick="openDocGen('demand-letter')">
+          <div class="report-card" onclick="openDocGen('collection')">
             <div class="report-icon" style="background:#EAF3DE">📊</div>
             <div class="report-info">
-              <div class="report-name">Client Statement / Demand</div>
-              <div class="report-desc">Account statement or demand notice — STATEMENT / STATEMENTTY form</div>
+              <div class="report-name">Collection / Fee Statement</div>
+              <div class="report-desc">Fee collection record — COLLECTION report. Advocates (Remuneration) Order</div>
               <span class="report-badge rb-finance">Finance</span>
             </div>
           </div>
-          <div class="report-card" onclick="openDocGen('demand-letter')">
+          <div class="report-card" onclick="openDocGen('statement')">
+            <div class="report-icon" style="background:#EAF3DE">📄</div>
+            <div class="report-info">
+              <div class="report-name">Client Statement</div>
+              <div class="report-desc">Account statement — STATEMENT report</div>
+              <span class="report-badge rb-finance">Finance</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('recppp')">
             <div class="report-icon" style="background:#EAF3DE">🧾</div>
             <div class="report-info">
-              <div class="report-name">Payment Receipt</div>
+              <div class="report-name">Receipt / Payment Acknowledgement</div>
               <div class="report-desc">Fee receipt — RECPPP / RCPT form. Records fees and disbursements received</div>
               <span class="report-badge rb-finance">Finance</span>
             </div>
@@ -1923,7 +1923,7 @@ setTimeout(function() {
             <div class="report-icon" style="background:#FFF0CC">📬</div>
             <div class="report-info">
               <div class="report-name">Debt Recovery — Under KES 100K</div>
-              <div class="report-desc">Demand / recovery letter. Schedule 5 scale — up to KES 100,000</div>
+              <div class="report-desc">Demand / recovery letter — Debt Recovery 100K report. Schedule 5 scale</div>
               <span class="report-badge rb-debt">Debt Recovery</span>
             </div>
           </div>
@@ -1931,7 +1931,7 @@ setTimeout(function() {
             <div class="report-icon" style="background:#FFF0CC">📬</div>
             <div class="report-info">
               <div class="report-name">Debt Recovery — KES 100K–500K</div>
-              <div class="report-desc">Demand letter for mid-range debts between KES 100,000 and KES 500,000</div>
+              <div class="report-desc">Demand letter — Debt Recovery 100K_500k report. Mid-range debts</div>
               <span class="report-badge rb-debt">Debt Recovery</span>
             </div>
           </div>
@@ -1939,7 +1939,7 @@ setTimeout(function() {
             <div class="report-icon" style="background:#FFF0CC">📬</div>
             <div class="report-info">
               <div class="report-name">Debt Recovery — KES 500K–2M</div>
-              <div class="report-desc">Demand letter for debts between KES 500,000 and KES 2,000,000</div>
+              <div class="report-desc">Demand letter — Debt Recovery 500K_2M report</div>
               <span class="report-badge rb-debt">Debt Recovery</span>
             </div>
           </div>
@@ -1947,52 +1947,8 @@ setTimeout(function() {
             <div class="report-icon" style="background:#FCEBEB">📬</div>
             <div class="report-info">
               <div class="report-name">Debt Recovery — Over KES 2M</div>
-              <div class="report-desc">High-value debt recovery — amounts exceeding KES 2,000,000</div>
+              <div class="report-desc">High-value demand letter — Debt Recovery 2M report</div>
               <span class="report-badge rb-court">High Value</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="reports-section">
-        <div class="reports-section-title">HR &amp; Staff Documents</div>
-        <div class="reports-grid">
-          <div class="report-card" onclick="openDocGen('employment-contract')">
-            <div class="report-icon" style="background:#E6F1FB">🪪</div>
-            <div class="report-info">
-              <div class="report-name">Employment Contract</div>
-              <div class="report-desc">Staff employment contract — UserDetails / staffuser / staffer form. Employment Act 2007</div>
-              <span class="report-badge rb-id">HR</span>
-            </div>
-          </div>
-          <div class="report-card" onclick="openDocGen('board-resolution')">
-            <div class="report-icon" style="background:#EEEDFE">📋</div>
-            <div class="report-info">
-              <div class="report-name">Board Resolution</div>
-              <div class="report-desc">Company board resolution — maps to SIGNAGE / SIGNDOC form. Companies Act 2015</div>
-              <span class="report-badge rb-admin">Corporate</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="reports-section">
-        <div class="reports-section-title">Received Documents &amp; Admin</div>
-        <div class="reports-grid">
-          <div class="report-card" onclick="openDocGen('stat-dec')">
-            <div class="report-icon" style="background:#E6F1FB">📥</div>
-            <div class="report-info">
-              <div class="report-name">Document Receipt Acknowledgement</div>
-              <div class="report-desc">Digital acknowledgement for documents received — tblReceived / tbl_rcvd / RECEIVEDOCSS form</div>
-              <span class="report-badge rb-admin">Admin</span>
-            </div>
-          </div>
-          <div class="report-card" onclick="openDocGen('demand-letter')">
-            <div class="report-icon" style="background:#EAF3DE">📩</div>
-            <div class="report-info">
-              <div class="report-name">Demand / Notice Letter</div>
-              <div class="report-desc">Formal notice or demand — maps to letter / Namep form</div>
-              <span class="report-badge rb-admin">Correspondence</span>
             </div>
           </div>
         </div>
@@ -9883,9 +9839,6 @@ document.addEventListener('DOMContentLoaded', function() {
 .dg-gen-btn:hover{background:var(--navy2)}
 .dg-gen-btn:disabled{opacity:.6;cursor:not-allowed}
 /* Preview */
-.dg-preview-header{text-align:center;border-bottom:2px solid var(--navy);padding-bottom:14px;margin-bottom:20px}
-.dg-preview-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--navy);letter-spacing:.5px}
-.dg-preview-ref{font-size:10px;color:var(--txt3);margin-top:4px}
 .dg-preview-body{font-family:Georgia,serif;font-size:12.5px;line-height:1.85;color:#111;white-space:pre-wrap;word-break:break-word}
 .dg-blank{background:#FFF5CC;border-bottom:1px dashed #C8A400;padding:0 3px;font-style:italic;color:#7A5C00}
 /* Spin */
@@ -9901,35 +9854,39 @@ document.addEventListener('DOMContentLoaded', function() {
 // ── Document generator — template-based (no AI required) ──
 
 const DG_DOCS={
-  'affidavit':{title:'Affidavit (general)',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'e.g. EVELYN NETTAH SAYO'},{id:'id_no',l:'ID / Passport number',ph:'e.g. 12345678'},{id:'occupation',l:'Description (adult Kenyan female/male)',ph:'e.g. adult Kenyan female'},{id:'address',l:'Full address',ph:'e.g. P.O. Box 45233 - 00800, Nairobi'},{id:'court',l:'Court (if court affidavit)',ph:'e.g. High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'e.g. Civil Case No. 123 of 2025'},{id:'facts',l:'Facts (one paragraph per line)',ph:'Paragraph 1 fact\nParagraph 2 fact\nParagraph 3 fact',ta:1},{id:'purpose',l:'Purpose / closing paragraph',ph:'e.g. I swear this affidavit affirming that I do not owe any rental income...'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+  'affidavit':{title:'General Affidavit',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Affidavits & Sworn Statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'e.g. EVELYN NETTAH SAYO'},{id:'id_no',l:'ID / Passport number',ph:'e.g. 12345678'},{id:'occupation',l:'Description (adult Kenyan female/male)',ph:'e.g. adult Kenyan female'},{id:'address',l:'Full address',ph:'e.g. P.O. Box 45233 - 00800, Nairobi'},{id:'court',l:'Court (if court affidavit)',ph:'e.g. High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'e.g. Civil Case No. 123 of 2025'},{id:'facts',l:'Facts (one paragraph per line)',ph:'Paragraph 1 fact\nParagraph 2 fact\nParagraph 3 fact',ta:1},{id:'purpose',l:'Purpose / closing paragraph',ph:'e.g. I swear this affidavit affirming that I do not owe any rental income...'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
-  'stat-dec':{title:'Statutory declaration',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'declarant',l:'Declarant full name',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'National ID'},{id:'address',l:'Address',ph:'Physical address'},{id:'subject',l:'Subject matter',ph:'e.g. Change of name, loss of documents'},{id:'facts',l:'Facts declared',ph:'State all relevant facts…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'affidavit-custmarr':{title:'Affidavit — Marriage Declaration',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Affidavits & Sworn Statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'e.g. 12345678'},{id:'occupation',l:'Description',ph:'e.g. adult Kenyan female'},{id:'address',l:'Full address',ph:'Physical / postal address'},{id:'spouse_name',l:'Spouse full name',ph:'Full legal name of spouse'},{id:'spouse_id',l:'Spouse ID / Passport',ph:'e.g. 98765432'},{id:'marriage_date',l:'Date of marriage',ph:'DD/MM/YYYY'},{id:'marriage_place',l:'Place of marriage',ph:'e.g. Nairobi'},{id:'facts',l:'Additional facts (one paragraph per line)',ph:'State any further relevant facts…',ta:1},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
-  'affidavit-service':{title:'Affidavit of service',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'server',l:'Process server name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'court',l:'Court',ph:'e.g. High Court at Nairobi'},{id:'doc_served',l:'Document(s) served',ph:'e.g. Plaint and summons'},{id:'served_on',l:'Person served',ph:'Full name'},{id:'service_address',l:'Address of service',ph:'Where service was effected'},{id:'service_date',l:'Date and time of service',ph:'DD/MM/YYYY at HH:MM'},{id:'mode',l:'Mode of service',ph:'',sel:['Personal service','Substituted service','Postal service','Electronic service']},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+  'affidavit-lostpp':{title:'Affidavit — Lost Passport',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Affidavits & Sworn Statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'e.g. 12345678'},{id:'occupation',l:'Description',ph:'e.g. adult Kenyan female'},{id:'address',l:'Full address',ph:'Physical / postal address'},{id:'pp_no',l:'Lost passport number',ph:'e.g. A1234567'},{id:'pp_issue',l:'Date of issue',ph:'DD/MM/YYYY'},{id:'pp_expiry',l:'Date of expiry',ph:'DD/MM/YYYY'},{id:'circumstances',l:'Circumstances of loss',ph:'Describe how and when the passport was lost…',ta:1},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
-  'chamber-summons':{title:'Chamber summons',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'In the High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'applicant',l:'Applicant name',ph:'Full legal name'},{id:'respondent',l:'Respondent name',ph:'Full legal name'},{id:'orders',l:'Orders sought',ph:'1. An order that…\n2. Costs of and incidental to this application…',ta:1},{id:'grounds',l:'Grounds',ph:'Brief grounds for the application…',ta:1},{id:'return_date',l:'Proposed return date',ph:'DD/MM/YYYY'},{id:'advocate',l:'Advocate on record',ph:'Name and firm'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'stat-dec':{title:'Statutory Declaration',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Affidavits & Sworn Statements',color:'#378ADD',fields:[{id:'declarant',l:'Declarant full name',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'National ID'},{id:'address',l:'Address',ph:'Physical address'},{id:'subject',l:'Subject matter',ph:'e.g. Change of name, loss of documents'},{id:'facts',l:'Facts declared',ph:'State all relevant facts…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'notice-motion':{title:'Notice of motion',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'division',l:'Division',ph:'e.g. Commercial Division'},{id:'case_no',l:'Case number',ph:'e.g. Petition No. 12 of 2025'},{id:'applicant',l:'Applicant',ph:'Full legal name'},{id:'respondent',l:'Respondent',ph:'Full legal name'},{id:'orders',l:'Orders sought',ph:'1. An order that…\n2. Costs…',ta:1},{id:'grounds',l:'Grounds',ph:'This application is premised on the grounds that…',ta:1},{id:'supporting',l:'Supporting documents',ph:'e.g. Affidavit of [Name], documents annexed hereto'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'affidavit-service':{title:'Affidavit of Service',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Affidavits & Sworn Statements',color:'#378ADD',fields:[{id:'server',l:'Process server name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'court',l:'Court',ph:'e.g. High Court at Nairobi'},{id:'doc_served',l:'Document(s) served',ph:'e.g. Plaint and summons'},{id:'served_on',l:'Person served',ph:'Full name'},{id:'service_address',l:'Address of service',ph:'Where service was effected'},{id:'service_date',l:'Date and time of service',ph:'DD/MM/YYYY at HH:MM'},{id:'mode',l:'Mode of service',ph:'',sel:['Personal service','Substituted service','Postal service','Electronic service']},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
-  'plaint':{title:'Plaint',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court / Magistrates Court at…'},{id:'plaintiff',l:'Plaintiff',ph:'Full name, ID, address'},{id:'defendant',l:'Defendant',ph:'Full name, ID, address'},{id:'cause',l:'Cause of action',ph:'e.g. Breach of contract, negligence'},{id:'particulars',l:'Particulars of claim',ph:'1. On or about [date] the Defendant…',ta:1},{id:'amount',l:'Amount claimed (KES)',ph:'e.g. 1,500,000',num:1},{id:'interest',l:'Interest claimed',ph:'e.g. 14% p.a. from date of breach'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'authorization':{title:'Authorization',sub:'Powers of Attorney Act (Cap. 53) — Kenya',cat:'Authority & Administration',color:'#534AB7',fields:[{id:'donor',l:'Donor full name',ph:'Full legal name'},{id:'donor_id',l:'Donor ID',ph:'National ID'},{id:'attorney',l:'Attorney full name',ph:'Full legal name'},{id:'attorney_id',l:'Attorney ID',ph:'National ID'},{id:'purpose',l:'Specific purpose / transaction',ph:'e.g. To sell and transfer LR No. 209/123 on my behalf'},{id:'limitations',l:'Limitations on authority',ph:'e.g. Sale price not less than KES 5,000,000'},{id:'expiry',l:'Expiry',ph:'DD/MM/YYYY or \"upon completion of transaction\"'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'service-agreement':{title:'Service / appointment letter',sub:'Law of Contract Act (Cap. 23) — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'provider',l:'Service provider',ph:'Full name / company'},{id:'client',l:'Client',ph:'Full name / company'},{id:'services',l:'Services to be provided',ph:'Describe services in detail…',ta:1},{id:'fee',l:'Fee amount (KES)',ph:'e.g. 200,000',num:1},{id:'fee_structure',l:'Fee structure',ph:'',sel:['Fixed fee','Monthly retainer','Hourly rate','Milestone-based']},{id:'duration',l:'Contract duration',ph:'',sel:['3 months','6 months','1 year','2 years','Until completion']},{id:'governing_law',l:'Governing law',ph:'',sel:['Laws of Kenya','Laws of England & Wales']},{id:'dispute',l:'Dispute resolution',ph:'',sel:['Nairobi courts','NCIA Arbitration','Mediation then arbitration']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'appointment':{title:'Appointment / Service Letter',sub:'Law of Contract Act (Cap. 23) — Kenya',cat:'Authority & Administration',color:'#534AB7',fields:[{id:'provider',l:'Service provider / appointee',ph:'Full name / company'},{id:'client',l:'Client / appointing party',ph:'Full name / company'},{id:'services',l:'Services / role description',ph:'Describe services or appointment terms in detail…',ta:1},{id:'fee',l:'Fee amount (KES)',ph:'e.g. 200,000',num:1},{id:'fee_structure',l:'Fee structure',ph:'',sel:['Fixed fee','Monthly retainer','Hourly rate','Milestone-based']},{id:'duration',l:'Duration',ph:'',sel:['3 months','6 months','1 year','2 years','Until completion']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'employment-contract':{title:'Employment contract',sub:'Employment Act 2007 — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'employer',l:'Employer name',ph:'Company name (as registered)'},{id:'employer_reg',l:'Employer reg. number',ph:'Registration / PIN number'},{id:'employee',l:'Employee full name',ph:'Full legal name'},{id:'employee_id',l:'Employee ID number',ph:'National ID'},{id:'role',l:'Job title',ph:'e.g. Senior Associate'},{id:'start_date',l:'Start date',ph:'DD/MM/YYYY'},{id:'salary',l:'Gross monthly salary (KES)',ph:'e.g. 150,000',num:1},{id:'probation',l:'Probation period',ph:'',sel:['3 months','6 months','No probation']},{id:'notice',l:'Notice period',ph:'',sel:['1 month','2 months','3 months','As per Employment Act']},{id:'non_compete',l:'Non-compete (if any)',ph:'',sel:['None','6 months','12 months','24 months']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'lettersign':{title:'Letter / Correspondence',sub:'D.K. Mutonga & Co. Advocates — DKMA',cat:'Authority & Administration',color:'#5F5E5A',fields:[{id:'recipient',l:'Recipient name',ph:'Full name / company'},{id:'recipient_address',l:'Recipient address',ph:'Physical / postal address'},{id:'subject',l:'Subject (RE:)',ph:'e.g. RE: DEMAND FOR PAYMENT'},{id:'salutation',l:'Salutation',ph:'',sel:['Dear Sir/Madam,','Dear Sir,','Dear Madam,','To Whom It May Concern,']},{id:'body',l:'Letter body',ph:'Write the full letter content here…',ta:1},{id:'closing',l:'Closing',ph:'',sel:['Yours faithfully,','Yours sincerely,','Yours truly,']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'lease':{title:'Lease agreement',sub:'Land Act 2012, Landlord & Tenant Act — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'landlord',l:'Landlord name',ph:'Full legal name'},{id:'tenant',l:'Tenant name',ph:'Full legal name'},{id:'premises',l:'Premises description',ph:'e.g. Flat 4B, Westlands Court, Nairobi'},{id:'lr_no',l:'LR / Title number',ph:'e.g. LR No. 209/123'},{id:'rent',l:'Monthly rent (KES)',ph:'e.g. 75,000',num:1},{id:'deposit',l:'Security deposit (KES)',ph:'e.g. 150,000',num:1},{id:'term',l:'Lease term',ph:'',sel:['6 months','1 year','2 years','3 years','5 years']},{id:'start_date',l:'Commencement date',ph:'DD/MM/YYYY'},{id:'use',l:'Permitted use',ph:'e.g. Residential / Commercial office'},{id:'date',l:'Date of agreement',ph:'DD/MM/YYYY'}]},
+  'legal-opinion':{title:'Legal Opinion',sub:'D.K. Mutonga & Co. Advocates — DKMA',cat:'Authority & Administration',color:'#2D6A4F',fields:[{id:'recipient',l:'Addressed to',ph:'Full name / company'},{id:'subject',l:'Subject matter',ph:'e.g. Legal opinion on title to LR No. 209/123'},{id:'instructions',l:'Instructions received',ph:'Summarise the instructions given…',ta:1},{id:'facts',l:'Background facts',ph:'Set out the relevant facts…',ta:1},{id:'law',l:'Applicable law / analysis',ph:'Set out the legal framework and analysis…',ta:1},{id:'opinion',l:'Opinion',ph:'In our considered opinion…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'sale-agreement':{title:'Sale of goods agreement',sub:'Sale of Goods Act (Cap. 31) — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'seller',l:'Seller',ph:'Full name / company'},{id:'buyer',l:'Buyer',ph:'Full name / company'},{id:'goods',l:'Description of goods',ph:'Describe goods, quantity, specification…',ta:1},{id:'price',l:'Purchase price (KES)',ph:'e.g. 5,000,000',num:1},{id:'payment_terms',l:'Payment terms',ph:'',sel:['Full payment on signing','50% deposit, balance on delivery','30/70 split','Within 30 days']},{id:'delivery',l:'Delivery terms',ph:'e.g. Ex-works Nairobi, CIF Mombasa'},{id:'warranty',l:'Warranty period',ph:'',sel:['No warranty','3 months','6 months','12 months']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'sale-agreement':{title:'Sale Agreement',sub:'Land Act 2012 / Sale of Goods Act (Cap. 31) — Kenya',cat:'Conveyancing & Property',color:'#854F0B',fields:[{id:'seller',l:'Vendor / Seller full name',ph:'Full legal name'},{id:'seller_id',l:'Vendor ID',ph:'National ID'},{id:'seller_address',l:'Vendor address',ph:'Physical / postal address'},{id:'buyer',l:'Purchaser / Buyer full name',ph:'Full legal name'},{id:'buyer_id',l:'Purchaser ID',ph:'National ID'},{id:'buyer_address',l:'Purchaser address',ph:'Physical / postal address'},{id:'property',l:'Property / Title No.',ph:'e.g. LR No. 209/123 / Plot No. 45, Westlands'},{id:'property_size',l:'Property size',ph:'e.g. 0.5 acres / 50 sq.m'},{id:'property_location',l:'Property location',ph:'e.g. Westlands, Nairobi'},{id:'price',l:'Purchase price (KES)',ph:'e.g. 5,000,000',num:1},{id:'payment_method',l:'Payment method',ph:'',sel:['Full payment on signing','50% deposit, balance on transfer','As per agreed schedule']},{id:'date',l:'Date of agreement',ph:'DD/MM/YYYY'}]},
 
-  'poa-specific':{title:'Specific power of attorney',sub:'Powers of Attorney Act (Cap. 53) — Kenya',cat:'Powers & authority',color:'#534AB7',fields:[{id:'donor',l:'Donor full name',ph:'Full legal name'},{id:'donor_id',l:'Donor ID',ph:'National ID'},{id:'attorney',l:'Attorney full name',ph:'Full legal name'},{id:'attorney_id',l:'Attorney ID',ph:'National ID'},{id:'purpose',l:'Specific purpose / transaction',ph:'e.g. To sell and transfer LR No. 209/123 on my behalf'},{id:'limitations',l:'Limitations on authority',ph:'e.g. Sale price not less than KES 5,000,000'},{id:'expiry',l:'Expiry',ph:'DD/MM/YYYY or "upon completion of transaction"'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'client-power':{title:'Client Power of Attorney',sub:'Powers of Attorney Act (Cap. 53) — Kenya',cat:'Conveyancing & Property',color:'#854F0B',fields:[{id:'donor',l:'Donor full name',ph:'Full legal name'},{id:'donor_id',l:'Donor ID',ph:'National ID'},{id:'donor_address',l:'Donor address',ph:'Physical / postal address'},{id:'attorney',l:'Attorney full name',ph:'Full legal name'},{id:'attorney_id',l:'Attorney ID',ph:'National ID'},{id:'property',l:'Property / Title No.',ph:'e.g. LR No. 209/123'},{id:'purpose',l:'Powers granted',ph:'e.g. To sell, transfer, execute documents and do all acts necessary in respect of…'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'board-resolution':{title:'Board resolution',sub:'Companies Act 2015 — Kenya',cat:'Powers & authority',color:'#534AB7',fields:[{id:'company',l:'Company name',ph:'As per certificate of incorporation'},{id:'reg_no',l:'Registration number',ph:'PVT/123456'},{id:'res_type',l:'Type of resolution',ph:'',sel:['Opening bank account','Authorising signatory','Borrowing / loan','Property transaction','Appointment of director','Removal of director','Dividend declaration','Share allotment']},{id:'meeting_date',l:'Date of meeting',ph:'DD/MM/YYYY'},{id:'directors',l:'Directors present',ph:'Name 1, Name 2…'},{id:'resolution',l:'Resolution text',ph:'IT IS HEREBY RESOLVED that…',ta:1},{id:'date',l:'Date signed',ph:'DD/MM/YYYY'}]},
+  'collection':{title:'Collection / Fee Statement',sub:'Advocates (Remuneration) Order — Kenya',cat:'Finance & Accounts',color:'#185FA5',fields:[{id:'client',l:'Client name',ph:'Full name / company'},{id:'client_address',l:'Client address',ph:'Physical / postal address'},{id:'matter',l:'Matter / file reference',ph:'e.g. Civil Case No. 45/2025'},{id:'items',l:'Items (one per line: description — KES amount)',ph:'Professional fees — 50,000\nDisbursements — 5,000\nVAT (16%) — 8,000',ta:1},{id:'total',l:'Total amount (KES)',ph:'e.g. 63,000',num:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'demand-letter':{title:'Demand letter',sub:'Civil dispute pre-action notice — Kenya',cat:'Demand & notice',color:'#5F5E5A',fields:[{id:'sender',l:'Sender / law firm',ph:'Name and address'},{id:'recipient',l:'Recipient name',ph:'Full name / company'},{id:'recipient_address',l:'Recipient address',ph:'Physical / postal address'},{id:'subject',l:'Subject matter',ph:'e.g. Demand for payment of outstanding debt'},{id:'amount',l:'Amount demanded (KES)',ph:'e.g. 500,000',num:1},{id:'background',l:'Background facts',ph:'Brief summary of the dispute…',ta:1},{id:'demand',l:'Specific demand',ph:'e.g. Payment within 14 days, delivery of goods…',ta:1},{id:'deadline_days',l:'Response deadline (days)',ph:'e.g. 14'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]}
+  'statement':{title:'Client Statement',sub:'D.K. Mutonga & Co. Advocates — DKMA',cat:'Finance & Accounts',color:'#185FA5',fields:[{id:'client',l:'Client name',ph:'Full name / company'},{id:'client_address',l:'Client address',ph:'Physical / postal address'},{id:'period',l:'Statement period',ph:'e.g. 1 January 2025 — 31 March 2025'},{id:'opening',l:'Opening balance (KES)',ph:'e.g. 0',num:1},{id:'invoiced',l:'Amount invoiced (KES)',ph:'e.g. 150,000',num:1},{id:'paid',l:'Amount paid (KES)',ph:'e.g. 100,000',num:1},{id:'balance',l:'Balance outstanding (KES)',ph:'e.g. 50,000',num:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
+  'recppp':{title:'Receipt / Payment Acknowledgement',sub:'Advocates (Remuneration) Order — Kenya',cat:'Finance & Accounts',color:'#185FA5',fields:[{id:'received_from',l:'Received from',ph:'Full name / company'},{id:'amount',l:'Amount received (KES)',ph:'e.g. 50,000',num:1},{id:'in_words',l:'Amount in words',ph:'e.g. Kenya Shillings Fifty Thousand Only'},{id:'payment_for',l:'Payment for',ph:'e.g. Professional fees — Civil Case No. 45/2025'},{id:'payment_mode',l:'Mode of payment',ph:'',sel:['Cash','Cheque','Bank transfer','Mobile money']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
+  'demand-letter':{title:'Demand Letter',sub:'Civil dispute pre-action notice — Kenya',cat:'Finance & Accounts',color:'#185FA5',fields:[{id:'sender',l:'Sender / law firm',ph:'Name and address'},{id:'recipient',l:'Recipient name',ph:'Full name / company'},{id:'recipient_address',l:'Recipient address',ph:'Physical / postal address'},{id:'subject',l:'Subject matter',ph:'e.g. Demand for payment of outstanding debt'},{id:'amount',l:'Amount demanded (KES)',ph:'e.g. 500,000',num:1},{id:'background',l:'Background facts',ph:'Brief summary of the dispute…',ta:1},{id:'demand',l:'Specific demand',ph:'e.g. Payment within 14 days, delivery of goods…',ta:1},{id:'deadline_days',l:'Response deadline (days)',ph:'e.g. 14'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]}
 };
 
-const DG_CATS=['Sworn statements','Court applications','Contracts','Powers & authority','Demand & notice'];
-const DG_CAT_COLORS={'Sworn statements':'#378ADD','Court applications':'#993C1D','Contracts':'#639922','Powers & authority':'#534AB7','Demand & notice':'#5F5E5A'};
+const DG_CATS=['Affidavits & Sworn Statements','Authority & Administration','Conveyancing & Property','Finance & Accounts'];
+const DG_CAT_COLORS={'Affidavits & Sworn Statements':'#378ADD','Authority & Administration':'#534AB7','Conveyancing & Property':'#854F0B','Finance & Accounts':'#185FA5'};
 
 let dgCurrentId=null, dgGeneratedText='';
 
@@ -9938,14 +9895,14 @@ const DG_REPORT_MAP={
   'General Affidavit':'affidavit',
   'Affidavit_CustMarrDecl':'affidavit',
   'Affidavit_LostPP':'affidavit',
-  'Court':'notice-motion',
+  'Court':'lettersign',
   'AUTHORIZATION':'poa-specific',
   'APPOINTMENT':'service-agreement',
   'STATEMENT':'demand-letter',
   'RECPPP':'demand-letter',
   'SaleAgrmt-main':'sale-agreement',
   'DIGIRECEIVE':'stat-dec',
-  'EmployeeID':'employment-contract',
+  'EmployeeID':'lettersign',
 };
 
 function openReport(reportName){
@@ -10336,167 +10293,6 @@ function dgBuildDocument(id, v){
       ].filter(l=>l!==null&&l!==undefined).join(nl);
     }
 
-    case 'chamber-summons': case 'notice-motion':{
-      const docTitle = id==='chamber-summons' ? 'CHAMBER SUMMONS' : 'NOTICE OF MOTION';
-      return [
-        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
-        id==='notice-motion' && v.division ? `                    ${v.division.toUpperCase()} DIVISION` : '',
-        v.case_no ? `                    ${v.case_no}` : '',
-        '',
-        `BETWEEN`,
-        '',
-        `${(v.applicant||'[APPLICANT]').toUpperCase()}  ......................................................  APPLICANT`,
-        '',
-        `AND`,
-        '',
-        `${(v.respondent||'[RESPONDENT]').toUpperCase()}  ..................................................  RESPONDENT`,
-        '',
-        `              ${docTitle}`,
-        '',
-        `LET ALL PARTIES CONCERNED attend before the Honourable Court at the time and place to be appointed for the hearing of an application by the Applicant for orders that:`,
-        '',
-        `${v.orders||'[STATE ORDERS SOUGHT]'}`,
-        '',
-        `GROUNDS:`,
-        `${v.grounds||'[STATE GROUNDS]'}`,
-        '',
-        `This application is supported by the affidavit of the Applicant annexed hereto${id==='notice-motion'&&v.supporting?', and by:\n'+v.supporting:''}.`,
-        '',
-        `Proposed return date: ${v.return_date||id==='chamber-summons'?v.return_date||'[DATE]':'N/A'}`,
-        '',
-        `DATED this ${v.date||'       day of                    , 20     '}.`,
-        '',
-        `_________________________________`,
-        `ADVOCATE FOR THE APPLICANT`,
-        `${v.advocate||'[ADVOCATE NAME AND FIRM]'}`,
-        '',
-        `TO: THE RESPONDENT`,
-        `    ${v.respondent||'[RESPONDENT NAME AND ADDRESS]'}`,
-        stampNote
-      ].filter(l=>l!==null&&l!==undefined).join(nl);
-    }
-
-    case 'plaint':{
-      return [
-        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
-        '',
-        `BETWEEN`,
-        '',
-        `${(v.plaintiff||'[PLAINTIFF]').toUpperCase()}  ..............................................  PLAINTIFF`,
-        '',
-        `AND`,
-        '',
-        `${(v.defendant||'[DEFENDANT]').toUpperCase()}  ............................................  DEFENDANT`,
-        '',
-        `                    PLAINT`,
-        `              (Civil Procedure Act, Cap. 21 — Kenya)`,
-        '',
-        `1. The Plaintiff is ${v.plaintiff||'[PLAINTIFF DETAILS]'}.`,
-        '',
-        `2. The Defendant is ${v.defendant||'[DEFENDANT DETAILS]'}.`,
-        '',
-        `3. CAUSE OF ACTION: ${v.cause||'[CAUSE OF ACTION]'}`,
-        '',
-        `4. PARTICULARS OF CLAIM:`,
-        `${v.particulars||'[STATE PARTICULARS]'}`,
-        '',
-        `5. The Plaintiff claims from the Defendant the sum of Kenya Shillings ${v.amount||'[AMOUNT IN FIGURES]'} (KES ${v.amount||'[AMOUNT]'}) together with interest thereon at ${v.interest||'14% per annum from the date of breach'} until payment in full.`,
-        '',
-        `6. The Plaintiff also claims the costs of this suit and such other relief as this Honourable Court may deem fit.`,
-        '',
-        `DATED this ${v.date||'       day of                    , 20     '}.`,
-        '',
-        `_________________________________`,
-        `ADVOCATE FOR THE PLAINTIFF`,
-        stampNote
-      ].join(nl);
-    }
-
-    case 'service-agreement':{
-      return [
-        `              SERVICE AGREEMENT`,
-        `         (Law of Contract Act, Cap. 23 — Kenya)`,
-        '',
-        `THIS SERVICE AGREEMENT is entered into on ${v.date||'the       day of                    , 20     '} between:`,
-        '',
-        `1. ${v.provider||'[SERVICE PROVIDER]'} — hereinafter the "SERVICE PROVIDER"; and`,
-        `2. ${v.client||'[CLIENT]'} — hereinafter the "CLIENT".`,
-        '',
-        `1. SERVICES`,
-        `   The Service Provider shall provide the following services to the Client:`,
-        `   ${v.services||'[DESCRIBE SERVICES]'}`,
-        '',
-        `2. FEES`,
-        `   The Client shall pay Kenya Shillings ${v.fee||'[AMOUNT]'} (KES ${v.fee||'[AMOUNT]'}) on a ${v.fee_structure||'fixed fee'} basis.`,
-        '',
-        `3. DURATION`,
-        `   This Agreement shall continue for ${v.duration||'[DURATION]'} from the date hereof unless earlier terminated.`,
-        '',
-        `4. GOVERNING LAW`,
-        `   This Agreement shall be governed by the ${v.governing_law||'Laws of Kenya'} and disputes submitted to ${v.dispute||'the courts of Kenya'}.`,
-        '',
-        sig(`SERVICE PROVIDER — ${(v.provider||'').toUpperCase()}`),
-        sig(`CLIENT — ${(v.client||'').toUpperCase()}`),
-        witness,
-        stampNote
-      ].join(nl);
-    }
-
-    case 'employment-contract':{
-      return [
-        `              EMPLOYMENT CONTRACT`,
-        `              (Employment Act 2007 — Kenya)`,
-        '',
-        `THIS CONTRACT OF EMPLOYMENT is entered into on ${v.date||'the       day of                    , 20     '} between:`,
-        '',
-        `EMPLOYER: ${v.employer||'[EMPLOYER]'} (Reg. No. ${v.employer_reg||'[REG NO]'})`,
-        `EMPLOYEE: ${v.employee||'[EMPLOYEE]'} (ID No. ${v.employee_id||'[ID NO]'})`,
-        '',
-        `1. POSITION: The Employee is engaged as ${v.role||'[JOB TITLE]'} with effect from ${v.start_date||'[START DATE]'}.`,
-        '',
-        `2. REMUNERATION: The Employee shall be paid a gross monthly salary of Kenya Shillings ${v.salary||'[AMOUNT]'} (KES ${v.salary||'[AMOUNT]'}).`,
-        '',
-        `3. PROBATION: ${v.probation||'3 months'} probation period from commencement.`,
-        '',
-        `4. NOTICE: Either party may terminate this contract by giving ${v.notice||'1 month'} written notice.`,
-        '',
-        v.non_compete&&v.non_compete!=='None' ? `5. NON-COMPETE: The Employee shall not engage in competing activities for ${v.non_compete} following cessation of employment.\n` : '',
-        `6. This contract is subject to the Employment Act 2007 and all applicable laws of Kenya.`,
-        '',
-        sig(`EMPLOYER — ${(v.employer||'').toUpperCase()}`),
-        sig(`EMPLOYEE — ${(v.employee||'').toUpperCase()}`),
-        witness,
-        stampNote
-      ].filter(l=>l!==null&&l!==undefined).join(nl);
-    }
-
-    case 'lease':{
-      return [
-        `              LEASE AGREEMENT`,
-        `      (Land Act 2012 & Landlord and Tenant Act — Kenya)`,
-        '',
-        `THIS LEASE AGREEMENT is entered into on ${v.date||'the       day of                    , 20     '} between:`,
-        '',
-        `LANDLORD: ${v.landlord||'[LANDLORD]'} — hereinafter the "LANDLORD"; and`,
-        `TENANT:   ${v.tenant||'[TENANT]'} — hereinafter the "TENANT".`,
-        '',
-        `1. PREMISES: The Landlord lets to the Tenant the premises described as ${v.premises||'[PREMISES]'}, LR/Title No. ${v.lr_no||'[LR NUMBER]'}.`,
-        '',
-        `2. TERM: The tenancy shall be for a period of ${v.term||'[TERM]'} commencing on ${v.start_date||'[COMMENCEMENT DATE]'}.`,
-        '',
-        `3. RENT: The Tenant shall pay a monthly rent of Kenya Shillings ${v.rent||'[AMOUNT]'} (KES ${v.rent||'[AMOUNT]'}) payable in advance on the first day of each month.`,
-        '',
-        `4. DEPOSIT: The Tenant shall pay a security deposit of Kenya Shillings ${v.deposit||'[AMOUNT]'} (KES ${v.deposit||'[AMOUNT]'}) refundable at the end of the tenancy subject to the condition of the premises.`,
-        '',
-        `5. USE: The premises shall be used for ${v.use||'[PERMITTED USE]'} only.`,
-        '',
-        sig(`LANDLORD — ${(v.landlord||'').toUpperCase()}`),
-        sig(`TENANT — ${(v.tenant||'').toUpperCase()}`),
-        witness,
-        stampNote
-      ].join(nl);
-    }
-
     case 'sale-agreement':{
       return [
         `              SALE AGREEMENT`,
@@ -10524,61 +10320,6 @@ function dgBuildDocument(id, v){
         sig(`VENDOR — ${(v.seller||'').toUpperCase()}`),
         sig(`PURCHASER — ${(v.buyer||'').toUpperCase()}`),
         witness,
-        stampNote
-      ].join(nl);
-    }
-
-    case 'poa-specific':{
-      return [
-        `              POWER OF ATTORNEY`,
-        `         (Powers of Attorney Act, Cap. 53 — Kenya)`,
-        '',
-        `KNOW ALL MEN BY THESE PRESENTS that I, ${v.donor||'[DONOR NAME]'}, holder of ID/Passport No. ${v.donor_id||'[ID NUMBER]'},`,
-        '',
-        `do hereby appoint ${v.attorney||'[ATTORNEY NAME]'}, holder of ID/Passport No. ${v.attorney_id||'[ID NUMBER]'} (hereinafter "my Attorney"),`,
-        '',
-        `to be my true and lawful attorney with full power and authority in my name and on my behalf to:`,
-        '',
-        v.purpose||'[STATE SPECIFIC PURPOSE AND TRANSACTION]',
-        '',
-        v.limitations ? `LIMITATIONS ON AUTHORITY:\n${v.limitations}\n` : '',
-        `This Power of Attorney shall expire on ${v.expiry||'completion of the above transaction'}.`,
-        '',
-        `IN WITNESS WHEREOF I have hereunto set my hand this ${v.date||'       day of                    , 20     '}.`,
-        '',
-        `_________________________________`,
-        `DONOR/PRINCIPAL — ${(v.donor||'').toUpperCase()}`,
-        witness,
-        stampNote
-      ].filter(l=>l!==null&&l!==undefined).join(nl);
-    }
-
-    case 'board-resolution':{
-      return [
-        `              BOARD RESOLUTION`,
-        `              (Companies Act 2015 — Kenya)`,
-        '',
-        `COMPANY: ${v.company||'[COMPANY NAME]'} (Reg. No. ${v.reg_no||'[REG NO]'})`,
-        '',
-        `MINUTES OF A MEETING OF THE BOARD OF DIRECTORS`,
-        `Held on ${v.meeting_date||'[DATE OF MEETING]'}`,
-        '',
-        `PRESENT: ${v.directors||'[DIRECTORS PRESENT]'}`,
-        '',
-        `The following resolution was duly passed:`,
-        '',
-        `RESOLUTION — ${(v.res_type||'[TYPE OF RESOLUTION]').toUpperCase()}`,
-        '',
-        `${v.resolution||'IT IS HEREBY RESOLVED that…'}`,
-        '',
-        `This resolution is passed in accordance with the Companies Act 2015 and the Company's Articles of Association.`,
-        '',
-        `Certified as a true copy:`,
-        '',
-        sig('CHAIRPERSON'),
-        sig('COMPANY SECRETARY'),
-        '',
-        `Date signed: ${v.date||'       day of                    , 20     '}`,
         stampNote
       ].join(nl);
     }
@@ -10615,7 +10356,374 @@ function dgBuildDocument(id, v){
         ``,
         `CC: File`,
       ].join(nl);
-    }default:{
+    }
+
+    case 'affidavit-custmarr':{
+      const deponent = v.deponent||'[DEPONENT NAME]';
+      const swornAt = v.address ? v.address.split(',').pop().trim().toUpperCase() : 'NAIROBI';
+      const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      return [
+        `                         REPUBLIC OF KENYA`,
+        `          IN THE MATTER OF THE OATHS AND STATUTORY`,
+        `          DECLARATIONS ACT, CAP 15 OF THE LAWS OF KENYA`,
+        '',
+        `                   AFFIDAVIT — MARRIAGE DECLARATION`,
+        '',
+        `I, ${deponent.toUpperCase()} of ${v.address||'[ADDRESS]'} within the Republic of Kenya, do hereby make oath and state as follows:`,
+        '',
+        `1 .\tTHAT I am an adult ${v.occupation||'Kenyan'} of National Identity Number ${v.id_no||'[ID NUMBER]'}.`,
+        '',
+        `2 .\tTHAT I am duly competent to swear this affidavit.`,
+        '',
+        `3 .\tTHAT I was married to ${(v.spouse_name||'[SPOUSE NAME]').toUpperCase()}, National Identity Number ${v.id_no||'[ID NUMBER]'}, on the ${v.marriage_date||'[DATE OF MARRIAGE]'} at ${v.marriage_place||'[PLACE OF MARRIAGE]'}.`,
+        '',
+        v.facts ? `4 .\tTHAT ${v.facts}` : '',
+        '',
+        `SWORN at ${swornAt} by the said`,
+        `${deponent.toUpperCase()}`,
+        `This         Day of                         ,  ${new Date().getFullYear()}`,
+        '',
+        `_________________________________`,
+        `DEPONENT`,
+        '',
+        `BEFORE ME:`,
+        '',
+        `_________________________________`,
+        `COMMISSIONER OF OATHS`,
+        '',
+        `Drawn by:`,
+        `${firmName}`,
+        `${firmPO},`,
+        `Nairobi`
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'affidavit-lostpp':{
+      const deponent = v.deponent||'[DEPONENT NAME]';
+      const swornAt = v.address ? v.address.split(',').pop().trim().toUpperCase() : 'NAIROBI';
+      const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      return [
+        `                         REPUBLIC OF KENYA`,
+        `          IN THE MATTER OF THE OATHS AND STATUTORY`,
+        `          DECLARATIONS ACT, CAP 15 OF THE LAWS OF KENYA`,
+        '',
+        `                    AFFIDAVIT IN REGARDS TO LOST PASSPORT`,
+        `                    BELONGING TO ${deponent.toUpperCase()}`,
+        '',
+        `I, ${deponent.toUpperCase()} of ${v.address||'[ADDRESS]'} within the Republic of Kenya, do hereby make oath and state as follows:`,
+        '',
+        `1 .\tTHAT I am an adult ${v.occupation||'Kenyan'} of National Identity Number ${v.id_no||'[ID NUMBER]'}.`,
+        '',
+        `2 .\tTHAT I am duly competent to swear this affidavit.`,
+        '',
+        `3 .\tTHAT I was in possession of Passport Number ${v.pp_no||'[PASSPORT NUMBER]'} issued on ${v.pp_issue||'[DATE OF ISSUE]'} and expiring on ${v.pp_expiry||'[DATE OF EXPIRY]'}.`,
+        '',
+        `4 .\tTHAT the circumstances surrounding the loss of the said passport are as follows: ${v.circumstances||'[STATE CIRCUMSTANCES OF LOSS]'}.`,
+        '',
+        `5 .\tTHAT I have not found the said passport to date and believe it to be lost.`,
+        '',
+        `6 .\tTHAT I swear this affidavit to enable me apply for a replacement passport.`,
+        '',
+        `7 .\tTHAT what is deponed herein is correct to the best of my knowledge, information and belief.`,
+        '',
+        `SWORN at ${swornAt} by the said`,
+        `${deponent.toUpperCase()}`,
+        `This         Day of                         ,  ${new Date().getFullYear()}`,
+        '',
+        `_________________________________`,
+        `DEPONENT`,
+        '',
+        `BEFORE ME:`,
+        '',
+        `_________________________________`,
+        `COMMISSIONER OF OATHS`,
+        '',
+        `Drawn by:`,
+        `${firmName}`,
+        `${firmPO},`,
+        `Nairobi`
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'authorization': case 'poa-specific':{
+      const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      return [
+        `                         REPUBLIC OF KENYA`,
+        '',
+        `                           AUTHORIZATION`,
+        '',
+        `I, ${(v.donor||'[DONOR NAME]').toUpperCase()}, National Identity Number ${v.donor_id||'[ID NUMBER]'}, do hereby authorize:`,
+        '',
+        `${(v.attorney||'[ATTORNEY NAME]').toUpperCase()}, National Identity Number ${v.attorney_id||'[ID NUMBER]'},`,
+        '',
+        `to do the following on my behalf:`,
+        '',
+        `${v.purpose||'[STATE THE SPECIFIC PURPOSE / TRANSACTION]'}`,
+        '',
+        v.limitations ? `LIMITATIONS: ${v.limitations}` : '',
+        '',
+        v.expiry ? `This authorization expires on: ${v.expiry}` : '',
+        '',
+        `DATED this         Day of                         ,  ${v.date||new Date().getFullYear()}`,
+        '',
+        `_________________________________`,
+        `DONOR / PRINCIPAL`,
+        `${(v.donor||'[DONOR NAME]').toUpperCase()}`,
+        '',
+        `_________________________________`,
+        `AUTHORIZED PERSON`,
+        `${(v.attorney||'[ATTORNEY NAME]').toUpperCase()}`,
+        '',
+        `Drawn by:`,
+        `${firmName}`,
+        `${firmPO},`,
+        `Nairobi`
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'appointment':{
+      const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const today = new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
+      return [
+        `${firmName}`,
+        `${firmPO}`,
+        `Nairobi, Kenya`,
+        '',
+        `Date: ${v.date||today}`,
+        '',
+        `${(v.provider||'[APPOINTEE NAME]').toUpperCase()}`,
+        '',
+        `Dear Sir/Madam,`,
+        '',
+        `RE: LETTER OF APPOINTMENT / SERVICE`,
+        '',
+        `We are pleased to confirm your appointment / engagement on the following terms:`,
+        '',
+        `CLIENT / APPOINTING PARTY: ${v.client||'[CLIENT NAME]'}`,
+        `SERVICE PROVIDER / APPOINTEE: ${v.provider||'[PROVIDER NAME]'}`,
+        '',
+        `SERVICES / SCOPE OF APPOINTMENT:`,
+        `${v.services||'[DESCRIBE SERVICES / APPOINTMENT TERMS]'}`,
+        '',
+        `FEE: Kenya Shillings ${v.fee||'[FEE AMOUNT]'} (KES ${v.fee||'[FEE AMOUNT]'})`,
+        `FEE STRUCTURE: ${v.fee_structure||'[FEE STRUCTURE]'}`,
+        `DURATION: ${v.duration||'[DURATION]'}`,
+        '',
+        `Please confirm your acceptance of this appointment by signing below.`,
+        '',
+        `Yours faithfully,`,
+        '',
+        `_________________________________`,
+        `FOR: ${firmName}`,
+        '',
+        `I, ${(v.provider||'[APPOINTEE NAME]').toUpperCase()}, accept the terms of this appointment.`,
+        '',
+        `_________________________________`,
+        `SIGNATURE / DATE`,
+        stampNote
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'lettersign':{
+      const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'Nairobi, Kenya';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const today = new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
+      return [
+        `${firmName}`,
+        `${firmPO}`,
+        `${firmAddr}`,
+        '',
+        `Date: ${v.date||today}`,
+        '',
+        `${v.recipient||'[RECIPIENT NAME]'}`,
+        `${v.recipient_address||'[RECIPIENT ADDRESS]'}`,
+        '',
+        `${v.salutation||'Dear Sir/Madam,'}`,
+        '',
+        `${v.subject||'RE: [SUBJECT]'}`,
+        '',
+        `${v.body||'[LETTER BODY]'}`,
+        '',
+        `${v.closing||'Yours faithfully,'}`,
+        '',
+        `_________________________________`,
+        `ADVOCATE`,
+        `${firmName}`
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'legal-opinion':{
+      const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const today = new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
+      return [
+        `                           LEGAL OPINION`,
+        '',
+        `DATE: ${v.date||today}`,
+        `TO:   ${v.recipient||'[ADDRESSEE]'}`,
+        `FROM: ${firmName}`,
+        `RE:   ${v.subject||'[SUBJECT MATTER]'}`,
+        '',
+        `─────────────────────────────────────────────────────`,
+        '',
+        `A. INSTRUCTIONS`,
+        '',
+        `${v.instructions||'[SUMMARISE THE INSTRUCTIONS RECEIVED]'}`,
+        '',
+        `B. BACKGROUND FACTS`,
+        '',
+        `${v.facts||'[SET OUT THE RELEVANT FACTS]'}`,
+        '',
+        `C. APPLICABLE LAW AND ANALYSIS`,
+        '',
+        `${v.law||'[SET OUT THE LEGAL FRAMEWORK AND ANALYSIS]'}`,
+        '',
+        `D. OPINION`,
+        '',
+        `${v.opinion||'In our considered opinion…'}`,
+        '',
+        `─────────────────────────────────────────────────────`,
+        '',
+        `This opinion is given for the sole benefit of the addressee and may not be relied upon by any other person.`,
+        '',
+        `_________________________________`,
+        `FOR: ${firmName}`,
+        `${firmPO}, Nairobi`
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'client-power':{
+      const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      return [
+        `                         REPUBLIC OF KENYA`,
+        '',
+        `                      POWER OF ATTORNEY`,
+        '',
+        `KNOW ALL MEN BY THESE PRESENTS that I, ${(v.donor||'[DONOR NAME]').toUpperCase()} of ${v.donor_address||'[ADDRESS]'}, National Identity Number ${v.donor_id||'[ID NUMBER]'}, (hereinafter called the "Donor") do hereby appoint:`,
+        '',
+        `${(v.attorney||'[ATTORNEY NAME]').toUpperCase()}, National Identity Number ${v.attorney_id||'[ID NUMBER]'},`,
+        '',
+        `to be my true and lawful Attorney in respect of:`,
+        '',
+        `PROPERTY: ${v.property||'[PROPERTY / TITLE NO.]'}`,
+        '',
+        `POWERS GRANTED:`,
+        `${v.purpose||'[STATE THE POWERS GRANTED]'}`,
+        '',
+        `AND I hereby declare that this Power of Attorney shall not be revoked by my death, disability or incapacity.`,
+        '',
+        `DATED this         Day of                         ,  ${v.date||new Date().getFullYear()}`,
+        '',
+        `Signed by the said Donor:`,
+        '',
+        `_________________________________`,
+        `DONOR: ${(v.donor||'[DONOR NAME]').toUpperCase()}`,
+        `ID No: ${v.donor_id||'[ID NUMBER]'}`,
+        '',
+        `In the presence of:`,
+        '',
+        `_________________________________`,
+        `WITNESS`,
+        '',
+        `Drawn by:`,
+        `${firmName}`,
+        `${firmPO},`,
+        `Nairobi`
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'collection':{
+      const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const today = new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
+      const items = (v.items||'[ITEMS]').split('\n').filter(l=>l.trim());
+      return [
+        `${firmName}`,
+        `${firmPO}, Nairobi`,
+        '',
+        `Date: ${v.date||today}`,
+        '',
+        `TO: ${v.client||'[CLIENT NAME]'}`,
+        `    ${v.client_address||'[CLIENT ADDRESS]'}`,
+        '',
+        `RE: ${v.matter||'[MATTER / FILE REFERENCE]'}`,
+        '',
+        `FEE NOTE / COLLECTION`,
+        `─────────────────────────────────────────`,
+        ...items.map(item=>`  ${item}`),
+        `─────────────────────────────────────────`,
+        `TOTAL: KES ${v.total||'[TOTAL AMOUNT]'}`,
+        '',
+        `Payment is due within 14 days of this notice. Please make payment to:`,
+        `${firmName}`,
+        '',
+        `_________________________________`,
+        `FOR: ${firmName}`
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'statement':{
+      const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const today = new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
+      return [
+        `${firmName}`,
+        `${firmPO}, Nairobi`,
+        '',
+        `Date: ${v.date||today}`,
+        '',
+        `CLIENT STATEMENT`,
+        `─────────────────────────────────────────`,
+        `Client:   ${v.client||'[CLIENT NAME]'}`,
+        `Address:  ${v.client_address||'[ADDRESS]'}`,
+        `Period:   ${v.period||'[PERIOD]'}`,
+        `─────────────────────────────────────────`,
+        `Opening Balance:    KES ${v.opening||'0'}`,
+        `Amount Invoiced:    KES ${v.invoiced||'0'}`,
+        `Amount Paid:        KES ${v.paid||'0'}`,
+        `─────────────────────────────────────────`,
+        `Balance Outstanding: KES ${v.balance||'0'}`,
+        `─────────────────────────────────────────`,
+        '',
+        `Please remit the balance outstanding at your earliest convenience.`,
+        '',
+        `_________________________________`,
+        `FOR: ${firmName}`
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'recppp':{
+      const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const today = new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
+      return [
+        `${firmName}`,
+        `${firmPO}, Nairobi`,
+        '',
+        `RECEIPT`,
+        `─────────────────────────────────────────`,
+        `Date:           ${v.date||today}`,
+        `Received from:  ${v.received_from||'[PAYER NAME]'}`,
+        `Amount (KES):   ${v.amount||'[AMOUNT]'}`,
+        `In words:       ${v.in_words||'[AMOUNT IN WORDS]'}`,
+        `Payment for:    ${v.payment_for||'[DESCRIPTION]'}`,
+        `Mode of payment: ${v.payment_mode||'[MODE]'}`,
+        `─────────────────────────────────────────`,
+        '',
+        `_________________________________`,
+        `FOR: ${firmName}`,
+        '',
+        `E. & O.E.`
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    default:{
       // Generic fallback — list all field values
       const lines = [`${d.title.toUpperCase()}`, `(${d.sub})`, ''];
       Object.entries(v).forEach(([k,val])=>{
@@ -10650,8 +10758,7 @@ function dgGenerate(){
 
 function dgRenderPreview(text,d){
   const lines=text.split('\n');
-  let html=`<div class="dg-preview-header"><div class="dg-preview-title">${d.title.toUpperCase()}</div><div class="dg-preview-ref">${d.sub} &mdash; ${new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'})}</div></div>`;
-  html+='<div class="dg-preview-body">';
+  let html='<div class="dg-preview-body">';
   lines.forEach(line=>{
     if(!line.trim()){html+='<br>';return;}
     const f=line.replace(/\[([^\]]+)\]/g,'<span class="dg-blank">$1</span>');
