@@ -1828,7 +1828,7 @@ setTimeout(function() {
       </div>
 
       <div style="margin-top:8px;padding:12px 16px;background:var(--cream);border-radius:8px;border:1px solid var(--brd);font-size:11px;color:var(--txt3);line-height:1.6">
-        <strong>Note:</strong> Documents are generated directly in the CMS using AI. The debt recovery reports use the fee tiers from the Advocates (Remuneration) Order — use the <button class="card-action" onclick="showView('fee-calc',document.querySelector('[onclick*=fee-calc]'))">Fee Calculator</button> to verify applicable scale fees before issuing demand letters.
+        <strong>Note:</strong> Documents are generated instantly in the CMS — no internet connection required. The debt recovery reports use the fee tiers from the Advocates (Remuneration) Order — use the <button class="card-action" onclick="showView('fee-calc',document.querySelector('[onclick*=fee-calc]'))">Fee Calculator</button> to verify applicable scale fees before issuing demand letters.
       </div>
     </div><!-- /view-view-reports -->
 
@@ -9611,38 +9611,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // CMS — INLINE DOCUMENT GENERATOR
 // ══════════════════════════════════════════════
 
-// ── AI config (copy from LexAI — update to match your key) ──
-const DG_API_KEY      = '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';
-const DG_API_PROVIDER = 'groq'; // 'gemini' | 'groq' | 'openrouter'
-const DG_MODELS = {
-  gemini:     'gemini-1.5-flash',
-  groq:       'llama-3.3-70b-versatile',
-  openrouter: 'mistralai/mistral-7b-instruct:free'
-};
+// ── Document generator — template-based (no AI required) ──
 
-async function dgCallAI(userMsg, system, maxTokens=1500){
-  if(!DG_API_KEY || DG_API_KEY.includes('YOUR_')) throw new Error('No API key configured. Add your key in the HTML.');
-  const fullPrompt = system ? `${system}\n\n${userMsg}` : userMsg;
-  if(DG_API_PROVIDER === 'gemini'){
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${DG_MODELS.gemini}:generateContent?key=${DG_API_KEY}`;
-    const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:fullPrompt}]}],generationConfig:{maxOutputTokens:maxTokens,temperature:0.3}})});
-    const d = await r.json(); if(d.error) throw new Error(d.error.message);
-    return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  }
-  if(DG_API_PROVIDER === 'groq'){
-    const r = await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+DG_API_KEY},body:JSON.stringify({model:DG_MODELS.groq,max_tokens:maxTokens,temperature:0.3,messages:[{role:'system',content:system||'You are a helpful assistant.'},{role:'user',content:userMsg}]})});
-    const d = await r.json(); if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
-    return d.choices?.[0]?.message?.content || '';
-  }
-  if(DG_API_PROVIDER === 'openrouter'){
-    const r = await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+DG_API_KEY,'HTTP-Referer':'https://dkma.ke','X-Title':'DKMA CMS'},body:JSON.stringify({model:DG_MODELS.openrouter,max_tokens:maxTokens,messages:[{role:'system',content:system||'You are a helpful assistant.'},{role:'user',content:userMsg}]})});
-    const d = await r.json(); if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
-    return d.choices?.[0]?.message?.content || '';
-  }
-  throw new Error('Unknown DG_API_PROVIDER: '+DG_API_PROVIDER);
-}
-
-// ── Document type definitions (ported from LexAI) ──
 const DG_DOCS={
   'will':{title:'Last will & testament',sub:'Law of Succession Act (Cap. 160) — Kenya',cat:'Testamentary',color:'#B8860B',fields:[{id:'testator',l:'Full name of testator',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'National ID or passport number'},{id:'dob',l:'Date of birth',ph:'DD/MM/YYYY'},{id:'address',l:'Residential address',ph:'Physical address, county'},{id:'executor',l:'Executor full name',ph:'Full name of executor'},{id:'executor_id',l:'Executor ID number',ph:'National ID'},{id:'beneficiaries',l:'Beneficiaries & shares',ph:'Jane Doe (ID 12345) — 50%, John Doe (ID 67890) — 50%',ta:1},{id:'specific_bequests',l:'Specific bequests',ph:'e.g. Land Title No. 123 to Jane Doe',ta:1},{id:'guardian',l:'Guardian for minor children',ph:'Name and ID (leave blank if none)'},{id:'date',l:'Date of execution',ph:'DD/MM/YYYY'}]},
   'codicil':{title:'Codicil to will',sub:'Law of Succession Act (Cap. 160) — Kenya',cat:'Testamentary',color:'#B8860B',fields:[{id:'testator',l:'Testator full name',ph:'As in original will'},{id:'will_date',l:'Date of original will',ph:'DD/MM/YYYY'},{id:'amendment',l:'Amendment / addition',ph:'I revoke clause [X] and substitute:\nI add the following new clause:',ta:1},{id:'date',l:'Date of codicil',ph:'DD/MM/YYYY'}]},
@@ -9767,7 +9737,7 @@ function dgBuildForm(d){
     else h+=`<input class="dg-fi" id="dgf_${f.id}" placeholder="${f.ph||''}" type="text"/>`;
     h+='</div>';
   });
-  h+=`<button class="dg-gen-btn" id="dg-gen-btn" onclick="dgGenerate()">⚡ Generate document</button>`;
+  h+=`<button class="dg-gen-btn" id="dg-gen-btn" onclick="dgGenerate()">📄 Generate document</button>`;
   fp.innerHTML=h;
 }
 
@@ -9777,37 +9747,826 @@ function dgGetVals(){
   return v;
 }
 
-async function dgGenerate(){
+// ── Template builders — one per document type ──────────────────────
+
+function dgBuildDocument(id, v){
+  const d = DG_DOCS[id];
+  const today = new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
+  const nl = '\n';
+  const sig = (label) => nl+nl+`_________________________________${nl}${label}${nl}Date: _______________`;
+  const witness = nl+nl+`SIGNED by the above-named in our presence and in the presence of each other:${nl+nl}_________________________________${nl}Witness 1 — Full Name: _____________________ ID No.: _______________ Date: _______________${nl+nl}_________________________________${nl}Witness 2 — Full Name: _____________________ ID No.: _______________ Date: _______________`;
+  const stampNote = nl+nl+'─────────────────────────────────────────'+nl+'NOTE: This document may attract stamp duty under the Stamp Duty Act (Cap. 480, Laws of Kenya). Please seek advice on applicable stamp duty before execution.';
+
+  switch(id){
+
+    case 'affidavit': case 'affidavit-support':{
+      const name = id==='affidavit' ? v.deponent : v.deponent;
+      const deponent = v.deponent||v.deponent||'[DEPONENT NAME]';
+      return [
+        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
+        v.case_no ? `                    ${v.case_no}` : '',
+        '',
+        `              AFFIDAVIT OF ${deponent.toUpperCase()}`,
+        '',
+        `I, ${deponent}, holder of ID/Passport No. ${v.id_no||'[ID NUMBER]'}, of ${v.occupation||'[OCCUPATION]'}, residing at ${v.address||'[ADDRESS]'}, do hereby make oath and state as follows:`,
+        '',
+        `1. I am the Deponent herein and I am duly authorised to make this affidavit. The facts herein are within my personal knowledge save where the context indicates otherwise.`,
+        '',
+        `2. ${v.facts||v.facts||'[STATE THE FACTS SWORN TO]'}`,
+        id==='affidavit-support' ? `\n3. This affidavit is made in support of ${v.application||'[APPLICATION]'}.` : '',
+        v.annexures ? `\n4. Annexed hereto and marked accordingly are the following documents:\n${v.annexures}` : '',
+        v.purpose ? `\nThis affidavit is made ${v.purpose||'in support of the above application'}.` : '',
+        '',
+        `SWORN at ${(v.court||'NAIROBI').replace(/^.*?\bat\b\s*/i,'')||'NAIROBI'} by the said ${deponent}`,
+        `on the       day of                    , 20     .`,
+        '',
+        `_________________________________         Before me:`,
+        `DEPONENT`,
+        '',
+        `_________________________________`,
+        `COMMISSIONER FOR OATHS / MAGISTRATE`,
+        stampNote
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'stat-dec':{
+      return [
+        `              STATUTORY DECLARATION`,
+        `           (Oaths and Statutory Declarations Act, Cap. 15)`,
+        '',
+        `I, ${v.declarant||'[DECLARANT NAME]'}, holder of ID/Passport No. ${v.id_no||'[ID NUMBER]'}, residing at ${v.address||'[ADDRESS]'}, do hereby solemnly and sincerely declare as follows:`,
+        '',
+        `1. I make this declaration in respect of: ${v.subject||'[SUBJECT MATTER]'}.`,
+        '',
+        `2. ${v.facts||'[STATE THE FACTS DECLARED]'}`,
+        '',
+        `AND I make this solemn declaration conscientiously believing the same to be true and by virtue of the provisions of the Oaths and Statutory Declarations Act (Cap. 15).`,
+        '',
+        `DECLARED at NAIROBI on the       day of                    , 20     .`,
+        '',
+        `_________________________________`,
+        `DECLARANT — ${(v.declarant||'').toUpperCase()}`,
+        '',
+        `Before me:`,
+        '',
+        `_________________________________`,
+        `COMMISSIONER FOR OATHS`,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'affidavit-service':{
+      return [
+        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
+        v.case_no ? `                    ${v.case_no}` : '',
+        '',
+        `              AFFIDAVIT OF SERVICE`,
+        '',
+        `I, ${v.server||'[PROCESS SERVER NAME]'}, holder of ID No. ${v.id_no||'[ID NUMBER]'}, do hereby make oath and state as follows:`,
+        '',
+        `1. I am a process server and am duly authorised to effect service of process.`,
+        '',
+        `2. On ${v.service_date||'[DATE AND TIME]'}, I personally served ${v.served_on||'[PERSON SERVED]'} at ${v.service_address||'[ADDRESS OF SERVICE]'} with the following document(s): ${v.doc_served||'[DOCUMENTS SERVED]'}.`,
+        '',
+        `3. Mode of service: ${v.mode||'Personal service'}.`,
+        '',
+        `4. The said ${v.served_on||'[PERSON SERVED]'} acknowledged receipt / did not refuse service.`,
+        '',
+        `SWORN at NAIROBI by the said ${v.server||'[SERVER NAME]'}`,
+        `on the       day of                    , 20     .`,
+        '',
+        `_________________________________         Before me:`,
+        `DEPONENT`,
+        '',
+        `_________________________________`,
+        `COMMISSIONER FOR OATHS / MAGISTRATE`,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'will':{
+      return [
+        `              LAST WILL AND TESTAMENT`,
+        `         (Law of Succession Act, Cap. 160 — Kenya)`,
+        '',
+        `THIS IS THE LAST WILL AND TESTAMENT of me, ${v.testator||'[TESTATOR NAME]'}, holder of ID/Passport No. ${v.id_no||'[ID NUMBER]'}, born on ${v.dob||'[DATE OF BIRTH]'}, of ${v.address||'[ADDRESS]'} (hereinafter the "Testator").`,
+        '',
+        `RECITALS:`,
+        `WHEREAS I am of sound mind and disposing memory and I desire to make provision for the disposal of my estate after my death;`,
+        '',
+        `NOW THEREFORE I hereby revoke all former wills and testamentary dispositions previously made by me and declare this to be my Last Will and Testament:`,
+        '',
+        `1. EXECUTOR`,
+        `   I appoint ${v.executor||'[EXECUTOR NAME]'}, holder of ID No. ${v.executor_id||'[ID NUMBER]'}, to be the Executor of this Will.`,
+        '',
+        `2. BENEFICIARIES`,
+        `   I give, bequeath and devise my estate in the following shares:`,
+        `   ${v.beneficiaries||'[LIST BENEFICIARIES AND SHARES]'}`,
+        '',
+        v.specific_bequests ? `3. SPECIFIC BEQUESTS\n   ${v.specific_bequests}\n` : '',
+        v.guardian ? `4. GUARDIAN FOR MINOR CHILDREN\n   I appoint ${v.guardian} as guardian of my minor children.\n` : '',
+        `5. RESIDUARY ESTATE`,
+        `   The residue of my estate not otherwise disposed of shall be distributed equally among the surviving beneficiaries named above.`,
+        '',
+        `IN WITNESS WHEREOF I have hereunto set my hand this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `TESTATOR — ${(v.testator||'').toUpperCase()}`,
+        witness,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'codicil':{
+      return [
+        `                    CODICIL TO WILL`,
+        `              (Law of Succession Act, Cap. 160 — Kenya)`,
+        '',
+        `THIS IS A CODICIL to the Last Will and Testament of ${v.testator||'[TESTATOR NAME]'} dated ${v.will_date||'[ORIGINAL WILL DATE]'}.`,
+        '',
+        `I, ${v.testator||'[TESTATOR NAME]'}, hereby make the following amendment(s) / addition(s) to my Will:`,
+        '',
+        `${v.amendment||'[STATE AMENDMENT OR ADDITION]'}`,
+        '',
+        `In all other respects I confirm and republish my said Will.`,
+        '',
+        `SIGNED this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `TESTATOR — ${(v.testator||'').toUpperCase()}`,
+        witness,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'living-will':{
+      return [
+        `              LIVING WILL / ADVANCE DIRECTIVE`,
+        `      (Health Act 2017 & Constitution of Kenya 2010, Art. 26)`,
+        '',
+        `I, ${v.name||'[YOUR NAME]'}, holder of ID No. ${v.id_no||'[ID NUMBER]'}, of ${v.address||'[ADDRESS]'}, hereby make this advance directive regarding my future medical care:`,
+        '',
+        `1. HEALTHCARE PROXY`,
+        `   I appoint ${v.proxy||'[PROXY NAME]'} (ID No. ${v.proxy_id||'[ID NUMBER]'}) as my healthcare proxy to make medical decisions on my behalf if I am unable to do so.`,
+        '',
+        `2. MEDICAL DIRECTIVES`,
+        `   ${v.directives||'[STATE YOUR MEDICAL DIRECTIVES]'}`,
+        '',
+        `3. ORGAN DONATION`,
+        `   Organ donation preference: ${v.organ_donation||'[PREFERENCE]'}`,
+        '',
+        `4. GENERAL AUTHORITY`,
+        `   My healthcare proxy shall have full authority to consent to or refuse any medical treatment on my behalf in accordance with these directives.`,
+        '',
+        `SIGNED this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `DECLARANT — ${(v.name||'').toUpperCase()}`,
+        witness,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'chamber-summons': case 'notice-motion':{
+      const docTitle = id==='chamber-summons' ? 'CHAMBER SUMMONS' : 'NOTICE OF MOTION';
+      return [
+        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
+        id==='notice-motion' && v.division ? `                    ${v.division.toUpperCase()} DIVISION` : '',
+        v.case_no ? `                    ${v.case_no}` : '',
+        '',
+        `BETWEEN`,
+        '',
+        `${(v.applicant||'[APPLICANT]').toUpperCase()}  ......................................................  APPLICANT`,
+        '',
+        `AND`,
+        '',
+        `${(v.respondent||'[RESPONDENT]').toUpperCase()}  ..................................................  RESPONDENT`,
+        '',
+        `              ${docTitle}`,
+        '',
+        `LET ALL PARTIES CONCERNED attend before the Honourable Court at the time and place to be appointed for the hearing of an application by the Applicant for orders that:`,
+        '',
+        `${v.orders||'[STATE ORDERS SOUGHT]'}`,
+        '',
+        `GROUNDS:`,
+        `${v.grounds||'[STATE GROUNDS]'}`,
+        '',
+        `This application is supported by the affidavit of the Applicant annexed hereto${id==='notice-motion'&&v.supporting?', and by:\n'+v.supporting:''}.`,
+        '',
+        `Proposed return date: ${v.return_date||id==='chamber-summons'?v.return_date||'[DATE]':'N/A'}`,
+        '',
+        `DATED this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `ADVOCATE FOR THE APPLICANT`,
+        `${v.advocate||'[ADVOCATE NAME AND FIRM]'}`,
+        '',
+        `TO: THE RESPONDENT`,
+        `    ${v.respondent||'[RESPONDENT NAME AND ADDRESS]'}`,
+        stampNote
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'originating-summons':{
+      return [
+        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
+        v.case_no ? `                    ${v.case_no}` : '',
+        '',
+        `BETWEEN`,
+        '',
+        `${(v.plaintiff||'[PLAINTIFF / APPLICANT]').toUpperCase()}  ..............................................  PLAINTIFF/APPLICANT`,
+        '',
+        `AND`,
+        '',
+        `${(v.defendant||'[DEFENDANT / RESPONDENT]').toUpperCase()}  ............................................  DEFENDANT/RESPONDENT`,
+        '',
+        `              ORIGINATING SUMMONS`,
+        '',
+        `LET ${(v.defendant||'THE DEFENDANT').toUpperCase()} within EIGHT DAYS after service of this summons on them (inclusive of the day of service) cause an appearance to be entered to this summons, which is issued on the application of the Plaintiff/Applicant for determination of the following question(s):`,
+        '',
+        `${v.question||'[QUESTION(S) FOR DETERMINATION]'}`,
+        '',
+        `And for the following relief:`,
+        `${v.relief||'[RELIEF SOUGHT]'}`,
+        '',
+        `DATED this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `ADVOCATE FOR THE PLAINTIFF/APPLICANT`,
+        `${v.advocate||'[ADVOCATE NAME, FIRM, ADDRESS]'}`,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'plaint':{
+      return [
+        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
+        '',
+        `BETWEEN`,
+        '',
+        `${(v.plaintiff||'[PLAINTIFF]').toUpperCase()}  ..............................................  PLAINTIFF`,
+        '',
+        `AND`,
+        '',
+        `${(v.defendant||'[DEFENDANT]').toUpperCase()}  ............................................  DEFENDANT`,
+        '',
+        `                    PLAINT`,
+        `              (Civil Procedure Act, Cap. 21 — Kenya)`,
+        '',
+        `1. The Plaintiff is ${v.plaintiff||'[PLAINTIFF DETAILS]'}.`,
+        '',
+        `2. The Defendant is ${v.defendant||'[DEFENDANT DETAILS]'}.`,
+        '',
+        `3. CAUSE OF ACTION: ${v.cause||'[CAUSE OF ACTION]'}`,
+        '',
+        `4. PARTICULARS OF CLAIM:`,
+        `${v.particulars||'[STATE PARTICULARS]'}`,
+        '',
+        `5. The Plaintiff claims from the Defendant the sum of Kenya Shillings ${v.amount||'[AMOUNT IN FIGURES]'} (KES ${v.amount||'[AMOUNT]'}) together with interest thereon at ${v.interest||'14% per annum from the date of breach'} until payment in full.`,
+        '',
+        `6. The Plaintiff also claims the costs of this suit and such other relief as this Honourable Court may deem fit.`,
+        '',
+        `DATED this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `ADVOCATE FOR THE PLAINTIFF`,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'petition':{
+      return [
+        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
+        v.petition_no ? `                    PETITION NO. ${v.petition_no}` : `                    PETITION NO.         OF 20     `,
+        '',
+        `IN THE MATTER OF A PETITION UNDER ARTICLES ${v.articles||'22, 258'} OF THE CONSTITUTION OF KENYA 2010`,
+        '',
+        `AND IN THE MATTER OF:`,
+        '',
+        `${(v.petitioner||'[PETITIONER]').toUpperCase()}  ..............................................  PETITIONER`,
+        '',
+        `VERSUS`,
+        '',
+        `${(v.respondent||'[RESPONDENT(S)]').toUpperCase()}  ............................................  RESPONDENT(S)`,
+        '',
+        `                    PETITION`,
+        '',
+        `The Petitioner states as follows:`,
+        '',
+        `1. The Petitioner, ${v.petitioner||'[PETITIONER]'}, brings this petition pursuant to Articles ${v.articles||'22, 258'} of the Constitution of Kenya 2010.`,
+        '',
+        `2. FACTS:`,
+        `${v.facts||'[STATE FACTS GIVING RISE TO PETITION]'}`,
+        '',
+        `3. RELIEF SOUGHT:`,
+        `${v.relief||'[STATE RELIEF SOUGHT]'}`,
+        '',
+        `DATED this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `ADVOCATE FOR THE PETITIONER`,
+        `${v.advocate||'[ADVOCATE NAME AND FIRM]'}`,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'defence':{
+      return [
+        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
+        v.case_no ? `                    ${v.case_no}` : '',
+        '',
+        `BETWEEN`,
+        '',
+        `${(v.plaintiff||'[PLAINTIFF]').toUpperCase()}  ..............................................  PLAINTIFF`,
+        '',
+        `AND`,
+        '',
+        `${(v.defendant||'[DEFENDANT]').toUpperCase()}  ............................................  DEFENDANT`,
+        '',
+        `                    STATEMENT OF DEFENCE`,
+        '',
+        `The Defendant states as follows:`,
+        '',
+        `1. ADMISSIONS: ${v.admissions||'[STATE FACTS ADMITTED]'}`,
+        '',
+        `2. DENIALS:`,
+        `${v.denials||'[STATE FACTS DENIED]'}`,
+        '',
+        `3. POSITIVE DEFENCE:`,
+        `${v.positive_defence||'[STATE POSITIVE DEFENCE]'}`,
+        '',
+        v.counterclaim ? `4. COUNTERCLAIM:\n${v.counterclaim}\n` : '',
+        `DATED this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `ADVOCATE FOR THE DEFENDANT`,
+        `${v.advocate||'[ADVOCATE NAME AND FIRM]'}`,
+        stampNote
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'nda':{
+      return [
+        `              NON-DISCLOSURE AGREEMENT`,
+        `         (Law of Contract Act, Cap. 23 — Kenya)`,
+        '',
+        `THIS NON-DISCLOSURE AGREEMENT is entered into on ${v.date||'the       day of                    , 20     '} between:`,
+        '',
+        `1. ${v.party_a||'[DISCLOSING PARTY]'} (${v.party_a_type||'[TYPE]'}) — hereinafter the "DISCLOSING PARTY"; and`,
+        '',
+        `2. ${v.party_b||'[RECEIVING PARTY]'} (${v.party_b_type||'[TYPE]'}) — hereinafter the "RECEIVING PARTY".`,
+        '',
+        `WHEREAS the Disclosing Party possesses certain confidential information and desires to disclose such information to the Receiving Party for the purpose of: ${v.purpose||'[PURPOSE]'}.`,
+        '',
+        `NOW THEREFORE in consideration of the mutual covenants herein the Parties agree as follows:`,
+        '',
+        `1. CONFIDENTIAL INFORMATION means any information disclosed by the Disclosing Party to the Receiving Party whether orally, in writing or by any other means.`,
+        '',
+        `2. The Receiving Party shall hold all Confidential Information in strict confidence and shall not disclose it to any third party without the prior written consent of the Disclosing Party.`,
+        '',
+        `3. The obligations of confidentiality shall continue for a period of ${v.duration||'[DURATION]'} from the date of this Agreement.`,
+        '',
+        `4. This Agreement shall be governed by the ${v.governing_law||'Laws of Kenya'} and disputes shall be submitted to ${v.jurisdiction||'the courts of Kenya'}.`,
+        '',
+        sig(`DISCLOSING PARTY — ${(v.party_a||'').toUpperCase()}`),
+        sig(`RECEIVING PARTY — ${(v.party_b||'').toUpperCase()}`),
+        witness,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'service-agreement':{
+      return [
+        `              SERVICE AGREEMENT`,
+        `         (Law of Contract Act, Cap. 23 — Kenya)`,
+        '',
+        `THIS SERVICE AGREEMENT is entered into on ${v.date||'the       day of                    , 20     '} between:`,
+        '',
+        `1. ${v.provider||'[SERVICE PROVIDER]'} — hereinafter the "SERVICE PROVIDER"; and`,
+        `2. ${v.client||'[CLIENT]'} — hereinafter the "CLIENT".`,
+        '',
+        `1. SERVICES`,
+        `   The Service Provider shall provide the following services to the Client:`,
+        `   ${v.services||'[DESCRIBE SERVICES]'}`,
+        '',
+        `2. FEES`,
+        `   The Client shall pay Kenya Shillings ${v.fee||'[AMOUNT]'} (KES ${v.fee||'[AMOUNT]'}) on a ${v.fee_structure||'fixed fee'} basis.`,
+        '',
+        `3. DURATION`,
+        `   This Agreement shall continue for ${v.duration||'[DURATION]'} from the date hereof unless earlier terminated.`,
+        '',
+        `4. GOVERNING LAW`,
+        `   This Agreement shall be governed by the ${v.governing_law||'Laws of Kenya'} and disputes submitted to ${v.dispute||'the courts of Kenya'}.`,
+        '',
+        sig(`SERVICE PROVIDER — ${(v.provider||'').toUpperCase()}`),
+        sig(`CLIENT — ${(v.client||'').toUpperCase()}`),
+        witness,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'employment-contract':{
+      return [
+        `              EMPLOYMENT CONTRACT`,
+        `              (Employment Act 2007 — Kenya)`,
+        '',
+        `THIS CONTRACT OF EMPLOYMENT is entered into on ${v.date||'the       day of                    , 20     '} between:`,
+        '',
+        `EMPLOYER: ${v.employer||'[EMPLOYER]'} (Reg. No. ${v.employer_reg||'[REG NO]'})`,
+        `EMPLOYEE: ${v.employee||'[EMPLOYEE]'} (ID No. ${v.employee_id||'[ID NO]'})`,
+        '',
+        `1. POSITION: The Employee is engaged as ${v.role||'[JOB TITLE]'} with effect from ${v.start_date||'[START DATE]'}.`,
+        '',
+        `2. REMUNERATION: The Employee shall be paid a gross monthly salary of Kenya Shillings ${v.salary||'[AMOUNT]'} (KES ${v.salary||'[AMOUNT]'}).`,
+        '',
+        `3. PROBATION: ${v.probation||'3 months'} probation period from commencement.`,
+        '',
+        `4. NOTICE: Either party may terminate this contract by giving ${v.notice||'1 month'} written notice.`,
+        '',
+        v.non_compete&&v.non_compete!=='None' ? `5. NON-COMPETE: The Employee shall not engage in competing activities for ${v.non_compete} following cessation of employment.\n` : '',
+        `6. This contract is subject to the Employment Act 2007 and all applicable laws of Kenya.`,
+        '',
+        sig(`EMPLOYER — ${(v.employer||'').toUpperCase()}`),
+        sig(`EMPLOYEE — ${(v.employee||'').toUpperCase()}`),
+        witness,
+        stampNote
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'lease':{
+      return [
+        `              LEASE AGREEMENT`,
+        `      (Land Act 2012 & Landlord and Tenant Act — Kenya)`,
+        '',
+        `THIS LEASE AGREEMENT is entered into on ${v.date||'the       day of                    , 20     '} between:`,
+        '',
+        `LANDLORD: ${v.landlord||'[LANDLORD]'} — hereinafter the "LANDLORD"; and`,
+        `TENANT:   ${v.tenant||'[TENANT]'} — hereinafter the "TENANT".`,
+        '',
+        `1. PREMISES: The Landlord lets to the Tenant the premises described as ${v.premises||'[PREMISES]'}, LR/Title No. ${v.lr_no||'[LR NUMBER]'}.`,
+        '',
+        `2. TERM: The tenancy shall be for a period of ${v.term||'[TERM]'} commencing on ${v.start_date||'[COMMENCEMENT DATE]'}.`,
+        '',
+        `3. RENT: The Tenant shall pay a monthly rent of Kenya Shillings ${v.rent||'[AMOUNT]'} (KES ${v.rent||'[AMOUNT]'}) payable in advance on the first day of each month.`,
+        '',
+        `4. DEPOSIT: The Tenant shall pay a security deposit of Kenya Shillings ${v.deposit||'[AMOUNT]'} (KES ${v.deposit||'[AMOUNT]'}) refundable at the end of the tenancy subject to the condition of the premises.`,
+        '',
+        `5. USE: The premises shall be used for ${v.use||'[PERMITTED USE]'} only.`,
+        '',
+        sig(`LANDLORD — ${(v.landlord||'').toUpperCase()}`),
+        sig(`TENANT — ${(v.tenant||'').toUpperCase()}`),
+        witness,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'sale-agreement':{
+      return [
+        `              SALE AGREEMENT`,
+        `         (Sale of Goods Act, Cap. 31 — Kenya)`,
+        '',
+        `THIS SALE AGREEMENT is entered into on ${v.date||'the       day of                    , 20     '} between:`,
+        '',
+        `SELLER: ${v.seller||'[SELLER]'} — hereinafter the "VENDOR"; and`,
+        `BUYER:  ${v.buyer||'[BUYER]'} — hereinafter the "PURCHASER".`,
+        '',
+        `1. SUBJECT MATTER`,
+        `   The Vendor agrees to sell to the Purchaser the following:`,
+        `   ${v.goods||'[DESCRIPTION OF GOODS/PROPERTY]'}`,
+        '',
+        `2. PURCHASE PRICE`,
+        `   The Purchase Price shall be Kenya Shillings ${v.price||'[AMOUNT]'} (KES ${v.price||'[AMOUNT]'}).`,
+        '',
+        `3. PAYMENT TERMS`,
+        `   ${v.payment_terms||'[PAYMENT TERMS]'}`,
+        '',
+        `4. DELIVERY`,
+        `   ${v.delivery||'[DELIVERY TERMS]'}`,
+        '',
+        v.warranty&&v.warranty!=='No warranty' ? `5. WARRANTY\n   Warranty period: ${v.warranty}.\n` : `5. WARRANTY\n   The goods are sold without warranty unless expressly stated.\n`,
+        sig(`VENDOR — ${(v.seller||'').toUpperCase()}`),
+        sig(`PURCHASER — ${(v.buyer||'').toUpperCase()}`),
+        witness,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'shareholders':{
+      return [
+        `              SHAREHOLDERS AGREEMENT`,
+        `              (Companies Act 2015 — Kenya)`,
+        '',
+        `THIS SHAREHOLDERS AGREEMENT is entered into on ${v.date||'the       day of                    , 20     '} in respect of ${v.company||'[COMPANY NAME]'} (Reg. No. ${v.reg_no||'[REG NO]'}).`,
+        '',
+        `SHAREHOLDERS AND SHAREHOLDING:`,
+        `${v.shareholders||'[LIST SHAREHOLDERS AND SHAREHOLDING]'}`,
+        '',
+        `1. BOARD COMPOSITION`,
+        `   ${v.directors||'[BOARD COMPOSITION]'}`,
+        '',
+        `2. RESERVED MATTERS (require unanimous consent):`,
+        `   ${v.reserved||'[RESERVED MATTERS]'}`,
+        '',
+        `3. DIVIDEND POLICY`,
+        `   ${v.dividend||'[DIVIDEND POLICY]'}`,
+        '',
+        `4. DRAG / TAG-ALONG RIGHTS`,
+        `   ${v.drag_tag||'[DRAG/TAG ARRANGEMENT]'}`,
+        '',
+        `5. DISPUTE RESOLUTION`,
+        `   Disputes shall be referred to ${v.dispute||'arbitration in Nairobi'}.`,
+        '',
+        sig(`SHAREHOLDER 1`),
+        sig(`SHAREHOLDER 2`),
+        witness,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'poa-general': case 'poa-specific':{
+      const isGeneral = id==='poa-general';
+      return [
+        `              ${isGeneral?'GENERAL':'SPECIFIC'} POWER OF ATTORNEY`,
+        `         (Powers of Attorney Act, Cap. 53 — Kenya)`,
+        '',
+        `KNOW ALL MEN BY THESE PRESENTS that I, ${v.donor||'[DONOR NAME]'}, holder of ID/Passport No. ${v.donor_id||'[ID NUMBER]'}${isGeneral?', of '+v.donor_address:''},`,
+        '',
+        `do hereby appoint ${v.attorney||'[ATTORNEY NAME]'}, holder of ID/Passport No. ${v.attorney_id||'[ID NUMBER]'}${isGeneral?', of '+v.attorney_address:''} (hereinafter "my Attorney"),`,
+        '',
+        `to be my true and lawful attorney with full power and authority in my name and on my behalf to do and perform the following acts:`,
+        '',
+        isGeneral ? (v.powers||'[STATE SCOPE OF POWERS]') : (v.purpose||'[STATE SPECIFIC PURPOSE]'),
+        '',
+        isGeneral ? '' : (v.limitations ? `LIMITATIONS: ${v.limitations}` : ''),
+        '',
+        `This Power of Attorney shall ${isGeneral?'remain in force '+v.duration:'expire on '+v.expiry||'completion of the transaction'}.`,
+        '',
+        `IN WITNESS WHEREOF I have hereunto set my hand this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `DONOR/PRINCIPAL — ${(v.donor||'').toUpperCase()}`,
+        witness,
+        stampNote
+      ].filter(l=>l!==null).join(nl);
+    }
+
+    case 'board-resolution':{
+      return [
+        `              BOARD RESOLUTION`,
+        `              (Companies Act 2015 — Kenya)`,
+        '',
+        `COMPANY: ${v.company||'[COMPANY NAME]'} (Reg. No. ${v.reg_no||'[REG NO]'})`,
+        '',
+        `MINUTES OF A MEETING OF THE BOARD OF DIRECTORS`,
+        `Held on ${v.meeting_date||'[DATE OF MEETING]'}`,
+        '',
+        `PRESENT: ${v.directors||'[DIRECTORS PRESENT]'}`,
+        '',
+        `The following resolution was duly passed:`,
+        '',
+        `RESOLUTION — ${(v.res_type||'[TYPE OF RESOLUTION]').toUpperCase()}`,
+        '',
+        `${v.resolution||'IT IS HEREBY RESOLVED that…'}`,
+        '',
+        `This resolution is passed in accordance with the Companies Act 2015 and the Company's Articles of Association.`,
+        '',
+        `Certified as a true copy:`,
+        '',
+        sig('CHAIRPERSON'),
+        sig('COMPANY SECRETARY'),
+        '',
+        `Date signed: ${v.date||'       day of                    , 20     '}`,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'demand-letter':{
+      return [
+        `${v.sender||'D.K. MUTONGA ADVOCATES'}`,
+        ``,
+        `Date: ${v.date||'       day of                    , 20     '}`,
+        ``,
+        `${v.recipient||'[RECIPIENT NAME]'}`,
+        `${v.recipient_address||'[RECIPIENT ADDRESS]'}`,
+        ``,
+        `Dear Sir/Madam,`,
+        ``,
+        `RE: ${(v.subject||'DEMAND FOR PAYMENT').toUpperCase()}`,
+        ``,
+        `We act for and on behalf of our client and write to you as follows:`,
+        ``,
+        `BACKGROUND:`,
+        `${v.background||'[BACKGROUND FACTS]'}`,
+        ``,
+        `DEMAND:`,
+        `${v.demand||'[SPECIFIC DEMAND]'}`,
+        ``,
+        `The total sum demanded is Kenya Shillings ${v.amount||'[AMOUNT]'} (KES ${v.amount||'[AMOUNT]'}).`,
+        ``,
+        `TAKE NOTICE that unless you comply with the above demand within ${v.deadline_days||'14'} (${v.deadline_days||'fourteen'}) days from the date of this letter, our client shall have no alternative but to institute legal proceedings against you without further reference to you, in which event you shall additionally be liable for the costs of such proceedings.`,
+        ``,
+        `Yours faithfully,`,
+        ``,
+        `_________________________________`,
+        `ADVOCATE FOR THE PLAINTIFF/PETITIONER`,
+        ``,
+        `CC: File`,
+      ].join(nl);
+    }
+
+    case 'notice-terminate':{
+      return [
+        `              NOTICE OF TERMINATION`,
+        '',
+        `Date: ${v.date||'       day of                    , 20     '}`,
+        '',
+        `TO: ${v.party_b||'[RECEIVING PARTY]'}`,
+        `FROM: ${v.party_a||'[TERMINATING PARTY]'}`,
+        '',
+        `RE: NOTICE OF TERMINATION — ${(v.contract_type||'CONTRACT').toUpperCase()}`,
+        '',
+        `We write to give you formal notice of termination of the ${v.contract_type||'contract'} entered into between us on ${v.contract_date||'[CONTRACT DATE]'}.`,
+        '',
+        `GROUNDS FOR TERMINATION:`,
+        `${v.grounds||'[GROUNDS FOR TERMINATION]'}`,
+        '',
+        `This notice shall take effect after the expiry of ${v.notice_period||'30 days'} from the date of this notice.`,
+        '',
+        `The effective date of termination is therefore: ${v.effective_date||'[EFFECTIVE DATE]'}.`,
+        '',
+        `_________________________________`,
+        `${(v.party_a||'TERMINATING PARTY').toUpperCase()}`,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'cease-desist':{
+      return [
+        `${v.sender||'D.K. MUTONGA ADVOCATES'}`,
+        ``,
+        `Date: ${v.date||'       day of                    , 20     '}`,
+        ``,
+        `${v.recipient||'[RECIPIENT NAME]'}`,
+        `${v.recipient_address||'[RECIPIENT ADDRESS]'}`,
+        ``,
+        `Dear Sir/Madam,`,
+        ``,
+        `RE: CEASE AND DESIST — ${(v.violation||'VIOLATION').toUpperCase()}`,
+        ``,
+        `It has come to our attention that you have engaged in conduct constituting ${v.violation||'[VIOLATION]'} as follows:`,
+        ``,
+        `${v.facts||'[FACTS OF THE VIOLATION]'}`,
+        ``,
+        `LEGAL BASIS: ${v.legal_basis||'[APPLICABLE LAW]'}`,
+        ``,
+        `DEMAND: You are hereby required to:`,
+        `${v.remedy||'[REMEDY DEMANDED]'}`,
+        ``,
+        `You are required to comply with this demand within ${v.deadline_days||'7'} days of this letter. Failure to do so will result in legal proceedings being filed against you without further notice.`,
+        ``,
+        `Yours faithfully,`,
+        ``,
+        `_________________________________`,
+        `ADVOCATE`,
+      ].join(nl);
+    }
+
+    case 'letters-admin':{
+      return [
+        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
+        `                    SUCCESSION CAUSE NO.         OF 20     `,
+        '',
+        `IN THE MATTER OF THE ESTATE OF ${(v.deceased||'[DECEASED NAME]').toUpperCase()}`,
+        `AND IN THE MATTER OF AN APPLICATION FOR LETTERS OF ADMINISTRATION`,
+        '',
+        `                    PETITION`,
+        '',
+        `The Petitioner, ${v.petitioner||'[PETITIONER NAME]'}, holder of ID No. ${v.petitioner_id||'[ID NUMBER]'}, states as follows:`,
+        '',
+        `1. I am the ${v.relationship||'[RELATIONSHIP]'} of the deceased, ${v.deceased||'[DECEASED NAME]'}, who died on ${v.dod||'[DATE OF DEATH]'} at ${v.deceased_address||'[LAST ADDRESS]'}.`,
+        '',
+        `2. The deceased died ${v.will_date?'testate':'intestate'} (without a valid will).`,
+        '',
+        `3. The estate of the deceased consists of:`,
+        `   ${v.estate||'[DESCRIPTION OF ESTATE]'}`,
+        '',
+        `4. I pray for a grant of Letters of Administration of the estate of the deceased.`,
+        '',
+        `DATED this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `PETITIONER — ${(v.petitioner||'').toUpperCase()}`,
+        witness,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'grant-probate':{
+      return [
+        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
+        `                    SUCCESSION CAUSE NO.         OF 20     `,
+        '',
+        `IN THE MATTER OF THE ESTATE OF ${(v.deceased||'[DECEASED NAME]').toUpperCase()}`,
+        `AND IN THE MATTER OF AN APPLICATION FOR GRANT OF PROBATE`,
+        '',
+        `                    PETITION FOR GRANT OF PROBATE`,
+        '',
+        `The Petitioner/Executor, ${v.executor||'[EXECUTOR NAME]'}, holder of ID No. ${v.executor_id||'[ID NUMBER]'}, states as follows:`,
+        '',
+        `1. I am the duly appointed Executor under the Last Will and Testament of ${v.deceased||'[DECEASED NAME]'} who died on ${v.dod||'[DATE OF DEATH]'}.`,
+        '',
+        `2. The Will of the deceased was made on ${v.will_date||'[WILL DATE]'}.`,
+        '',
+        `3. The estate of the deceased consists of:`,
+        `   ${v.estate||'[DESCRIPTION OF ESTATE]'}`,
+        '',
+        `4. I pray for a grant of Probate of the Will of the deceased.`,
+        '',
+        `DATED this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `EXECUTOR/PETITIONER — ${(v.executor||'').toUpperCase()}`,
+        witness,
+        stampNote
+      ].join(nl);
+    }
+
+    case 'prenup':{
+      return [
+        `              PRE-NUPTIAL AGREEMENT`,
+        `              (Marriage Act 2014 — Kenya)`,
+        '',
+        `THIS PRE-NUPTIAL AGREEMENT is entered into on ${v.date||'the       day of                    , 20     '} between:`,
+        '',
+        `1. ${v.party_a||'[FIRST PARTY]'} (ID No. ${v.party_a_id||'[ID NO]'}) — hereinafter "PARTY A"; and`,
+        `2. ${v.party_b||'[SECOND PARTY]'} (ID No. ${v.party_b_id||'[ID NO]'}) — hereinafter "PARTY B".`,
+        '',
+        `WHEREAS both parties intend to marry on ${v.marriage_date||'[INTENDED DATE]'}:`,
+        '',
+        `1. PARTY A\'S ASSETS`,
+        `   ${v.assets_a||'[PARTY A ASSETS]'}`,
+        '',
+        `2. PARTY B\'S ASSETS`,
+        `   ${v.assets_b||'[PARTY B ASSETS]'}`,
+        '',
+        `3. JOINTLY ACQUIRED ASSETS`,
+        `   ${v.joint_assets||'[ARRANGEMENT FOR JOINT ASSETS]'}`,
+        '',
+        `4. SPOUSAL MAINTENANCE`,
+        `   ${v.spousal_support||'[MAINTENANCE ARRANGEMENT]'}`,
+        '',
+        `5. This Agreement is entered into freely and voluntarily by both parties and shall be governed by the Laws of Kenya.`,
+        '',
+        sig(`PARTY A — ${(v.party_a||'').toUpperCase()}`),
+        sig(`PARTY B — ${(v.party_b||'').toUpperCase()}`),
+        witness,
+        stampNote
+      ].join(nl);
+    }
+
+    default:{
+      // Generic fallback — list all field values
+      const lines = [`${d.title.toUpperCase()}`, `(${d.sub})`, ''];
+      Object.entries(v).forEach(([k,val])=>{
+        const field = d.fields.find(f=>f.id===k);
+        lines.push(`${field?field.l:k}: ${val}`);
+      });
+      lines.push('', sig('PARTY 1'), sig('PARTY 2'), witness, stampNote);
+      return lines.join(nl);
+    }
+  }
+}
+
+// ── Generate — template-based, instant, no API ────────────────────
+
+function dgGenerate(){
   if(!dgCurrentId)return;
   const d=DG_DOCS[dgCurrentId];
   const vals=dgGetVals();
   const btn=document.getElementById('dg-gen-btn');
-  btn.disabled=true;btn.textContent='Generating…';
-  document.getElementById('dg-preview-wrap').innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:30px;color:var(--txt3);font-size:13px"><svg class="dg-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>Drafting your document…</div>`;
-  const fieldSummary=Object.entries(vals).map(([k,v])=>`${k}: ${v}`).join('\n');
-  const prompt=`Draft a complete, formal ${d.title} for use in Kenya. Statute: ${d.sub}.\n\nDetails:\n${fieldSummary}\n\nGenerate the FULL document text exactly as it should appear when printed, with proper headings, numbered clauses, recitals, operative clauses, signature blocks with witness lines, attestation clauses, and all required Kenyan legal language. Use [BLANK] for any fields not provided. Reference applicable Kenyan statutes throughout.`;
-  const sys=`You are a senior Kenyan advocate with 20 years experience. Draft complete, print-ready formal legal documents strictly following Kenyan legal practice and formatting requirements:\n\nMANDATORY FORMATTING RULES:\n1. TITLE BLOCK: Centre the document title in FULL CAPITALS.\n2. PARTIES: Identify with full legal name, ID/Passport number, physical address, and county. Use defined terms e.g. "hereinafter called the VENDOR".\n3. RECITALS: Begin with "WHEREAS:" recitals.\n4. OPERATIVE CLAUSES: Number with Arabic numerals. Sub-clauses use (a),(b),(c)... and (i),(ii),(iii)...\n5. CONSIDERATION: State KES amounts in figures and words e.g. "Kenya Shillings One Million (KES 1,000,000)".\n6. ATTESTATION: Use proper Kenyan attestation block with "IN WITNESS WHEREOF…" signature lines and full witness blocks.\n7. AFFIDAVITS: Include venue line, title "AFFIDAVIT OF [NAME]", intro para, numbered facts, and proper Jurat.\n8. COURT DOCUMENTS: Include full court header.\n9. DATE FORMAT: Use "this [  ] day of [Month], 20[  ]" — never DD/MM/YYYY in the body.\n10. STAMP DUTY NOTE: Add note at end re stamp duty under Stamp Duty Act (Cap. 480).\n\nGenerate the COMPLETE document text exactly as it should appear when printed. No commentary, no preamble, no markdown.`;
+  btn.disabled=true;btn.textContent='Building…';
   try{
-    const raw=await dgCallAI(prompt,sys,1500);
-    dgGeneratedText=raw;
-    dgRenderPreview(raw,d);
+    const text = dgBuildDocument(dgCurrentId, vals);
+    dgGeneratedText = text;
+    dgRenderPreview(text, d);
     document.getElementById('dg-btn-copy').style.display='inline-block';
     document.getElementById('dg-btn-print').style.display='inline-block';
   }catch(e){
-    document.getElementById('dg-preview-wrap').innerHTML=`<div style="padding:20px;font-size:13px;color:#a33">Error: ${e.message}</div>`;
+    document.getElementById('dg-preview-wrap').innerHTML=`<div style="padding:20px;font-size:13px;color:#a33">Error building document: ${e.message}</div>`;
   }
-  btn.disabled=false;btn.textContent='⚡ Regenerate document';
+  btn.disabled=false;btn.textContent='📄 Regenerate document';
 }
 
 function dgRenderPreview(text,d){
   const lines=text.split('\n');
-  let html=`<div class="dg-preview-header"><div class="dg-preview-title">${d.title.toUpperCase()}</div><div class="dg-preview-ref">${d.sub} &mdash; Generated ${new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'})}</div></div>`;
+  let html=`<div class="dg-preview-header"><div class="dg-preview-title">${d.title.toUpperCase()}</div><div class="dg-preview-ref">${d.sub} &mdash; ${new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'})}</div></div>`;
   html+='<div class="dg-preview-body">';
   lines.forEach(line=>{
     if(!line.trim()){html+='<br>';return;}
     const f=line.replace(/\[([^\]]+)\]/g,'<span class="dg-blank">$1</span>');
     if(/^[A-Z\s]{6,}$/.test(line.trim())&&line.trim().length<80) html+=`<p style="font-weight:700;margin-top:14px;margin-bottom:6px;text-align:center">${f}</p>`;
     else if(/^\d+\.|^[a-z]\)|^\([a-z]\)/.test(line)) html+=`<p style="padding-left:20px">${f}</p>`;
+    else if(line.startsWith('   ')) html+=`<p style="padding-left:20px">${f}</p>`;
     else html+=`<p>${f}</p>`;
   });
   html+='</div>';
@@ -9816,7 +10575,8 @@ function dgRenderPreview(text,d){
 
 function dgCopyText(){
   navigator.clipboard.writeText(dgGeneratedText).then(()=>{
-    if(typeof showToast==='function') showToast('Document copied to clipboard');
+    if(typeof toast==='function') toast('Document copied to clipboard');
+    else if(typeof showToast==='function') showToast('Document copied to clipboard');
   });
 }
 
