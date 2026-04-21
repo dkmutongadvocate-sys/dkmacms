@@ -692,6 +692,68 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 /* ── PANIC / SOS ──────────────────────────────────────────────── */
 @keyframes panic-dot-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.4)}}
 @keyframes panic-nav-pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  /* ══ FEE CALCULATOR VIEW ══ */
+  #view-fee-calc{overflow-y:auto;padding:24px 28px}
+  .fee-hero-cms{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:10px;padding:18px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+  .fee-hero-cms-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:500;color:#fff}
+  .fee-hero-cms-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px}
+  .fee-grid-cms{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:16px}
+  .fee-card-cms{background:#fff;border-radius:10px;border:0.5px solid var(--brd);overflow:hidden}
+  .fee-card-hd-cms{padding:11px 16px;background:var(--cream);border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:9px}
+  .fee-card-icon-cms{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .fee-card-icon-cms svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2}
+  .fee-card-title-cms{font-size:13px;font-weight:500;color:var(--txt);font-family:'Playfair Display',serif}
+  .fee-card-sub-cms{font-size:10px;color:var(--txt3);margin-top:1px}
+  .fee-body-cms{padding:14px 16px;display:flex;flex-direction:column;gap:9px}
+  .fee-row-cms{display:flex;flex-direction:column;gap:3px}
+  .fee-label-cms{font-size:10px;font-weight:500;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em}
+  .fee-input-cms{border:1px solid var(--brd);border-radius:7px;padding:7px 11px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%}
+  .fee-input-cms:focus{outline:none;border-color:var(--navy)}
+  .fee-sel-cms{border:1px solid var(--brd);border-radius:7px;padding:7px 11px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%}
+  .fee-sel-cms:focus{outline:none;border-color:var(--navy)}
+  .fee-result-cms{background:linear-gradient(135deg,#fdf9ef,#fffbf2);border:1px solid var(--gold);border-radius:8px;padding:12px 14px;display:none;margin-top:2px}
+  .fee-result-cms.show{display:block}
+  .fee-result-label-cms{font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+  .fee-result-main-cms{font-size:22px;font-weight:500;color:var(--navy);font-family:'Playfair Display',serif}
+  .fee-result-bd-cms{margin-top:7px;border-top:1px solid rgba(184,149,58,0.2);padding-top:6px;display:flex;flex-direction:column;gap:3px}
+  .fee-br-cms{display:flex;justify-content:space-between;font-size:11px;color:var(--txt2)}
+  .fee-br-cms.total{font-weight:600;color:var(--txt);border-top:1px solid var(--brd);padding-top:4px;margin-top:2px}
+  .fee-note-cms{font-size:10px;color:var(--txt3);line-height:1.5;margin-top:6px;padding-top:6px;border-top:1px solid var(--brd)}
+  .fee-disclaimer-cms{background:#FFF8E7;border:1px solid var(--gold);border-radius:8px;padding:11px 14px;font-size:11px;color:#6B4A00;line-height:1.6;margin-bottom:16px}
+  .aro-section{background:#fff;border-radius:10px;border:0.5px solid var(--brd);overflow:hidden;margin-top:16px}
+  .aro-hd{padding:12px 18px;background:var(--cream);border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .aro-hd-title{font-family:'Playfair Display',serif;font-size:14px;font-weight:500;color:var(--txt)}
+  .aro-hd-sub{font-size:10px;color:var(--txt3);margin-top:1px}
+  .aro-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+  .aro-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .aro-field{display:flex;flex-direction:column;gap:3px}
+  .aro-lbl{font-size:10px;font-weight:500;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em}
+  .aro-inp{border:1px solid var(--brd);border-radius:7px;padding:7px 11px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%}
+  .aro-inp:focus{outline:none;border-color:var(--navy)}
+  .aro-msg{font-size:12px;padding:8px 12px;border-radius:6px;display:none;margin-top:4px}
+  /* ══ REPORTS VIEW ══ */
+  #view-view-reports{overflow-y:auto;padding:24px 28px}
+  .reports-hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:10px;padding:18px 22px;color:#fff;margin-bottom:20px}
+  .reports-hero-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:500;color:#fff}
+  .reports-hero-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px}
+  .reports-section{margin-bottom:24px}
+  .reports-section-title{font-family:'Playfair Display',serif;font-size:13px;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;padding-bottom:7px;border-bottom:1px solid var(--brd);margin-bottom:12px}
+  .reports-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+  .report-card{background:#fff;border-radius:10px;border:0.5px solid var(--brd);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
+  .report-card:hover{border-color:var(--gold);box-shadow:0 2px 10px rgba(184,149,58,0.12)}
+  .report-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+  .report-info{flex:1}
+  .report-name{font-size:13px;font-weight:500;color:var(--txt);font-family:'Playfair Display',serif;margin-bottom:2px}
+  .report-desc{font-size:11px;color:var(--txt3);line-height:1.5}
+  .report-badge{display:inline-block;margin-top:5px;font-size:9px;padding:2px 7px;border-radius:8px;font-weight:500}
+  .rb-access{background:#EAF3DE;color:#2D6A4F}
+  .rb-debt{background:#FFF0CC;color:#7A4800}
+  .rb-court{background:#FCEBEB;color:#A32D2D}
+  .rb-admin{background:var(--cream2);color:var(--txt2)}
+  .rb-id{background:#E6F1FB;color:#185FA5}
+  .rb-affidavit{background:#FBEAF0;color:#993556}
+  .rb-finance{background:#EAF3DE;color:#2D6A4F}
+
 </style>
 </head>
 <body>
@@ -875,6 +937,16 @@ setTimeout(function() {
       <span>Firm Settings</span>
     </div>
   </div>
+
+    <div class="nav-label">Tools</div>
+    <div class="nav-item" onclick="showView('fee-calc',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M5 4h4.5a2.5 2.5 0 010 5H5M5 9h5a2.5 2.5 0 010 5H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <span>Fee Calculator</span>
+    </div>
+    <div class="nav-item" onclick="showView('view-reports',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M3 2h8l2 2v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.4"/><path d="M9 2v3h3M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <span>Document Reports</span>
+    </div>
   <div class="sidebar-footer">
     <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08)">
       <button id="notif-toggle-btn" onclick="requestNotifPermission()" style="background:none;border:none;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;padding:4px 0;display:block;width:100%;text-align:left;color:var(--gold);transition:opacity 0.15s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">🔔 Enable Notifications</button>
@@ -1337,6 +1409,429 @@ setTimeout(function() {
         </div>
       </div>
     </div>
+
+    <!-- ════ FEE CALCULATOR VIEW ════ -->
+    <div class="view" id="view-fee-calc">
+      <div class="fee-hero-cms">
+        <div>
+          <div class="fee-hero-cms-title">⚖ Advocates Fee Calculator</div>
+          <div class="fee-hero-cms-sub">Advocates (Remuneration) Order — Laws of Kenya (L.N. 64/1962, as amended L.N. 35/2014 &amp; L.N. 45/2014)</div>
+        </div>
+        <button class="topbar-btn gold" onclick="showAROTool()" style="font-size:11px;padding:6px 14px;white-space:nowrap">⚙ Update ARO Rates</button>
+      </div>
+      <div class="fee-disclaimer-cms"><strong>Note:</strong> These are minimum prescribed fees. An advocate may charge more by written agreement with the client but <em>not less</em> than the scale fee. All amounts are exclusive of VAT (16%) and disbursements (stamp duty, court fees, searches). Figures are drawn from the current ARO schedule — use the "Update ARO Rates" tool if the Order is amended.</div>
+      <div class="fee-grid-cms">
+
+        <!-- SCHEDULE 1 — SALE/PURCHASE -->
+        <div class="fee-card-cms">
+          <div class="fee-card-hd-cms">
+            <div class="fee-card-icon-cms" style="background:#2D6A4F"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div><div class="fee-card-title-cms">Sale / Purchase of Land</div><div class="fee-card-sub-cms">Schedule 1 — Land Act 2012</div></div>
+          </div>
+          <div class="fee-body-cms">
+            <div class="fee-row-cms"><div class="fee-label-cms">Consideration / Value (KES)</div><input class="fee-input-cms" id="cms-s1-val" type="number" placeholder="e.g. 10,000,000" oninput="cmsCalcS1()"/></div>
+            <div class="fee-row-cms"><div class="fee-label-cms">Acting for</div>
+              <select class="fee-sel-cms" id="cms-s1-role" onchange="cmsCalcS1()">
+                <option value="both">Both vendor &amp; purchaser</option>
+                <option value="vendor">Vendor only</option>
+                <option value="purchaser">Purchaser only</option>
+              </select></div>
+            <div class="fee-row-cms"><div class="fee-label-cms">Agreement for sale prepared?</div>
+              <select class="fee-sel-cms" id="cms-s1-agr" onchange="cmsCalcS1()">
+                <option value="yes">Yes — full scale fee</option>
+                <option value="no">No — vendor fee reduced by 1/3</option>
+              </select></div>
+            <div class="fee-result-cms" id="cms-s1-result">
+              <div class="fee-result-label-cms">Minimum Scale Fee</div>
+              <div class="fee-result-main-cms" id="cms-s1-main"></div>
+              <div class="fee-result-bd-cms" id="cms-s1-bd"></div>
+              <div class="fee-note-cms">Excl. VAT (16%), stamp duty (4% residential / 2% commercial), Land Registry and search fees.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SCHEDULE 2 — LEASE -->
+        <div class="fee-card-cms">
+          <div class="fee-card-hd-cms">
+            <div class="fee-card-icon-cms" style="background:#185FA5"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+            <div><div class="fee-card-title-cms">Lease / Tenancy Agreement</div><div class="fee-card-sub-cms">Schedule 2 — Landlord &amp; Tenant Acts</div></div>
+          </div>
+          <div class="fee-body-cms">
+            <div class="fee-row-cms"><div class="fee-label-cms">Annual Rent (KES)</div><input class="fee-input-cms" id="cms-s2-rent" type="number" placeholder="e.g. 1,200,000" oninput="cmsCalcS2()"/></div>
+            <div class="fee-row-cms"><div class="fee-label-cms">Role</div>
+              <select class="fee-sel-cms" id="cms-s2-role" onchange="cmsCalcS2()">
+                <option value="lessor">Lessor's advocate (preparing)</option>
+                <option value="lessee">Lessee's advocate (perusing)</option>
+              </select></div>
+            <div class="fee-result-cms" id="cms-s2-result">
+              <div class="fee-result-label-cms">Minimum Scale Fee</div>
+              <div class="fee-result-main-cms" id="cms-s2-main"></div>
+              <div class="fee-result-bd-cms" id="cms-s2-bd"></div>
+              <div class="fee-note-cms">Lessee's advocate is entitled to 50% of lessor's fee. Stamp duty &amp; registration fees billed separately.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MORTGAGE / CHARGE -->
+        <div class="fee-card-cms">
+          <div class="fee-card-hd-cms">
+            <div class="fee-card-icon-cms" style="background:#993C1D"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+            <div><div class="fee-card-title-cms">Mortgage / Charge</div><div class="fee-card-sub-cms">Schedule 1 (2nd Scale)</div></div>
+          </div>
+          <div class="fee-body-cms">
+            <div class="fee-row-cms"><div class="fee-label-cms">Secured Amount (KES)</div><input class="fee-input-cms" id="cms-s1b-val" type="number" placeholder="e.g. 15,000,000" oninput="cmsCalcS1b()"/></div>
+            <div class="fee-row-cms"><div class="fee-label-cms">Role</div>
+              <select class="fee-sel-cms" id="cms-s1b-role" onchange="cmsCalcS1b()">
+                <option value="grantee">Grantee's advocate (lender) — full scale</option>
+                <option value="grantor">Grantor's advocate (borrower) — 50%</option>
+                <option value="both">Both grantee &amp; grantor</option>
+              </select></div>
+            <div class="fee-result-cms" id="cms-s1b-result">
+              <div class="fee-result-label-cms">Minimum Scale Fee</div>
+              <div class="fee-result-main-cms" id="cms-s1b-main"></div>
+              <div class="fee-result-bd-cms" id="cms-s1b-bd"></div>
+              <div class="fee-note-cms">Grantor typically pays both sets of fees (para 9, Sch. 1). VAT 16% applies.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HIGH COURT -->
+        <div class="fee-card-cms">
+          <div class="fee-card-hd-cms">
+            <div class="fee-card-icon-cms" style="background:#534AB7"><svg viewBox="0 0 24 24"><path d="M18 3a3 3 0 00-3 3v12a3 3 0 003 3 3 3 0 003-3 3 3 0 00-3-3H6a3 3 0 00-3 3 3 3 0 003 3 3 3 0 003-3V6a3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3h12a3 3 0 003-3 3 3 0 00-3-3z"/></svg></div>
+            <div><div class="fee-card-title-cms">High Court Litigation</div><div class="fee-card-sub-cms">Schedule 6 — Civil Procedure Act</div></div>
+          </div>
+          <div class="fee-body-cms">
+            <div class="fee-row-cms"><div class="fee-label-cms">Value of Claim (KES)</div><input class="fee-input-cms" id="cms-s6-val" type="number" placeholder="e.g. 2,000,000" oninput="cmsCalcS6()"/></div>
+            <div class="fee-row-cms"><div class="fee-label-cms">Proceeding type</div>
+              <select class="fee-sel-cms" id="cms-s6-type" onchange="cmsCalcS6()">
+                <option value="undefended">Undefended / no appearance (65% of 1b)</option>
+                <option value="summary">Summary determination (75% of 1b)</option>
+                <option value="settled_pre">Settled before 1st hearing (85% of 1b)</option>
+                <option value="uncontested">Contested — no defence (scale 1a)</option>
+                <option value="contested">Fully contested — defence filed (scale 1b)</option>
+              </select></div>
+            <div class="fee-row-cms"><div class="fee-label-cms">Costs basis</div>
+              <select class="fee-sel-cms" id="cms-s6-basis" onchange="cmsCalcS6()">
+                <option value="pp">Party &amp; party (standard)</option>
+                <option value="ac">Advocate &amp; client (+50%)</option>
+              </select></div>
+            <div class="fee-result-cms" id="cms-s6-result">
+              <div class="fee-result-label-cms">Minimum Instruction Fee</div>
+              <div class="fee-result-main-cms" id="cms-s6-main"></div>
+              <div class="fee-result-bd-cms" id="cms-s6-bd"></div>
+              <div class="fee-note-cms">Instruction fee only. Additional: drawing (KES 250/folio), perusing (KES 70/folio), attendances (KES 1,000/15 min), letters (KES 300). Senior counsel +50%.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAGISTRATES COURT -->
+        <div class="fee-card-cms">
+          <div class="fee-card-hd-cms">
+            <div class="fee-card-icon-cms" style="background:#5F5E5A"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <div><div class="fee-card-title-cms">Magistrates Court</div><div class="fee-card-sub-cms">Schedule 7 — Lower and Higher Scale</div></div>
+          </div>
+          <div class="fee-body-cms">
+            <div class="fee-row-cms"><div class="fee-label-cms">Value of Claim (KES)</div><input class="fee-input-cms" id="cms-s7-val" type="number" placeholder="e.g. 500,000" oninput="cmsCalcS7()"/></div>
+            <div class="fee-row-cms"><div class="fee-label-cms">Scale</div>
+              <select class="fee-sel-cms" id="cms-s7-scale" onchange="cmsCalcS7()">
+                <option value="lower">Lower scale (standard)</option>
+                <option value="higher">Higher scale (complex / opposed)</option>
+              </select></div>
+            <div class="fee-result-cms" id="cms-s7-result">
+              <div class="fee-result-label-cms">Minimum Instruction Fee</div>
+              <div class="fee-result-main-cms" id="cms-s7-main"></div>
+              <div class="fee-result-bd-cms" id="cms-s7-bd"></div>
+              <div class="fee-note-cms">For claims over KES 2,000,000: fee at 2M + 25% of excess.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROBATE & ESTATE -->
+        <div class="fee-card-cms">
+          <div class="fee-card-hd-cms">
+            <div class="fee-card-icon-cms" style="background:#993556"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+            <div><div class="fee-card-title-cms">Probate &amp; Administration</div><div class="fee-card-sub-cms">Schedule 10 — Law of Succession Act</div></div>
+          </div>
+          <div class="fee-body-cms">
+            <div class="fee-row-cms"><div class="fee-label-cms">Gross Estate Value (KES)</div><input class="fee-input-cms" id="cms-s10-val" type="number" placeholder="e.g. 5,000,000" oninput="cmsCalcS10()"/></div>
+            <div class="fee-row-cms"><div class="fee-label-cms">Matter type</div>
+              <select class="fee-sel-cms" id="cms-s10-type" onchange="cmsCalcS10()">
+                <option value="grant">Grant of probate / letters of administration</option>
+                <option value="admin">Full estate administration</option>
+              </select></div>
+            <div class="fee-result-cms" id="cms-s10-result">
+              <div class="fee-result-label-cms">Minimum Scale Fee</div>
+              <div class="fee-result-main-cms" id="cms-s10-main"></div>
+              <div class="fee-result-bd-cms" id="cms-s10-bd"></div>
+              <div class="fee-note-cms">Court filing fees, ad fees, and stamp duty on assents are separate disbursements.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DEBT COLLECTION (Schedule 5) -->
+        <div class="fee-card-cms">
+          <div class="fee-card-hd-cms">
+            <div class="fee-card-icon-cms" style="background:var(--gold)"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+            <div><div class="fee-card-title-cms">Non-Contentious Debt Collection</div><div class="fee-card-sub-cms">Schedule 5, Para 7 — Inclusive scale</div></div>
+          </div>
+          <div class="fee-body-cms">
+            <div class="fee-row-cms"><div class="fee-label-cms">Debt Amount (KES)</div><input class="fee-input-cms" id="cms-s5-val" type="number" placeholder="e.g. 800,000" oninput="cmsCalcS5()"/></div>
+            <div class="fee-row-cms"><div class="fee-label-cms">Stage reached</div>
+              <select class="fee-sel-cms" id="cms-s5-stage" onchange="cmsCalcS5()">
+                <option value="demand">Demand letter only (50% of scale)</option>
+                <option value="full">Full non-contentious recovery</option>
+              </select></div>
+            <div class="fee-result-cms" id="cms-s5-result">
+              <div class="fee-result-label-cms">Minimum Scale Fee</div>
+              <div class="fee-result-main-cms" id="cms-s5-main"></div>
+              <div class="fee-result-bd-cms" id="cms-s5-bd"></div>
+              <div class="fee-note-cms">If proceedings are filed, Schedule 5 inclusive scale does not apply — revert to Sch. 6/7. VAT 16% applies.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COMPANY / TRADEMARK -->
+        <div class="fee-card-cms">
+          <div class="fee-card-hd-cms">
+            <div class="fee-card-icon-cms" style="background:var(--navy)"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg></div>
+            <div><div class="fee-card-title-cms">Company Formation / Trademark</div><div class="fee-card-sub-cms">Schedules 3 &amp; 4 — Companies Act 2015</div></div>
+          </div>
+          <div class="fee-body-cms">
+            <div class="fee-row-cms"><div class="fee-label-cms">Matter type</div>
+              <select class="fee-sel-cms" id="cms-s3-type" onchange="cmsCalcS3()">
+                <option value="company_local">Company incorporation (local)</option>
+                <option value="company_foreign">Foreign company registration</option>
+                <option value="tm_one">Trademark — single class</option>
+                <option value="tm_two">Trademark — 2nd mark (same proprietor)</option>
+                <option value="tm_renew">Trademark renewal (1 class)</option>
+                <option value="tm_assign">Trademark assignment (1 mark)</option>
+              </select></div>
+            <div class="fee-result-cms show" id="cms-s3-result">
+              <div class="fee-result-label-cms">Minimum Scale Fee</div>
+              <div class="fee-result-main-cms" id="cms-s3-main">KES 60,000</div>
+              <div class="fee-result-bd-cms" id="cms-s3-bd"><div class="fee-br-cms"><span>Company incorporation (Schedule 3)</span><span>KES 60,000</span></div></div>
+              <div class="fee-note-cms">KRA filing fees and government levies are separate disbursements.</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /fee-grid-cms -->
+
+      <!-- ── ARO UPDATE TOOL ── -->
+      <div class="aro-section" id="aro-tool" style="display:none">
+        <div class="aro-hd">
+          <div>
+            <div class="aro-hd-title">⚙ Update ARO Rate Tables</div>
+            <div class="aro-hd-sub">Use when the Advocates (Remuneration) Order is amended by Legal Notice. Changes are saved to localStorage for this device.</div>
+          </div>
+          <button class="topbar-btn" onclick="document.getElementById('aro-tool').style.display='none'" style="font-size:11px;padding:5px 12px">Hide</button>
+        </div>
+        <div class="aro-body">
+          <div style="font-size:12px;color:var(--txt2);line-height:1.6;background:var(--cream);padding:10px 12px;border-radius:7px;border:1px solid var(--brd)">
+            Amend the rate parameters below to match the latest Order. These override the default figures built into the calculator. Click <strong>Apply &amp; Save</strong> — all fee calculations will immediately reflect the new rates without needing to reload.
+          </div>
+
+          <div style="font-family:'Playfair Display',serif;font-size:12px;font-weight:500;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-top:4px">Schedule 1 — Land Sale &amp; Purchase</div>
+          <div class="aro-grid">
+            <div class="aro-field"><div class="aro-lbl">Minimum Fee (KES)</div><input class="aro-inp" id="aro-s1-min" type="number" placeholder="35000"/></div>
+            <div class="aro-field"><div class="aro-lbl">Band 1 rate (≤5M) %</div><input class="aro-inp" id="aro-s1-r1" type="number" step="0.001" placeholder="2"/></div>
+            <div class="aro-field"><div class="aro-lbl">Band 2 rate (5M–100M) %</div><input class="aro-inp" id="aro-s1-r2" type="number" step="0.001" placeholder="1.5"/></div>
+            <div class="aro-field"><div class="aro-lbl">Band 3 rate (100M–250M) %</div><input class="aro-inp" id="aro-s1-r3" type="number" step="0.001" placeholder="1.25"/></div>
+            <div class="aro-field"><div class="aro-lbl">Band 4 rate (250M–1B) %</div><input class="aro-inp" id="aro-s1-r4" type="number" step="0.001" placeholder="1"/></div>
+            <div class="aro-field"><div class="aro-lbl">Band 5 rate (&gt;1B) %</div><input class="aro-inp" id="aro-s1-r5" type="number" step="0.001" placeholder="0.1"/></div>
+          </div>
+
+          <div style="font-family:'Playfair Display',serif;font-size:12px;font-weight:500;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">Schedule 5 — Debt Collection</div>
+          <div class="aro-grid">
+            <div class="aro-field"><div class="aro-lbl">Band 1 rate (≤100K) %</div><input class="aro-inp" id="aro-s5-r1" type="number" step="0.01" placeholder="10"/></div>
+            <div class="aro-field"><div class="aro-lbl">Band 2 rate (100K–500K) %</div><input class="aro-inp" id="aro-s5-r2" type="number" step="0.01" placeholder="5"/></div>
+            <div class="aro-field"><div class="aro-lbl">Band 3 rate (500K–2M) %</div><input class="aro-inp" id="aro-s5-r3" type="number" step="0.01" placeholder="3"/></div>
+            <div class="aro-field"><div class="aro-lbl">Band 4 rate (&gt;2M) %</div><input class="aro-inp" id="aro-s5-r4" type="number" step="0.01" placeholder="1.5"/></div>
+            <div class="aro-field"><div class="aro-lbl">Demand letter only (%)</div><input class="aro-inp" id="aro-s5-demand" type="number" step="1" placeholder="50"/></div>
+            <div class="aro-field"><div class="aro-lbl">Min. demand fee (KES)</div><input class="aro-inp" id="aro-s5-min-demand" type="number" placeholder="1000"/></div>
+          </div>
+
+          <div style="font-family:'Playfair Display',serif;font-size:12px;font-weight:500;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">Schedule 3/4 — Fixed Fees (KES)</div>
+          <div class="aro-grid">
+            <div class="aro-field"><div class="aro-lbl">Company incorporation</div><input class="aro-inp" id="aro-s3-company" type="number" placeholder="60000"/></div>
+            <div class="aro-field"><div class="aro-lbl">Trademark — 1 class</div><input class="aro-inp" id="aro-s3-tm1" type="number" placeholder="42000"/></div>
+            <div class="aro-field"><div class="aro-lbl">Trademark — 2nd mark</div><input class="aro-inp" id="aro-s3-tm2" type="number" placeholder="29000"/></div>
+            <div class="aro-field"><div class="aro-lbl">Trademark renewal</div><input class="aro-inp" id="aro-s3-tmr" type="number" placeholder="25000"/></div>
+          </div>
+
+          <div style="font-family:'Playfair Display',serif;font-size:12px;font-weight:500;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">VAT Rate</div>
+          <div class="aro-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+            <div class="aro-field"><div class="aro-lbl">Current VAT rate (%)</div><input class="aro-inp" id="aro-vat" type="number" step="0.1" placeholder="16"/></div>
+            <div class="aro-field"><div class="aro-lbl">Legal Notice / Amendment reference</div><input class="aro-inp" id="aro-ref" type="text" placeholder="e.g. L.N. 12/2025"/></div>
+          </div>
+
+          <div id="aro-msg" class="aro-msg"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+            <button class="topbar-btn gold" onclick="aroApply()" style="font-size:12px">Apply &amp; Save Changes</button>
+            <button class="topbar-btn sec" onclick="aroReset()" style="font-size:12px">Reset to Defaults</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /view-fee-calc -->
+
+    <!-- ════ DOCUMENT REPORTS VIEW ════ -->
+    <div class="view" id="view-view-reports">
+      <div class="reports-hero">
+        <div class="reports-hero-title">📄 Document Reports</div>
+        <div class="reports-hero-sub">All document generators from the DKMA practice system. Click any card to launch the document in the DKM LexAI platform, or print directly.</div>
+      </div>
+
+      <div class="reports-section">
+        <div class="reports-section-title">Affidavits &amp; Sworn Statements</div>
+        <div class="reports-grid">
+          <div class="report-card" onclick="openReport('General Affidavit')">
+            <div class="report-icon" style="background:#FBEAF0">📜</div>
+            <div class="report-info">
+              <div class="report-name">General Affidavit</div>
+              <div class="report-desc">Standard sworn statement for general use before a Commissioner for Oaths</div>
+              <span class="report-badge rb-affidavit">Affidavit</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openReport('Affidavit_CustMarrDecl')">
+            <div class="report-icon" style="background:#FBEAF0">💍</div>
+            <div class="report-info">
+              <div class="report-name">Affidavit — Marriage Declaration</div>
+              <div class="report-desc">Custom marriage declaration affidavit — confirms marital status before an authority</div>
+              <span class="report-badge rb-affidavit">Affidavit</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openReport('Affidavit_LostPP')">
+            <div class="report-icon" style="background:#FBEAF0">🪪</div>
+            <div class="report-info">
+              <div class="report-name">Affidavit — Lost Passport / PP</div>
+              <div class="report-desc">Statutory affidavit to support a replacement passport or lost document application</div>
+              <span class="report-badge rb-affidavit">Affidavit</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reports-section">
+        <div class="reports-section-title">Court &amp; Litigation</div>
+        <div class="reports-grid">
+          <div class="report-card" onclick="openReport('Court')">
+            <div class="report-icon" style="background:#FCEBEB">⚖️</div>
+            <div class="report-info">
+              <div class="report-name">Court Document</div>
+              <div class="report-desc">Formal court filing — pleadings, applications, and related court paperwork</div>
+              <span class="report-badge rb-court">Litigation</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openReport('AUTHORIZATION')">
+            <div class="report-icon" style="background:#EAF3DE">✅</div>
+            <div class="report-info">
+              <div class="report-name">Authorization</div>
+              <div class="report-desc">Written authority document authorising an agent or representative to act</div>
+              <span class="report-badge rb-access">Authority</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openReport('APPOINTMENT')">
+            <div class="report-icon" style="background:#E6F1FB">📅</div>
+            <div class="report-info">
+              <div class="report-name">Appointment Letter</div>
+              <div class="report-desc">Formal letter of appointment — clients, advisors, agents, or officers</div>
+              <span class="report-badge rb-admin">Admin</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reports-section">
+        <div class="reports-section-title">Finance &amp; Debt Recovery</div>
+        <div class="reports-grid">
+          <div class="report-card" onclick="openReport('STATEMENT')">
+            <div class="report-icon" style="background:#EAF3DE">📊</div>
+            <div class="report-info">
+              <div class="report-name">Client Statement</div>
+              <div class="report-desc">Account statement showing invoices, payments received, and outstanding balances</div>
+              <span class="report-badge rb-finance">Finance</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openReport('RECPPP')">
+            <div class="report-icon" style="background:#EAF3DE">🧾</div>
+            <div class="report-info">
+              <div class="report-name">Payment Receipt</div>
+              <div class="report-desc">Official receipt for fees and disbursements received from a client</div>
+              <span class="report-badge rb-finance">Finance</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openReport('SaleAgrmt-main')">
+            <div class="report-icon" style="background:#FFF0CC">🤝</div>
+            <div class="report-info">
+              <div class="report-name">Sale Agreement</div>
+              <div class="report-desc">Formal agreement for sale of land, property, or assets — principal document</div>
+              <span class="report-badge rb-debt">Conveyancing</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDebtRecovery('100K')">
+            <div class="report-icon" style="background:#FFF0CC">📬</div>
+            <div class="report-info">
+              <div class="report-name">Debt Recovery — Under KES 100K</div>
+              <div class="report-desc">Demand / recovery letter for debts up to KES 100,000 (Schedule 5 scale)</div>
+              <span class="report-badge rb-debt">Debt Recovery</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDebtRecovery('100K_500k')">
+            <div class="report-icon" style="background:#FFF0CC">📬</div>
+            <div class="report-info">
+              <div class="report-name">Debt Recovery — KES 100K–500K</div>
+              <div class="report-desc">Demand letter for mid-range debts between KES 100,000 and KES 500,000</div>
+              <span class="report-badge rb-debt">Debt Recovery</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDebtRecovery('500K_2M')">
+            <div class="report-icon" style="background:#FFF0CC">📬</div>
+            <div class="report-info">
+              <div class="report-name">Debt Recovery — KES 500K–2M</div>
+              <div class="report-desc">Formal demand letter for debts between KES 500,000 and KES 2,000,000</div>
+              <span class="report-badge rb-debt">Debt Recovery</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDebtRecovery('2M')">
+            <div class="report-icon" style="background:#FCEBEB">📬</div>
+            <div class="report-info">
+              <div class="report-name">Debt Recovery — Over KES 2M</div>
+              <div class="report-desc">High-value debt recovery notice for amounts exceeding KES 2,000,000</div>
+              <span class="report-badge rb-court">High Value</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reports-section">
+        <div class="reports-section-title">Received Documents &amp; Admin</div>
+        <div class="reports-grid">
+          <div class="report-card" onclick="openReport('DIGIRECEIVE')">
+            <div class="report-icon" style="background:#E6F1FB">📥</div>
+            <div class="report-info">
+              <div class="report-name">Digital Document Receipt</div>
+              <div class="report-desc">Acknowledgement stamp and receipt for documents received at the firm</div>
+              <span class="report-badge rb-admin">Admin</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openReport('EmployeeID')">
+            <div class="report-icon" style="background:#E6F1FB">🪪</div>
+            <div class="report-info">
+              <div class="report-name">Employee ID Card</div>
+              <div class="report-desc">Staff identification card with photo, name, designation, and expiry</div>
+              <span class="report-badge rb-id">HR</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:8px;padding:12px 16px;background:var(--cream);border-radius:8px;border:1px solid var(--brd);font-size:11px;color:var(--txt3);line-height:1.6">
+        <strong>Note:</strong> These reports are generated by the DKMA Access CMS (DKMA.accdb). The debt recovery reports use the fee tiers from the Advocates (Remuneration) Order — use the <button class="card-action" onclick="showView('fee-calc',document.querySelector('[onclick*=fee-calc]'))">Fee Calculator</button> to verify applicable scale fees before issuing demand letters.
+      </div>
+    </div><!-- /view-view-reports -->
+
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -1800,6 +2295,14 @@ setTimeout(function() {
       Team
     </div>
   </div>
+    <div class="drawer-item" id="di-fee-calc" onclick="showView('fee-calc',null,true);closeDrawer()">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M8 1v14M5 4h4.5a2.5 2.5 0 010 5H5M5 9h5a2.5 2.5 0 010 5H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Fee Calculator
+    </div>
+    <div class="drawer-item" id="di-view-reports" onclick="showView('view-reports',null,true);closeDrawer()">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M3 2h8l2 2v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.4"/><path d="M9 2v3h3M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Document Reports
+    </div>
   <div class="drawer-footer">
     <div class="drawer-user">
       <div class="drawer-user-av" id="drawer-user-av">—</div>
@@ -8666,6 +9169,401 @@ document.addEventListener('click', function(e){
     const panel = document.getElementById('ev-date-check');
     if(panel){ panel.style.display='none'; panel.innerHTML=''; }
   }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// FEE CALCULATOR — Advocates (Remuneration) Order
+// L.N. 64/1962 as amended by L.N. 35/2014 & L.N. 45/2014
+// ARO rates are stored in localStorage under 'dkma_aro_rates'
+// so they persist across sessions on this device.
+// ══════════════════════════════════════════════════════════════════
+
+// ── Default ARO rate tables (current Order) ──
+const ARO_DEFAULTS = {
+  // Schedule 1: Sale/Purchase of Land — cumulative bands
+  s1_min:   35000,
+  s1_r1:    0.02,    // ≤ 5M
+  s1_r2:    0.015,   // 5M – 100M
+  s1_r3:    0.0125,  // 100M – 250M
+  s1_r4:    0.01,    // 250M – 1B
+  s1_r5:    0.001,   // > 1B
+
+  // Schedule 5: Debt Collection
+  s5_r1:          0.10,   // ≤ 100K
+  s5_r2:          0.05,   // 100K – 500K
+  s5_r3:          0.03,   // 500K – 2M
+  s5_r4:          0.015,  // > 2M
+  s5_demand_pct:  0.50,   // demand letter = 50% of scale
+  s5_min_demand:  1000,   // minimum demand-letter fee
+
+  // Schedule 3/4: Fixed fees (KES)
+  s3_company_local:  60000,
+  s3_company_foreign:60000,
+  s3_tm_one:         42000,
+  s3_tm_two:         29000,
+  s3_tm_renew:       25000,
+  s3_tm_assign:      25000,
+
+  // VAT
+  vat: 0.16,
+
+  // Legal Notice reference (informational)
+  ref: 'L.N. 35/2014 & L.N. 45/2014'
+};
+
+// Live rates — start from defaults, then overlay any saved overrides
+let ARO = Object.assign({}, ARO_DEFAULTS);
+
+function aroLoad() {
+  try {
+    const saved = localStorage.getItem('dkma_aro_rates');
+    if (saved) ARO = Object.assign({}, ARO_DEFAULTS, JSON.parse(saved));
+  } catch(e) { /* ignore */ }
+}
+aroLoad();
+
+function cmsKES(n){ return 'KES ' + Math.round(n).toLocaleString('en-KE'); }
+
+// ── Show / hide ARO tool ──
+function showAROTool() {
+  const t = document.getElementById('aro-tool');
+  if (!t) return;
+  t.style.display = t.style.display === 'none' ? 'block' : 'none';
+  if (t.style.display === 'block') aroPopulateFields();
+  // Scroll to it
+  setTimeout(() => t.scrollIntoView({behavior:'smooth', block:'start'}), 80);
+}
+
+// Populate ARO form with current values
+function aroPopulateFields() {
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+  set('aro-s1-min',  ARO.s1_min);
+  set('aro-s1-r1',   +(ARO.s1_r1 * 100).toFixed(4));
+  set('aro-s1-r2',   +(ARO.s1_r2 * 100).toFixed(4));
+  set('aro-s1-r3',   +(ARO.s1_r3 * 100).toFixed(4));
+  set('aro-s1-r4',   +(ARO.s1_r4 * 100).toFixed(4));
+  set('aro-s1-r5',   +(ARO.s1_r5 * 100).toFixed(4));
+  set('aro-s5-r1',   +(ARO.s5_r1 * 100).toFixed(2));
+  set('aro-s5-r2',   +(ARO.s5_r2 * 100).toFixed(2));
+  set('aro-s5-r3',   +(ARO.s5_r3 * 100).toFixed(2));
+  set('aro-s5-r4',   +(ARO.s5_r4 * 100).toFixed(2));
+  set('aro-s5-demand', +(ARO.s5_demand_pct * 100).toFixed(0));
+  set('aro-s5-min-demand', ARO.s5_min_demand);
+  set('aro-s3-company', ARO.s3_company_local);
+  set('aro-s3-tm1',     ARO.s3_tm_one);
+  set('aro-s3-tm2',     ARO.s3_tm_two);
+  set('aro-s3-tmr',     ARO.s3_tm_renew);
+  set('aro-vat',  +(ARO.vat * 100).toFixed(1));
+  set('aro-ref',  ARO.ref);
+}
+
+// Apply & save
+function aroApply() {
+  const get = id => parseFloat(document.getElementById(id)?.value);
+  const getStr = id => document.getElementById(id)?.value?.trim() || '';
+  const updates = {
+    s1_min:         get('aro-s1-min')  || ARO_DEFAULTS.s1_min,
+    s1_r1:          (get('aro-s1-r1')  || ARO_DEFAULTS.s1_r1  * 100) / 100,
+    s1_r2:          (get('aro-s1-r2')  || ARO_DEFAULTS.s1_r2  * 100) / 100,
+    s1_r3:          (get('aro-s1-r3')  || ARO_DEFAULTS.s1_r3  * 100) / 100,
+    s1_r4:          (get('aro-s1-r4')  || ARO_DEFAULTS.s1_r4  * 100) / 100,
+    s1_r5:          (get('aro-s1-r5')  || ARO_DEFAULTS.s1_r5  * 100) / 100,
+    s5_r1:          (get('aro-s5-r1')  || ARO_DEFAULTS.s5_r1  * 100) / 100,
+    s5_r2:          (get('aro-s5-r2')  || ARO_DEFAULTS.s5_r2  * 100) / 100,
+    s5_r3:          (get('aro-s5-r3')  || ARO_DEFAULTS.s5_r3  * 100) / 100,
+    s5_r4:          (get('aro-s5-r4')  || ARO_DEFAULTS.s5_r4  * 100) / 100,
+    s5_demand_pct:  (get('aro-s5-demand')   || 50) / 100,
+    s5_min_demand:  get('aro-s5-min-demand') || ARO_DEFAULTS.s5_min_demand,
+    s3_company_local:  get('aro-s3-company') || ARO_DEFAULTS.s3_company_local,
+    s3_company_foreign:get('aro-s3-company') || ARO_DEFAULTS.s3_company_foreign,
+    s3_tm_one:     get('aro-s3-tm1') || ARO_DEFAULTS.s3_tm_one,
+    s3_tm_two:     get('aro-s3-tm2') || ARO_DEFAULTS.s3_tm_two,
+    s3_tm_renew:   get('aro-s3-tmr') || ARO_DEFAULTS.s3_tm_renew,
+    s3_tm_assign:  get('aro-s3-tmr') || ARO_DEFAULTS.s3_tm_assign,
+    vat:           (get('aro-vat') || 16) / 100,
+    ref:           getStr('aro-ref') || ARO_DEFAULTS.ref
+  };
+  ARO = Object.assign({}, ARO_DEFAULTS, updates);
+  try {
+    localStorage.setItem('dkma_aro_rates', JSON.stringify(updates));
+  } catch(e) { /* quota exceeded */ }
+  // Re-run any open calculator results
+  cmsCalcS1(); cmsCalcS2(); cmsCalcS1b(); cmsCalcS6();
+  cmsCalcS7(); cmsCalcS10(); cmsCalcS5(); cmsCalcS3();
+  // Update hero subtitle with reference
+  const sub = document.querySelector('.fee-hero-cms-sub');
+  if(sub) sub.textContent = 'Advocates (Remuneration) Order — ' + ARO.ref + (updates.ref !== ARO_DEFAULTS.ref ? ' ⚠ Custom rates applied' : '');
+  aroShowMsg('✓ Rates updated and saved to this device. All calculations now reflect the amended Order (' + ARO.ref + ').', 'ok');
+}
+
+function aroReset() {
+  try { localStorage.removeItem('dkma_aro_rates'); } catch(e){}
+  ARO = Object.assign({}, ARO_DEFAULTS);
+  aroPopulateFields();
+  cmsCalcS1(); cmsCalcS2(); cmsCalcS1b(); cmsCalcS6();
+  cmsCalcS7(); cmsCalcS10(); cmsCalcS5(); cmsCalcS3();
+  const sub = document.querySelector('.fee-hero-cms-sub');
+  if(sub) sub.textContent = 'Advocates (Remuneration) Order — Laws of Kenya (' + ARO_DEFAULTS.ref + ')';
+  aroShowMsg('✓ Rates reset to published defaults (' + ARO_DEFAULTS.ref + ').', 'ok');
+}
+
+function aroShowMsg(txt, type) {
+  const el = document.getElementById('aro-msg');
+  if (!el) return;
+  el.textContent = txt;
+  el.style.display = 'block';
+  el.style.background = type === 'ok' ? '#EAF3DE' : '#FCEBEB';
+  el.style.color      = type === 'ok' ? '#2D6A4F' : '#A32D2D';
+  el.style.border     = type === 'ok' ? '1px solid #97C459' : '1px solid #F09595';
+  el.style.borderRadius = '7px';
+  el.style.padding = '8px 12px';
+  setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+// ── Schedule 1: Sale/Purchase (cumulative bands, live ARO rates) ──
+function scheduleOneSaleFee_cms(v) {
+  const min = ARO.s1_min;
+  let fee = Math.max(Math.min(v, 5000000) * ARO.s1_r1, min);
+  if (v > 5000000)    fee += (Math.min(v, 100000000)  - 5000000)   * ARO.s1_r2;
+  if (v > 100000000)  fee += (Math.min(v, 250000000)  - 100000000) * ARO.s1_r3;
+  if (v > 250000000)  fee += (Math.min(v, 1000000000) - 250000000) * ARO.s1_r4;
+  if (v > 1000000000) fee += (v - 1000000000) * ARO.s1_r5;
+  return fee;
+}
+
+function cmsCalcS1() {
+  const v    = parseFloat(document.getElementById('cms-s1-val')?.value) || 0;
+  const role = document.getElementById('cms-s1-role')?.value || 'both';
+  const agr  = document.getElementById('cms-s1-agr')?.value  || 'yes';
+  const res  = document.getElementById('cms-s1-result');
+  if (!v || !res) { res && res.classList.remove('show'); return; }
+  const base = scheduleOneSaleFee_cms(v);
+  let vFee = base, pFee = base, total = 0, rows = '';
+  if (agr === 'no') vFee = vFee * (2/3);
+  if (role === 'vendor'    || role === 'both') { rows += `<div class="fee-br-cms"><span>Vendor's advocate fee</span><span>${cmsKES(vFee)}</span></div>`; total += vFee; }
+  if (role === 'purchaser' || role === 'both') { rows += `<div class="fee-br-cms"><span>Purchaser's advocate fee</span><span>${cmsKES(pFee)}</span></div>`; total += pFee; }
+  if (role === 'both') rows += `<div class="fee-br-cms total"><span>Total (both sides)</span><span>${cmsKES(total)}</span></div>`;
+  else total = role === 'vendor' ? vFee : pFee;
+  document.getElementById('cms-s1-main').textContent = cmsKES(total);
+  document.getElementById('cms-s1-bd').innerHTML = rows;
+  res.classList.add('show');
+}
+
+// ── Schedule 2: Leases ──
+function cmsCalcS2() {
+  const rent = parseFloat(document.getElementById('cms-s2-rent')?.value) || 0;
+  const role = document.getElementById('cms-s2-role')?.value || 'lessor';
+  const res  = document.getElementById('cms-s2-result');
+  if (!rent || !res) { res && res.classList.remove('show'); return; }
+  let base;
+  if      (rent <= 500000)  base = Math.max(rent * 0.15, 20000);
+  else if (rent <= 3000000) base = Math.max(500000 * 0.15, 20000) + (rent - 500000) * 0.03;
+  else                      base = Math.max(500000 * 0.15, 20000) + (3000000 - 500000) * 0.03 + (rent - 3000000) * 0.01;
+  const fee  = role === 'lessee' ? base * 0.5 : base;
+  const rows = `<div class="fee-br-cms"><span>${role === 'lessor' ? 'Lessor (preparing)' : 'Lessee (perusing)'} — annual rent ${cmsKES(rent)}</span><span></span></div>`
+             + `<div class="fee-br-cms"><span>Scale fee (${role === 'lessee' ? '50% of lessor fee' : 'full'})</span><span>${cmsKES(fee)}</span></div>`;
+  document.getElementById('cms-s2-main').textContent = cmsKES(fee);
+  document.getElementById('cms-s2-bd').innerHTML = rows;
+  res.classList.add('show');
+}
+
+// ── Schedule 1 (2nd Scale): Mortgage / Charge ──
+function scheduleMortgageFee_cms(v) {
+  let fee = Math.max(Math.min(v, 2500000) * 0.02, 28000);
+  if (v > 2500000)    fee += (Math.min(v, 5000000)   - 2500000)   * 0.0175;
+  if (v > 5000000)    fee += (Math.min(v, 100000000) - 5000000)   * 0.01;
+  if (v > 100000000)  fee += (Math.min(v, 250000000) - 100000000) * 0.0075;
+  if (v > 250000000)  fee += (Math.min(v, 1000000000)- 250000000) * 0.0015;
+  if (v > 1000000000) fee += (v - 1000000000) * 0.001;
+  return fee;
+}
+
+function cmsCalcS1b() {
+  const v    = parseFloat(document.getElementById('cms-s1b-val')?.value) || 0;
+  const role = document.getElementById('cms-s1b-role')?.value || 'grantee';
+  const res  = document.getElementById('cms-s1b-result');
+  if (!v || !res) { res && res.classList.remove('show'); return; }
+  const grantee = scheduleMortgageFee_cms(v);
+  const grantor = grantee * 0.5;
+  let total = 0, rows = '';
+  if (role === 'grantee') {
+    total = grantee;
+    rows = `<div class="fee-br-cms"><span>Grantee's (lender's) advocate</span><span>${cmsKES(grantee)}</span></div>`;
+  } else if (role === 'grantor') {
+    total = grantor;
+    rows = `<div class="fee-br-cms"><span>Grantor's (borrower's) advocate</span><span>${cmsKES(grantor)}</span></div>`;
+  } else {
+    total = grantee + grantor;
+    rows = `<div class="fee-br-cms"><span>Grantee's advocate fee</span><span>${cmsKES(grantee)}</span></div>`
+         + `<div class="fee-br-cms"><span>Grantor's advocate fee (50%)</span><span>${cmsKES(grantor)}</span></div>`
+         + `<div class="fee-br-cms total"><span>Total (both sides)</span><span>${cmsKES(total)}</span></div>`;
+  }
+  document.getElementById('cms-s1b-main').textContent = cmsKES(total);
+  document.getElementById('cms-s1b-bd').innerHTML = rows;
+  res.classList.add('show');
+}
+
+// ── Schedule 6: High Court (L.N.35/2014 rates) ──
+function s6Base1a(v) {
+  if (v <= 500000)  return 45000;
+  if (v <= 750000)  return 65000;
+  if (v <= 1000000) return 75000;
+  if (v <= 20000000) return 75000 + (v - 1000000) * 0.0175;
+  return 75000 + (20000000 - 1000000) * 0.0175 + (v - 20000000) * 0.015;
+}
+function s6Base1b(v) {
+  if (v <= 500000)  return 75000;
+  if (v <= 750000)  return 90000;
+  if (v <= 1000000) return 120000;
+  if (v <= 20000000) return 120000 + (v - 1000000) * 0.02;
+  return 120000 + (20000000 - 1000000) * 0.02 + (v - 20000000) * 0.015;
+}
+
+function cmsCalcS6() {
+  const v     = parseFloat(document.getElementById('cms-s6-val')?.value)  || 0;
+  const type  = document.getElementById('cms-s6-type')?.value  || 'contested';
+  const basis = document.getElementById('cms-s6-basis')?.value || 'pp';
+  const res   = document.getElementById('cms-s6-result');
+  if (!v || !res) { res && res.classList.remove('show'); return; }
+  let base = 0, label = '', pct = '';
+  if      (type === 'undefended')   { base = s6Base1b(v) * 0.65; label = 'Undefended';           pct = '65% of scale 1b'; }
+  else if (type === 'summary')      { base = s6Base1b(v) * 0.75; label = 'Summary determination'; pct = '75% of scale 1b'; }
+  else if (type === 'settled_pre')  { base = s6Base1b(v) * 0.85; label = 'Settled pre-hearing';   pct = '85% of scale 1b'; }
+  else if (type === 'uncontested')  { base = s6Base1a(v);         label = 'Uncontested (scale 1a)';pct = 'Scale 1a'; }
+  else                               { base = s6Base1b(v);         label = 'Fully contested';       pct = 'Scale 1b'; }
+  const fee = basis === 'ac' ? base * 1.5 : base;
+  let rows = `<div class="fee-br-cms"><span>${label} (${pct})</span><span>${cmsKES(base)}</span></div>`;
+  if (basis === 'ac') rows += `<div class="fee-br-cms"><span>A&amp;C uplift (+50%)</span><span>${cmsKES(base * 0.5)}</span></div>`
+                            + `<div class="fee-br-cms total"><span>A&amp;C instruction fee</span><span>${cmsKES(fee)}</span></div>`;
+  document.getElementById('cms-s6-main').textContent = cmsKES(fee);
+  document.getElementById('cms-s6-bd').innerHTML = rows;
+  res.classList.add('show');
+}
+
+// ── Schedule 7: Magistrates Court (L.N.45/2014 rates) ──
+function cmsCalcS7() {
+  const v     = parseFloat(document.getElementById('cms-s7-val')?.value) || 0;
+  const scale = document.getElementById('cms-s7-scale')?.value || 'lower';
+  const res   = document.getElementById('cms-s7-result');
+  if (!v || !res) { res && res.classList.remove('show'); return; }
+  const bands = [
+    [0,       50000,    10000,  15000],
+    [50000,   100000,   15000,  30000],
+    [100000,  200000,   30000,  40000],
+    [200000,  500000,   45000,  65000],
+    [500000,  1000000,  65000,  90000],
+    [1000000, 2000000,  90000, 120000]
+  ];
+  let fee = 0, bandLabel = 'Over KES 2,000,000';
+  for (const [lo, hi, low, high] of bands) {
+    if (v > lo && v <= hi) { fee = scale === 'lower' ? low : high; bandLabel = `${cmsKES(lo)}–${cmsKES(hi)}`; break; }
+  }
+  if (v > 2000000) { fee = (scale === 'lower' ? 120000 : 120000) + (v - 2000000) * 0.25; }
+  const rows = `<div class="fee-br-cms"><span>Claim band: ${bandLabel}</span><span></span></div>`
+             + `<div class="fee-br-cms"><span>${scale === 'lower' ? 'Lower' : 'Higher'} scale fee</span><span>${cmsKES(fee)}</span></div>`;
+  document.getElementById('cms-s7-main').textContent = cmsKES(fee);
+  document.getElementById('cms-s7-bd').innerHTML = rows;
+  res.classList.add('show');
+}
+
+// ── Schedule 10: Probate & Administration ──
+function cmsCalcS10() {
+  const v    = parseFloat(document.getElementById('cms-s10-val')?.value) || 0;
+  const type = document.getElementById('cms-s10-type')?.value || 'grant';
+  const res  = document.getElementById('cms-s10-result');
+  if (!v || !res) { res && res.classList.remove('show'); return; }
+  const full  = scheduleOneSaleFee_cms(v);
+  const grant = full * 0.6;
+  const fee   = type === 'admin' ? full : grant;
+  const label = type === 'admin' ? 'Full administration (Sch. 10)' : 'Grant only (approx. 60% of full admin)';
+  document.getElementById('cms-s10-main').textContent = cmsKES(fee);
+  document.getElementById('cms-s10-bd').innerHTML = `<div class="fee-br-cms"><span>${label}</span><span>${cmsKES(fee)}</span></div>`;
+  res.classList.add('show');
+}
+
+// ── Schedule 5: Debt Collection (live ARO rates) ──
+function cmsCalcS5() {
+  const v     = parseFloat(document.getElementById('cms-s5-val')?.value) || 0;
+  const stage = document.getElementById('cms-s5-stage')?.value || 'full';
+  const res   = document.getElementById('cms-s5-result');
+  if (!v || !res) { res && res.classList.remove('show'); return; }
+  let fee = 0;
+  if      (v <= 100000)  fee = v * ARO.s5_r1;
+  else if (v <= 500000)  fee = 100000 * ARO.s5_r1 + (v - 100000)  * ARO.s5_r2;
+  else if (v <= 2000000) fee = 100000 * ARO.s5_r1 + 400000 * ARO.s5_r2 + (v - 500000)  * ARO.s5_r3;
+  else                   fee = 100000 * ARO.s5_r1 + 400000 * ARO.s5_r2 + 1500000 * ARO.s5_r3 + (v - 2000000) * ARO.s5_r4;
+  const rows_full = `<div class="fee-br-cms"><span>Debt amount</span><span>${cmsKES(v)}</span></div>`
+                  + `<div class="fee-br-cms"><span>Full non-contentious recovery scale</span><span>${cmsKES(fee)}</span></div>`;
+  if (stage === 'demand') {
+    const demandFee = Math.max(fee * ARO.s5_demand_pct, ARO.s5_min_demand);
+    document.getElementById('cms-s5-main').textContent = cmsKES(demandFee);
+    document.getElementById('cms-s5-bd').innerHTML = rows_full
+      + `<div class="fee-br-cms"><span>Demand letter only (${Math.round(ARO.s5_demand_pct*100)}% of scale, min ${cmsKES(ARO.s5_min_demand)})</span><span>${cmsKES(demandFee)}</span></div>`;
+  } else {
+    document.getElementById('cms-s5-main').textContent = cmsKES(fee);
+    document.getElementById('cms-s5-bd').innerHTML = rows_full;
+  }
+  res.classList.add('show');
+}
+
+// ── Schedule 3/4: Company & Trademark (live ARO rates) ──
+function cmsCalcS3() {
+  const type = document.getElementById('cms-s3-type')?.value || 'company_local';
+  const feeMap = {
+    company_local:   { label: 'Company incorporation (Schedule 3)',           fee: ARO.s3_company_local   },
+    company_foreign: { label: 'Foreign company registration (Schedule 3)',     fee: ARO.s3_company_foreign },
+    tm_one:          { label: 'Trademark — 1 mark, 1 class (Schedule 4)',      fee: ARO.s3_tm_one          },
+    tm_two:          { label: 'Trademark — 2nd mark, same proprietor (Sch. 4)',fee: ARO.s3_tm_two          },
+    tm_renew:        { label: 'Trademark renewal — 1 class (Schedule 4)',      fee: ARO.s3_tm_renew        },
+    tm_assign:       { label: 'Trademark assignment — 1 mark (Schedule 4)',    fee: ARO.s3_tm_assign       }
+  };
+  const d = feeMap[type] || feeMap['company_local'];
+  const mainEl = document.getElementById('cms-s3-main');
+  const bdEl   = document.getElementById('cms-s3-bd');
+  if (mainEl) mainEl.textContent = cmsKES(d.fee);
+  if (bdEl)   bdEl.innerHTML = `<div class="fee-br-cms"><span>${d.label}</span><span>${cmsKES(d.fee)}</span></div>`;
+}
+
+// ── Report launcher functions ──
+function openReport(reportName) {
+  // Show a brief toast then link to the LexAI doc generator
+  if (typeof showToast === 'function') {
+    showToast('Opening ' + reportName + ' — use LexAI Doc Generator or DKMA Access CMS to print.');
+  } else {
+    alert('Report: ' + reportName + '\n\nOpen DKMA.accdb in Microsoft Access and run this report, or use the DKM LexAI Document Generator.');
+  }
+}
+
+function openDebtRecovery(tier) {
+  const tierLabels = {
+    '100K':     'Under KES 100,000',
+    '100K_500k':'KES 100,000 – 500,000',
+    '500K_2M':  'KES 500,000 – 2,000,000',
+    '2M':       'Over KES 2,000,000'
+  };
+  const label = tierLabels[tier] || tier;
+  // Switch to fee-calc view and open the debt recovery calculator
+  const navEl = document.querySelector('[onclick*="fee-calc"]');
+  if (navEl) showView('fee-calc', navEl);
+  // Scroll to debt card
+  setTimeout(() => {
+    const debtCard = document.getElementById('cms-s5-val');
+    if (debtCard) {
+      debtCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      debtCard.focus();
+    }
+  }, 300);
+  if (typeof showToast === 'function') {
+    showToast('Debt Recovery — ' + label + '. Enter the debt amount below to calculate the correct scale fee.');
+  }
+}
+
+// ── Initialise fee calc on first render ──
+document.addEventListener('DOMContentLoaded', function() {
+  // Re-load any saved ARO overrides
+  aroLoad();
+  // Initialise the company/trademark calculator (it shows a result immediately)
+  cmsCalcS3();
 });
 
 </script>
