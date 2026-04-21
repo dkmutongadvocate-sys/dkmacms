@@ -1463,7 +1463,7 @@ setTimeout(function() {
 
           <!-- SALE / PURCHASE -->
           <div id="fp-sale" class="fee-panel" style="display:flex;flex-direction:column;gap:8px">
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Consideration / Value (KES)</div><input class="fee-input" id="s1-val" type="number" placeholder="e.g. 10,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Consideration / Value (KES)</div><input class="fee-input" id="s1-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 10,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
               <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Acting for</div>
                 <select class="fee-sel" id="s1-role" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
@@ -1483,7 +1483,7 @@ setTimeout(function() {
 
           <!-- LEASE -->
           <div id="fp-lease" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Annual Rent (KES)</div><input class="fee-input" id="s2-rent" type="number" placeholder="e.g. 1,200,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Annual Rent (KES)</div><input class="fee-input" id="s2-rent" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 1,200,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
             <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Role</div>
               <select class="fee-sel" id="s2-role" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="lessor">Lessor's advocate (preparing)</option>
@@ -1494,7 +1494,7 @@ setTimeout(function() {
 
           <!-- MORTGAGE -->
           <div id="fp-mortgage" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Secured Amount (KES)</div><input class="fee-input" id="s1b-val" type="number" placeholder="e.g. 15,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Secured Amount (KES)</div><input class="fee-input" id="s1b-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 15,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
             <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Role</div>
               <select class="fee-sel" id="s1b-role" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="grantee">Lender's advocate (full scale)</option>
@@ -1506,7 +1506,7 @@ setTimeout(function() {
 
           <!-- HIGH COURT -->
           <div id="fp-hc" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Value of Claim (KES)</div><input class="fee-input" id="s6-val" type="number" placeholder="e.g. 2,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Value of Claim (KES)</div><input class="fee-input" id="s6-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 2,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
               <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Proceeding type</div>
                 <select class="fee-sel" id="s6-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
@@ -1528,7 +1528,7 @@ setTimeout(function() {
 
           <!-- MAGISTRATES COURT -->
           <div id="fp-mc" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Value of Claim (KES)</div><input class="fee-input" id="s7-val" type="number" placeholder="e.g. 500,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Value of Claim (KES)</div><input class="fee-input" id="s7-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 500,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
             <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Scale</div>
               <select class="fee-sel" id="s7-scale" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="lower">Lower scale (standard)</option>
@@ -1539,7 +1539,7 @@ setTimeout(function() {
 
           <!-- ELRC / ELC -->
           <div id="fp-elrc" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Value of Claim / Salary Claimed (KES)</div><input class="fee-input" id="selrc-val" type="number" placeholder="e.g. 1,200,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Value of Claim / Salary Claimed (KES)</div><input class="fee-input" id="selrc-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 1,200,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
             <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Court</div>
               <select class="fee-sel" id="selrc-court" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="elrc">Employment &amp; Labour Relations Court (ELRC)</option>
@@ -1565,7 +1565,7 @@ setTimeout(function() {
                 <option value="nullity">Nullity of marriage</option>
               </select>
             </div>
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Property / estate involved? (KES)</div><input class="fee-input" id="sdiv-val" type="number" placeholder="0 if none" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Property / estate involved? (KES)</div><input class="fee-input" id="sdiv-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="0 if none" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
           </div>
 
           <!-- CUSTODY -->
@@ -1580,12 +1580,12 @@ setTimeout(function() {
                 <option value="variation">Variation of existing order</option>
               </select>
             </div>
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Monthly maintenance / value involved (KES)</div><input class="fee-input" id="scust-val" type="number" placeholder="e.g. 50,000/month" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Monthly maintenance / value involved (KES)</div><input class="fee-input" id="scust-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 50,000/month" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
           </div>
 
           <!-- MATRIMONIAL -->
           <div id="fp-matrimonial" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Net matrimonial property value (KES)</div><input class="fee-input" id="smat-val" type="number" placeholder="e.g. 8,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Net matrimonial property value (KES)</div><input class="fee-input" id="smat-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 8,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
             <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Matter type</div>
               <select class="fee-sel" id="smat-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="consent">Consent / settlement (out of court)</option>
@@ -1597,7 +1597,7 @@ setTimeout(function() {
 
           <!-- PROBATE -->
           <div id="fp-probate" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Gross Estate Value (KES)</div><input class="fee-input" id="s10-val" type="number" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Gross Estate Value (KES)</div><input class="fee-input" id="s10-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
             <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Matter type</div>
               <select class="fee-sel" id="s10-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="grant">Grant of probate / letters of administration</option>
@@ -1609,7 +1609,7 @@ setTimeout(function() {
 
           <!-- SUCCESSION DISPUTE -->
           <div id="fp-succession_dispute" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Disputed estate value (KES)</div><input class="fee-input" id="ssucc-val" type="number" placeholder="e.g. 10,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Disputed estate value (KES)</div><input class="fee-input" id="ssucc-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 10,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
             <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Stage</div>
               <select class="fee-sel" id="ssucc-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="contested">Fully contested (High Court Family Division)</option>
@@ -1620,7 +1620,7 @@ setTimeout(function() {
 
           <!-- DEBT -->
           <div id="fp-debt" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Debt Amount (KES)</div><input class="fee-input" id="s5-val" type="number" placeholder="e.g. 800,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Debt Amount (KES)</div><input class="fee-input" id="s5-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 800,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
             <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Stage reached</div>
               <select class="fee-sel" id="s5-stage" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="demand">Demand letter only (50% of scale)</option>
@@ -1657,7 +1657,7 @@ setTimeout(function() {
 
           <!-- ARBITRATION -->
           <div id="fp-arbitration" class="fee-panel" style="display:none;flex-direction:column;gap:8px">
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Amount in Dispute (KES)</div><input class="fee-input" id="sarb-val" type="number" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Amount in Dispute (KES)</div><input class="fee-input" id="sarb-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
             <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Arbitration type</div>
               <select class="fee-sel" id="sarb-type" onchange="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%">
                 <option value="domestic">Domestic (NCIA / ad hoc)</option>
@@ -1721,7 +1721,7 @@ setTimeout(function() {
                 <option value="review">Application for review / setting aside</option>
               </select>
             </div>
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Amount involved (KES)</div><input class="fee-input" id="smisc-val" type="number" placeholder="e.g. 1,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Amount involved (KES)</div><input class="fee-input" id="smisc-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 1,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
           </div>
 
           <!-- INJUNCTION -->
@@ -1735,7 +1735,7 @@ setTimeout(function() {
                 <option value="stay">Stay of execution</option>
               </select>
             </div>
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Approximate subject matter value (KES)</div><input class="fee-input" id="sinj-val" type="number" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Approximate subject matter value (KES)</div><input class="fee-input" id="sinj-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
           </div>
 
           <!-- JUDICIAL REVIEW -->
@@ -1760,7 +1760,7 @@ setTimeout(function() {
                 <option value="debenture">Debenture (0.1%)</option>
               </select>
             </div>
-            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Instrument value (KES)</div><input class="fee-input" id="sstamp-val" type="number" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
+            <div class="fee-row" style="display:flex;flex-direction:column;gap:3px"><div class="fee-label" style="font-size:11px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em">Instrument value (KES)</div><input class="fee-input" id="sstamp-val" type="text" inputmode="numeric" onfocus="feeInputFocus(this)" onblur="feeInputBlur(this)" placeholder="e.g. 5,000,000" oninput="calcFee()" style="border:0.5px solid var(--brd);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;color:var(--txt);font-family:'DM Sans',sans-serif;width:100%"/></div>
           </div>
 
           <!-- RESULT BOX -->
@@ -9401,12 +9401,31 @@ function feeShowPanel(){
 function row(label,amt){return `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--txt2);padding:2px 0"><span>${label}</span><span>${fmtKES(amt)}</span></div>`;}
 function rowTotal(label,amt){return `<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--txt);border-top:0.5px solid var(--brd);padding-top:4px;margin-top:2px"><span>${label}</span><span>${fmtKES(amt)}</span></div>`;}
 
+// ── Fee calculator input comma formatting ─────────────────────────
+function feeInputFocus(el){
+  // Strip commas on focus so the user edits raw digits
+  const raw=parseFloat((el.value||'').replace(/,/g,''));
+  if(!isNaN(raw)&&raw>0) el.value=raw;
+}
+function feeInputBlur(el){
+  // Re-apply commas on blur, then recalculate
+  const raw=parseFloat((el.value||'').replace(/,/g,''));
+  if(!isNaN(raw)&&raw>0) el.value=raw.toLocaleString('en-KE');
+  calcFee();
+}
+// Block non-numeric chars in fee inputs while typing
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('.fee-input[type="text"]').forEach(el=>{
+    el.addEventListener('input',()=>{el.value=el.value.replace(/[^\d,]/g,'');});
+  });
+});
+
 function calcFee(){
   const catEl=document.getElementById('fc-cat');if(!catEl)return;
   const cat=catEl.value;
   const res=document.getElementById('fc-result');if(!res)return;
   const g=id=>{const el=document.getElementById(id);return el?el.value:null;};
-  const gn=id=>{const v=parseFloat(document.getElementById(id)?.value);return isNaN(v)?0:v;};
+  const gn=id=>{const raw=(document.getElementById(id)?.value||'').replace(/,/g,'');const v=parseFloat(raw);return isNaN(v)?0:v;};
   let fee=0,rows='',note='',label='Minimum Scale Fee';
   try{
     if(cat==='sale'){const v=gn('s1-val');if(!v){res.style.display='none';return;}const role=g('s1-role'),agr=g('s1-agr');const base=scheduleOneSaleFee(v);let vFee=agr==='no'?base*(2/3):base,pFee=base,total=0;if(role==='vendor'||role==='both'){rows+=row('Vendor advocate fee',vFee);total+=vFee;}if(role==='purchaser'||role==='both'){rows+=row('Purchaser advocate fee',pFee);total+=pFee;}if(role==='both')rows+=rowTotal('Total (both sides)',total);else total=role==='vendor'?vFee:pFee;fee=total;note='Excl. VAT (16%), stamp duty (4% residential/2% commercial), Land Registry fees & searches.';}
@@ -9882,38 +9901,35 @@ document.addEventListener('DOMContentLoaded', function() {
 // ── Document generator — template-based (no AI required) ──
 
 const DG_DOCS={
-  'will':{title:'Last will & testament',sub:'Law of Succession Act (Cap. 160) — Kenya',cat:'Testamentary',color:'#B8860B',fields:[{id:'testator',l:'Full name of testator',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'National ID or passport number'},{id:'dob',l:'Date of birth',ph:'DD/MM/YYYY'},{id:'address',l:'Residential address',ph:'Physical address, county'},{id:'executor',l:'Executor full name',ph:'Full name of executor'},{id:'executor_id',l:'Executor ID number',ph:'National ID'},{id:'beneficiaries',l:'Beneficiaries & shares',ph:'Jane Doe (ID 12345) — 50%, John Doe (ID 67890) — 50%',ta:1},{id:'specific_bequests',l:'Specific bequests',ph:'e.g. Land Title No. 123 to Jane Doe',ta:1},{id:'guardian',l:'Guardian for minor children',ph:'Name and ID (leave blank if none)'},{id:'date',l:'Date of execution',ph:'DD/MM/YYYY'}]},
-  'codicil':{title:'Codicil to will',sub:'Law of Succession Act (Cap. 160) — Kenya',cat:'Testamentary',color:'#B8860B',fields:[{id:'testator',l:'Testator full name',ph:'As in original will'},{id:'will_date',l:'Date of original will',ph:'DD/MM/YYYY'},{id:'amendment',l:'Amendment / addition',ph:'I revoke clause [X] and substitute:\nI add the following new clause:',ta:1},{id:'date',l:'Date of codicil',ph:'DD/MM/YYYY'}]},
-  'living-will':{title:'Living will / advance directive',sub:'Health Act 2017, Constitution Art. 26 — Kenya',cat:'Testamentary',color:'#B8860B',fields:[{id:'name',l:'Your full name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'address',l:'Address',ph:'Physical address'},{id:'proxy',l:'Healthcare proxy name',ph:'Person authorised to make decisions'},{id:'proxy_id',l:'Proxy ID number',ph:'National ID'},{id:'directives',l:'Medical directives',ph:'e.g. No mechanical ventilation if brain dead',ta:1},{id:'organ_donation',l:'Organ donation',ph:'',sel:['Yes — all organs','Yes — specific organs only','No organ donation','No preference']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
   'affidavit':{title:'Affidavit (general)',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'National ID'},{id:'occupation',l:'Occupation',ph:'e.g. Business person'},{id:'address',l:'Residential address',ph:'Physical address'},{id:'court',l:'Court (if for court)',ph:'e.g. High Court at Nairobi'},{id:'case_no',l:'Case number',ph:'e.g. Civil Case No. 123 of 2025'},{id:'facts',l:'Facts sworn to',ph:'State facts clearly and concisely…',ta:1},{id:'purpose',l:'Purpose of affidavit',ph:'e.g. In support of application for injunction'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+
   'stat-dec':{title:'Statutory declaration',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'declarant',l:'Declarant full name',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'National ID'},{id:'address',l:'Address',ph:'Physical address'},{id:'subject',l:'Subject matter',ph:'e.g. Change of name, loss of documents'},{id:'facts',l:'Facts declared',ph:'State all relevant facts…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
   'affidavit-service':{title:'Affidavit of service',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'server',l:'Process server name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'court',l:'Court',ph:'e.g. High Court at Nairobi'},{id:'doc_served',l:'Document(s) served',ph:'e.g. Plaint and summons'},{id:'served_on',l:'Person served',ph:'Full name'},{id:'service_address',l:'Address of service',ph:'Where service was effected'},{id:'service_date',l:'Date and time of service',ph:'DD/MM/YYYY at HH:MM'},{id:'mode',l:'Mode of service',ph:'',sel:['Personal service','Substituted service','Postal service','Electronic service']},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
-  'affidavit-support':{title:'Supporting affidavit',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'case_no',l:'Case number',ph:'e.g. Civil Case No. 45 of 2025'},{id:'court',l:'Court',ph:'e.g. High Court at Nairobi'},{id:'application',l:'Application supported',ph:'e.g. Chamber summons dated DD/MM/YYYY for injunction'},{id:'facts',l:'Supporting facts',ph:'The grounds upon which I support this application are…',ta:1},{id:'annexures',l:'Annexures',ph:'e.g. Annexure A — Agreement dated…'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+
   'chamber-summons':{title:'Chamber summons',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'In the High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'applicant',l:'Applicant name',ph:'Full legal name'},{id:'respondent',l:'Respondent name',ph:'Full legal name'},{id:'orders',l:'Orders sought',ph:'1. An order that…\n2. Costs of and incidental to this application…',ta:1},{id:'grounds',l:'Grounds',ph:'Brief grounds for the application…',ta:1},{id:'return_date',l:'Proposed return date',ph:'DD/MM/YYYY'},{id:'advocate',l:'Advocate on record',ph:'Name and firm'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'originating-summons':{title:'Originating summons',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'Leave blank if not yet filed'},{id:'plaintiff',l:'Plaintiff / Applicant',ph:'Full name'},{id:'defendant',l:'Defendant / Respondent',ph:'Full name'},{id:'question',l:'Question(s) for determination',ph:'Whether the Plaintiff is entitled to…',ta:1},{id:'relief',l:'Relief sought',ph:'An order that…',ta:1},{id:'advocate',l:'Advocate on record',ph:'Name, firm, address'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
   'notice-motion':{title:'Notice of motion',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'division',l:'Division',ph:'e.g. Commercial Division'},{id:'case_no',l:'Case number',ph:'e.g. Petition No. 12 of 2025'},{id:'applicant',l:'Applicant',ph:'Full legal name'},{id:'respondent',l:'Respondent',ph:'Full legal name'},{id:'orders',l:'Orders sought',ph:'1. An order that…\n2. Costs…',ta:1},{id:'grounds',l:'Grounds',ph:'This application is premised on the grounds that…',ta:1},{id:'supporting',l:'Supporting documents',ph:'e.g. Affidavit of [Name], documents annexed hereto'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'plaint':{title:'Plaint',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court / Magistrates Court at…'},{id:'plaintiff',l:'Plaintiff',ph:'Full name, ID, address'},{id:'defendant',l:'Defendant',ph:'Full name, ID, address'},{id:'cause',l:'Cause of action',ph:'e.g. Breach of contract, negligence'},{id:'particulars',l:'Particulars of claim',ph:'1. On or about [date] the Defendant…',ta:1},{id:'amount',l:'Amount claimed (KES)',ph:'e.g. 1,500,000'},{id:'interest',l:'Interest claimed',ph:'e.g. 14% p.a. from date of breach'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'petition':{title:'Constitutional petition',sub:'Constitution of Kenya 2010, Art. 22 & 258',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'petition_no',l:'Petition number',ph:'Leave blank if not yet filed'},{id:'petitioner',l:'Petitioner name',ph:'Full name or organisation'},{id:'respondent',l:'Respondent(s)',ph:'e.g. Attorney General, Cabinet Secretary'},{id:'articles',l:'Constitutional articles violated',ph:'e.g. Articles 27, 28, 47'},{id:'facts',l:'Facts giving rise to petition',ph:'Chronological account of events…',ta:1},{id:'relief',l:'Relief sought',ph:'e.g. Declaration that…; Compensation of KES…',ta:1},{id:'advocate',l:'Advocate',ph:'Name and firm'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'defence':{title:'Statement of defence',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'plaintiff',l:'Plaintiff',ph:'Full name'},{id:'defendant',l:'Defendant',ph:'Full name'},{id:'admissions',l:'Facts admitted',ph:'The Defendant admits paragraphs…'},{id:'denials',l:'Facts denied',ph:'The Defendant denies paragraphs…',ta:1},{id:'positive_defence',l:'Positive defence',ph:'Further and in the alternative…',ta:1},{id:'counterclaim',l:'Counterclaim (if any)',ph:'Leave blank if no counterclaim'},{id:'advocate',l:'Advocate on record',ph:'Name, firm, address'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'nda':{title:'Non-disclosure agreement',sub:'Law of Contract Act (Cap. 23) — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'party_a',l:'Disclosing party',ph:'Full name / company'},{id:'party_a_type',l:'Disclosing party type',ph:'',sel:['Individual','Limited Company','Partnership','LLP']},{id:'party_b',l:'Receiving party',ph:'Full name / company'},{id:'party_b_type',l:'Receiving party type',ph:'',sel:['Individual','Limited Company','Partnership','LLP']},{id:'purpose',l:'Purpose of disclosure',ph:'e.g. Evaluation of potential business partnership'},{id:'duration',l:'Confidentiality duration',ph:'',sel:['1 year','2 years','3 years','5 years','Indefinite']},{id:'governing_law',l:'Governing law',ph:'',sel:['Laws of Kenya','Laws of England & Wales','Laws of Uganda','Laws of Tanzania']},{id:'jurisdiction',l:'Dispute resolution',ph:'',sel:['Kenyan courts (Nairobi)','LCIA Arbitration','NCIA Arbitration','UNCITRAL Arbitration']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'service-agreement':{title:'Service agreement',sub:'Law of Contract Act (Cap. 23) — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'provider',l:'Service provider',ph:'Full name / company'},{id:'client',l:'Client',ph:'Full name / company'},{id:'services',l:'Services to be provided',ph:'Describe services in detail…',ta:1},{id:'fee',l:'Fee amount (KES)',ph:'e.g. 200,000'},{id:'fee_structure',l:'Fee structure',ph:'',sel:['Fixed fee','Monthly retainer','Hourly rate','Milestone-based']},{id:'duration',l:'Contract duration',ph:'',sel:['3 months','6 months','1 year','2 years','Until completion']},{id:'governing_law',l:'Governing law',ph:'',sel:['Laws of Kenya','Laws of England & Wales']},{id:'dispute',l:'Dispute resolution',ph:'',sel:['Nairobi courts','NCIA Arbitration','Mediation then arbitration']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'employment-contract':{title:'Employment contract',sub:'Employment Act 2007 — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'employer',l:'Employer name',ph:'Company name (as registered)'},{id:'employer_reg',l:'Employer reg. number',ph:'Registration / PIN number'},{id:'employee',l:'Employee full name',ph:'Full legal name'},{id:'employee_id',l:'Employee ID number',ph:'National ID'},{id:'role',l:'Job title',ph:'e.g. Senior Associate'},{id:'start_date',l:'Start date',ph:'DD/MM/YYYY'},{id:'salary',l:'Gross monthly salary (KES)',ph:'e.g. 150,000'},{id:'probation',l:'Probation period',ph:'',sel:['3 months','6 months','No probation']},{id:'notice',l:'Notice period',ph:'',sel:['1 month','2 months','3 months','As per Employment Act']},{id:'non_compete',l:'Non-compete (if any)',ph:'',sel:['None','6 months','12 months','24 months']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'lease':{title:'Lease agreement',sub:'Land Act 2012, Landlord & Tenant Act — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'landlord',l:'Landlord name',ph:'Full legal name'},{id:'tenant',l:'Tenant name',ph:'Full legal name'},{id:'premises',l:'Premises description',ph:'e.g. Flat 4B, Westlands Court, Nairobi'},{id:'lr_no',l:'LR / Title number',ph:'e.g. LR No. 209/123'},{id:'rent',l:'Monthly rent (KES)',ph:'e.g. 75,000'},{id:'deposit',l:'Security deposit (KES)',ph:'e.g. 150,000'},{id:'term',l:'Lease term',ph:'',sel:['6 months','1 year','2 years','3 years','5 years']},{id:'start_date',l:'Commencement date',ph:'DD/MM/YYYY'},{id:'use',l:'Permitted use',ph:'e.g. Residential / Commercial office'},{id:'date',l:'Date of agreement',ph:'DD/MM/YYYY'}]},
-  'sale-agreement':{title:'Sale of goods agreement',sub:'Sale of Goods Act (Cap. 31) — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'seller',l:'Seller',ph:'Full name / company'},{id:'buyer',l:'Buyer',ph:'Full name / company'},{id:'goods',l:'Description of goods',ph:'Describe goods, quantity, specification…',ta:1},{id:'price',l:'Purchase price (KES)',ph:'e.g. 5,000,000'},{id:'payment_terms',l:'Payment terms',ph:'',sel:['Full payment on signing','50% deposit, balance on delivery','30/70 split','Within 30 days']},{id:'delivery',l:'Delivery terms',ph:'e.g. Ex-works Nairobi, CIF Mombasa'},{id:'warranty',l:'Warranty period',ph:'',sel:['No warranty','3 months','6 months','12 months']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'shareholders':{title:'Shareholders agreement',sub:'Companies Act 2015 — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'company',l:'Company name',ph:'As per certificate of incorporation'},{id:'reg_no',l:'Registration number',ph:'PVT/123456'},{id:'shareholders',l:'Shareholders & shareholding',ph:'John Doe — 60%, Jane Doe — 40%',ta:1},{id:'directors',l:'Board composition',ph:'e.g. 3 directors; majority appoints 2'},{id:'reserved',l:'Reserved matters',ph:'New share issuance, sale of business, name change…',ta:1},{id:'dividend',l:'Dividend policy',ph:'e.g. 30% of net profit annually'},{id:'drag_tag',l:'Drag/tag-along',ph:'',sel:['Both drag and tag-along','Drag-along only','Tag-along only','None']},{id:'dispute',l:'Dispute resolution',ph:'',sel:['Nairobi courts','NCIA Arbitration','UNCITRAL Arbitration']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'poa-general':{title:'General power of attorney',sub:'Powers of Attorney Act (Cap. 53) — Kenya',cat:'Powers & authority',color:'#534AB7',fields:[{id:'donor',l:'Donor (principal) full name',ph:'Full legal name'},{id:'donor_id',l:'Donor ID number',ph:'National ID'},{id:'donor_address',l:'Donor address',ph:'Physical address'},{id:'attorney',l:'Attorney full name',ph:'Full legal name'},{id:'attorney_id',l:'Attorney ID number',ph:'National ID'},{id:'attorney_address',l:'Attorney address',ph:'Physical address'},{id:'powers',l:'Scope of powers granted',ph:'All matters concerning banking, property, legal proceedings…',ta:1},{id:'duration',l:'Duration',ph:'',sel:['Until revoked','1 year','2 years','5 years','For specific transaction only']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
+  'plaint':{title:'Plaint',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court / Magistrates Court at…'},{id:'plaintiff',l:'Plaintiff',ph:'Full name, ID, address'},{id:'defendant',l:'Defendant',ph:'Full name, ID, address'},{id:'cause',l:'Cause of action',ph:'e.g. Breach of contract, negligence'},{id:'particulars',l:'Particulars of claim',ph:'1. On or about [date] the Defendant…',ta:1},{id:'amount',l:'Amount claimed (KES)',ph:'e.g. 1,500,000',num:1},{id:'interest',l:'Interest claimed',ph:'e.g. 14% p.a. from date of breach'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
+  'service-agreement':{title:'Service / appointment letter',sub:'Law of Contract Act (Cap. 23) — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'provider',l:'Service provider',ph:'Full name / company'},{id:'client',l:'Client',ph:'Full name / company'},{id:'services',l:'Services to be provided',ph:'Describe services in detail…',ta:1},{id:'fee',l:'Fee amount (KES)',ph:'e.g. 200,000',num:1},{id:'fee_structure',l:'Fee structure',ph:'',sel:['Fixed fee','Monthly retainer','Hourly rate','Milestone-based']},{id:'duration',l:'Contract duration',ph:'',sel:['3 months','6 months','1 year','2 years','Until completion']},{id:'governing_law',l:'Governing law',ph:'',sel:['Laws of Kenya','Laws of England & Wales']},{id:'dispute',l:'Dispute resolution',ph:'',sel:['Nairobi courts','NCIA Arbitration','Mediation then arbitration']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
+  'employment-contract':{title:'Employment contract',sub:'Employment Act 2007 — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'employer',l:'Employer name',ph:'Company name (as registered)'},{id:'employer_reg',l:'Employer reg. number',ph:'Registration / PIN number'},{id:'employee',l:'Employee full name',ph:'Full legal name'},{id:'employee_id',l:'Employee ID number',ph:'National ID'},{id:'role',l:'Job title',ph:'e.g. Senior Associate'},{id:'start_date',l:'Start date',ph:'DD/MM/YYYY'},{id:'salary',l:'Gross monthly salary (KES)',ph:'e.g. 150,000',num:1},{id:'probation',l:'Probation period',ph:'',sel:['3 months','6 months','No probation']},{id:'notice',l:'Notice period',ph:'',sel:['1 month','2 months','3 months','As per Employment Act']},{id:'non_compete',l:'Non-compete (if any)',ph:'',sel:['None','6 months','12 months','24 months']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
+  'lease':{title:'Lease agreement',sub:'Land Act 2012, Landlord & Tenant Act — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'landlord',l:'Landlord name',ph:'Full legal name'},{id:'tenant',l:'Tenant name',ph:'Full legal name'},{id:'premises',l:'Premises description',ph:'e.g. Flat 4B, Westlands Court, Nairobi'},{id:'lr_no',l:'LR / Title number',ph:'e.g. LR No. 209/123'},{id:'rent',l:'Monthly rent (KES)',ph:'e.g. 75,000',num:1},{id:'deposit',l:'Security deposit (KES)',ph:'e.g. 150,000',num:1},{id:'term',l:'Lease term',ph:'',sel:['6 months','1 year','2 years','3 years','5 years']},{id:'start_date',l:'Commencement date',ph:'DD/MM/YYYY'},{id:'use',l:'Permitted use',ph:'e.g. Residential / Commercial office'},{id:'date',l:'Date of agreement',ph:'DD/MM/YYYY'}]},
+
+  'sale-agreement':{title:'Sale of goods agreement',sub:'Sale of Goods Act (Cap. 31) — Kenya',cat:'Contracts',color:'#639922',fields:[{id:'seller',l:'Seller',ph:'Full name / company'},{id:'buyer',l:'Buyer',ph:'Full name / company'},{id:'goods',l:'Description of goods',ph:'Describe goods, quantity, specification…',ta:1},{id:'price',l:'Purchase price (KES)',ph:'e.g. 5,000,000',num:1},{id:'payment_terms',l:'Payment terms',ph:'',sel:['Full payment on signing','50% deposit, balance on delivery','30/70 split','Within 30 days']},{id:'delivery',l:'Delivery terms',ph:'e.g. Ex-works Nairobi, CIF Mombasa'},{id:'warranty',l:'Warranty period',ph:'',sel:['No warranty','3 months','6 months','12 months']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
   'poa-specific':{title:'Specific power of attorney',sub:'Powers of Attorney Act (Cap. 53) — Kenya',cat:'Powers & authority',color:'#534AB7',fields:[{id:'donor',l:'Donor full name',ph:'Full legal name'},{id:'donor_id',l:'Donor ID',ph:'National ID'},{id:'attorney',l:'Attorney full name',ph:'Full legal name'},{id:'attorney_id',l:'Attorney ID',ph:'National ID'},{id:'purpose',l:'Specific purpose / transaction',ph:'e.g. To sell and transfer LR No. 209/123 on my behalf'},{id:'limitations',l:'Limitations on authority',ph:'e.g. Sale price not less than KES 5,000,000'},{id:'expiry',l:'Expiry',ph:'DD/MM/YYYY or "upon completion of transaction"'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
   'board-resolution':{title:'Board resolution',sub:'Companies Act 2015 — Kenya',cat:'Powers & authority',color:'#534AB7',fields:[{id:'company',l:'Company name',ph:'As per certificate of incorporation'},{id:'reg_no',l:'Registration number',ph:'PVT/123456'},{id:'res_type',l:'Type of resolution',ph:'',sel:['Opening bank account','Authorising signatory','Borrowing / loan','Property transaction','Appointment of director','Removal of director','Dividend declaration','Share allotment']},{id:'meeting_date',l:'Date of meeting',ph:'DD/MM/YYYY'},{id:'directors',l:'Directors present',ph:'Name 1, Name 2…'},{id:'resolution',l:'Resolution text',ph:'IT IS HEREBY RESOLVED that…',ta:1},{id:'date',l:'Date signed',ph:'DD/MM/YYYY'}]},
-  'demand-letter':{title:'Demand letter',sub:'Civil dispute pre-action notice — Kenya',cat:'Demand & notice',color:'#5F5E5A',fields:[{id:'sender',l:'Sender / law firm',ph:'Name and address'},{id:'recipient',l:'Recipient name',ph:'Full name / company'},{id:'recipient_address',l:'Recipient address',ph:'Physical / postal address'},{id:'subject',l:'Subject matter',ph:'e.g. Demand for payment of outstanding debt'},{id:'amount',l:'Amount demanded (KES)',ph:'e.g. 500,000'},{id:'background',l:'Background facts',ph:'Brief summary of the dispute…',ta:1},{id:'demand',l:'Specific demand',ph:'e.g. Payment within 14 days, delivery of goods…',ta:1},{id:'deadline_days',l:'Response deadline (days)',ph:'e.g. 14'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'notice-terminate':{title:'Notice of termination',sub:'Law of Contract Act / Employment Act — Kenya',cat:'Demand & notice',color:'#5F5E5A',fields:[{id:'party_a',l:'Terminating party',ph:'Name / company'},{id:'party_b',l:'Receiving party',ph:'Name / company'},{id:'contract_type',l:'Contract type',ph:'',sel:['Employment contract','Service agreement','Lease agreement','Supply contract','Other']},{id:'contract_date',l:'Date of original contract',ph:'DD/MM/YYYY'},{id:'grounds',l:'Grounds for termination',ph:'e.g. Breach of clause 5, redundancy, expiry of term'},{id:'notice_period',l:'Notice period',ph:'e.g. 30 days from date of this notice'},{id:'effective_date',l:'Effective date',ph:'DD/MM/YYYY'},{id:'date',l:'Date of notice',ph:'DD/MM/YYYY'}]},
-  'cease-desist':{title:'Cease & desist letter',sub:'Civil & IP law — Kenya',cat:'Demand & notice',color:'#5F5E5A',fields:[{id:'sender',l:'Sender / law firm',ph:'Name and address'},{id:'recipient',l:'Recipient name',ph:'Full name / company'},{id:'recipient_address',l:'Recipient address',ph:'Physical / postal address'},{id:'violation',l:'Type of violation',ph:'',sel:['IP infringement','Defamation','Breach of contract','Harassment','Trademark infringement','Copyright infringement']},{id:'facts',l:'Facts of the violation',ph:'Describe the infringing conduct in detail…',ta:1},{id:'legal_basis',l:'Legal basis',ph:'e.g. Copyright Act Cap. 130, Trade Marks Act Cap. 506'},{id:'remedy',l:'Remedy demanded',ph:'e.g. Immediate cessation, removal of content, payment of damages'},{id:'deadline_days',l:'Compliance deadline (days)',ph:'e.g. 7'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
-  'letters-admin':{title:'Petition — letters of administration',sub:'Law of Succession Act (Cap. 160) — Kenya',cat:'Family & probate',color:'#D4537E',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'petitioner',l:'Petitioner name',ph:'Full legal name'},{id:'petitioner_id',l:'Petitioner ID',ph:'National ID'},{id:'relationship',l:'Relationship to deceased',ph:'e.g. Spouse, child, sibling'},{id:'deceased',l:'Deceased full name',ph:'Full legal name'},{id:'dod',l:'Date of death',ph:'DD/MM/YYYY'},{id:'deceased_address',l:'Deceased last address',ph:'Physical address'},{id:'estate',l:'Description of estate',ph:'Land LR No. 123, motor vehicle KCA 001X, bank accounts…',ta:1},{id:'date',l:'Date of petition',ph:'DD/MM/YYYY'}]},
-  'grant-probate':{title:'Petition for grant of probate',sub:'Law of Succession Act (Cap. 160) — Kenya',cat:'Family & probate',color:'#D4537E',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'executor',l:'Executor / petitioner name',ph:'Full legal name'},{id:'executor_id',l:'Executor ID',ph:'National ID'},{id:'deceased',l:'Deceased full name',ph:'Full legal name'},{id:'dod',l:'Date of death',ph:'DD/MM/YYYY'},{id:'will_date',l:'Date of will',ph:'DD/MM/YYYY'},{id:'estate',l:'Description of estate',ph:'Land, vehicles, bank accounts, shares…',ta:1},{id:'date',l:'Date of petition',ph:'DD/MM/YYYY'}]},
-  'prenup':{title:'Pre-nuptial agreement',sub:'Marriage Act 2014 — Kenya',cat:'Family & probate',color:'#D4537E',fields:[{id:'party_a',l:'First party full name',ph:'Full legal name'},{id:'party_a_id',l:'First party ID',ph:'National ID'},{id:'party_b',l:'Second party full name',ph:'Full legal name'},{id:'party_b_id',l:'Second party ID',ph:'National ID'},{id:'marriage_date',l:'Intended marriage date',ph:'DD/MM/YYYY'},{id:'assets_a',l:"First party's assets",ph:'Property, investments, business interests…',ta:1},{id:'assets_b',l:"Second party's assets",ph:'Property, investments, business interests…',ta:1},{id:'joint_assets',l:'Joint assets arrangement',ph:'How jointly acquired assets will be treated'},{id:'spousal_support',l:'Spousal maintenance arrangement',ph:'e.g. KES 50,000/month for 2 years upon separation'},{id:'date',l:'Date of signing',ph:'DD/MM/YYYY'}]},
+
+  'demand-letter':{title:'Demand letter',sub:'Civil dispute pre-action notice — Kenya',cat:'Demand & notice',color:'#5F5E5A',fields:[{id:'sender',l:'Sender / law firm',ph:'Name and address'},{id:'recipient',l:'Recipient name',ph:'Full name / company'},{id:'recipient_address',l:'Recipient address',ph:'Physical / postal address'},{id:'subject',l:'Subject matter',ph:'e.g. Demand for payment of outstanding debt'},{id:'amount',l:'Amount demanded (KES)',ph:'e.g. 500,000',num:1},{id:'background',l:'Background facts',ph:'Brief summary of the dispute…',ta:1},{id:'demand',l:'Specific demand',ph:'e.g. Payment within 14 days, delivery of goods…',ta:1},{id:'deadline_days',l:'Response deadline (days)',ph:'e.g. 14'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]}
 };
 
-const DG_CATS=['Testamentary','Sworn statements','Court applications','Contracts','Powers & authority','Demand & notice','Family & probate'];
-const DG_CAT_COLORS={'Testamentary':'#B8860B','Sworn statements':'#378ADD','Court applications':'#993C1D','Contracts':'#639922','Powers & authority':'#534AB7','Demand & notice':'#5F5E5A','Family & probate':'#D4537E'};
+const DG_CATS=['Sworn statements','Court applications','Contracts','Powers & authority','Demand & notice'];
+const DG_CAT_COLORS={'Sworn statements':'#378ADD','Court applications':'#993C1D','Contracts':'#639922','Powers & authority':'#534AB7','Demand & notice':'#5F5E5A'};
 
 let dgCurrentId=null, dgGeneratedText='';
 
@@ -9995,23 +10011,160 @@ function dgSelectDoc(id){
   document.getElementById('dg-preview-wrap').innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px;color:var(--txt3);font-size:12px;text-align:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Fill in the form and click Generate</div>';
 }
 
+// ── Number formatting helpers ──────────────────────────────────────
+function dgFmtNum(val){
+  // Format a numeric string with commas: "1000000" → "1,000,000"
+  const n=parseFloat(String(val).replace(/,/g,''));
+  if(isNaN(n))return val;
+  return n.toLocaleString('en-KE');
+}
+function dgRawNum(val){
+  // Strip commas for arithmetic: "1,000,000" → 1000000
+  return parseFloat(String(val).replace(/,/g,''))||0;
+}
+function dgAttachNumFmt(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('blur',()=>{
+    const raw=dgRawNum(el.value);
+    if(raw>0) el.value=raw.toLocaleString('en-KE');
+  });
+  el.addEventListener('focus',()=>{
+    // Strip commas on focus so user can edit raw digits
+    const raw=dgRawNum(el.value);
+    if(raw>0) el.value=raw;
+  });
+  el.addEventListener('input',()=>{
+    // Allow only digits and commas while typing
+    el.value=el.value.replace(/[^\d,]/g,'');
+  });
+}
+
+// ── CMS auto-fill: builds the client/matter picker panel ──────────
+function dgBuildCmsPicker(){
+  const hasClients = typeof clients !== 'undefined' && clients.length > 0;
+  if(!hasClients) return '';
+
+  const clientOpts = clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  return `
+<div class="dg-div" style="margin-top:0">Auto-fill from CMS</div>
+<div class="dg-fg">
+  <label class="dg-fl">Client</label>
+  <select class="dg-fi" id="dgcms-client" onchange="dgCmsClientChange()">
+    <option value="">— select client —</option>
+    ${clientOpts}
+  </select>
+</div>
+<div class="dg-fg" id="dgcms-matter-wrap" style="display:none">
+  <label class="dg-fl">Matter (optional)</label>
+  <select class="dg-fi" id="dgcms-matter" onchange="dgCmsFill()">
+    <option value="">— select matter —</option>
+  </select>
+</div>
+<button class="dg-gen-btn" onclick="dgCmsFill()" style="background:var(--gold);color:var(--navy);margin-bottom:10px;font-size:11px;padding:7px">⚡ Fill fields from CMS</button>
+`;
+}
+
+function dgCmsClientChange(){
+  const cId=document.getElementById('dgcms-client')?.value;
+  const mWrap=document.getElementById('dgcms-matter-wrap');
+  const mSel=document.getElementById('dgcms-matter');
+  if(!cId||!mWrap||!mSel){if(mWrap)mWrap.style.display='none';return;}
+  const cm=(typeof matters!=='undefined'?matters:[]).filter(m=>m.client_id===cId);
+  if(cm.length){
+    mSel.innerHTML='<option value="">— select matter —</option>'+cm.map(m=>`<option value="${m.id}">${m.file_number?m.file_number+' — ':''}${m.title}</option>`).join('');
+    mWrap.style.display='block';
+  }else{
+    mWrap.style.display='none';
+  }
+  dgCmsFill();
+}
+
+function dgCmsFill(){
+  const cId=document.getElementById('dgcms-client')?.value;
+  if(!cId)return;
+  const c=(typeof clients!=='undefined'?clients:[]).find(x=>x.id===cId);
+  if(!c)return;
+  const mId=document.getElementById('dgcms-matter')?.value;
+  const m=mId&&(typeof matters!=='undefined'?matters:[]).find(x=>x.id===mId);
+
+  // Firm info
+  const firmName=(typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+  const firmAddr=(typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'Nairobi';
+  const firmPhone=(typeof firmContact!=='undefined'&&firmContact?.contact_phone)||'';
+  const advocateName=(typeof currentProfile!=='undefined'&&currentProfile?.full_name)||firmName;
+
+  // Today
+  const today=new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Mapping field ids → CMS values
+  const fill={
+    // Client identity
+    deponent:    c.name,
+    declarant:   c.name,
+    donor:       c.name,
+    donor_id:    c.id_number||'',
+    plaintiff:   c.name,
+    petitioner:  c.name,
+    applicant:   c.name,
+    employee:    c.name,
+    employee_id: c.id_number||'',
+    tenant:      c.name,
+    buyer:       c.name,
+    // Client contact
+    address:     c.address||'',
+    occupation:  c.type||'',
+    // Matter fields
+    case_no:     m?(m.file_number||''):'',
+    court:       m?(m.court||'High Court of Kenya at Nairobi'):'High Court of Kenya at Nairobi',
+    // Advocate / firm
+    sender:      `${firmName}\n${firmAddr}${firmPhone?'\nTel: '+firmPhone:''}`,
+    advocate:    `${advocateName}\n${firmName}\n${firmAddr}`,
+    employer:    firmName,
+    provider:    firmName,
+    // Date
+    date:        today,
+  };
+
+  Object.entries(fill).forEach(([id,val])=>{
+    const el=document.getElementById('dgf_'+id);
+    if(el&&val)el.value=val;
+  });
+}
+
 function dgBuildForm(d){
   const fp=document.getElementById('dg-form-wrap');
-  let h='<div class="dg-div">Document details</div>';
+  let h=dgBuildCmsPicker();
+  h+='<div class="dg-div">Document fields</div>';
   d.fields.forEach(f=>{
     h+=`<div class="dg-fg"><label class="dg-fl" for="dgf_${f.id}">${f.l}</label>`;
-    if(f.ta) h+=`<textarea class="dg-fi dg-fi-ta" id="dgf_${f.id}" placeholder="${f.ph||''}"></textarea>`;
-    else if(f.sel) h+=`<select class="dg-fi" id="dgf_${f.id}"><option value="">Select…</option>${f.sel.map(o=>`<option>${o}</option>`).join('')}</select>`;
-    else h+=`<input class="dg-fi" id="dgf_${f.id}" placeholder="${f.ph||''}" type="text"/>`;
+    if(f.ta){
+      h+=`<textarea class="dg-fi dg-fi-ta" id="dgf_${f.id}" placeholder="${f.ph||''}"></textarea>`;
+    } else if(f.sel){
+      h+=`<select class="dg-fi" id="dgf_${f.id}"><option value="">Select…</option>${f.sel.map(o=>`<option>${o}</option>`).join('')}</select>`;
+    } else if(f.num){
+      // Monetary / number field — formatted with commas
+      h+=`<input class="dg-fi" id="dgf_${f.id}" placeholder="${f.ph||''}" type="text" inputmode="numeric"/>`;
+    } else {
+      h+=`<input class="dg-fi" id="dgf_${f.id}" placeholder="${f.ph||''}" type="text"/>`;
+    }
     h+='</div>';
   });
   h+=`<button class="dg-gen-btn" id="dg-gen-btn" onclick="dgGenerate()">📄 Generate document</button>`;
   fp.innerHTML=h;
+  // Attach comma formatter to all num fields
+  d.fields.filter(f=>f.num).forEach(f=>dgAttachNumFmt('dgf_'+f.id));
 }
 
 function dgGetVals(){
   const d=DG_DOCS[dgCurrentId];if(!d)return{};
-  const v={};d.fields.forEach(f=>{const el=document.getElementById('dgf_'+f.id);if(el)v[f.id]=el.value||('['+f.l+']');});
+  const v={};
+  d.fields.forEach(f=>{
+    const el=document.getElementById('dgf_'+f.id);
+    if(!el){v[f.id]='['+f.l+']';return;}
+    // For num fields, store the raw numeric string (no commas) for template use
+    v[f.id]= f.num ? (el.value?dgRawNum(el.value).toLocaleString('en-KE'):'['+f.l+']') : (el.value||'['+f.l+']');
+  });
   return v;
 }
 
@@ -10112,89 +10265,6 @@ function dgBuildDocument(id, v){
       ].join(nl);
     }
 
-    case 'will':{
-      return [
-        `              LAST WILL AND TESTAMENT`,
-        `         (Law of Succession Act, Cap. 160 — Kenya)`,
-        '',
-        `THIS IS THE LAST WILL AND TESTAMENT of me, ${v.testator||'[TESTATOR NAME]'}, holder of ID/Passport No. ${v.id_no||'[ID NUMBER]'}, born on ${v.dob||'[DATE OF BIRTH]'}, of ${v.address||'[ADDRESS]'} (hereinafter the "Testator").`,
-        '',
-        `RECITALS:`,
-        `WHEREAS I am of sound mind and disposing memory and I desire to make provision for the disposal of my estate after my death;`,
-        '',
-        `NOW THEREFORE I hereby revoke all former wills and testamentary dispositions previously made by me and declare this to be my Last Will and Testament:`,
-        '',
-        `1. EXECUTOR`,
-        `   I appoint ${v.executor||'[EXECUTOR NAME]'}, holder of ID No. ${v.executor_id||'[ID NUMBER]'}, to be the Executor of this Will.`,
-        '',
-        `2. BENEFICIARIES`,
-        `   I give, bequeath and devise my estate in the following shares:`,
-        `   ${v.beneficiaries||'[LIST BENEFICIARIES AND SHARES]'}`,
-        '',
-        v.specific_bequests ? `3. SPECIFIC BEQUESTS\n   ${v.specific_bequests}\n` : '',
-        v.guardian ? `4. GUARDIAN FOR MINOR CHILDREN\n   I appoint ${v.guardian} as guardian of my minor children.\n` : '',
-        `5. RESIDUARY ESTATE`,
-        `   The residue of my estate not otherwise disposed of shall be distributed equally among the surviving beneficiaries named above.`,
-        '',
-        `IN WITNESS WHEREOF I have hereunto set my hand this ${v.date||'       day of                    , 20     '}.`,
-        '',
-        `_________________________________`,
-        `TESTATOR — ${(v.testator||'').toUpperCase()}`,
-        witness,
-        stampNote
-      ].join(nl);
-    }
-
-    case 'codicil':{
-      return [
-        `                    CODICIL TO WILL`,
-        `              (Law of Succession Act, Cap. 160 — Kenya)`,
-        '',
-        `THIS IS A CODICIL to the Last Will and Testament of ${v.testator||'[TESTATOR NAME]'} dated ${v.will_date||'[ORIGINAL WILL DATE]'}.`,
-        '',
-        `I, ${v.testator||'[TESTATOR NAME]'}, hereby make the following amendment(s) / addition(s) to my Will:`,
-        '',
-        `${v.amendment||'[STATE AMENDMENT OR ADDITION]'}`,
-        '',
-        `In all other respects I confirm and republish my said Will.`,
-        '',
-        `SIGNED this ${v.date||'       day of                    , 20     '}.`,
-        '',
-        `_________________________________`,
-        `TESTATOR — ${(v.testator||'').toUpperCase()}`,
-        witness,
-        stampNote
-      ].join(nl);
-    }
-
-    case 'living-will':{
-      return [
-        `              LIVING WILL / ADVANCE DIRECTIVE`,
-        `      (Health Act 2017 & Constitution of Kenya 2010, Art. 26)`,
-        '',
-        `I, ${v.name||'[YOUR NAME]'}, holder of ID No. ${v.id_no||'[ID NUMBER]'}, of ${v.address||'[ADDRESS]'}, hereby make this advance directive regarding my future medical care:`,
-        '',
-        `1. HEALTHCARE PROXY`,
-        `   I appoint ${v.proxy||'[PROXY NAME]'} (ID No. ${v.proxy_id||'[ID NUMBER]'}) as my healthcare proxy to make medical decisions on my behalf if I am unable to do so.`,
-        '',
-        `2. MEDICAL DIRECTIVES`,
-        `   ${v.directives||'[STATE YOUR MEDICAL DIRECTIVES]'}`,
-        '',
-        `3. ORGAN DONATION`,
-        `   Organ donation preference: ${v.organ_donation||'[PREFERENCE]'}`,
-        '',
-        `4. GENERAL AUTHORITY`,
-        `   My healthcare proxy shall have full authority to consent to or refuse any medical treatment on my behalf in accordance with these directives.`,
-        '',
-        `SIGNED this ${v.date||'       day of                    , 20     '}.`,
-        '',
-        `_________________________________`,
-        `DECLARANT — ${(v.name||'').toUpperCase()}`,
-        witness,
-        stampNote
-      ].join(nl);
-    }
-
     case 'chamber-summons': case 'notice-motion':{
       const docTitle = id==='chamber-summons' ? 'CHAMBER SUMMONS' : 'NOTICE OF MOTION';
       return [
@@ -10235,37 +10305,6 @@ function dgBuildDocument(id, v){
       ].filter(l=>l!==null&&l!==undefined).join(nl);
     }
 
-    case 'originating-summons':{
-      return [
-        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
-        v.case_no ? `                    ${v.case_no}` : '',
-        '',
-        `BETWEEN`,
-        '',
-        `${(v.plaintiff||'[PLAINTIFF / APPLICANT]').toUpperCase()}  ..............................................  PLAINTIFF/APPLICANT`,
-        '',
-        `AND`,
-        '',
-        `${(v.defendant||'[DEFENDANT / RESPONDENT]').toUpperCase()}  ............................................  DEFENDANT/RESPONDENT`,
-        '',
-        `              ORIGINATING SUMMONS`,
-        '',
-        `LET ${(v.defendant||'THE DEFENDANT').toUpperCase()} within EIGHT DAYS after service of this summons on them (inclusive of the day of service) cause an appearance to be entered to this summons, which is issued on the application of the Plaintiff/Applicant for determination of the following question(s):`,
-        '',
-        `${v.question||'[QUESTION(S) FOR DETERMINATION]'}`,
-        '',
-        `And for the following relief:`,
-        `${v.relief||'[RELIEF SOUGHT]'}`,
-        '',
-        `DATED this ${v.date||'       day of                    , 20     '}.`,
-        '',
-        `_________________________________`,
-        `ADVOCATE FOR THE PLAINTIFF/APPLICANT`,
-        `${v.advocate||'[ADVOCATE NAME, FIRM, ADDRESS]'}`,
-        stampNote
-      ].join(nl);
-    }
-
     case 'plaint':{
       return [
         `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
@@ -10298,107 +10337,6 @@ function dgBuildDocument(id, v){
         '',
         `_________________________________`,
         `ADVOCATE FOR THE PLAINTIFF`,
-        stampNote
-      ].join(nl);
-    }
-
-    case 'petition':{
-      return [
-        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
-        v.petition_no ? `                    PETITION NO. ${v.petition_no}` : `                    PETITION NO.         OF 20     `,
-        '',
-        `IN THE MATTER OF A PETITION UNDER ARTICLES ${v.articles||'22, 258'} OF THE CONSTITUTION OF KENYA 2010`,
-        '',
-        `AND IN THE MATTER OF:`,
-        '',
-        `${(v.petitioner||'[PETITIONER]').toUpperCase()}  ..............................................  PETITIONER`,
-        '',
-        `VERSUS`,
-        '',
-        `${(v.respondent||'[RESPONDENT(S)]').toUpperCase()}  ............................................  RESPONDENT(S)`,
-        '',
-        `                    PETITION`,
-        '',
-        `The Petitioner states as follows:`,
-        '',
-        `1. The Petitioner, ${v.petitioner||'[PETITIONER]'}, brings this petition pursuant to Articles ${v.articles||'22, 258'} of the Constitution of Kenya 2010.`,
-        '',
-        `2. FACTS:`,
-        `${v.facts||'[STATE FACTS GIVING RISE TO PETITION]'}`,
-        '',
-        `3. RELIEF SOUGHT:`,
-        `${v.relief||'[STATE RELIEF SOUGHT]'}`,
-        '',
-        `DATED this ${v.date||'       day of                    , 20     '}.`,
-        '',
-        `_________________________________`,
-        `ADVOCATE FOR THE PETITIONER`,
-        `${v.advocate||'[ADVOCATE NAME AND FIRM]'}`,
-        stampNote
-      ].join(nl);
-    }
-
-    case 'defence':{
-      return [
-        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
-        v.case_no ? `                    ${v.case_no}` : '',
-        '',
-        `BETWEEN`,
-        '',
-        `${(v.plaintiff||'[PLAINTIFF]').toUpperCase()}  ..............................................  PLAINTIFF`,
-        '',
-        `AND`,
-        '',
-        `${(v.defendant||'[DEFENDANT]').toUpperCase()}  ............................................  DEFENDANT`,
-        '',
-        `                    STATEMENT OF DEFENCE`,
-        '',
-        `The Defendant states as follows:`,
-        '',
-        `1. ADMISSIONS: ${v.admissions||'[STATE FACTS ADMITTED]'}`,
-        '',
-        `2. DENIALS:`,
-        `${v.denials||'[STATE FACTS DENIED]'}`,
-        '',
-        `3. POSITIVE DEFENCE:`,
-        `${v.positive_defence||'[STATE POSITIVE DEFENCE]'}`,
-        '',
-        v.counterclaim ? `4. COUNTERCLAIM:\n${v.counterclaim}\n` : '',
-        `DATED this ${v.date||'       day of                    , 20     '}.`,
-        '',
-        `_________________________________`,
-        `ADVOCATE FOR THE DEFENDANT`,
-        `${v.advocate||'[ADVOCATE NAME AND FIRM]'}`,
-        stampNote
-      ].filter(l=>l!==null&&l!==undefined).join(nl);
-    }
-
-    case 'nda':{
-      return [
-        `              NON-DISCLOSURE AGREEMENT`,
-        `         (Law of Contract Act, Cap. 23 — Kenya)`,
-        '',
-        `THIS NON-DISCLOSURE AGREEMENT is entered into on ${v.date||'the       day of                    , 20     '} between:`,
-        '',
-        `1. ${v.party_a||'[DISCLOSING PARTY]'} (${v.party_a_type||'[TYPE]'}) — hereinafter the "DISCLOSING PARTY"; and`,
-        '',
-        `2. ${v.party_b||'[RECEIVING PARTY]'} (${v.party_b_type||'[TYPE]'}) — hereinafter the "RECEIVING PARTY".`,
-        '',
-        `WHEREAS the Disclosing Party possesses certain confidential information and desires to disclose such information to the Receiving Party for the purpose of: ${v.purpose||'[PURPOSE]'}.`,
-        '',
-        `NOW THEREFORE in consideration of the mutual covenants herein the Parties agree as follows:`,
-        '',
-        `1. CONFIDENTIAL INFORMATION means any information disclosed by the Disclosing Party to the Receiving Party whether orally, in writing or by any other means.`,
-        '',
-        `2. The Receiving Party shall hold all Confidential Information in strict confidence and shall not disclose it to any third party without the prior written consent of the Disclosing Party.`,
-        '',
-        `3. The obligations of confidentiality shall continue for a period of ${v.duration||'[DURATION]'} from the date of this Agreement.`,
-        '',
-        `4. This Agreement shall be governed by the ${v.governing_law||'Laws of Kenya'} and disputes shall be submitted to ${v.jurisdiction||'the courts of Kenya'}.`,
-        '',
-        sig(`DISCLOSING PARTY — ${(v.party_a||'').toUpperCase()}`),
-        sig(`RECEIVING PARTY — ${(v.party_b||'').toUpperCase()}`),
-        witness,
         stampNote
       ].join(nl);
     }
@@ -10519,55 +10457,21 @@ function dgBuildDocument(id, v){
       ].join(nl);
     }
 
-    case 'shareholders':{
+    case 'poa-specific':{
       return [
-        `              SHAREHOLDERS AGREEMENT`,
-        `              (Companies Act 2015 — Kenya)`,
-        '',
-        `THIS SHAREHOLDERS AGREEMENT is entered into on ${v.date||'the       day of                    , 20     '} in respect of ${v.company||'[COMPANY NAME]'} (Reg. No. ${v.reg_no||'[REG NO]'}).`,
-        '',
-        `SHAREHOLDERS AND SHAREHOLDING:`,
-        `${v.shareholders||'[LIST SHAREHOLDERS AND SHAREHOLDING]'}`,
-        '',
-        `1. BOARD COMPOSITION`,
-        `   ${v.directors||'[BOARD COMPOSITION]'}`,
-        '',
-        `2. RESERVED MATTERS (require unanimous consent):`,
-        `   ${v.reserved||'[RESERVED MATTERS]'}`,
-        '',
-        `3. DIVIDEND POLICY`,
-        `   ${v.dividend||'[DIVIDEND POLICY]'}`,
-        '',
-        `4. DRAG / TAG-ALONG RIGHTS`,
-        `   ${v.drag_tag||'[DRAG/TAG ARRANGEMENT]'}`,
-        '',
-        `5. DISPUTE RESOLUTION`,
-        `   Disputes shall be referred to ${v.dispute||'arbitration in Nairobi'}.`,
-        '',
-        sig(`SHAREHOLDER 1`),
-        sig(`SHAREHOLDER 2`),
-        witness,
-        stampNote
-      ].join(nl);
-    }
-
-    case 'poa-general': case 'poa-specific':{
-      const isGeneral = id==='poa-general';
-      return [
-        `              ${isGeneral?'GENERAL':'SPECIFIC'} POWER OF ATTORNEY`,
+        `              POWER OF ATTORNEY`,
         `         (Powers of Attorney Act, Cap. 53 — Kenya)`,
         '',
-        `KNOW ALL MEN BY THESE PRESENTS that I, ${v.donor||'[DONOR NAME]'}, holder of ID/Passport No. ${v.donor_id||'[ID NUMBER]'}${isGeneral?', of '+v.donor_address:''},`,
+        `KNOW ALL MEN BY THESE PRESENTS that I, ${v.donor||'[DONOR NAME]'}, holder of ID/Passport No. ${v.donor_id||'[ID NUMBER]'},`,
         '',
-        `do hereby appoint ${v.attorney||'[ATTORNEY NAME]'}, holder of ID/Passport No. ${v.attorney_id||'[ID NUMBER]'}${isGeneral?', of '+v.attorney_address:''} (hereinafter "my Attorney"),`,
+        `do hereby appoint ${v.attorney||'[ATTORNEY NAME]'}, holder of ID/Passport No. ${v.attorney_id||'[ID NUMBER]'} (hereinafter "my Attorney"),`,
         '',
-        `to be my true and lawful attorney with full power and authority in my name and on my behalf to do and perform the following acts:`,
+        `to be my true and lawful attorney with full power and authority in my name and on my behalf to:`,
         '',
-        isGeneral ? (v.powers||'[STATE SCOPE OF POWERS]') : (v.purpose||'[STATE SPECIFIC PURPOSE]'),
+        v.purpose||'[STATE SPECIFIC PURPOSE AND TRANSACTION]',
         '',
-        isGeneral ? '' : (v.limitations ? `LIMITATIONS: ${v.limitations}` : ''),
-        '',
-        `This Power of Attorney shall ${isGeneral?'remain in force '+v.duration:'expire on '+v.expiry||'completion of the transaction'}.`,
+        v.limitations ? `LIMITATIONS ON AUTHORITY:\n${v.limitations}\n` : '',
+        `This Power of Attorney shall expire on ${v.expiry||'completion of the above transaction'}.`,
         '',
         `IN WITNESS WHEREOF I have hereunto set my hand this ${v.date||'       day of                    , 20     '}.`,
         '',
@@ -10575,7 +10479,7 @@ function dgBuildDocument(id, v){
         `DONOR/PRINCIPAL — ${(v.donor||'').toUpperCase()}`,
         witness,
         stampNote
-      ].filter(l=>l!==null).join(nl);
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
     }
 
     case 'board-resolution':{
@@ -10640,159 +10544,7 @@ function dgBuildDocument(id, v){
         ``,
         `CC: File`,
       ].join(nl);
-    }
-
-    case 'notice-terminate':{
-      return [
-        `              NOTICE OF TERMINATION`,
-        '',
-        `Date: ${v.date||'       day of                    , 20     '}`,
-        '',
-        `TO: ${v.party_b||'[RECEIVING PARTY]'}`,
-        `FROM: ${v.party_a||'[TERMINATING PARTY]'}`,
-        '',
-        `RE: NOTICE OF TERMINATION — ${(v.contract_type||'CONTRACT').toUpperCase()}`,
-        '',
-        `We write to give you formal notice of termination of the ${v.contract_type||'contract'} entered into between us on ${v.contract_date||'[CONTRACT DATE]'}.`,
-        '',
-        `GROUNDS FOR TERMINATION:`,
-        `${v.grounds||'[GROUNDS FOR TERMINATION]'}`,
-        '',
-        `This notice shall take effect after the expiry of ${v.notice_period||'30 days'} from the date of this notice.`,
-        '',
-        `The effective date of termination is therefore: ${v.effective_date||'[EFFECTIVE DATE]'}.`,
-        '',
-        `_________________________________`,
-        `${(v.party_a||'TERMINATING PARTY').toUpperCase()}`,
-        stampNote
-      ].join(nl);
-    }
-
-    case 'cease-desist':{
-      return [
-        `${v.sender||'D.K. MUTONGA ADVOCATES'}`,
-        ``,
-        `Date: ${v.date||'       day of                    , 20     '}`,
-        ``,
-        `${v.recipient||'[RECIPIENT NAME]'}`,
-        `${v.recipient_address||'[RECIPIENT ADDRESS]'}`,
-        ``,
-        `Dear Sir/Madam,`,
-        ``,
-        `RE: CEASE AND DESIST — ${(v.violation||'VIOLATION').toUpperCase()}`,
-        ``,
-        `It has come to our attention that you have engaged in conduct constituting ${v.violation||'[VIOLATION]'} as follows:`,
-        ``,
-        `${v.facts||'[FACTS OF THE VIOLATION]'}`,
-        ``,
-        `LEGAL BASIS: ${v.legal_basis||'[APPLICABLE LAW]'}`,
-        ``,
-        `DEMAND: You are hereby required to:`,
-        `${v.remedy||'[REMEDY DEMANDED]'}`,
-        ``,
-        `You are required to comply with this demand within ${v.deadline_days||'7'} days of this letter. Failure to do so will result in legal proceedings being filed against you without further notice.`,
-        ``,
-        `Yours faithfully,`,
-        ``,
-        `_________________________________`,
-        `ADVOCATE`,
-      ].join(nl);
-    }
-
-    case 'letters-admin':{
-      return [
-        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
-        `                    SUCCESSION CAUSE NO.         OF 20     `,
-        '',
-        `IN THE MATTER OF THE ESTATE OF ${(v.deceased||'[DECEASED NAME]').toUpperCase()}`,
-        `AND IN THE MATTER OF AN APPLICATION FOR LETTERS OF ADMINISTRATION`,
-        '',
-        `                    PETITION`,
-        '',
-        `The Petitioner, ${v.petitioner||'[PETITIONER NAME]'}, holder of ID No. ${v.petitioner_id||'[ID NUMBER]'}, states as follows:`,
-        '',
-        `1. I am the ${v.relationship||'[RELATIONSHIP]'} of the deceased, ${v.deceased||'[DECEASED NAME]'}, who died on ${v.dod||'[DATE OF DEATH]'} at ${v.deceased_address||'[LAST ADDRESS]'}.`,
-        '',
-        `2. The deceased died ${v.will_date?'testate':'intestate'} (without a valid will).`,
-        '',
-        `3. The estate of the deceased consists of:`,
-        `   ${v.estate||'[DESCRIPTION OF ESTATE]'}`,
-        '',
-        `4. I pray for a grant of Letters of Administration of the estate of the deceased.`,
-        '',
-        `DATED this ${v.date||'       day of                    , 20     '}.`,
-        '',
-        `_________________________________`,
-        `PETITIONER — ${(v.petitioner||'').toUpperCase()}`,
-        witness,
-        stampNote
-      ].join(nl);
-    }
-
-    case 'grant-probate':{
-      return [
-        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
-        `                    SUCCESSION CAUSE NO.         OF 20     `,
-        '',
-        `IN THE MATTER OF THE ESTATE OF ${(v.deceased||'[DECEASED NAME]').toUpperCase()}`,
-        `AND IN THE MATTER OF AN APPLICATION FOR GRANT OF PROBATE`,
-        '',
-        `                    PETITION FOR GRANT OF PROBATE`,
-        '',
-        `The Petitioner/Executor, ${v.executor||'[EXECUTOR NAME]'}, holder of ID No. ${v.executor_id||'[ID NUMBER]'}, states as follows:`,
-        '',
-        `1. I am the duly appointed Executor under the Last Will and Testament of ${v.deceased||'[DECEASED NAME]'} who died on ${v.dod||'[DATE OF DEATH]'}.`,
-        '',
-        `2. The Will of the deceased was made on ${v.will_date||'[WILL DATE]'}.`,
-        '',
-        `3. The estate of the deceased consists of:`,
-        `   ${v.estate||'[DESCRIPTION OF ESTATE]'}`,
-        '',
-        `4. I pray for a grant of Probate of the Will of the deceased.`,
-        '',
-        `DATED this ${v.date||'       day of                    , 20     '}.`,
-        '',
-        `_________________________________`,
-        `EXECUTOR/PETITIONER — ${(v.executor||'').toUpperCase()}`,
-        witness,
-        stampNote
-      ].join(nl);
-    }
-
-    case 'prenup':{
-      return [
-        `              PRE-NUPTIAL AGREEMENT`,
-        `              (Marriage Act 2014 — Kenya)`,
-        '',
-        `THIS PRE-NUPTIAL AGREEMENT is entered into on ${v.date||'the       day of                    , 20     '} between:`,
-        '',
-        `1. ${v.party_a||'[FIRST PARTY]'} (ID No. ${v.party_a_id||'[ID NO]'}) — hereinafter "PARTY A"; and`,
-        `2. ${v.party_b||'[SECOND PARTY]'} (ID No. ${v.party_b_id||'[ID NO]'}) — hereinafter "PARTY B".`,
-        '',
-        `WHEREAS both parties intend to marry on ${v.marriage_date||'[INTENDED DATE]'}:`,
-        '',
-        `1. PARTY A\'S ASSETS`,
-        `   ${v.assets_a||'[PARTY A ASSETS]'}`,
-        '',
-        `2. PARTY B\'S ASSETS`,
-        `   ${v.assets_b||'[PARTY B ASSETS]'}`,
-        '',
-        `3. JOINTLY ACQUIRED ASSETS`,
-        `   ${v.joint_assets||'[ARRANGEMENT FOR JOINT ASSETS]'}`,
-        '',
-        `4. SPOUSAL MAINTENANCE`,
-        `   ${v.spousal_support||'[MAINTENANCE ARRANGEMENT]'}`,
-        '',
-        `5. This Agreement is entered into freely and voluntarily by both parties and shall be governed by the Laws of Kenya.`,
-        '',
-        sig(`PARTY A — ${(v.party_a||'').toUpperCase()}`),
-        sig(`PARTY B — ${(v.party_b||'').toUpperCase()}`),
-        witness,
-        stampNote
-      ].join(nl);
-    }
-
-    default:{
+    }default:{
       // Generic fallback — list all field values
       const lines = [`${d.title.toUpperCase()}`, `(${d.sub})`, ''];
       Object.entries(v).forEach(([k,val])=>{
