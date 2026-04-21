@@ -9901,7 +9901,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // ── Document generator — template-based (no AI required) ──
 
 const DG_DOCS={
-  'affidavit':{title:'Affidavit (general)',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'National ID'},{id:'occupation',l:'Occupation',ph:'e.g. Business person'},{id:'address',l:'Residential address',ph:'Physical address'},{id:'court',l:'Court (if for court)',ph:'e.g. High Court at Nairobi'},{id:'case_no',l:'Case number',ph:'e.g. Civil Case No. 123 of 2025'},{id:'facts',l:'Facts sworn to',ph:'State facts clearly and concisely…',ta:1},{id:'purpose',l:'Purpose of affidavit',ph:'e.g. In support of application for injunction'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+  'affidavit':{title:'Affidavit (general)',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'e.g. EVELYN NETTAH SAYO'},{id:'id_no',l:'ID / Passport number',ph:'e.g. 12345678'},{id:'occupation',l:'Description (adult Kenyan female/male)',ph:'e.g. adult Kenyan female'},{id:'address',l:'Full address',ph:'e.g. P.O. Box 45233 - 00800, Nairobi'},{id:'court',l:'Court (if court affidavit)',ph:'e.g. High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'e.g. Civil Case No. 123 of 2025'},{id:'facts',l:'Facts (one paragraph per line)',ph:'Paragraph 1 fact\nParagraph 2 fact\nParagraph 3 fact',ta:1},{id:'purpose',l:'Purpose / closing paragraph',ph:'e.g. I swear this affidavit affirming that I do not owe any rental income...'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
   'stat-dec':{title:'Statutory declaration',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'declarant',l:'Declarant full name',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'National ID'},{id:'address',l:'Address',ph:'Physical address'},{id:'subject',l:'Subject matter',ph:'e.g. Change of name, loss of documents'},{id:'facts',l:'Facts declared',ph:'State all relevant facts…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
@@ -10181,88 +10181,159 @@ function dgBuildDocument(id, v){
   switch(id){
 
     case 'affidavit': case 'affidavit-support':{
-      const name = id==='affidavit' ? v.deponent : v.deponent;
-      const deponent = v.deponent||v.deponent||'[DEPONENT NAME]';
+      const deponent = v.deponent||'[DEPONENT NAME]';
+      const swornAt  = v.address ? v.address.split(',').pop().trim().toUpperCase() : 'NAIROBI';
+
+      // Build numbered paragraphs from the free-text facts field
+      // Each paragraph on its own line gets its own number; we auto-number from 3 onward
+      const factLines = (v.facts||'[STATE THE FACTS]').split('\n').filter(l=>l.trim());
+      let paraNum = 3;
+      const factParas = factLines.map(line => `${paraNum++} .\tTHAT ${line.trim()}`).join(nl+nl);
+
+      const firmName   = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO     = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmCity   = 'Nairobi';
+
       return [
-        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
-        v.case_no ? `                    ${v.case_no}` : '',
+        `                         REPUBLIC OF KENYA`,
+        `          IN THE MATTER OF THE OATHS AND STATUTORY`,
+        `          DECLARATIONS ACT, CAP 15 OF THE LAWS OF KENYA`,
         '',
-        `              AFFIDAVIT OF ${deponent.toUpperCase()}`,
+        v.court||v.case_no ? [
+          v.court ? `                    IN THE ${v.court.toUpperCase()}` : '',
+          v.case_no ? `                    ${v.case_no}` : ''
+        ].filter(Boolean).join(nl) : '',
+        v.court||v.case_no ? '' : '',
+        `                              AFFIDAVIT`,
         '',
-        `I, ${deponent}, holder of ID/Passport No. ${v.id_no||'[ID NUMBER]'}, of ${v.occupation||'[OCCUPATION]'}, residing at ${v.address||'[ADDRESS]'}, do hereby make oath and state as follows:`,
+        `I, ${deponent.toUpperCase()} of ${v.address||'[ADDRESS]'} within the Republic of Kenya, do hereby make oath and state as follows:`,
         '',
-        `1. I am the Deponent herein and I am duly authorised to make this affidavit. The facts herein are within my personal knowledge save where the context indicates otherwise.`,
+        `1 .\tTHAT I am an adult ${v.occupation||'Kenyan'} residing in ${swornAt} within the Republic of Kenya of National Identity Number ${v.id_no||'[ID NUMBER]'}.`,
         '',
-        `2. ${v.facts||v.facts||'[STATE THE FACTS SWORN TO]'}`,
-        id==='affidavit-support' ? `\n3. This affidavit is made in support of ${v.application||'[APPLICATION]'}.` : '',
-        v.annexures ? `\n4. Annexed hereto and marked accordingly are the following documents:\n${v.annexures}` : '',
-        v.purpose ? `\nThis affidavit is made ${v.purpose||'in support of the above application'}.` : '',
+        `2 .\tTHAT I am duly competent to swear this affidavit and the facts herein are within my personal knowledge save where the context indicates otherwise.`,
         '',
-        `SWORN at ${(v.court||'NAIROBI').replace(/^.*?\bat\b\s*/i,'')||'NAIROBI'} by the said ${deponent}`,
-        `on the       day of                    , 20     .`,
+        factParas,
         '',
-        `_________________________________         Before me:`,
-        `DEPONENT`,
+        `${paraNum} .\tTHAT ${v.purpose||'I swear this affidavit in support of the above-captioned matter'}.`,
+        '',
+        `${paraNum+1} .\tTHAT what is deponed herein is correct to the best of my knowledge, information and belief.`,
+        '',
+        // Jurat — authentic layout with } column
+        `SWORN at ${swornAt} by the said`,
+        `${deponent.toUpperCase()}`,
+        `This         Day of                         ,  ${new Date().getFullYear()}`,
         '',
         `_________________________________`,
-        `COMMISSIONER FOR OATHS / MAGISTRATE`,
-        stampNote
+        `DEPONENT`,
+        '',
+        `BEFORE ME:`,
+        '',
+        `_________________________________`,
+        `COMMISSIONER OF OATHS`,
+        '',
+        `Drawn by:`,
+        `${firmName}`,
+        `${firmPO},`,
+        `${firmCity}`
       ].filter(l=>l!==null&&l!==undefined).join(nl);
     }
 
     case 'stat-dec':{
+      const declarant  = v.declarant||'[DECLARANT NAME]';
+      const declaredAt = v.address ? v.address.split(',').pop().trim().toUpperCase() : 'NAIROBI';
+      const firmName   = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO     = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+
+      const factLines = (v.facts||'[STATE THE FACTS]').split('\n').filter(l=>l.trim());
+      let pn = 3;
+      const factParas = factLines.map(line => `${pn++} .\tTHAT ${line.trim()}`).join(nl+nl);
+
       return [
-        `              STATUTORY DECLARATION`,
-        `           (Oaths and Statutory Declarations Act, Cap. 15)`,
+        `                         REPUBLIC OF KENYA`,
+        `          IN THE MATTER OF THE OATHS AND STATUTORY`,
+        `          DECLARATIONS ACT, CAP 15 OF THE LAWS OF KENYA`,
         '',
-        `I, ${v.declarant||'[DECLARANT NAME]'}, holder of ID/Passport No. ${v.id_no||'[ID NUMBER]'}, residing at ${v.address||'[ADDRESS]'}, do hereby solemnly and sincerely declare as follows:`,
+        `                         STATUTORY DECLARATION`,
         '',
-        `1. I make this declaration in respect of: ${v.subject||'[SUBJECT MATTER]'}.`,
+        `I, ${declarant.toUpperCase()} of ${v.address||'[ADDRESS]'} within the Republic of Kenya, do hereby solemnly and sincerely declare as follows:`,
         '',
-        `2. ${v.facts||'[STATE THE FACTS DECLARED]'}`,
+        `1 .\tTHAT I am an adult of sound mind, duly competent to make this declaration.`,
         '',
-        `AND I make this solemn declaration conscientiously believing the same to be true and by virtue of the provisions of the Oaths and Statutory Declarations Act (Cap. 15).`,
+        `2 .\tTHAT this declaration is made in respect of: ${v.subject||'[SUBJECT MATTER]'}.`,
         '',
-        `DECLARED at NAIROBI on the       day of                    , 20     .`,
+        factParas,
+        '',
+        `${pn} .\tTHAT what is declared herein is true to the best of my knowledge, information and belief.`,
+        '',
+        `AND I make this solemn declaration conscientiously believing the same to be true and by virtue of the provisions of the Oaths and Statutory Declarations Act (Cap. 15 Laws of Kenya).`,
+        '',
+        `DECLARED at ${declaredAt} by the said`,
+        `${declarant.toUpperCase()}`,
+        `This         Day of                         ,  ${new Date().getFullYear()}`,
         '',
         `_________________________________`,
-        `DECLARANT — ${(v.declarant||'').toUpperCase()}`,
+        `DECLARANT`,
         '',
-        `Before me:`,
+        `BEFORE ME:`,
         '',
         `_________________________________`,
-        `COMMISSIONER FOR OATHS`,
-        stampNote
+        `COMMISSIONER OF OATHS`,
+        '',
+        `Drawn by:`,
+        `${firmName}`,
+        `${firmPO},`,
+        `Nairobi`
       ].join(nl);
     }
 
     case 'affidavit-service':{
+      const server   = v.server||'[PROCESS SERVER NAME]';
+      const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+
       return [
-        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
+        `                         REPUBLIC OF KENYA`,
+        `          IN THE MATTER OF THE OATHS AND STATUTORY`,
+        `          DECLARATIONS ACT, CAP 15 OF THE LAWS OF KENYA`,
+        '',
+        v.court ? `                    IN THE ${v.court.toUpperCase()}` : '',
         v.case_no ? `                    ${v.case_no}` : '',
+        v.court||v.case_no ? '' : '',
+        `                         AFFIDAVIT OF SERVICE`,
         '',
-        `              AFFIDAVIT OF SERVICE`,
+        `I, ${server.toUpperCase()} of National Identity Number ${v.id_no||'[ID NUMBER]'} do hereby make oath and state as follows:`,
         '',
-        `I, ${v.server||'[PROCESS SERVER NAME]'}, holder of ID No. ${v.id_no||'[ID NUMBER]'}, do hereby make oath and state as follows:`,
+        `1 .\tTHAT I am an adult of sound mind and duly authorised to effect service of court process.`,
         '',
-        `1. I am a process server and am duly authorised to effect service of process.`,
+        `2 .\tTHAT on ${v.service_date||'[DATE AND TIME]'} I personally served ${(v.served_on||'[PERSON SERVED]').toUpperCase()} at ${v.service_address||'[ADDRESS OF SERVICE]'} with the following document(s):`,
         '',
-        `2. On ${v.service_date||'[DATE AND TIME]'}, I personally served ${v.served_on||'[PERSON SERVED]'} at ${v.service_address||'[ADDRESS OF SERVICE]'} with the following document(s): ${v.doc_served||'[DOCUMENTS SERVED]'}.`,
+        `\t${v.doc_served||'[DOCUMENTS SERVED]'}`,
         '',
-        `3. Mode of service: ${v.mode||'Personal service'}.`,
+        `3 .\tTHAT the mode of service was: ${v.mode||'personal service'}.`,
         '',
-        `4. The said ${v.served_on||'[PERSON SERVED]'} acknowledged receipt / did not refuse service.`,
+        `4 .\tTHAT the said ${v.served_on||'[PERSON SERVED]'} acknowledged receipt of the said documents / did not refuse service.`,
         '',
-        `SWORN at NAIROBI by the said ${v.server||'[SERVER NAME]'}`,
-        `on the       day of                    , 20     .`,
+        `5 .\tTHAT what is deponed herein is correct to the best of my knowledge, information and belief.`,
         '',
-        `_________________________________         Before me:`,
-        `DEPONENT`,
+        `SWORN at NAIROBI by the said`,
+        `${server.toUpperCase()}`,
+        `This         Day of                         ,  ${new Date().getFullYear()}`,
         '',
         `_________________________________`,
-        `COMMISSIONER FOR OATHS / MAGISTRATE`,
-        stampNote
-      ].join(nl);
+        `DEPONENT`,
+        '',
+        `BEFORE ME:`,
+        '',
+        `_________________________________`,
+        `COMMISSIONER OF OATHS`,
+        '',
+        `This document constitutes a record of service generated by the DKMA Law Firm Management System.`,
+        '',
+        `Drawn by:`,
+        `${firmName}`,
+        `${firmPO},`,
+        `Nairobi`
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
     }
 
     case 'chamber-summons': case 'notice-motion':{
