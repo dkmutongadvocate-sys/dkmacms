@@ -12512,17 +12512,17 @@ function dgBuildJuratHtml(marker) {
 <table class="dg-jurat" style="width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9">
   <tbody>
     <tr>
-      <td style="width:60%;vertical-align:top;padding:0">${verb} at <u>${city}</u> by the said</td>
+      <td style="width:55%;vertical-align:top;padding:0">${verb} at <u>${city}</u> by the said</td>
       <td style="width:5%;vertical-align:top;padding:0;text-align:center">}</td>
-      <td style="width:35%;vertical-align:top;padding:0">&nbsp;</td>
+      <td style="width:40%;vertical-align:top;padding:0">&nbsp;</td>
     </tr>
     <tr>
       <td style="vertical-align:top;padding:0"><u>${name}</u></td>
       <td style="vertical-align:top;padding:0;text-align:center">}</td>
-      <td style="vertical-align:top;padding:0;border-bottom:1px dotted #333">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+      <td style="vertical-align:top;padding:0;border-bottom:1px dotted #333">&nbsp;</td>
     </tr>
     <tr>
-      <td style="vertical-align:top;padding:0">This &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Day of &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,&nbsp; ${yr}</td>
+      <td style="vertical-align:top;padding:0">This &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Day of &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${yr}</td>
       <td style="vertical-align:top;padding:0;text-align:center">}</td>
       <td style="vertical-align:top;padding:0;font-weight:700">${role}</td>
     </tr>
@@ -12533,12 +12533,13 @@ function dgBuildJuratHtml(marker) {
     <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
     <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
     <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
-    <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
+    <tr>
+      <td style="vertical-align:bottom;padding-top:8px;text-decoration:underline;font-weight:700;padding-left:0">COMMISSIONER OF OATHS</td>
+      <td style="text-align:center;padding:0">}</td>
+      <td style="padding:0">&nbsp;</td>
+    </tr>
   </tbody>
-</table>
-<p style="margin-top:16px">BEFORE ME:</p>
-<p style="margin-top:20px;margin-bottom:0">_________________________________</p>
-<p style="font-weight:700;text-decoration:underline;margin-top:2px">COMMISSIONER OF OATHS</p>`;
+</table>`;
 }
 
 function dgRenderPreview(text,d){
@@ -12552,10 +12553,21 @@ function dgRenderPreview(text,d){
     }
     if(!line.trim()){html+='<br>';return;}
     const f=line.replace(/\[([^\]]+)\]/g,'<span class="dg-blank">[$1]</span>');
-    // Centred ALL-CAPS headings
-    if(/^[A-Z\s\u2014\-]{6,}$/.test(line.trim())&&line.trim().length<80) html+=`<p style="font-weight:700;margin-top:14px;margin-bottom:6px;text-align:center">${f}</p>`;
-    // Numbered paragraphs with tab
-    else if(/^\d+ \.\t/.test(line)) html+=`<p style="margin-left:20px">${f}</p>`;
+    // Centred ALL-CAPS headings (headings, title lines)
+    if(/^[A-Z\s\u2014\-]{6,}$/.test(line.trim())&&line.trim().length<80) html+=`<p style="font-weight:700;margin-top:14px;margin-bottom:6px;text-align:center;text-decoration:underline">${f}</p>`;
+    // Numbered paragraphs — format "1 .\tTHAT ..." — render as proper hanging indent table
+    else if(/^\d+\s*\.\s*\t/.test(line)){
+      const numMatch=line.match(/^(\d+)\s*\.\s*\t(.*)/);
+      if(numMatch){
+        const num=numMatch[1];
+        const body=numMatch[2].replace(/\[([^\]]+)\]/g,'<span class="dg-blank">[$1]</span>');
+        // Bold-underline "THAT" prefix extracted from body if present
+        const bodyHtml=body.replace(/^(THAT\s+)/,'<u><b>THAT</b></u> ');
+        html+=`<table style="width:100%;border-collapse:collapse;margin-bottom:8px;margin-top:4px"><tr><td style="width:36px;vertical-align:top;padding:0;padding-right:4px;white-space:nowrap">${num} .</td><td style="vertical-align:top;padding:0">${bodyHtml}</td></tr></table>`;
+      }else{
+        html+=`<p style="margin-left:40px">${f}</p>`;
+      }
+    }
     // Tab-indented lines
     else if(/^\t/.test(line)) html+=`<p style="margin-left:40px">${f.replace(/^\t/,'')}</p>`;
     // Space-indented lines
@@ -12596,11 +12608,14 @@ function dgPrint(){
     h1,h2,h3{font-family:inherit}
     p{margin-bottom:4px;margin-top:0}
     br{display:block;margin-bottom:8px}
+    table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
     .dg-blank{background:#FFF5CC;padding:0 2px}
     .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9}
     .dg-jurat td{padding:0;vertical-align:top}
-    @page{margin:2.5cm 3cm;size:A4}
-    @media print{body{margin:0}}
+    @page{margin:2.5cm 3cm;size:A4;marks:none}
+    @media print{
+      body{margin:0}
+    }
   </style></head><body>${previewHtml}</body></html>`;
   frame.contentDocument.open();
   frame.contentDocument.write(content);
