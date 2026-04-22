@@ -8100,10 +8100,16 @@ document.addEventListener('DOMContentLoaded', () => { initAuth(); });
 
 async function viewDocument(storageName, displayName) {
   const path = `${activeMatterId}/${storageName}`;
+  // Generated HTML documents (from doc editor) open in editor for further editing
+  const ext = (storageName.split('.').pop() || '').toLowerCase();
+  const isGeneratedHtml = ext === 'html' && storageName.includes('__generated__') && !storageName.includes('Email_Receipt');
+  if (isGeneratedHtml) {
+    await dgOpenDocInEditor(path, displayName);
+    return;
+  }
   const { data, error } = await sb.storage.from(STORAGE_BUCKET).createSignedUrl(path, 600);
   if (error) { toast('Could not open document.', true); return; }
   const url = data.signedUrl;
-  const ext = (storageName.split('.').pop() || '').toLowerCase();
   const overlay = document.getElementById('doc-viewer-overlay');
   document.getElementById('doc-viewer-filename').textContent = displayName;
   const body = document.getElementById('doc-viewer-body');
@@ -8118,7 +8124,6 @@ async function viewDocument(storageName, displayName) {
   } else if (ext === 'pdf') {
     body.innerHTML = `<iframe src="${url}" style="width:100%;height:100%;min-height:300px;border:none;display:block;flex:1"></iframe>`;
   } else if (isReceiptHtml) {
-    // Receipt files are HTML — fetch content and render locally so print works correctly.
     body.innerHTML = `<div class="doc-viewer-nopreview" style="gap:16px">
       <div style="font-size:44px">📬</div>
       <div style="font-weight:600;color:var(--txt);font-size:15px">${esc(displayName)}</div>
@@ -8134,7 +8139,6 @@ async function viewDocument(storageName, displayName) {
       try {
         const resp = await fetch(url);
         let html = await resp.text();
-        // Remove the auto-print script so user controls when to print
         html = html.replace(/<scr[^>]*>window\.onload[^<]*<\/script>/gi, '');
         const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
         const blobUrl = URL.createObjectURL(blob);
@@ -8144,7 +8148,6 @@ async function viewDocument(storageName, displayName) {
             setTimeout(() => { win.print(); URL.revokeObjectURL(blobUrl); }, 400);
           });
         } else {
-          // Fallback: open blob URL directly (user triggers print manually)
           window.open(blobUrl, '_blank');
         }
       } catch(e) {
@@ -9270,27 +9273,52 @@ async function loadOfficeDocuments(){
       list.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--txt3)">No office documents yet.<br><span style="color:var(--gold)">Use ✦ New Blank Document → 💾 Save to File → 🏛 Office File to save documents here.</span></div>';
       return;
     }
-    let html = '';
+
+    // Group files by base name (strip leading category__generated__TIMESTAMP_ prefix)
+    // Format: category__generated__TIMESTAMP_BaseName.html
+    const groups = {}; // baseName → [files sorted newest first]
     files.forEach(f => {
       const parts = f.name.split('__');
+      // parts[0]=category, parts[1]=generated, parts[2]=TIMESTAMP_BaseName.html
+      const rawBase = parts.slice(2).join('__') || f.name;
+      const baseName = rawBase.replace(/^\d+_/, ''); // strip leading timestamp
+      if (!groups[baseName]) groups[baseName] = [];
+      groups[baseName].push(f);
+    });
+
+    let html = '';
+    Object.entries(groups).forEach(([baseName, versions]) => {
+      // Sort newest first by created_at
+      versions.sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0));
+      const latest = versions[0];
+      const parts = latest.name.split('__');
       const cat = parts[0] || 'document';
-      // Extract original display name: last part after final underscore-timestamp pattern
-      const rawDisplay = parts.slice(2).join('__') || f.name;
-      const displayName = rawDisplay.replace(/^\d+_/, '').replace(/_/g, ' ');
-      const sizeMB = f.metadata?.size ? (f.metadata.size / 1024).toFixed(1) + ' KB' : '';
-      const date = f.created_at ? new Date(f.created_at).toLocaleDateString('en-KE', {day:'2-digit',month:'short',year:'numeric'}) : '';
-      const safeName = esc(f.name);
-      html += `<div style="display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid var(--brd);transition:background 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''">
-        <div style="width:34px;height:34px;border-radius:7px;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:1px solid var(--brd)">📄</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(displayName)}</div>
-          <div style="font-size:10px;color:var(--txt3);margin-top:2px">${esc(cat)} · ${date}${sizeMB ? ' · ' + sizeMB : ''}</div>
+      const displayName = baseName.replace(/\.html$/i,'').replace(/_/g,' ');
+      const date = latest.created_at ? new Date(latest.created_at).toLocaleDateString('en-KE',{day:'2-digit',month:'short',year:'numeric'}) : '';
+      const size = latest.metadata?.size ? (latest.metadata.size/1024).toFixed(1)+' KB' : '';
+      const vCount = versions.length;
+      const safeLatest = esc(latest.name);
+      const safeBase = esc(baseName);
+      const versionsBadge = vCount > 1
+        ? `<span style="font-size:9px;background:#EEEDFE;color:#3C3489;padding:1px 6px;border-radius:8px;font-weight:500;margin-left:5px;cursor:pointer" onclick="dgShowVersions('${safeBase}',this)">${vCount} versions ▾</span>`
+        : '';
+      html += `
+      <div class="dg-doc-group" data-base="${safeBase}">
+        <div style="display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid var(--brd);transition:background 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''">
+          <div style="width:34px;height:34px;border-radius:7px;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:1px solid var(--brd)">📄</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              ${esc(displayName)}${versionsBadge}
+            </div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px">${esc(cat)} · ${date}${size?' · '+size:''} · office file</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button onclick="dgOpenDocInEditor('office-general/${safeLatest}','${safeBase}')" style="font-size:11px;padding:4px 10px;border:1px solid var(--navy);border-radius:5px;background:var(--navy);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500">✏️ Open</button>
+            <button onclick="downloadOfficeDoc('${safeLatest}')" style="font-size:11px;padding:4px 10px;border:1px solid var(--brd);border-radius:5px;background:#fff;cursor:pointer;color:var(--txt2);font-family:'DM Sans',sans-serif" title="Download">↓</button>
+            <button onclick="deleteOfficeDoc('${safeLatest}',this,'${safeBase}')" style="font-size:11px;padding:4px 10px;border:1px solid #f5c6c6;border-radius:5px;background:#fff;cursor:pointer;color:var(--red);font-family:'DM Sans',sans-serif" title="Delete this version">✕</button>
+          </div>
         </div>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          <button onclick="viewOfficeDoc('${safeName}')" style="font-size:11px;padding:4px 10px;border:1px solid var(--brd);border-radius:5px;background:#fff;cursor:pointer;color:var(--txt2);font-family:'DM Sans',sans-serif">View</button>
-          <button onclick="downloadOfficeDoc('${safeName}')" style="font-size:11px;padding:4px 10px;border:1px solid var(--brd);border-radius:5px;background:#fff;cursor:pointer;color:var(--txt2);font-family:'DM Sans',sans-serif">↓</button>
-          <button onclick="deleteOfficeDoc('${safeName}',this)" style="font-size:11px;padding:4px 10px;border:1px solid #f5c6c6;border-radius:5px;background:#fff;cursor:pointer;color:var(--red);font-family:'DM Sans',sans-serif">✕</button>
-        </div>
+        <div class="dg-versions-panel" id="dg-vp-${safeBase.replace(/[^a-zA-Z0-9]/g,'_')}" style="display:none;background:#fafaf8;border-bottom:1px solid var(--brd)"></div>
       </div>`;
     });
     list.innerHTML = html || '<div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">No files found.</div>';
@@ -9299,10 +9327,115 @@ async function loadOfficeDocuments(){
   }
 }
 
+async function dgShowVersions(baseName, triggerEl) {
+  const panelId = 'dg-vp-' + baseName.replace(/[^a-zA-Z0-9]/g,'_');
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  if (panel.style.display !== 'none') { panel.style.display = 'none'; if(triggerEl) triggerEl.textContent = triggerEl.textContent.replace('▴','▾'); return; }
+  if(triggerEl) triggerEl.textContent = triggerEl.textContent.replace('▾','▴');
+  panel.style.display = 'block';
+  panel.innerHTML = '<div style="padding:10px 20px;font-size:11px;color:var(--txt3)">Loading versions…</div>';
+
+  try {
+    const { data, error } = await sb.storage.from(STORAGE_BUCKET).list('office-general', { limit:200 });
+    if (error) throw error;
+    // Filter to same base name
+    const versions = (data||[]).filter(f => {
+      const rawBase = f.name.split('__').slice(2).join('__') || f.name;
+      return rawBase.replace(/^\d+_/,'') === baseName;
+    }).sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0));
+
+    if (!versions.length) { panel.innerHTML = '<div style="padding:10px 20px;font-size:11px;color:var(--txt3)">No versions found.</div>'; return; }
+
+    let html = '<div style="padding:6px 20px 10px 68px">';
+    html += `<div style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;font-weight:600;padding:4px 0 6px">Version History</div>`;
+    versions.forEach((f, i) => {
+      const date = f.created_at ? new Date(f.created_at).toLocaleString('en-KE',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+      const size = f.metadata?.size ? (f.metadata.size/1024).toFixed(1)+' KB' : '';
+      const isLatest = i === 0;
+      const safeN = esc(f.name);
+      html += `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--brd)">
+        <div style="width:6px;height:6px;border-radius:50%;background:${isLatest?'var(--green)':'var(--brd2)'};flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <span style="font-size:11px;color:var(--txt)">${date}</span>
+          ${isLatest ? '<span style="font-size:9px;background:#EAF3DE;color:#2D6A4F;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:600">Latest</span>' : ''}
+          ${size ? '<span style="font-size:10px;color:var(--txt3);margin-left:6px">'+size+'</span>' : ''}
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button onclick="dgOpenDocInEditor('office-general/${safeN}','${esc(baseName)}')" style="font-size:10px;padding:3px 8px;border:1px solid var(--navy);border-radius:4px;background:var(--navy);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif">${isLatest ? '✏️ Open' : '↩ Restore'}</button>
+          <button onclick="deleteOfficeDoc('${safeN}',this,'${esc(baseName)}')" style="font-size:10px;padding:3px 8px;border:1px solid #f5c6c6;border-radius:4px;background:#fff;cursor:pointer;color:var(--red);font-family:'DM Sans',sans-serif">✕</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    panel.innerHTML = html;
+  } catch(e) {
+    panel.innerHTML = `<div style="padding:10px 20px;color:var(--red);font-size:11px">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+async function dgOpenDocInEditor(storagePath, baseName) {
+  // Fetch the HTML content from storage and load it into the editor
+  const { data, error } = await sb.storage.from(STORAGE_BUCKET).createSignedUrl(storagePath, 120);
+  if (error) { toast('Could not open document: ' + error.message, true); return; }
+
+  let htmlContent = '';
+  try {
+    const resp = await fetch(data.signedUrl);
+    htmlContent = await resp.text();
+  } catch(e) {
+    toast('Could not fetch document content.', true); return;
+  }
+
+  // Extract just the <body> content
+  const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  const bodyHtml = bodyMatch ? bodyMatch[1].trim() : htmlContent;
+
+  // Open blank editor with this content
+  document.getElementById('docgen-overlay').classList.remove('hidden');
+  document.getElementById('dg-modal-normal').style.display = 'none';
+
+  dgEditMode = true;
+  dgGeneratedText = '__html__';
+
+  // Derive display name
+  const displayName = (baseName || storagePath.split('/').pop())
+    .replace(/\.html$/i,'').replace(/_/g,' ');
+
+  const editorTitle = document.getElementById('dg-editor-title');
+  if (editorTitle) editorTitle.textContent = displayName;
+  const editorSub = document.getElementById('dg-editor-subtitle');
+  if (editorSub) editorSub.textContent = 'Editing saved document — save a new version with 💾 Save to File';
+
+  // Set content
+  const editorContent = document.getElementById('dg-editor-content');
+  if (editorContent) editorContent.innerHTML = bodyHtml;
+
+  // Store current base name so Save to File pre-fills the same name
+  window._dgCurrentDocBase = baseName || '';
+  window._dgCurrentDocPath = storagePath;
+
+  // Show editor modal
+  const em = document.getElementById('dg-editor-modal');
+  em.style.display = 'flex';
+
+  // Pre-fill client details panel if possible
+  dgPopulateClientPanel();
+
+  setTimeout(() => {
+    dgInitRuler();
+    dgApplyMargins();
+    dgInitVRuler();
+    dgDrawVRuler();
+    if (editorContent) editorContent.focus();
+  }, 80);
+
+  toast('Document loaded in editor ✓');
+}
+
 async function viewOfficeDoc(name) {
-  const { data, error } = await sb.storage.from(STORAGE_BUCKET).createSignedUrl('office-general/' + name, 600);
-  if (error) { toast('Could not open document.', true); return; }
-  window.open(data.signedUrl, '_blank');
+  // Now opens in editor instead of new tab
+  await dgOpenDocInEditor('office-general/' + name, name);
 }
 async function downloadOfficeDoc(name) {
   const { data, error } = await sb.storage.from(STORAGE_BUCKET).createSignedUrl('office-general/' + name, 300);
@@ -9310,12 +9443,12 @@ async function downloadOfficeDoc(name) {
   const a = document.createElement('a'); a.href = data.signedUrl; a.download = name; a.target = '_blank';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
-async function deleteOfficeDoc(name, btn) {
-  if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+async function deleteOfficeDoc(name, btn, baseName) {
+  if (!confirm('Delete this version of "' + (baseName||name).replace(/\.html$/i,'').replace(/_/g,' ') + '"?\n\nThis cannot be undone.')) return;
   btn.disabled = true;
   const { error } = await sb.storage.from(STORAGE_BUCKET).remove(['office-general/' + name]);
   if (error) { toast('Delete failed: ' + error.message, true); btn.disabled = false; return; }
-  toast('File deleted.');
+  toast('Version deleted.');
   loadOfficeDocuments();
 }
 
@@ -14088,8 +14221,8 @@ function dgOpenBlankEditor() {
 
   dgEditMode = true;
   dgGeneratedText = '__html__';
-
-  // Clear the editor
+  window._dgCurrentDocBase = '';
+  window._dgCurrentDocPath = '';
   const editorContent = document.getElementById('dg-editor-content');
   if (editorContent) editorContent.innerHTML = '<p><br></p>';
 
@@ -14298,11 +14431,14 @@ function dgSaveToFile() {
     }, 50);
   }
 
-  // Pre-fill filename
+  // Pre-fill filename — use existing doc base name if editing a saved doc
   const nameEl = document.getElementById('dg-save-filename');
   if (nameEl) {
-    const suggested = (cpTitle || edTitle).replace(/[^a-zA-Z0-9\s\-_]/g, '').trim().replace(/\s+/g, '_') || 'Document';
-    nameEl.value = suggested + '_' + new Date().toISOString().slice(0,10);
+    const existingBase = window._dgCurrentDocBase
+      ? window._dgCurrentDocBase.replace(/\.html$/i,'').replace(/_/g,' ')
+      : '';
+    const suggested = existingBase || (cpTitle || edTitle).replace(/[^a-zA-Z0-9\s\-_]/g,'').trim().replace(/\s+/g,'_') || 'Document';
+    nameEl.value = suggested.replace(/\s+/g,'_');
   }
 
   // Auto-detect destination
