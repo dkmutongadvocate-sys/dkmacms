@@ -1852,11 +1852,11 @@ setTimeout(function() {
             </div>
           </div>
           <div class="report-card" onclick="openDocGen('plaint')">
-            <div class="report-icon" style="background:#FCEBEB">📝</div>
+            <div class="report-icon" style="background:#FBEAF0">👶</div>
             <div class="report-info">
-              <div class="report-name">Plaint</div>
-              <div class="report-desc">Civil claim originating process — Civil Procedure Act (Cap. 21)</div>
-              <span class="report-badge rb-court">Litigation</span>
+              <div class="report-name">Plaint — Children's Court (Custody)</div>
+              <div class="report-desc">Custody application — Children Act 2022</div>
+              <span class="report-badge rb-court">Family</span>
             </div>
           </div>
           <div class="report-card" onclick="openDocGen('poa-specific')">
@@ -2098,8 +2098,48 @@ setTimeout(function() {
           <div class="report-card" onclick="openDocGen('children-custody')">
             <div class="report-icon" style="background:#FBEAF0">👶</div>
             <div class="report-info">
-              <div class="report-name">Children — Custody Application</div>
-              <div class="report-desc">Custody and access orders — Children Act 2022</div>
+              <div class="report-name">Children — Custody Plaint</div>
+              <div class="report-desc">Plaint for custody, care &amp; control — Children Act 2022</div>
+              <span class="report-badge rb-court">Family</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('divorce-petition')">
+            <div class="report-icon" style="background:#FBEAF0">⚖️</div>
+            <div class="report-info">
+              <div class="report-name">Divorce — Petition</div>
+              <div class="report-desc">Petition for dissolution of marriage — Marriage Act 2014</div>
+              <span class="report-badge rb-court">Family</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('verifying-affidavit-divorce')">
+            <div class="report-icon" style="background:#FBEAF0">📋</div>
+            <div class="report-info">
+              <div class="report-name">Verifying Affidavit — Divorce</div>
+              <div class="report-desc">Verifying affidavit to accompany Divorce Petition</div>
+              <span class="report-badge rb-affidavit">Family</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('verifying-affidavit-children')">
+            <div class="report-icon" style="background:#FBEAF0">📋</div>
+            <div class="report-info">
+              <div class="report-name">Verifying Affidavit — Children's Court</div>
+              <div class="report-desc">Verifying affidavit to accompany Children's Court Plaint</div>
+              <span class="report-badge rb-affidavit">Family</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('list-of-witnesses')">
+            <div class="report-icon" style="background:#FBEAF0">👥</div>
+            <div class="report-info">
+              <div class="report-name">List of Witnesses</div>
+              <div class="report-desc">Petitioner's list of witnesses — Divorce / Family matters</div>
+              <span class="report-badge rb-court">Family</span>
+            </div>
+          </div>
+          <div class="report-card" onclick="openDocGen('witness-statement')">
+            <div class="report-icon" style="background:#FBEAF0">📝</div>
+            <div class="report-info">
+              <div class="report-name">Witness Statement</div>
+              <div class="report-desc">Witness statement for divorce or family proceedings</div>
               <span class="report-badge rb-court">Family</span>
             </div>
           </div>
@@ -8518,8 +8558,8 @@ function buildDocumentEmailHtml(toName, fileName, personalMessage, trackingId){
             <p style="margin:0 0 4px 0;font-size:13px;font-weight:bold;color:#212121;">Client Services</p>
             <p style="margin:0 0 12px 0;font-size:12px;color:#555555;">Support Services | Dennis Kimani Mutonga, Advocate</p>
             <p style="margin:0;font-size:12px;color:#212121;line-height:1.8;">
-              📍 Kazilife Workspace, Room 201, Greenwood Plaza, Kikuyu-Nderi Road, Kikuyu, Nairobi, Kenya<br>
-              📬 P.O. BOX <a href="tel:+17063800400" style="color:#479ef5;text-decoration:none;">70638-00400</a> Nairobi, Kenya<br>
+              📍 [FIRM PHYSICAL ADDRESS], Nairobi, Kenya<br>
+              📬 [FIRM PO BOX], Nairobi, Kenya<br>
               📞 <a href="tel:+254757354379" style="color:#479ef5;text-decoration:none;">+254 757 354 379</a><br>
               🌐 <a href="https://www.dkma.co.ke/" style="color:#479ef5;text-decoration:none;">www.dkma.co.ke</a><br>
               ✉ <a href="mailto:info@dkma.co.ke" style="color:#479ef5;text-decoration:none;">info@dkma.co.ke</a> / <a href="mailto:service@dkma.co.ke" style="color:#479ef5;text-decoration:none;">service@dkma.co.ke</a>
@@ -10320,7 +10360,7 @@ document.addEventListener('DOMContentLoaded', function() {
 const DG_DOCS={
 
   // ── SWORN STATEMENTS ─────────────────────────────────────────────
-  'affidavit':{title:'Affidavit (general)',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'e.g. EVELYN NETTAH SAYO'},{id:'id_no',l:'ID / Passport number',ph:'e.g. 12345678'},{id:'occupation',l:'Description (adult Kenyan female/male)',ph:'e.g. adult Kenyan female'},{id:'address',l:'Full address',ph:'e.g. P.O. Box 45233 - 00800, Nairobi'},{id:'court',l:'Court (if court affidavit)',ph:'e.g. High Court of Kenya at Nairobi',opt:1},{id:'case_no',l:'Case number',ph:'e.g. Civil Case No. 123 of 2025',opt:1},{id:'facts',l:'Facts (one paragraph per line)',ph:'Paragraph 1 fact\nParagraph 2 fact\nParagraph 3 fact',ta:1},{id:'purpose',l:'Purpose / closing paragraph',ph:'e.g. I swear this affidavit affirming that I do not owe any rental income...'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+  'affidavit':{title:'Affidavit (general)',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'e.g. FULL NAME OF DEPONENT'},{id:'id_no',l:'ID / Passport number',ph:'e.g. 12345678'},{id:'occupation',l:'Description (adult Kenyan female/male)',ph:'e.g. adult Kenyan female'},{id:'address',l:'Full address',ph:'e.g. P.O. Box [NUMBER] - [CODE], [CITY]'},{id:'court',l:'Court (if court affidavit)',ph:'e.g. High Court of Kenya at Nairobi',opt:1},{id:'case_no',l:'Case number',ph:'e.g. Civil Case No. 123 of 2025',opt:1},{id:'facts',l:'Facts (one paragraph per line)',ph:'Paragraph 1 fact\nParagraph 2 fact\nParagraph 3 fact',ta:1},{id:'purpose',l:'Purpose / closing paragraph',ph:'e.g. I swear this affidavit affirming that I do not owe any rental income...'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
   'affidavit-probate':{title:'Affidavit — Grant of Probate',sub:'Law of Succession Act (Cap. 160) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'address',l:'Address',ph:'Full address'},{id:'deceased',l:'Deceased full name',ph:'Full name of deceased'},{id:'deceased_id',l:'Deceased ID number',ph:'National ID of deceased'},{id:'date_death',l:'Date of death',ph:'DD/MM/YYYY'},{id:'place_death',l:'Place of death',ph:'e.g. Nairobi'},{id:'will',l:'Was there a will?',ph:'',sel:['Yes — will is attached','No — intestate succession']},{id:'estate',l:'Brief description of estate',ph:'e.g. Land parcel No. X, bank accounts, motor vehicle…',ta:1},{id:'relationship',l:'Relationship to deceased',ph:'e.g. Spouse, child, administrator'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
@@ -10336,24 +10376,34 @@ const DG_DOCS={
 
   'stat-dec-id':{title:'Statutory Declaration of Identity',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'declarant',l:'Declarant full name',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'National ID'},{id:'address',l:'Address',ph:'Full address'},{id:'other_names',l:'Other name(s) previously used',ph:'e.g. JANE MARY WANJIKU'},{id:'reason',l:'Reason for declaration',ph:'e.g. The names on my academic certificates differ from my current legal name'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'affidavit-service':{title:'Affidavit of service',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'server',l:'Process server name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'court',l:'Court',ph:'e.g. High Court at Nairobi',opt:1},{id:'doc_served',l:'Document(s) served',ph:'e.g. Plaint and summons'},{id:'served_on',l:'Person served',ph:'Full name'},{id:'service_address',l:'Address of service',ph:'Where service was effected'},{id:'service_date',l:'Date and time of service',ph:'DD/MM/YYYY at HH:MM'},{id:'mode',l:'Mode of service',ph:'',sel:['Personal service','Substituted service','Postal service','Electronic service']},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+  'affidavit-service':{title:'Affidavit of service',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'server',l:'Process server name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'case_no',l:'Case number',ph:'Civil Case No. [NUMBER] of [YEAR]'},{id:'court',l:'Court',ph:'e.g. High Court at Nairobi',opt:1},{id:'doc_served',l:'Document(s) served',ph:'e.g. Plaint and summons'},{id:'served_on',l:'Person served',ph:'Full name'},{id:'service_address',l:'Address of service',ph:'Where service was effected'},{id:'service_date',l:'Date and time of service',ph:'DD/MM/YYYY at HH:MM'},{id:'mode',l:'Mode of service',ph:'',sel:['Personal service','Substituted service','Postal service','Electronic service']},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
   // ── COURT APPLICATIONS ───────────────────────────────────────────
-  'chamber-summons':{title:'Chamber summons',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'In the High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'applicant',l:'Applicant name',ph:'Full legal name'},{id:'respondent',l:'Respondent name',ph:'Full legal name'},{id:'orders',l:'Orders sought',ph:'1. An order that…\n2. Costs of and incidental to this application…',ta:1},{id:'grounds',l:'Grounds',ph:'Brief grounds for the application…',ta:1},{id:'return_date',l:'Proposed return date',ph:'DD/MM/YYYY'},{id:'advocate',l:'Advocate on record',ph:'Name and firm'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'chamber-summons':{title:'Chamber summons',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'In the High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'Civil Case No. [NUMBER] of [YEAR]'},{id:'applicant',l:'Applicant name',ph:'Full legal name'},{id:'respondent',l:'Respondent name',ph:'Full legal name'},{id:'orders',l:'Orders sought',ph:'1. An order that…\n2. Costs of and incidental to this application…',ta:1},{id:'grounds',l:'Grounds',ph:'Brief grounds for the application…',ta:1},{id:'return_date',l:'Proposed return date',ph:'DD/MM/YYYY'},{id:'advocate',l:'Advocate on record',ph:'Name and firm'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'notice-motion':{title:'Notice of motion',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'division',l:'Division',ph:'e.g. Commercial Division',opt:1},{id:'case_no',l:'Case number',ph:'e.g. Petition No. 12 of 2025'},{id:'applicant',l:'Applicant',ph:'Full legal name'},{id:'respondent',l:'Respondent',ph:'Full legal name'},{id:'orders',l:'Orders sought',ph:'1. An order that…\n2. Costs…',ta:1},{id:'grounds',l:'Grounds',ph:'This application is premised on the grounds that…',ta:1},{id:'supporting',l:'Supporting documents',ph:'e.g. Affidavit of [Name], documents annexed hereto'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'notice-motion':{title:'Notice of motion',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'division',l:'Division',ph:'e.g. Commercial Division',opt:1},{id:'case_no',l:'Case number',ph:'e.g. Petition No. [NUMBER] of [YEAR]'},{id:'applicant',l:'Applicant',ph:'Full legal name'},{id:'respondent',l:'Respondent',ph:'Full legal name'},{id:'orders',l:'Orders sought',ph:'1. An order that…\n2. Costs…',ta:1},{id:'grounds',l:'Grounds',ph:'This application is premised on the grounds that…',ta:1},{id:'supporting',l:'Supporting documents',ph:'e.g. Affidavit of [Name], documents annexed hereto'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'plaint':{title:'Plaint',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court / Magistrates Court at…'},{id:'plaintiff',l:'Plaintiff',ph:'Full name, ID, address'},{id:'defendant',l:'Defendant',ph:'Full name, ID, address'},{id:'cause',l:'Cause of action',ph:'e.g. Breach of contract, negligence'},{id:'particulars',l:'Particulars of claim',ph:'1. On or about [date] the Defendant…',ta:1},{id:'amount',l:'Amount claimed (KES)',ph:'e.g. 1,500,000',num:1},{id:'interest',l:'Interest claimed',ph:'e.g. 14% p.a. from date of breach'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'plaint':{title:'Plaint — Children\'s Court (Custody)',sub:'Children Act 2022 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'Children\'s Court at [Location]'},{id:'case_no',l:'Case number',ph:'Misc. Children\'s Case No. [NUMBER] of [YEAR]'},{id:'child1',l:'Child 1 — full name (minor)',ph:'Full name of child (MINOR)'},{id:'child2',l:'Child 2 — full name (minor)',ph:'Full name of child (MINOR)',opt:1},{id:'child3',l:'Child 3 — full name (minor)',ph:'Full name of child (MINOR)',opt:1},{id:'plaintiff',l:'Plaintiff (parent/guardian)',ph:'Full legal name'},{id:'defendant',l:'Defendant',ph:'Full legal name'},{id:'marriage_venue',l:'Marriage venue & date',ph:'e.g. [Venue] on [Date]'},{id:'child1_dob',l:'Child 1 date of birth',ph:'e.g. 1st January 20XX'},{id:'child2_dob',l:'Child 2 date of birth',ph:'e.g. 1st January 20XX',opt:1},{id:'child3_dob',l:'Child 3 date of birth',ph:'e.g. 1st January 20XX',opt:1},{id:'cruelty_year',l:'Year of separation/incident',ph:'e.g. 2023'},{id:'custody_prayer',l:'Children sought in custody order',ph:'Full name 1, Full name 2, Full name 3'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'injunction':{title:'Application for injunction',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'applicant',l:'Applicant',ph:'Full legal name'},{id:'respondent',l:'Respondent',ph:'Full legal name'},{id:'inj_type',l:'Type of injunction',ph:'',sel:['Temporary injunction','Permanent injunction','Mandatory injunction','Mareva injunction','Anton Piller order']},{id:'subject',l:'Subject matter of injunction',ph:'e.g. Restraining dealing with land parcel LR No. 123'},{id:'grounds',l:'Grounds / urgency',ph:'The Applicant apprehends that unless restrained…',ta:1},{id:'undertaking',l:'Undertaking as to damages',ph:'The Applicant undertakes to pay damages if the order proves unjustified'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'divorce-petition':{title:'Petition — Divorce (Marriage Act 2014)',sub:'Marriage Act 2014 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'Chief Magistrate\'s Court at [Location]'},{id:'division',l:'Division/Station',ph:'e.g. Milimani Commercial Court',opt:1},{id:'case_no',l:'Case number',ph:'Divorce Cause No. [NUMBER] of [YEAR]'},{id:'petitioner',l:'Petitioner (full name)',ph:'Full legal name'},{id:'respondent',l:'Respondent (full name)',ph:'Full legal name'},{id:'marriage_venue',l:'Marriage venue & date',ph:'e.g. [Venue] on [Date]'},{id:'marriage_type',l:'Type of marriage',ph:'',sel:['Christian Marriage','Civil Marriage','Customary Marriage','Islamic Marriage']},{id:'marital_home',l:'Matrimonial home location',ph:'e.g. [Area] within [County]'},{id:'child1',l:'Child 1 — name and DOB',ph:'e.g. [Name] born [Date]',opt:1},{id:'child2',l:'Child 2 — name and DOB',ph:'e.g. [Name] born [Date]',opt:1},{id:'child3',l:'Child 3 — name and DOB',ph:'e.g. [Name] born [Date]',opt:1},{id:'cruelty_particulars',l:'Particulars of cruelty',ph:'1. The Respondent failed to provide for the family…\n2. The Respondent continually failed to respect the Petitioner…\n3. The Respondent physically abused the Petitioner in [year]…',ta:1},{id:'separation_year',l:'Year of separation',ph:'e.g. 2023'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
+  'verifying-affidavit-divorce':{title:'Verifying Affidavit — Divorce Petition',sub:'Marriage Act 2014 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'Chief Magistrate\'s Court at [Location]'},{id:'division',l:'Division/Station',ph:'e.g. Milimani Commercial Court',opt:1},{id:'case_no',l:'Case number',ph:'Divorce Cause No. [NUMBER] of [YEAR]'},{id:'petitioner',l:'Petitioner (full name)',ph:'Full legal name'},{id:'respondent',l:'Respondent (full name)',ph:'Full legal name'},{id:'residence',l:'Petitioner\'s area of residence',ph:'e.g. [Area] within [County]'},{id:'po_box',l:'Petitioner\'s PO Box',ph:'e.g. P.O. Box [NUMBER]-[CODE] [City]'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
+  'verifying-affidavit-children':{title:'Verifying Affidavit — Children\'s Court',sub:'Children Act 2022 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'Children\'s Court at [Location]'},{id:'case_no',l:'Case number',ph:'Misc. Children\'s Case No. [NUMBER] of [YEAR]'},{id:'child1',l:'Child 1 — full name (minor)',ph:'Full name of child (MINOR)'},{id:'child2',l:'Child 2 — full name (minor)',ph:'Full name of child (MINOR)',opt:1},{id:'child3',l:'Child 3 — full name (minor)',ph:'Full name of child (MINOR)',opt:1},{id:'plaintiff',l:'Plaintiff (full name)',ph:'Full legal name'},{id:'defendant',l:'Defendant (full name)',ph:'Full legal name'},{id:'residence',l:'Plaintiff\'s area of residence',ph:'e.g. [Area] within [County]'},{id:'po_box',l:'Plaintiff\'s PO Box',ph:'e.g. P.O. Box [NUMBER]-[CODE] [City]'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+
+  'list-of-witnesses':{title:'List of Witnesses — Divorce / Petition',sub:'Marriage Act 2014 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'Chief Magistrate\'s Court at [Location]'},{id:'division',l:'Division/Station',ph:'e.g. Milimani Commercial Court',opt:1},{id:'case_no',l:'Case number',ph:'Divorce Cause No. [NUMBER] of [YEAR]'},{id:'petitioner',l:'Petitioner (full name)',ph:'Full legal name'},{id:'respondent',l:'Respondent (full name)',ph:'Full legal name'},{id:'witness1',l:'Witness 1 full name',ph:'Full legal name'},{id:'witness2',l:'Witness 2 full name',ph:'Full legal name',opt:1},{id:'witness3',l:'Witness 3 full name',ph:'Full legal name',opt:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
+  'witness-statement':{title:'Witness Statement — Divorce / Petition',sub:'Marriage Act 2014 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'Chief Magistrate\'s Court at [Location]'},{id:'division',l:'Division/Station',ph:'e.g. Milimani Commercial Court',opt:1},{id:'case_no',l:'Case number',ph:'Divorce Cause No. [NUMBER] of [YEAR]'},{id:'petitioner',l:'Petitioner (full name)',ph:'Full legal name'},{id:'respondent',l:'Respondent (full name)',ph:'Full legal name'},{id:'witness_name',l:'Witness full name',ph:'Full legal name'},{id:'witness_address',l:'Witness address',ph:'e.g. C/O P.O. Box [NUMBER]-[CODE] [City]'},{id:'witness_capacity',l:'Witness capacity / relationship',ph:'e.g. neighbour, family member, representative of landlord'},{id:'facts',l:'Facts (one paragraph per entry)',ph:'Para 1: State first fact…\nPara 2: State next fact…\nPara 3: Continue…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+
+  'injunction':{title:'Application for injunction',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'Civil Case No. [NUMBER] of [YEAR]'},{id:'applicant',l:'Applicant',ph:'Full legal name'},{id:'respondent',l:'Respondent',ph:'Full legal name'},{id:'inj_type',l:'Type of injunction',ph:'',sel:['Temporary injunction','Permanent injunction','Mandatory injunction','Mareva injunction','Anton Piller order']},{id:'subject',l:'Subject matter of injunction',ph:'e.g. Restraining dealing with land parcel LR No. 123'},{id:'grounds',l:'Grounds / urgency',ph:'The Applicant apprehends that unless restrained…',ta:1},{id:'undertaking',l:'Undertaking as to damages',ph:'The Applicant undertakes to pay damages if the order proves unjustified'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
   'judicial-review':{title:'Application for Judicial Review',sub:'Law Reform Act (Cap. 26) & Fair Administrative Action Act 2015 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya (Judicial Review Division) at Nairobi'},{id:'applicant',l:'Applicant',ph:'Full name'},{id:'respondent',l:'Respondent / decision-maker',ph:'e.g. Cabinet Secretary, Ministry of…'},{id:'decision',l:'Decision / action challenged',ph:'e.g. Revocation of licence No. X dated DD/MM/YYYY'},{id:'remedy',l:'Remedy sought',ph:'',sel:['Certiorari (quash decision)','Mandamus (compel action)','Prohibition (prevent action)','Declaration','All of the above']},{id:'grounds',l:'Grounds for review',ph:'The decision was illegal / irrational / procedurally improper because…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'succession-summons':{title:'Summons — Confirmation of Grant (Intestate)',sub:'Law of Succession Act (Cap. 160) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi — Probate & Administration'},{id:'cause_no',l:'Succession Cause number',ph:'e.g. Succession Cause No. 456 of 2025'},{id:'petitioner',l:'Petitioner full name',ph:'Full legal name'},{id:'deceased',l:'Deceased full name',ph:'Full name of deceased'},{id:'date_death',l:'Date of death',ph:'DD/MM/YYYY'},{id:'estate_value',l:'Approximate estate value (KES)',ph:'e.g. 5,000,000',num:1},{id:'beneficiaries',l:'Beneficiaries (name and relationship)',ph:'1. [Name] — [Relationship]\n2. [Name] — [Relationship]',ta:1},{id:'distribution',l:'Proposed distribution',ph:'Describe how the estate is to be distributed…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'succession-summons':{title:'Summons — Confirmation of Grant (Intestate)',sub:'Law of Succession Act (Cap. 160) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi — Probate & Administration'},{id:'cause_no',l:'Succession Cause number',ph:'e.g. Succession Cause No. [NUMBER] of [YEAR]'},{id:'petitioner',l:'Petitioner full name',ph:'Full legal name'},{id:'deceased',l:'Deceased full name',ph:'Full name of deceased'},{id:'date_death',l:'Date of death',ph:'DD/MM/YYYY'},{id:'estate_value',l:'Approximate estate value (KES)',ph:'e.g. 5,000,000',num:1},{id:'beneficiaries',l:'Beneficiaries (name and relationship)',ph:'1. [Name] — [Relationship]\n2. [Name] — [Relationship]',ta:1},{id:'distribution',l:'Proposed distribution',ph:'Describe how the estate is to be distributed…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'children-custody':{title:"Children's court — Custody application",sub:"Children Act 2022 — Kenya",cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'Magistrates Court at Nairobi (Children)'},{id:'case_no',l:'Case number',ph:'Children Case No. 12 of 2025'},{id:'applicant',l:'Applicant (parent/guardian)',ph:'Full legal name'},{id:'respondent',l:'Respondent',ph:'Full legal name'},{id:'child_name',l:'Child(ren) name(s)',ph:'Name, DOB, for each child'},{id:'orders',l:'Orders sought',ph:'1. Sole custody to the applicant\n2. Reasonable access to respondent\n3. Costs…',ta:1},{id:'grounds',l:'Grounds',ph:'State grounds in support of the custody application…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'children-custody':{title:"Children's court — Custody application (Plaint)",sub:"Children Act 2022 — Kenya",cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:"Children's Court at [Location]"},{id:'case_no',l:'Case number',ph:"Misc. Children's Case No. [NUMBER] of [YEAR]"},{id:'applicant',l:'Plaintiff / Applicant (parent)',ph:'Full legal name'},{id:'respondent',l:'Respondent / Defendant',ph:'Full legal name'},{id:'child1',l:'Child 1 — full name (minor)',ph:'Full name (MINOR)'},{id:'child2',l:'Child 2 — full name (minor)',ph:'Full name (MINOR)',opt:1},{id:'child3',l:'Child 3 — full name (minor)',ph:'Full name (MINOR)',opt:1},{id:'marriage_date',l:'Date of marriage',ph:'DD/MM/YYYY'},{id:'cruelty_year',l:'Year of physical incident / separation',ph:'e.g. 2023'},{id:'orders',l:'Orders sought',ph:'1. Sole custody, care and control of the minors to the Plaintiff\n2. Cost of the suit…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'memo-appeal':{title:'Memo of appeal',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Appellate Court',ph:'High Court of Kenya at Nairobi'},{id:'lower_court',l:'Lower court & case number',ph:'e.g. Milimani CMCC Civil Case No. 12 of 2024'},{id:'appellant',l:'Appellant',ph:'Full legal name'},{id:'respondent',l:'Respondent',ph:'Full legal name'},{id:'judgment_date',l:'Date of judgment appealed from',ph:'DD/MM/YYYY'},{id:'grounds',l:'Grounds of appeal',ph:'1. The learned magistrate erred in law and in fact in holding that…\n2. …',ta:1},{id:'orders',l:'Orders sought on appeal',ph:'1. Allow this appeal\n2. Set aside the judgment/order of the lower court\n3. Costs…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'memo-appeal':{title:'Memo of appeal',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Appellate Court',ph:'High Court of Kenya at Nairobi'},{id:'lower_court',l:'Lower court & case number',ph:'e.g. [Court Name] [Case Type] No. [NUMBER] of [YEAR]'},{id:'appellant',l:'Appellant',ph:'Full legal name'},{id:'respondent',l:'Respondent',ph:'Full legal name'},{id:'judgment_date',l:'Date of judgment appealed from',ph:'DD/MM/YYYY'},{id:'grounds',l:'Grounds of appeal',ph:'1. The learned magistrate erred in law and in fact in holding that…\n2. …',ta:1},{id:'orders',l:'Orders sought on appeal',ph:'1. Allow this appeal\n2. Set aside the judgment/order of the lower court\n3. Costs…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
   // ── CONTRACTS & AGREEMENTS ───────────────────────────────────────
   'service-agreement':{title:'Service / appointment letter',sub:'Law of Contract Act (Cap. 23) — Kenya',cat:'Contracts & agreements',color:'#639922',fields:[{id:'provider',l:'Service provider',ph:'Full name / company'},{id:'client',l:'Client',ph:'Full name / company'},{id:'services',l:'Services to be provided',ph:'Describe services in detail…',ta:1},{id:'fee',l:'Fee amount (KES)',ph:'e.g. 200,000',num:1},{id:'fee_structure',l:'Fee structure',ph:'',sel:['Fixed fee','Monthly retainer','Hourly rate','Milestone-based']},{id:'duration',l:'Contract duration',ph:'',sel:['3 months','6 months','1 year','2 years','Until completion']},{id:'governing_law',l:'Governing law',ph:'',sel:['Laws of Kenya','Laws of England & Wales']},{id:'dispute',l:'Dispute resolution',ph:'',sel:['Nairobi courts','NCIA Arbitration','Mediation then arbitration']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
@@ -10440,7 +10490,7 @@ const DG_DOCS={
     {id:'land_loc_new',l:'Location of new site',ph:'e.g. Gachie, Kihara Ward, Kiambu County'},
     {id:'ocs_station',l:'OCS Police Station',ph:'e.g. Kihara Police Station'},
     {id:'hearing_date',l:'Proposed hearing date',ph:'DD/MM/YYYY or leave blank'},
-    {id:'sworn_city',l:'City of signing',ph:'e.g. KIKUYU'},
+    {id:'sworn_city',l:'City of signing',ph:'e.g. NAIROBI'},
     {id:'date',l:'Date',ph:'DD/MM/YYYY'}
   ]},
   'certificate-urgency':{title:'Certificate of Urgency',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[
@@ -10450,7 +10500,7 @@ const DG_DOCS={
     {id:'respondent',l:'Respondent',ph:'e.g. COUNTY DIRECTOR OF PUBLIC HEALTH'},
     {id:'matter_desc',l:'Matter description',ph:'e.g. EXHUMATION AND RE-INTERMENT OF THE LATE [NAME]'},
     {id:'urgency_grounds',l:'Grounds of urgency (one per line)',ph:'Remains need to be exhumed urgently…\nPurchaser requires vacant possession…',ta:1},
-    {id:'sworn_city',l:'City of signing',ph:'e.g. KIKUYU'},
+    {id:'sworn_city',l:'City of signing',ph:'e.g. NAIROBI'},
     {id:'date',l:'Date',ph:'DD/MM/YYYY'},
     {id:'respondent_address',l:'Respondent service address',ph:'e.g. County Health Offices, Thika Town\nP.O. Box 2344-00900',ta:1}
   ]},
@@ -10467,12 +10517,12 @@ const DG_DOCS={
     {id:'hearing_time',l:'Hearing time',ph:'e.g. 9 o clock in the forenoon'},
     {id:'magistrate',l:'Magistrate name',ph:'e.g. Hon. E.K. Suter (S.P.M.)'},
     {id:'courtroom',l:'Courtroom',ph:'e.g. Courtroom 3'},
-    {id:'sworn_city',l:'City of signing',ph:'e.g. KIKUYU'},
+    {id:'sworn_city',l:'City of signing',ph:'e.g. NAIROBI'},
     {id:'date',l:'Date of notice',ph:'DD/MM/YYYY'}
   ]},
   'affidavit-service-electronic':{title:'Affidavit of Service — Electronic',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[
-    {id:'server',l:'Deponent full name',ph:'e.g. DENNIS KIMANI MUTONGA'},
-    {id:'server_address',l:'Deponent address',ph:'e.g. P.O. Box 70638-00400, Nairobi'},
+    {id:'server',l:'Deponent full name',ph:'Full legal name of deponent'},
+    {id:'server_address',l:'Deponent address',ph:'P.O. Box [NUMBER]-[CODE], [CITY]'},
     {id:'court',l:'Court',ph:'e.g. Chief Magistrate Court at Kiambu'},
     {id:'case_no',l:'Case/Application No.',ph:'e.g. Misc. Application No. E006 of 2026'},
     {id:'applicant',l:'Applicant',ph:'e.g. GODFREY WAMWIRI NGUGI'},
@@ -10484,7 +10534,7 @@ const DG_DOCS={
     {id:'served_number',l:'Number or email served',ph:'e.g. +254 722 000000'},
     {id:'served_contact',l:'Name and designation of recipient',ph:'e.g. Jane Doe, officer at the Director of Public Health office'},
     {id:'exhibit_ref',l:'Exhibit reference for screenshots',ph:'e.g. DKM-1'},
-    {id:'sworn_city',l:'City of swearing',ph:'e.g. KIKUYU'},
+    {id:'sworn_city',l:'City of swearing',ph:'e.g. NAIROBI'},
     {id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}
   ]},
   'supporting-affidavit-exhumation':{title:'Supporting Affidavit — Exhumation',sub:'Public Health Act (Cap. 242) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[
@@ -10506,7 +10556,7 @@ const DG_DOCS={
     {id:'exhibit_death',l:'Exhibit — death cert or burial permit',ph:'e.g. GWN-01 and GWN-02'},
     {id:'exhibit_title',l:'Exhibit — title to new site',ph:'e.g. GWN-03'},
     {id:'exhibit_consent',l:'Exhibit — family consent',ph:'e.g. GWN-04'},
-    {id:'sworn_city',l:'City of swearing',ph:'e.g. KIKUYU'},
+    {id:'sworn_city',l:'City of swearing',ph:'e.g. NAIROBI'},
     {id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}
   ]},
 
@@ -10566,6 +10616,11 @@ const DG_REPORT_MAP={
   'EntryPermitBank':'entry-permit-bank-letter',
   'ExtensionPass':'application-extension-pass',
   'ChildrenCustody':'children-custody',
+  'DivorcePetition':'divorce-petition',
+  'VerifyingAffidavitDivorce':'verifying-affidavit-divorce',
+  'VerifyingAffidavitChildren':'verifying-affidavit-children',
+  'ListOfWitnesses':'list-of-witnesses',
+  'WitnessStatement':'witness-statement',
   'MemoAppeal':'memo-appeal',
   'RTACharge':'rta-charge',
 };
@@ -10819,7 +10874,7 @@ function dgBuildDocument(id, v){
       const factParas = factLines.map(line => `${paraNum++} .\tTHAT ${line.trim()}`).join(nl+nl);
 
       const firmName   = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO     = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO     = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
       const firmCity   = 'Nairobi';
 
       return [
@@ -10857,7 +10912,7 @@ function dgBuildDocument(id, v){
       const declarant  = v.declarant||'[DECLARANT NAME]';
       const declaredAt = v.address ? v.address.split(',').pop().trim().toUpperCase() : 'NAIROBI';
       const firmName   = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO     = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO     = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
 
       const factLines = (v.facts||'[STATE THE FACTS]').split('\n').filter(l=>l.trim());
       let pn = 3;
@@ -10894,7 +10949,7 @@ function dgBuildDocument(id, v){
     case 'affidavit-service':{
       const server   = v.server||'[PROCESS SERVER NAME]';
       const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO   = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
 
       return [
         `                         REPUBLIC OF KENYA`,
@@ -10936,7 +10991,7 @@ function dgBuildDocument(id, v){
       const _nmp_city = (v.sworn_city||'NAIROBI').toUpperCase();
       const _nmp_adv = (typeof currentProfile!=='undefined'&&currentProfile?.full_name)||'DENNIS KIMANI MUTONGA, ADVOCATE';
       const _nmp_fd = (typeof firmContact!=='undefined'&&firmContact)||{};
-      const _nmp_fl = _nmp_fd.contact_postal ? (_nmp_fd.contact_firm_name||'Dennis Kimani Mutonga, Advocate') + '\n' + _nmp_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
+      const _nmp_fl = _nmp_fd.contact_postal ? (_nmp_fd.contact_firm_name||'[Advocate Name], Advocate') + '\n' + _nmp_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
       const _nmp_ref = _nmp_fd.contact_ref ? ' (REF: ' + _nmp_fd.contact_ref + ')' : '';
       const _d1 = (v.deceased1||'[DECEASED 1]').toUpperCase();
       const _d2 = v.deceased2 ? v.deceased2.toUpperCase() : null;
@@ -10981,7 +11036,7 @@ function dgBuildDocument(id, v){
       const _cu_city = (v.sworn_city||'NAIROBI').toUpperCase();
       const _cu_adv = (typeof currentProfile!=='undefined'&&currentProfile?.full_name)||'DENNIS KIMANI MUTONGA, ADVOCATE';
       const _cu_fd = (typeof firmContact!=='undefined'&&firmContact)||{};
-      const _cu_fl = _cu_fd.contact_postal ? (_cu_fd.contact_firm_name||'Dennis Kimani Mutonga, Advocate') + '\n' + _cu_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
+      const _cu_fl = _cu_fd.contact_postal ? (_cu_fd.contact_firm_name||'[Advocate Name], Advocate') + '\n' + _cu_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
       const _cu_ref = _cu_fd.contact_ref ? ' (REF: ' + _cu_fd.contact_ref + ')' : '';
       const _cu_adv_name = (typeof currentProfile!=='undefined'&&currentProfile?.full_name)||'Dennis Kimani Mutonga';
       const _cu_phys = _cu_fd.contact_physical||'c/o Kazilife Workspace, 2nd Floor, Office No. 201, Gracewood Plaza, Kikuyu-Nderi Road, Kikuyu';
@@ -11017,7 +11072,7 @@ function dgBuildDocument(id, v){
       const _hn_city = (v.sworn_city||'NAIROBI').toUpperCase();
       const _hn_adv = (typeof currentProfile!=='undefined'&&currentProfile?.full_name)||'DENNIS KIMANI MUTONGA, ADVOCATE';
       const _hn_fd = (typeof firmContact!=='undefined'&&firmContact)||{};
-      const _hn_fl = _hn_fd.contact_postal ? (_hn_fd.contact_firm_name||'Dennis Kimani Mutonga, Advocate') + '\n' + _hn_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
+      const _hn_fl = _hn_fd.contact_postal ? (_hn_fd.contact_firm_name||'[Advocate Name], Advocate') + '\n' + _hn_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
       const _hn_ref = _hn_fd.contact_ref ? ' (REF: ' + _hn_fd.contact_ref + ')' : '';
       return [
         'REPUBLIC OF KENYA','',
@@ -11050,7 +11105,7 @@ function dgBuildDocument(id, v){
       const _ase_server = (v.server||'[DEPONENT NAME]').toUpperCase();
       const _ase_city = (v.sworn_city||'NAIROBI').toUpperCase();
       const _ase_fd = (typeof firmContact!=='undefined'&&firmContact)||{};
-      const _ase_fl = _ase_fd.contact_postal ? (_ase_fd.contact_firm_name||'Dennis Kimani Mutonga, Advocate') + '\n' + _ase_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
+      const _ase_fl = _ase_fd.contact_postal ? (_ase_fd.contact_firm_name||'[Advocate Name], Advocate') + '\n' + _ase_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
       const _ase_ref = _ase_fd.contact_ref ? ' (REF: ' + _ase_fd.contact_ref + ')' : '';
       const _ase_docs = (v.docs_served||'[DOCUMENT 1]').split('\n').filter(Boolean).map(d=>'\t- A copy of ' + d.trim()).join('\n');
       return [
@@ -11087,7 +11142,7 @@ function dgBuildDocument(id, v){
       const _sae_dep = (v.deponent||'[DEPONENT NAME]').toUpperCase();
       const _sae_city = (v.sworn_city||'NAIROBI').toUpperCase();
       const _sae_fd = (typeof firmContact!=='undefined'&&firmContact)||{};
-      const _sae_fl = _sae_fd.contact_postal ? (_sae_fd.contact_firm_name||'Dennis Kimani Mutonga, Advocate') + '\n' + _sae_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
+      const _sae_fl = _sae_fd.contact_postal ? (_sae_fd.contact_firm_name||'[Advocate Name], Advocate') + '\n' + _sae_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
       const _sae_ref = _sae_fd.contact_ref ? ' (REF: ' + _sae_fd.contact_ref + ')' : '';
       const _sae_d1 = (v.deceased1||'[DECEASED 1]').toUpperCase();
       const _sae_d2 = v.deceased2 ? v.deceased2.toUpperCase() : null;
@@ -11120,8 +11175,8 @@ function dgBuildDocument(id, v){
 
     case 'chamber-summons': case 'notice-motion':{
       const docTitle = id==='chamber-summons' ? 'CHAMBER SUMMONS' : 'NOTICE OF MOTION';
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       return [
         `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
         id==='notice-motion'&&v.division ? `                    ${v.division.toUpperCase()} DIVISION` : '',
@@ -11161,48 +11216,67 @@ function dgBuildDocument(id, v){
     }
 
     case 'plaint':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
+      const children = [v.child1,v.child2,v.child3].filter(Boolean).map(c=>`IN THE MATTER OF ${c.toUpperCase()} (MINOR)`).join(nl);
+      const childrenList = [v.child1,v.child2,v.child3].filter(Boolean).map(c=>`- ${c}`).join(nl);
       return [
-        `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
+        `REPUBLIC OF KENYA`,
         '',
-        `BETWEEN`,
+        `IN THE ${(v.court||"CHILDREN'S COURT").toUpperCase()}`,
         '',
-        `${(v.plaintiff||'[PLAINTIFF]').toUpperCase()}                                           PLAINTIFF`,
+        v.case_no ? `MISC. CHILDREN'S CASE NO      OF ${new Date().getFullYear()}` : '',
         '',
-        `AND`,
+        children||`IN THE MATTER OF [CHILD NAME] (MINOR)`,
         '',
-        `${(v.defendant||'[DEFENDANT]').toUpperCase()}                                           DEFENDANT`,
+        `${(v.plaintiff||'[PLAINTIFF NAME]').toUpperCase()} ………..………..……. PLAINTIFF`,
+        '',
+        `-VERSUS-`,
+        '',
+        `${(v.defendant||'[DEFENDANT NAME]').toUpperCase()} ………………..……………….. DEFENDANT`,
         '',
         `                    PLAINT`,
         '',
-        `1 .\tThe Plaintiff is ${v.plaintiff||'[PLAINTIFF DETAILS]'}.`,
+        `1. The Plaintiff is a female adult of sound mind and disposition working and residing Nairobi whose address for service for purposes of this suit is care of [ADVOCATE NAME], Advocate, [FIRM ADDRESS].`,
         '',
-        `2 .\tThe Defendant is ${v.defendant||'[DEFENDANT DETAILS]'}.`,
+        `2. The Defendant is a male adult of sound mind and disposition working and residing in Nairobi. (Service of the Petition will be effected through the Plaintiff's Advocates' office).`,
         '',
-        `3 .\tCAUSE OF ACTION: ${v.cause||'[CAUSE OF ACTION]'}`,
+        `3. The Plaintiff avers that she got married to the Defendant on ${v.marriage_date||'[MARRIAGE DATE]'} which led to the birth of the following issues namely;`,
         '',
-        `4 .\tPARTICULARS OF CLAIM:`,
-        `\t${(v.particulars||'[STATE PARTICULARS]').replace(/\n/g,'\n\t')}`,
+        childrenList||'[LIST CHILDREN]',
         '',
-        `5 .\tThe Plaintiff claims from the Defendant the sum of Kenya Shillings ${v.amount||'[AMOUNT]'} (KES ${v.amount||'[AMOUNT]'}) together with interest thereon at ${v.interest||'14% per annum from the date of breach'} until payment in full.`,
+        `4. The Plaintiff avers that during the subsistence of the marriage, the Defendant has treated the Plaintiff with cruelty which caused her mental and physical torture and anguish which adversely affected her marriage to the Defendant.`,
         '',
-        `6 .\tThe Plaintiff also claims the costs of this suit and such other relief as this Honourable Court may deem fit.`,
+        `5. The Plaintiff avers that in the year ${v.cruelty_year||'[YEAR]'}, the Defendant physically attacked the Plaintiff in the matrimonial home in the presence of the minors which prompted her to leave for her own safety away from further harm from the Defendant.`,
+        '',
+        `6. The Plaintiff avers that since their separation, the minors have alternated living with the Plaintiff and the Defendant.`,
+        '',
+        `7. There is no other suit pending before any other court touching on the same matter.`,
+        '',
+        `8. This Honourable Court has jurisdiction to hear and determine this case.`,
+        '',
+        `REASONS WHEREFORE the Plaintiff prays for judgement against the Defendant as follows;`,
+        '',
+        `${(v.orders||'- THAT the sole custody, care and control of the minors be given to the Plaintiff\n- Cost of the suit.\n- Any further relief that this Honourable Court may deem just and fit to grant in the circumstances')}`,
         '',
         `DATED at NAIROBI this ${v.date||'       day of                    , 20     '}.`,
         '',
         `_________________________________`,
-        `${(typeof currentProfile!=='undefined'&&currentProfile?.full_name)||_firm}`,
+        `[ADVOCATE NAME], ADVOCATE`,
         `ADVOCATE FOR THE PLAINTIFF`,
-        `${_firmAddr}`,
-      ].join(nl);
+        `[FIRM ADDRESS]`,
+        '',
+        `TO BE SERVED UPON`,
+        `${(v.defendant||'[DEFENDANT NAME]').toUpperCase()}`,
+        `(Service of summons to be effected through the Plaintiff's Advocates offices)`,
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
     }
 
     case 'service-agreement':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _firmPhone = (typeof firmContact!=='undefined'&&firmContact?.contact_phone)||'';
-      const _firmEmail = (typeof firmContact!=='undefined'&&firmContact?.contact_email)||'info@dkmutongadvocate.co.ke';
+      const _firmEmail = (typeof firmContact!=='undefined'&&firmContact?.contact_email)||'[firm@email.co.ke]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `${_firm}`,
@@ -11240,8 +11314,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'employment-contract':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `${_firm}`,
@@ -11285,8 +11359,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'lease':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       return [
         `                    LEASE AGREEMENT`,
         '',
@@ -11328,8 +11402,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'sale-agreement':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _saTitle = `${(v.goods||'PROPERTY').toUpperCase()} SALE AGREEMENT BETWEEN ${(v.seller||'[VENDOR]').toUpperCase()} AND ${(v.buyer||'[PURCHASER]').toUpperCase()}`;
       return [
         _saTitle,
@@ -11372,9 +11446,9 @@ function dgBuildDocument(id, v){
     }
 
     case 'poa-specific':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
-      const _firmEmail = (typeof firmContact!=='undefined'&&firmContact?.contact_email)||'info@dkmutongadvocate.co.ke';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
+      const _firmEmail = (typeof firmContact!=='undefined'&&firmContact?.contact_email)||'[firm@email.co.ke]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `${_firm}`,
@@ -11409,8 +11483,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'board-resolution':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       return [
         `                    BOARD RESOLUTION`,
         '',
@@ -11443,10 +11517,10 @@ function dgBuildDocument(id, v){
     }
 
     case 'demand-letter':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _firmPhone = (typeof firmContact!=='undefined'&&firmContact?.contact_phone)||'';
-      const _firmEmail = (typeof firmContact!=='undefined'&&firmContact?.contact_email)||'info@dkmutongadvocate.co.ke';
+      const _firmEmail = (typeof firmContact!=='undefined'&&firmContact?.contact_email)||'[firm@email.co.ke]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `${_firm}`,
@@ -11488,7 +11562,7 @@ function dgBuildDocument(id, v){
     case 'affidavit-probate':{
       const dep = v.deponent||'[DEPONENT NAME]';
       const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
       return [
         `                         REPUBLIC OF KENYA`,
         `          IN THE HIGH COURT OF KENYA AT NAIROBI`,
@@ -11525,7 +11599,7 @@ function dgBuildDocument(id, v){
     case 'affidavit-financial-support':{
       const dep = v.deponent||'[DEPONENT NAME]';
       const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
       return [
         `                         REPUBLIC OF KENYA`,
         `          IN THE MATTER OF THE OATHS AND STATUTORY`,
@@ -11556,7 +11630,7 @@ function dgBuildDocument(id, v){
     case 'affidavit-lost-passport':{
       const dep = v.deponent||'[DEPONENT NAME]';
       const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
       return [
         `                         REPUBLIC OF KENYA`,
         `          IN THE MATTER OF THE OATHS AND STATUTORY`,
@@ -11587,7 +11661,7 @@ function dgBuildDocument(id, v){
     case 'affidavit-lost-docs':{
       const dep = v.deponent||'[DEPONENT NAME]';
       const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
       return [
         `                         REPUBLIC OF KENYA`,
         `          IN THE MATTER OF THE OATHS AND STATUTORY`,
@@ -11618,7 +11692,7 @@ function dgBuildDocument(id, v){
     case 'affidavit-motor-vehicle':{
       const dep = v.deponent||'[DEPONENT NAME]';
       const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
       return [
         `                         REPUBLIC OF KENYA`,
         `          IN THE MATTER OF THE OATHS AND STATUTORY`,
@@ -11647,7 +11721,7 @@ function dgBuildDocument(id, v){
     case 'stat-dec-id':{
       const dec = v.declarant||'[DECLARANT NAME]';
       const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
       return [
         `                         REPUBLIC OF KENYA`,
         `          IN THE MATTER OF THE OATHS AND STATUTORY`,
@@ -11676,8 +11750,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'injunction':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       return [
         `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
         v.case_no ? `                    ${v.case_no}` : '',
@@ -11713,8 +11787,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'judicial-review':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       return [
         `                    IN THE ${(v.court||'HIGH COURT OF KENYA (JUDICIAL REVIEW DIVISION)').toUpperCase()}`,
         '',
@@ -11757,8 +11831,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'succession-summons':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       return [
         `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
         `                    PROBATE AND ADMINISTRATION DIVISION`,
@@ -11793,47 +11867,288 @@ function dgBuildDocument(id, v){
     }
 
     case 'children-custody':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
+      const children = [v.child1,v.child2,v.child3].filter(Boolean).map(c=>`IN THE MATTER OF ${c.toUpperCase()} (MINOR)`).join(nl);
+      const childrenList = [v.child1,v.child2,v.child3].filter(Boolean).map((c,i)=>`- ${c}`).join(nl);
       return [
-        `                    IN THE ${(v.court||'MAGISTRATES COURT OF KENYA').toUpperCase()}`,
-        v.case_no ? `                    ${v.case_no}` : '',
+        `REPUBLIC OF KENYA`,
         '',
-        `BETWEEN`,
+        `IN THE ${(v.court||"CHILDREN'S COURT").toUpperCase()}`,
+        v.case_no ? `MISC. CHILDREN'S CASE NO      OF ${new Date().getFullYear()}` : '',
         '',
-        `${(v.applicant||'[APPLICANT]').toUpperCase()}                                           APPLICANT`,
+        children,
         '',
-        `AND`,
+        `${(v.applicant||'[PLAINTIFF NAME]').toUpperCase()} ………..………..……. PLAINTIFF`,
         '',
-        `${(v.respondent||'[RESPONDENT]').toUpperCase()}                                         RESPONDENT`,
+        `-VERSUS-`,
         '',
-        `                    ORIGINATING SUMMONS`,
-        `                    (Children's Act 2022 — Custody)`,
+        `${(v.respondent||'[DEFENDANT NAME]').toUpperCase()} ………………..……………….. DEFENDANT`,
         '',
-        `LET ALL PARTIES CONCERNED attend before the Honourable Court at the time and place to be appointed for the hearing of an application by the Applicant for the following orders in respect of the child(ren):`,
+        `                    PLAINT`,
         '',
-        `${(v.child_name||'[CHILDREN DETAILS]').replace(/\n/g,nl)}`,
+        `1. The Plaintiff is a female adult of sound mind and disposition working and residing Nairobi whose address for service for purposes of this suit is care of [ADVOCATE NAME], Advocate, [FIRM ADDRESS].`,
         '',
-        `ORDERS SOUGHT:`,
+        `2. The Defendant is a male adult of sound mind and disposition working and residing in Nairobi. (Service of the Petition will be effected through the Plaintiff's Advocates' office).`,
         '',
-        `${v.orders||'[STATE ORDERS]'}`,
+        `3. The Plaintiff avers that she got married to the Defendant on ${v.marriage_date||'[MARRIAGE DATE]'} which led to the birth of the following issues namely;`,
         '',
-        `GROUNDS:`,
+        childrenList,
         '',
-        `${v.grounds||'[STATE GROUNDS]'}`,
+        `4. The Plaintiff avers that during the subsistence of the marriage, the Defendant has treated the Plaintiff with cruelty which caused her mental and physical torture and anguish which adversely affected her marriage to the Defendant.`,
+        '',
+        `5. The Plaintiff avers that in the year ${v.cruelty_year||'[YEAR]'}, the Defendant physically attacked the Plaintiff in the matrimonial home in the presence of the minors which prompted her to leave for her own safety away from further harm from the Defendant.`,
+        '',
+        `6. The Plaintiff avers that since their separation, the minors have alternated living with the Plaintiff and the Defendant.`,
+        '',
+        `7. There is no other suit pending before any other court touching on the same matter.`,
+        '',
+        `8. This Honourable Court has jurisdiction to hear and determine this case.`,
+        '',
+        `REASONS WHEREFORE the Plaintiff prays for judgement against the Defendant as follows;`,
+        '',
+        `${v.orders||'- THAT the sole custody, care and control of the minors be given to the Plaintiff\n- Cost of the suit.\n- Any further relief that this Honourable Court may deem just and fit to grant in the circumstances'}`,
         '',
         `DATED at NAIROBI this ${v.date||'       day of                    , 20     '}.`,
         '',
         `_________________________________`,
-        `${_firm}`,
-        `ADVOCATE FOR THE APPLICANT`,
-        `${_firmAddr}`,
+        `[ADVOCATE NAME], ADVOCATE`,
+        `ADVOCATE FOR THE PLAINTIFF`,
+        `[FIRM ADDRESS]`,
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'divorce-petition':{
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
+      const childLines = [v.child1,v.child2,v.child3].filter(Boolean).map(c=>`- ${c}`).join(nl);
+      return [
+        `REPUBLIC OF KENYA`,
+        '',
+        `IN THE ${(v.court||"CHIEF MAGISTRATE'S COURT").toUpperCase()}`,
+        v.division ? `${v.division.toUpperCase()}` : '',
+        '',
+        `${v.case_no||'DIVORCE CAUSE NO      OF '+new Date().getFullYear()}`,
+        '',
+        `${(v.petitioner||'[PETITIONER NAME]').toUpperCase()} ……………….……………………. PETITIONER`,
+        '',
+        `-VERSUS-`,
+        '',
+        `${(v.respondent||'[RESPONDENT NAME]').toUpperCase()} ………………...……………………….… RESPONDENT`,
+        '',
+        `                    PETITION`,
+        '',
+        `TO: CHIEF MAGISTRATE`,
+        `    CHIEF MAGISTRATE'S COURT`,
+        `    ${v.division ? v.division.toUpperCase() : '[COURT STATION]'}`,
+        `    NAIROBI`,
+        '',
+        `THE HUMBLE PETITION of ${v.petitioner||'[PETITIONER NAME]'} (hereinafter referred to as the "Petitioner") SHOWETH;`,
+        '',
+        `1. THAT the Petitioner is a female adult of sound mind and disposition working and residing Nairobi whose address for service for purposes of this Petition is care of [ADVOCATE NAME], Advocate, [FIRM ADDRESS].`,
+        '',
+        `2. THAT the Respondent is a male adult of sound mind and disposition working and residing in Nairobi. (Service of the Petition will be effected through the Petitioner's Advocates' office).`,
+        '',
+        `3. THAT the Petitioner got married to the Respondent at ${v.marriage_venue||'[MARRIAGE VENUE AND DATE]'} through a ${v.marriage_type||'Christian Marriage'}. (Annexed herewith and marked as [ANNEX-01] is a CERTIFIED copy of the marriage certificate)`,
+        '',
+        `4. THAT during the subsistence of their marriage the Petitioner and Respondent cohabited in ${v.marital_home||'[MARITAL HOME AREA]'} as husband and wife and had the following children;`,
+        '',
+        childLines||'[LIST CHILDREN WITH DATES OF BIRTH]',
+        '',
+        `5. THAT the marriage between the Petitioner and Respondent was riddled with problems arising from dishonesty and cruelty from the onset.`,
+        '',
+        `6.  THAT during the subsistence of the marriage, the Respondent has treated the Petitioner with cruelty as follows: -`,
+        '',
+        `PARTICULARS OF CRUELTY`,
+        '',
+        `${v.cruelty_particulars||'[STATE PARTICULARS OF CRUELTY]'}`,
+        '',
+        `7. THAT the marriage has irretrievably broken down, is dead and cannot be saved:`,
+        '',
+        `- The Petitioner and the Respondent can never agree on anything concerning themselves or their children.`,
+        `- The Petitioner and the Respondent have been separated with each living separate lives since ${v.separation_year||'[YEAR]'}`,
+        `- There is no communication between the Petitioner and Respondent`,
+        `- The Petitioner and the Respondent cannot see eye to eye and neither can they stand each other's presence`,
+        `- That the marriage between the Petitioner and the Respondent has been rendered untenable.`,
+        '',
+        `8. THAT this Petition is not presented and/or prosecuted in collusion with the Respondent and the Petitioner has not in any way been an accessory to or connived at or condoned the disrespect as hereinabove alleged`,
+        '',
+        `9. THAT this cause of action arose within the jurisdiction of this Honourable Court.`,
+        '',
+        `REASONS WHEREFORE the Petitioner prays for orders;`,
+        '',
+        `- THAT the marriage between the Petitioner and the Respondent be dissolved`,
+        `- THAT the Respondent pay the costs of this Petition.`,
+        `- Any further relief that this Honourable Court may deem just and fit to grant in the circumstances`,
+        '',
+        `DATED at NAIROBI this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `_________________________________`,
+        `[ADVOCATE NAME], ADVOCATE`,
+        `ADVOCATE FOR THE PETITIONER`,
+        `[FIRM ADDRESS]`,
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'verifying-affidavit-divorce':{
+      return [
+        `REPUBLIC OF KENYA`,
+        '',
+        `IN THE ${(v.court||"CHIEF MAGISTRATE'S COURT").toUpperCase()}`,
+        v.division ? v.division.toUpperCase() : '',
+        '',
+        `${v.case_no||'DIVORCE CAUSE NO      OF '+new Date().getFullYear()}`,
+        '',
+        `${(v.petitioner||'[PETITIONER NAME]').toUpperCase()} ……………….……………………. PETITIONER`,
+        '',
+        `-VERSUS-`,
+        '',
+        `${(v.respondent||'[RESPONDENT NAME]').toUpperCase()} ………………...………………………….… RESPONDENT`,
+        '',
+        `                    VERIFYING AFFIDAVIT`,
+        '',
+        `I, ${(v.petitioner||'[PETITIONER NAME]').toUpperCase()} a resident of ${v.residence||'[AREA OF RESIDENCE]'} and of ${v.po_box||'[PO BOX ADDRESS]'} within the Republic of Kenya, do hereby make oath and state as follows: -`,
+        '',
+        `- THAT I am an adult of sound mind and disposition, the petitioner herein hence competent to swear this Verifying Affidavit.`,
+        '',
+        `- THAT I have read the contents of the Petition herein and I confirm and verify the facts to be correct.`,
+        '',
+        `- THAT what is deponed to herein is true to the best of my knowledge, information and belief.`,
+        '',
+        `DATED at NAIROBI this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `SWORN at NAIROBI by the said`,
+        `${(v.petitioner||'[PETITIONER NAME]').toUpperCase()}`,
+        `This .......day of..................... 20     .          DEPONENT`,
+        '',
+        `Before me`,
+        '',
+        `COMMISSIONER OF OATHS`,
+        '',
+        `[ADVOCATE NAME], ADVOCATE`,
+        `[FIRM ADDRESS]`,
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'verifying-affidavit-children':{
+      const children = [v.child1,v.child2,v.child3].filter(Boolean).map(c=>`IN THE MATTER OF ${c.toUpperCase()} (MINOR)`).join(nl);
+      return [
+        `REPUBLIC OF KENYA`,
+        '',
+        `IN THE ${(v.court||"CHILDREN'S COURT").toUpperCase()}`,
+        '',
+        `${v.case_no||"MISC. CHILDREN'S CASE NO      OF "+new Date().getFullYear()}`,
+        '',
+        children,
+        '',
+        `${(v.plaintiff||'[PLAINTIFF NAME]').toUpperCase()} ……..………..……. PLAINTIFF`,
+        '',
+        `-VERSUS-`,
+        '',
+        `${(v.defendant||'[DEFENDANT NAME]').toUpperCase()} ……………..……………….. DEFENDANT`,
+        '',
+        `                    VERIFYING AFFIDAVIT`,
+        '',
+        `I, ${(v.plaintiff||'[PLAINTIFF NAME]').toUpperCase()} a resident of ${v.residence||'[AREA OF RESIDENCE]'} and of ${v.po_box||'[PO BOX ADDRESS]'} within the Republic of Kenya, do hereby make oath and state as follows: -`,
+        '',
+        `- THAT I am the Plaintiff herein hence competent to swear this Affidavit.`,
+        '',
+        `- THAT I confirm that what is contained in the Plaint is correct, true and within my personal knowledge.`,
+        '',
+        `- THAT there is no other suit pending and there have been no previous proceedings on the matters in question.`,
+        '',
+        `- THAT I swear this Affidavit to verify the correctness of the averments contained in the Plaint the contents being true and within my personal knowledge save where otherwise stated.`,
+        '',
+        `SWORN at NAIROBI by the said`,
+        `${(v.plaintiff||'[PLAINTIFF NAME]').toUpperCase()}`,
+        `This .......day of..................... 20     .`,
+        '',
+        `Before me`,
+        '',
+        `COMMISSIONER OF OATHS`,
+        '',
+        `[ADVOCATE NAME], ADVOCATE`,
+        `[FIRM ADDRESS]`,
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'list-of-witnesses':{
+      const witnesses = [v.witness1,v.witness2,v.witness3].filter(Boolean).map(w=>`- ${w}`).join(nl);
+      return [
+        `REPUBLIC OF KENYA`,
+        '',
+        `IN THE ${(v.court||"CHIEF MAGISTRATE'S COURT").toUpperCase()}`,
+        v.division ? v.division.toUpperCase() : '',
+        '',
+        `${v.case_no||'DIVORCE CAUSE NO      OF '+new Date().getFullYear()}`,
+        '',
+        `${(v.petitioner||'[PETITIONER NAME]').toUpperCase()} ……………….……………………. PETITIONER`,
+        '',
+        `-VERSUS-`,
+        '',
+        `${(v.respondent||'[RESPONDENT NAME]').toUpperCase()} ………………...………………………….… RESPONDENT`,
+        '',
+        `                    PETITIONER'S LIST OF WITNESSES`,
+        '',
+        witnesses||'- [WITNESS NAME]',
+        '',
+        `DATED at NAIROBI this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `[ADVOCATE NAME], ADVOCATE`,
+        `ADVOCATE FOR THE PETITIONER`,
+        `[FIRM ADDRESS]`,
+        '',
+        `TO BE SERVED UPON`,
+        `${(v.respondent||'[RESPONDENT NAME]').toUpperCase()}`,
+        `(Service of summons to be effected through the Petitioner's Advocates offices)`,
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'witness-statement':{
+      const factsLines = (v.facts||'[STATE FACTS HERE]').replace(/\n/g,nl+nl+'- ');
+      return [
+        `REPUBLIC OF KENYA`,
+        '',
+        `IN THE ${(v.court||"CHIEF MAGISTRATE'S COURT").toUpperCase()}`,
+        v.division ? v.division.toUpperCase() : '',
+        '',
+        `${v.case_no||'DIVORCE CAUSE NO      OF '+new Date().getFullYear()}`,
+        '',
+        `${(v.petitioner||'[PETITIONER NAME]').toUpperCase()} ……………….……………………. PETITIONER`,
+        '',
+        `-VERSUS-`,
+        '',
+        `${(v.respondent||'[RESPONDENT NAME]').toUpperCase()} ………………...………………………….… RESPONDENT`,
+        '',
+        `                    WITNESS STATEMENT`,
+        '',
+        `I, ${(v.witness_name||'[WITNESS NAME]').toUpperCase()} of ${v.witness_address||'[WITNESS ADDRESS]'} within the Republic of Kenya, do hereby state as follows: -`,
+        '',
+        `- I am an adult of sound mind, ${v.witness_capacity||'[STATE CAPACITY / RELATIONSHIP TO PARTIES]'} and a witness to the matters herein. I am therefore well conversant with the issues of this suit.`,
+        '',
+        `- ${factsLines}`,
+        '',
+        `That is all I wish to state`,
+        '',
+        `${(v.witness_name||'[WITNESS NAME]').toUpperCase()}              }  ____________________________`,
+        `                             }               `,
+        `                             }`,
+        `                             }`,
+        '',
+        `DATED at NAIROBI this ${v.date||'       day of                    , 20     '}.`,
+        '',
+        `[ADVOCATE NAME], ADVOCATE`,
+        `[FIRM ADDRESS]`,
+        '',
+        `TO BE SERVED UPON`,
+        `${(v.respondent||'[RESPONDENT NAME]').toUpperCase()}`,
+        `(Service of summons to be effected through the Petitioner's Advocates offices)`,
       ].filter(l=>l!==null&&l!==undefined).join(nl);
     }
 
     case 'memo-appeal':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       return [
         `                    IN THE ${(v.court||'HIGH COURT OF KENYA').toUpperCase()}`,
         '',
@@ -11869,8 +12184,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'sale-of-land': case 'sale-land-agreement':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       const vendor = v.vendor||'[VENDOR]';
       const purchaser = v.purchaser||'[PURCHASER]';
@@ -11928,8 +12243,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'sale-shares':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    AGREEMENT FOR SALE OF SHARES`,
@@ -11971,8 +12286,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'loan-agreement':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    LOAN AGREEMENT`,
@@ -12023,8 +12338,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'mou':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    MEMORANDUM OF UNDERSTANDING`,
@@ -12073,8 +12388,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'consultancy-agreement':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    CONSULTANCY AGREEMENT`,
@@ -12119,8 +12434,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'jv-agreement':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    JOINT VENTURE AGREEMENT`,
@@ -12170,8 +12485,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'confidentiality-agreement':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    NON-DISCLOSURE / CONFIDENTIALITY AGREEMENT`,
@@ -12216,8 +12531,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'partnership-deed':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    PARTNERSHIP DEED`,
@@ -12266,8 +12581,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'hire-purchase':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    HIRE PURCHASE AGREEMENT`,
@@ -12312,8 +12627,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'poa-land':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    POWER OF ATTORNEY — LAND`,
@@ -12355,8 +12670,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'poa-vehicle':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    POWER OF ATTORNEY — MOTOR VEHICLE`,
@@ -12392,8 +12707,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'rta-charge':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    CHARGE`,
@@ -12435,8 +12750,8 @@ function dgBuildDocument(id, v){
     case 'agm-notice': case 'egm-notice':{
       const isAGM = id==='agm-notice';
       const meetingType = isAGM ? 'ANNUAL GENERAL MEETING' : 'EXTRAORDINARY GENERAL MEETING';
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       return [
         `${(v.company||'[COMPANY NAME]').toUpperCase()}`,
         `(Registration No. ${v.reg_no||'[REG NO]'})`,
@@ -12468,8 +12783,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'share-transfer':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    DEED OF TRANSFER OF SHARES`,
@@ -12501,8 +12816,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'debenture':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    DEBENTURE`,
@@ -12546,7 +12861,7 @@ function dgBuildDocument(id, v){
     case 'grant-probate-affidavit':{
       const dep = v.petitioner||'[PETITIONER NAME]';
       const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
       return [
         `                         REPUBLIC OF KENYA`,
         `          IN THE HIGH COURT OF KENYA AT NAIROBI`,
@@ -12585,7 +12900,7 @@ function dgBuildDocument(id, v){
 
     case 'deed-poll':{
       const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                         REPUBLIC OF KENYA`,
@@ -12621,7 +12936,7 @@ function dgBuildDocument(id, v){
 
     case 'deed-poll-minor':{
       const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                         REPUBLIC OF KENYA`,
@@ -12655,7 +12970,7 @@ function dgBuildDocument(id, v){
 
     case 'gazette-notice-name':{
       const firmName = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'D.K. MUTONGA & CO. ADVOCATES';
-      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'P.O. Box 70638 - 00400';
+      const firmPO = (typeof firmContact!=='undefined'&&firmContact?.contact_postal)||'[FIRM PO BOX]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    GAZETTE NOTICE — CHANGE OF NAME`,
@@ -12686,8 +13001,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'statutory-notice-business':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `                    STATUTORY NOTICE FOR TRANSFER OF BUSINESS`,
@@ -12720,10 +13035,10 @@ function dgBuildDocument(id, v){
     }
 
     case 'holding-letter':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _firmPhone = (typeof firmContact!=='undefined'&&firmContact?.contact_phone)||'';
-      const _firmEmail = (typeof firmContact!=='undefined'&&firmContact?.contact_email)||'info@dkmutongadvocate.co.ke';
+      const _firmEmail = (typeof firmContact!=='undefined'&&firmContact?.contact_email)||'[firm@email.co.ke]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `${_firm}`,
@@ -12754,8 +13069,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'entry-permit-bank-letter':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `${(v.bank||'[BANK NAME]').toUpperCase()}`,
@@ -12785,8 +13100,8 @@ function dgBuildDocument(id, v){
     }
 
     case 'application-extension-pass':{
-      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'Dennis Kimani Mutonga, Advocate';
-      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'P.O. Box 70638-00400, Nairobi';
+      const _firm = (typeof firmContact!=='undefined'&&firmContact?.contact_firm_name)||'[Advocate Name], Advocate';
+      const _firmAddr = (typeof firmContact!=='undefined'&&firmContact?.contact_physical)||'[Firm Address]';
       const _today = v.date||new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'});
       return [
         `TO:`,
