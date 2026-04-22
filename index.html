@@ -10208,6 +10208,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="font-size:11px;color:var(--txt3);margin-top:2px" id="dg-modal-sub">Select a document type</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
+        <button class="topbar-btn sec" id="dg-btn-new-blank" onclick="dgOpenBlankEditor()" style="font-size:11px;padding:5px 12px" title="Open a blank document in the editor">✦ New Document</button>
         <button class="topbar-btn sec" id="dg-btn-copy" onclick="dgCopyText()" style="display:none;font-size:11px;padding:5px 12px">Copy</button>
         <button class="topbar-btn sec" id="dg-btn-edit" onclick="dgToggleEdit()" style="display:none;font-size:11px;padding:5px 12px">✏️ Edit</button>
         <button class="topbar-btn gold" id="dg-btn-print" onclick="dgPrint()" style="display:none;font-size:11px;padding:5px 12px">Print / Save PDF</button>
@@ -10243,12 +10244,83 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="flex-shrink:0;background:var(--navy);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:12px;border-radius:12px 12px 0 0">
       <div style="flex:1;min-width:0">
         <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:500" id="dg-editor-title">Document Editor</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:1px">Edit document content — changes are preserved when you save</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:1px" id="dg-editor-subtitle">Edit document content — changes are preserved when you save</div>
       </div>
       <span id="dg-edit-badge2" style="display:none;background:#FFF5CC;color:#7A5C00;font-size:9px;padding:2px 8px;border-radius:8px;font-weight:600;letter-spacing:.3px">EDITING</span>
+      <button onclick="dgToggleClientPanel()" id="dg-client-panel-btn" title="Fill in client details" style="background:rgba(255,255,255,0.13);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:6px 13px;border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:5px">👤 Client Details</button>
       <button onclick="dgToggleEdit()" id="dg-btn-done" style="background:var(--green);color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px"><span>✅</span> Done editing</button>
       <button onclick="dgPrint()" style="background:var(--gold);color:var(--navy);border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Print / Save PDF</button>
       <button onclick="dgCloseEditor()" style="background:rgba(255,255,255,0.12);color:#fff;border:none;width:32px;height:32px;border-radius:6px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
+    </div>
+
+    <!-- Client Details Panel (collapsible) -->
+    <div id="dg-client-panel" style="display:none;flex-shrink:0;background:#f0ede7;border-bottom:2px solid var(--brd2);padding:14px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--navy);letter-spacing:.3px;text-transform:uppercase">Client &amp; Document Details</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="dgInsertClientDetails()" style="background:var(--navy);color:#fff;border:none;padding:5px 14px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">⬇ Insert into Document</button>
+          <button onclick="dgToggleClientPanel()" style="background:transparent;border:1px solid var(--brd2);color:var(--txt2);padding:4px 10px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer">Close</button>
+        </div>
+      </div>
+      <!-- Linked client selector -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">Link to Client</label>
+          <select id="dg-cp-client" onchange="dgAutofillClientDetails(this.value)" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+            <option value="">— Select client —</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">Link to Matter</label>
+          <select id="dg-cp-matter" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+            <option value="">— Select matter —</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">Document Title</label>
+          <input id="dg-cp-doctitle" placeholder="e.g. Affidavit of Service" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">Date</label>
+          <input type="date" id="dg-cp-date" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">Full Name</label>
+          <input id="dg-cp-name" placeholder="Full legal name" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">ID / Passport No.</label>
+          <input id="dg-cp-id" placeholder="e.g. 12345678" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">Address / Postal</label>
+          <input id="dg-cp-address" placeholder="e.g. P.O. Box 123-00100, Nairobi" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">Phone / Email</label>
+          <input id="dg-cp-contact" placeholder="Phone or email" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
+        <div>
+          <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">Opposing Party</label>
+          <input id="dg-cp-opposing" placeholder="Name of opposing party" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">Case / File Number</label>
+          <input id="dg-cp-caseno" placeholder="e.g. Civil Case No. 12 of 2025" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+        </div>
+        <div>
+          <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">Court / Tribunal</label>
+          <input id="dg-cp-court" placeholder="e.g. High Court at Nairobi" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;font-weight:500">Additional Notes / Instructions</label>
+        <textarea id="dg-cp-notes" placeholder="Any extra notes or instructions to insert…" rows="2" style="width:100%;border:1px solid var(--brd);border-radius:5px;padding:6px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none;resize:vertical"></textarea>
+      </div>
     </div>
 
     <!-- Toolbar -->
@@ -10274,6 +10346,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <select class="dg-tb-sel" title="Font" style="min-width:150px" onchange="dge2('fontName',false,this.value);this.blur()">
           <option value="">Font</option>
           <optgroup label="── Serif ──">
+          <option value="'Sitka Text','Sitka',Georgia,serif">Sitka Text</option>
           <option value="Georgia,serif">Georgia</option>
           <option value="'Times New Roman',Times,serif">Times New Roman</option>
           <option value="'Book Antiqua','Palatino Linotype',Palatino,serif">Book Antiqua</option>
@@ -10436,6 +10509,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <select class="dg-tb-sel" title="Font family" style="min-width:150px" onchange="dgSetFont(this.value);this.blur()">
       <option value="">Font</option>
       <optgroup label="── Serif ──">
+      <option value="'Sitka Text','Sitka',Georgia,serif">Sitka Text</option>
       <option value="Georgia,serif">Georgia</option>
       <option value="'Times New Roman',Times,serif">Times New Roman</option>
       <option value="'Book Antiqua','Palatino Linotype',Palatino,serif">Book Antiqua</option>
@@ -13722,7 +13796,187 @@ function dgInitRuler() {
   window._dgDrawRuler = drawRuler;
 }
 
-// ── VERTICAL RULER ────────────────────────────────────────────────
+// ── BLANK EDITOR (New Document) ───────────────────────────────────
+function dgOpenBlankEditor() {
+  dgEditMode = true;
+  dgGeneratedText = '__html__';
+
+  // Clear the editor
+  const editorContent = document.getElementById('dg-editor-content');
+  if (editorContent) editorContent.innerHTML = '<p><br></p>';
+
+  // Set title
+  const editorTitle = document.getElementById('dg-editor-title');
+  if (editorTitle) editorTitle.textContent = 'New Document';
+  const editorSub = document.getElementById('dg-editor-subtitle');
+  if (editorSub) editorSub.textContent = 'Blank document — use Client Details to autofill fields';
+
+  // Hide normal modal, show editor modal
+  document.getElementById('dg-modal-normal').style.display = 'none';
+  const em = document.getElementById('dg-editor-modal');
+  em.style.display = 'flex';
+
+  // Populate client/matter dropdowns then open client panel
+  dgPopulateClientPanel();
+  dgToggleClientPanel(true);
+
+  // Init ruler
+  setTimeout(() => {
+    dgInitRuler();
+    dgApplyMargins();
+    dgInitVRuler();
+    dgDrawVRuler();
+    if (editorContent) editorContent.focus();
+  }, 80);
+}
+
+// ── CLIENT DETAILS PANEL ─────────────────────────────────────────
+function dgToggleClientPanel(forceOpen) {
+  const panel = document.getElementById('dg-client-panel');
+  const btn = document.getElementById('dg-client-panel-btn');
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  const shouldOpen = forceOpen !== undefined ? forceOpen : !isOpen;
+  panel.style.display = shouldOpen ? 'block' : 'none';
+  if (btn) {
+    btn.style.background = shouldOpen ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.13)';
+    btn.style.borderColor = shouldOpen ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)';
+  }
+  if (shouldOpen) {
+    dgPopulateClientPanel();
+    // Set today's date by default
+    const dateEl = document.getElementById('dg-cp-date');
+    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0, 10);
+  }
+}
+
+function dgPopulateClientPanel() {
+  // Populate client dropdown
+  const clientSel = document.getElementById('dg-cp-client');
+  if (clientSel && typeof clients !== 'undefined') {
+    const current = clientSel.value;
+    clientSel.innerHTML = '<option value="">— Select client —</option>';
+    (clients || []).forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name + (c.file_number ? ' (' + c.file_number + ')' : '');
+      clientSel.appendChild(opt);
+    });
+    if (current) clientSel.value = current;
+  }
+  // Populate matter dropdown
+  const matterSel = document.getElementById('dg-cp-matter');
+  if (matterSel && typeof matters !== 'undefined') {
+    const linkedClientId = document.getElementById('dg-cp-client')?.value;
+    matterSel.innerHTML = '<option value="">— Select matter —</option>';
+    const filtered = linkedClientId
+      ? (matters || []).filter(m => m.client_id === linkedClientId)
+      : (matters || []);
+    filtered.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = (m.file_number ? m.file_number + ' — ' : '') + (m.title || m.matter_title || 'Untitled');
+      matterSel.appendChild(opt);
+    });
+  }
+}
+
+function dgAutofillClientDetails(clientId) {
+  if (!clientId || typeof clients === 'undefined') return;
+  const c = clients.find(x => x.id === clientId);
+  if (!c) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+  set('dg-cp-name', c.name);
+  set('dg-cp-id', c.id_number || c.id_no || '');
+  set('dg-cp-address', c.postal_address || c.address || '');
+  set('dg-cp-contact', c.phone || c.email || '');
+  // Refresh matters filtered by this client
+  const matterSel = document.getElementById('dg-cp-matter');
+  if (matterSel && typeof matters !== 'undefined') {
+    matterSel.innerHTML = '<option value="">— Select matter —</option>';
+    matters.filter(m => m.client_id === clientId).forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = (m.file_number ? m.file_number + ' — ' : '') + (m.title || m.matter_title || 'Untitled');
+      matterSel.appendChild(opt);
+    });
+    // Auto-select first matter if only one
+    if (matterSel.options.length === 2) {
+      matterSel.selectedIndex = 1;
+      dgAutofillMatterDetails(matterSel.value);
+    }
+  }
+}
+
+function dgAutofillMatterDetails(matterId) {
+  if (!matterId || typeof matters === 'undefined') return;
+  const m = matters.find(x => x.id === matterId);
+  if (!m) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+  set('dg-cp-caseno', m.file_number || '');
+  set('dg-cp-court', m.court || '');
+}
+
+function dgInsertClientDetails() {
+  const get = id => (document.getElementById(id)?.value || '').trim();
+  const name      = get('dg-cp-name');
+  const idNo      = get('dg-cp-id');
+  const address   = get('dg-cp-address');
+  const contact   = get('dg-cp-contact');
+  const docTitle  = get('dg-cp-doctitle');
+  const dateVal   = get('dg-cp-date');
+  const opposing  = get('dg-cp-opposing');
+  const caseNo    = get('dg-cp-caseno');
+  const court     = get('dg-cp-court');
+  const notes     = get('dg-cp-notes');
+
+  // Format date
+  let dateStr = dateVal;
+  if (dateVal) {
+    try {
+      dateStr = new Date(dateVal).toLocaleDateString('en-KE', { day: '2-digit', month: 'long', year: 'numeric' });
+    } catch(e) {}
+  }
+
+  // Build header block HTML
+  let html = '';
+  if (docTitle) html += `<p style="text-align:center;font-weight:700;font-size:14pt;text-transform:uppercase;letter-spacing:.5px">${esc(docTitle)}</p><p>&nbsp;</p>`;
+  if (court)    html += `<p style="text-align:center">${esc(court)}</p>`;
+  if (caseNo)   html += `<p style="text-align:center"><strong>${esc(caseNo)}</strong></p>`;
+  if (court || caseNo) html += `<p>&nbsp;</p>`;
+  if (name)     html += `<p><strong>Name:</strong> ${esc(name.toUpperCase())}</p>`;
+  if (idNo)     html += `<p><strong>ID / Passport No.:</strong> ${esc(idNo)}</p>`;
+  if (address)  html += `<p><strong>Address:</strong> ${esc(address)}</p>`;
+  if (contact)  html += `<p><strong>Contact:</strong> ${esc(contact)}</p>`;
+  if (opposing) html += `<p><strong>Opposing Party:</strong> ${esc(opposing.toUpperCase())}</p>`;
+  if (dateStr)  html += `<p><strong>Date:</strong> ${esc(dateStr)}</p>`;
+  if (notes)    html += `<p>&nbsp;</p><p>${esc(notes)}</p>`;
+  html += `<p>&nbsp;</p>`;
+
+  // Insert at cursor in editor, or prepend if no selection
+  const editorContent = document.getElementById('dg-editor-content');
+  if (!editorContent) return;
+  editorContent.focus();
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0 && editorContent.contains(sel.anchorNode)) {
+    document.execCommand('insertHTML', false, html);
+  } else {
+    editorContent.innerHTML = html + editorContent.innerHTML;
+  }
+
+  // Close panel after insert
+  dgToggleClientPanel(false);
+  if (typeof toast === 'function') toast('Client details inserted into document.');
+}
+
+// Hook matter selector to autofill case details
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.id === 'dg-cp-matter') {
+    dgAutofillMatterDetails(e.target.value);
+  }
+});
+
+
 let _dgVRulerRaf = null;
 function dgDrawVRuler() {
   const canvas = document.getElementById('dg-vruler');
