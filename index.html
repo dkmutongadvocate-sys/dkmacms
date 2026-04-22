@@ -10186,75 +10186,83 @@ document.addEventListener('DOMContentLoaded', function() {
           Select a document<br>to see fields
         </div>
       </div>
-      <!-- Right: preview column — flex column so toolbar sits above scrollable doc -->
-      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#fff">
-        <!-- Editor toolbar — shown in edit mode -->
-        <div id="dg-editor-toolbar" style="display:none;flex-shrink:0;background:#f4f2ee;border-bottom:1px solid var(--brd);padding:6px 10px;flex-wrap:wrap;gap:4px;align-items:center">
-          <div class="dg-tb-group">
-            <button class="dg-tb-btn" title="Bold" onclick="dge('bold')"><b>B</b></button>
-            <button class="dg-tb-btn" title="Italic" onclick="dge('italic')"><i>I</i></button>
-            <button class="dg-tb-btn" title="Underline" onclick="dge('underline')"><u>U</u></button>
-            <button class="dg-tb-btn" title="Strikethrough" onclick="dge('strikethrough')"><s>S</s></button>
-          </div>
-          <div class="dg-tb-sep"></div>
-          <div class="dg-tb-group">
-            <select class="dg-tb-sel" title="Font size" onchange="dge('fontSize',false,this.value);this.blur()">
-              <option value="">Size</option>
-              <option value="1">8pt</option>
-              <option value="2">10pt</option>
-              <option value="3">12pt</option>
-              <option value="4">14pt</option>
-              <option value="5">18pt</option>
-              <option value="6">24pt</option>
-              <option value="7">36pt</option>
-            </select>
-            <select class="dg-tb-sel" title="Font family" onchange="dgSetFont(this.value);this.blur()">
-              <option value="">Font</option>
-              <option value="Georgia,serif">Georgia</option>
-              <option value="Times New Roman,serif">Times New Roman</option>
-              <option value="Arial,sans-serif">Arial</option>
-              <option value="Courier New,monospace">Courier New</option>
-            </select>
-          </div>
-          <div class="dg-tb-sep"></div>
-          <div class="dg-tb-group">
-            <button class="dg-tb-btn" title="Align left" onclick="dge('justifyLeft')">&#8676; L</button>
-            <button class="dg-tb-btn" title="Centre" onclick="dge('justifyCenter')">C</button>
-            <button class="dg-tb-btn" title="Align right" onclick="dge('justifyRight')">R &#8677;</button>
-            <button class="dg-tb-btn" title="Justify" onclick="dge('justifyFull')">&#8644;</button>
-          </div>
-          <div class="dg-tb-sep"></div>
-          <div class="dg-tb-group">
-            <button class="dg-tb-btn" title="Bullet list" onclick="dge('insertUnorderedList')">&#8226; List</button>
-            <button class="dg-tb-btn" title="Numbered list" onclick="dge('insertOrderedList')">1. List</button>
-            <button class="dg-tb-btn" title="Indent" onclick="dge('indent')">&#8594;</button>
-            <button class="dg-tb-btn" title="Outdent" onclick="dge('outdent')">&#8592;</button>
-          </div>
-          <div class="dg-tb-sep"></div>
-          <div class="dg-tb-group">
-            <label style="font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;gap:3px" title="Text colour">
-              A <input type="color" id="dg-color-pick" value="#111111" oninput="dge('foreColor',false,this.value)" style="width:22px;height:18px;padding:0;border:1px solid var(--brd);border-radius:3px;cursor:pointer">
-            </label>
-            <label style="font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;gap:3px;margin-left:6px" title="Highlight">
-              H <input type="color" id="dg-hl-pick" value="#FFFF88" oninput="dge('hiliteColor',false,this.value)" style="width:22px;height:18px;padding:0;border:1px solid var(--brd);border-radius:3px;cursor:pointer">
-            </label>
-          </div>
-          <div class="dg-tb-sep"></div>
-          <div class="dg-tb-group">
-            <button class="dg-tb-btn" title="Undo" onclick="dge('undo')">&#8617;</button>
-            <button class="dg-tb-btn" title="Redo" onclick="dge('redo')">&#8618;</button>
-            <button class="dg-tb-btn" title="Clear formatting" onclick="dge('removeFormat')" style="font-size:10px;margin-left:2px">&#215; fmt</button>
-          </div>
-        </div>
-        <!-- Scrollable document preview / editable area -->
-        <div style="flex:1;overflow-y:auto;padding:20px 24px;" id="dg-preview-wrap">
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px;color:var(--txt3);font-size:12px;text-align:center">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            Fill in the form and click Generate
-          </div>
+      <!-- Right: preview -->
+      <div style="flex:1;overflow-y:auto;padding:20px 24px;background:#fff" id="dg-preview-wrap">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px;color:var(--txt3);font-size:12px;text-align:center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Fill in the form and click Generate
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Rich text editor toolbar (shown when in edit mode) -->
+<div id="dg-editor-toolbar" style="display:none;position:sticky;top:0;z-index:10;background:#f4f2ee;border-bottom:1px solid var(--brd);padding:6px 10px;display:none;flex-wrap:wrap;gap:4px;align-items:center">
+  <!-- Text style -->
+  <div class="dg-tb-group">
+    <button class="dg-tb-btn" title="Bold" onclick="dge('bold')"><b>B</b></button>
+    <button class="dg-tb-btn" title="Italic" onclick="dge('italic')"><i>I</i></button>
+    <button class="dg-tb-btn" title="Underline" onclick="dge('underline')"><u>U</u></button>
+    <button class="dg-tb-btn" title="Strikethrough" onclick="dge('strikethrough')"><s>S</s></button>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Font size -->
+  <div class="dg-tb-group">
+    <select class="dg-tb-sel" title="Font size" onchange="dge('fontSize',false,this.value);this.blur()">
+      <option value="">Size</option>
+      <option value="1">8pt</option>
+      <option value="2">10pt</option>
+      <option value="3">12pt</option>
+      <option value="4">14pt</option>
+      <option value="5">18pt</option>
+      <option value="6">24pt</option>
+      <option value="7">36pt</option>
+    </select>
+    <select class="dg-tb-sel" title="Font family" onchange="dgSetFont(this.value);this.blur()">
+      <option value="">Font</option>
+      <option value="Georgia,serif">Georgia</option>
+      <option value="'Times New Roman',serif">Times New Roman</option>
+      <option value="Arial,sans-serif">Arial</option>
+      <option value="'Courier New',monospace">Courier New</option>
+    </select>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Alignment -->
+  <div class="dg-tb-group">
+    <button class="dg-tb-btn" title="Align left" onclick="dge('justifyLeft')">⬛︎ L</button>
+    <button class="dg-tb-btn" title="Centre" onclick="dge('justifyCenter')">≡ C</button>
+    <button class="dg-tb-btn" title="Align right" onclick="dge('justifyRight')">R ⬛︎</button>
+    <button class="dg-tb-btn" title="Justify" onclick="dge('justifyFull')">≣</button>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Lists & indent -->
+  <div class="dg-tb-group">
+    <button class="dg-tb-btn" title="Bullet list" onclick="dge('insertUnorderedList')">• List</button>
+    <button class="dg-tb-btn" title="Numbered list" onclick="dge('insertOrderedList')">1. List</button>
+    <button class="dg-tb-btn" title="Indent" onclick="dge('indent')">→</button>
+    <button class="dg-tb-btn" title="Outdent" onclick="dge('outdent')">←</button>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Colour -->
+  <div class="dg-tb-group" style="align-items:center">
+    <label style="font-size:10px;color:var(--txt3);cursor:pointer" title="Text colour">
+      A <input type="color" id="dg-color-pick" value="#111111" oninput="dge('foreColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
+    </label>
+    <label style="font-size:10px;color:var(--txt3);cursor:pointer;margin-left:6px" title="Highlight colour">
+      H <input type="color" id="dg-hl-pick" value="#FFFF88" oninput="dge('hiliteColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
+    </label>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Undo/redo -->
+  <div class="dg-tb-group">
+    <button class="dg-tb-btn" title="Undo" onclick="dge('undo')">↩</button>
+    <button class="dg-tb-btn" title="Redo" onclick="dge('redo')">↪</button>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Clear formatting -->
+  <div class="dg-tb-group">
+    <button class="dg-tb-btn" title="Clear formatting" onclick="dge('removeFormat')" style="font-size:10px">Clear fmt</button>
   </div>
 </div>
 
@@ -10416,6 +10424,91 @@ const DG_DOCS={
 
   // ── IMMIGRATION ──────────────────────────────────────────────────
   'entry-permit-bank-letter':{title:'Entry permit — bank letter',sub:'Kenya Immigration Act (Cap. 172) — Kenya',cat:'Immigration',color:'#2C6E8C',fields:[{id:'bank',l:'Bank name',ph:'e.g. Equity Bank Kenya Limited'},{id:'branch',l:'Branch',ph:'e.g. Westlands Branch, Nairobi'},{id:'applicant',l:'Applicant (permit holder) full name',ph:'Full legal name'},{id:'passport',l:'Passport number',ph:'e.g. A1234567'},{id:'employer',l:'Employer / company name',ph:'As per certificate of incorporation'},{id:'position',l:'Position / job title',ph:'e.g. Finance Director'},{id:'salary',l:'Monthly salary (KES)',ph:'e.g. 350,000',num:1},{id:'account',l:'Account number (if appropriate)',ph:'Leave blank if not to be included',opt:1},{id:'date',l:'Date of letter',ph:'DD/MM/YYYY'}]},
+
+
+  // ── PUBLIC HEALTH / EXHUMATION ───────────────────────────────────────────
+  'notice-motion-public-health':{title:'Notice of Motion — Exhumation',sub:'Public Health Act (Cap. 242) — Kenya',cat:'Court applications',color:'#993C1D',fields:[
+    {id:'court',l:'Court',ph:'e.g. Chief Magistrate Court at Kiambu'},
+    {id:'case_no',l:'Misc. Application No.',ph:'e.g. Misc. Application No. E006 of 2026'},
+    {id:'applicant',l:'Applicant full name',ph:'e.g. GODFREY WAMWIRI NGUGI'},
+    {id:'respondent',l:'Respondent',ph:'e.g. COUNTY DIRECTOR OF PUBLIC HEALTH'},
+    {id:'deceased1',l:'First deceased full name',ph:'e.g. JOSEPH MICHAEL NGUGI MUNGA'},
+    {id:'deceased2',l:'Second deceased (if any)',ph:'Leave blank if only one',opt:1},
+    {id:'land_ref_orig',l:'Original burial land reference',ph:'e.g. KIAMBAA/KIHARA 8511'},
+    {id:'land_loc_orig',l:'Location of original site',ph:'e.g. Gachie, Kihara Ward, Kiambu County'},
+    {id:'land_ref_new',l:'New burial land reference',ph:'e.g. KIAMBAA/KIHARA 8513'},
+    {id:'land_loc_new',l:'Location of new site',ph:'e.g. Gachie, Kihara Ward, Kiambu County'},
+    {id:'ocs_station',l:'OCS Police Station',ph:'e.g. Kihara Police Station'},
+    {id:'hearing_date',l:'Proposed hearing date',ph:'DD/MM/YYYY or leave blank'},
+    {id:'sworn_city',l:'City of signing',ph:'e.g. KIKUYU'},
+    {id:'date',l:'Date',ph:'DD/MM/YYYY'}
+  ]},
+  'certificate-urgency':{title:'Certificate of Urgency',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[
+    {id:'court',l:'Court',ph:'e.g. Chief Magistrate Court at Kiambu'},
+    {id:'case_no',l:'Misc. Application No.',ph:'e.g. Misc. Application No. E006 of 2026'},
+    {id:'applicant',l:'Applicant full name',ph:'e.g. GODFREY WAMWIRI NGUGI'},
+    {id:'respondent',l:'Respondent',ph:'e.g. COUNTY DIRECTOR OF PUBLIC HEALTH'},
+    {id:'matter_desc',l:'Matter description',ph:'e.g. EXHUMATION AND RE-INTERMENT OF THE LATE [NAME]'},
+    {id:'urgency_grounds',l:'Grounds of urgency (one per line)',ph:'Remains need to be exhumed urgently…\nPurchaser requires vacant possession…',ta:1},
+    {id:'sworn_city',l:'City of signing',ph:'e.g. KIKUYU'},
+    {id:'date',l:'Date',ph:'DD/MM/YYYY'},
+    {id:'respondent_address',l:'Respondent service address',ph:'e.g. County Health Offices, Thika Town\nP.O. Box 2344-00900',ta:1}
+  ]},
+  'hearing-notice':{title:'Hearing Notice',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Court applications',color:'#993C1D',fields:[
+    {id:'court',l:'Court',ph:'e.g. Chief Magistrate Court at Kiambu'},
+    {id:'case_no',l:'Case/Application No.',ph:'e.g. Misc. Application No. E006 of 2026'},
+    {id:'applicant',l:'Applicant full name',ph:'e.g. GODFREY WAMWIRI NGUGI'},
+    {id:'respondent',l:'Respondent',ph:'e.g. COUNTY DIRECTOR OF PUBLIC HEALTH'},
+    {id:'matter_desc',l:'Matter description',ph:'e.g. EXHUMATION AND RE-INTERMENT OF THE LATE [NAME]'},
+    {id:'to_name',l:'Notice addressed to',ph:'e.g. County Director of Public Health'},
+    {id:'to_address',l:'Full address of addressee',ph:'e.g. Department of Health, Kiambu County',ta:1},
+    {id:'app_date',l:'Date application was filed',ph:'e.g. 21st January 2026'},
+    {id:'hearing_date',l:'Hearing date',ph:'e.g. 12th March 2026'},
+    {id:'hearing_time',l:'Hearing time',ph:'e.g. 9 o clock in the forenoon'},
+    {id:'magistrate',l:'Magistrate name',ph:'e.g. Hon. E.K. Suter (S.P.M.)'},
+    {id:'courtroom',l:'Courtroom',ph:'e.g. Courtroom 3'},
+    {id:'sworn_city',l:'City of signing',ph:'e.g. KIKUYU'},
+    {id:'date',l:'Date of notice',ph:'DD/MM/YYYY'}
+  ]},
+  'affidavit-service-electronic':{title:'Affidavit of Service — Electronic',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[
+    {id:'server',l:'Deponent full name',ph:'e.g. DENNIS KIMANI MUTONGA'},
+    {id:'server_address',l:'Deponent address',ph:'e.g. P.O. Box 70638-00400, Nairobi'},
+    {id:'court',l:'Court',ph:'e.g. Chief Magistrate Court at Kiambu'},
+    {id:'case_no',l:'Case/Application No.',ph:'e.g. Misc. Application No. E006 of 2026'},
+    {id:'applicant',l:'Applicant',ph:'e.g. GODFREY WAMWIRI NGUGI'},
+    {id:'respondent',l:'Respondent',ph:'e.g. COUNTY DIRECTOR OF PUBLIC HEALTH'},
+    {id:'matter_desc',l:'Matter description',ph:'e.g. EXHUMATION AND RE-INTERMENT OF THE LATE [NAME]'},
+    {id:'service_date',l:'Date and time of service',ph:'e.g. 27th March 2026 at 8:43 a.m.'},
+    {id:'docs_served',l:'Documents served (one per line)',ph:'Supplementary Affidavit (PDF)\nAmended Notice of Motion (PDF)',ta:1},
+    {id:'served_via',l:'Mode of electronic service',ph:'e.g. WhatsApp'},
+    {id:'served_number',l:'Number or email served',ph:'e.g. +254 722 000000'},
+    {id:'served_contact',l:'Name and designation of recipient',ph:'e.g. Jane Doe, officer at the Director of Public Health office'},
+    {id:'exhibit_ref',l:'Exhibit reference for screenshots',ph:'e.g. DKM-1'},
+    {id:'sworn_city',l:'City of swearing',ph:'e.g. KIKUYU'},
+    {id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}
+  ]},
+  'supporting-affidavit-exhumation':{title:'Supporting Affidavit — Exhumation',sub:'Public Health Act (Cap. 242) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[
+    {id:'deponent',l:'Deponent full name',ph:'e.g. GODFREY WAMWIRI NGUGI'},
+    {id:'deponent_address',l:'Deponent address',ph:'e.g. P.O. Box 4000-01002, Thika'},
+    {id:'court',l:'Court',ph:'e.g. Chief Magistrate Court at Kiambu'},
+    {id:'case_no',l:'Case/Application No.',ph:'e.g. Misc. Application No. E006 of 2026'},
+    {id:'applicant',l:'Applicant',ph:'e.g. GODFREY WAMWIRI NGUGI'},
+    {id:'respondent',l:'Respondent',ph:'e.g. COUNTY DIRECTOR OF PUBLIC HEALTH'},
+    {id:'matter_desc',l:'Matter description',ph:'e.g. EXHUMATION AND RE-INTERMENT OF THE LATE [NAME]'},
+    {id:'deceased1',l:'First deceased full name',ph:'e.g. JOSEPH MICHAEL NGUGI MUNGA'},
+    {id:'deceased1_date',l:'First deceased date of death',ph:'e.g. 5th April 2011'},
+    {id:'deceased2',l:'Second deceased full name (if any)',ph:'Leave blank if one',opt:1},
+    {id:'deceased2_date',l:'Second deceased date of death',ph:'e.g. 3rd January 2018',opt:1},
+    {id:'land_ref_orig',l:'Original burial land reference',ph:'e.g. KIAMBAA/KIHARA 8511'},
+    {id:'land_loc_orig',l:'Location of original site',ph:'e.g. Gachie, Kihara Ward, Kiambu County'},
+    {id:'land_ref_new',l:'New burial land reference',ph:'e.g. KIAMBAA/KIHARA 8513'},
+    {id:'land_loc_new',l:'Location of new site',ph:'e.g. Gachie, Kihara Ward, Kiambu County'},
+    {id:'exhibit_death',l:'Exhibit — death cert or burial permit',ph:'e.g. GWN-01 and GWN-02'},
+    {id:'exhibit_title',l:'Exhibit — title to new site',ph:'e.g. GWN-03'},
+    {id:'exhibit_consent',l:'Exhibit — family consent',ph:'e.g. GWN-04'},
+    {id:'sworn_city',l:'City of swearing',ph:'e.g. KIKUYU'},
+    {id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}
+  ]},
 
   'application-extension-pass':{title:"Application — extension of visitor's pass",sub:'Kenya Immigration Act (Cap. 172) — Kenya',cat:'Immigration',color:'#2C6E8C',fields:[{id:'applicant',l:'Applicant full name',ph:'Full legal name'},{id:'passport',l:'Passport number',ph:'e.g. A1234567'},{id:'nationality',l:'Nationality',ph:'e.g. British, Indian'},{id:'current_expiry',l:'Current pass expiry date',ph:'DD/MM/YYYY'},{id:'extension_period',l:'Extension requested',ph:'',sel:['30 days','60 days','90 days','6 months']},{id:'purpose',l:'Purpose of stay',ph:'e.g. Medical treatment, business, tourism'},{id:'address',l:'Address in Kenya',ph:'Full address while in Kenya'},{id:'date',l:'Date of application',ph:'DD/MM/YYYY'}]}
 
@@ -10833,6 +10926,195 @@ function dgBuildDocument(id, v){
         `${firmName}`,
         `${firmPO},`,
         `Nairobi`
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+
+    case 'notice-motion-public-health':{
+      const _nmp_dec2 = v.deceased2 ? '\nAND THE LATE ' + v.deceased2.toUpperCase() + ' (DECEASED)' : '';
+      const _nmp_hear = v.hearing_date || '       day of              , 20     ';
+      const _nmp_city = (v.sworn_city||'NAIROBI').toUpperCase();
+      const _nmp_adv = (typeof currentProfile!=='undefined'&&currentProfile?.full_name)||'DENNIS KIMANI MUTONGA, ADVOCATE';
+      const _nmp_fd = (typeof firmContact!=='undefined'&&firmContact)||{};
+      const _nmp_fl = _nmp_fd.contact_postal ? (_nmp_fd.contact_firm_name||'Dennis Kimani Mutonga, Advocate') + '\n' + _nmp_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
+      const _nmp_ref = _nmp_fd.contact_ref ? ' (REF: ' + _nmp_fd.contact_ref + ')' : '';
+      const _d1 = (v.deceased1||'[DECEASED 1]').toUpperCase();
+      const _d2 = v.deceased2 ? v.deceased2.toUpperCase() : null;
+      return [
+        'REPUBLIC OF KENYA','',
+        'IN THE ' + (v.court||"CHIEF MAGISTRATE'S COURT AT KIAMBU").toUpperCase(),'',
+        v.case_no||'MISC. APPLICATION NO.            OF 20     ','',
+        'IN THE MATTER OF THE PUBLIC HEALTH ACT (CAP 242)','',
+        'AND','',
+        'IN THE MATTER OF THE EXHUMATION AND RE-INTERMENT OF THE LATE ' + _d1 + ' (DECEASED)' + (_d2 ? '\nAND THE LATE ' + _d2 + ' (DECEASED)' : ''),'',
+        'BETWEEN','',
+        (v.applicant||'[APPLICANT]').toUpperCase() + ' \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026  APPLICANT','',
+        'VERSUS','',
+        (v.respondent||'[RESPONDENT]').toUpperCase() + ' \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026  RESPONDENT','',
+        'NOTICE OF MOTION','',
+        '*(Under Sections 146 of the Public Health Act Cap 242, 1A, 1B, 3A of the Civil Procedure Act Cap 21 Laws of Kenya and all other enabling provisions of the Law)*','',
+        "TAKE NOTICE that this Honourable Court will be moved on " + _nmp_hear + " at 9.00 o'clock in the forenoon or soon thereafter so as Counsel for the Applicant may be heard on an application for ORDERS:-",'',
+        '1 .\tTHAT this Honourable Court be pleased to grant leave to the Applicant to exhume the remains of the Late ' + _d1 + ' (Deceased)' + (_d2 ? ' and the Late ' + _d2 + ' (Deceased)' : '') + ' from their current burial site located at property known as Land Reference Number ' + (v.land_ref_orig||'[LAND REF]') + ' situated in ' + (v.land_loc_orig||'[LOCATION]') + '.','',
+        '2 .\tTHAT upon exhumation, the Applicant be permitted to cause the remains to be reburied at the property known as Land Reference Number ' + (v.land_ref_new||'[NEW LAND REF]') + ' situated in ' + (v.land_loc_new||'[NEW LOCATION]') + '.','',
+        '3 .\tTHAT the exhumation shall be conducted under the supervision of a Public Health Officer appointed by the Respondent in compliance with the Public Health Act.','',
+        '4 .\tTHAT the Officer Commanding Station (OCS) ' + (v.ocs_station||'[POLICE STATION]') + ' do provide security during the exhumation.','',
+        'WHICH APPLICATION is supported by the Affidavit of ' + (v.applicant||'[APPLICANT]').toUpperCase() + ' on the following grounds and other grounds to be adduced at the hearing hereof:-','',
+        '1 .\tTHAT the Applicant is the biological son/daughter of the Late ' + _d1 + ' (Deceased)' + (_d2 ? ' and the Late ' + _d2 + ' (Deceased)' : '') + '.','',
+        '2 .\tTHAT the deceased ' + (_d2 ? 'were' : 'was') + ' buried at the property known as Land Reference Number ' + (v.land_ref_orig||'[LAND REF]') + ' situated in ' + (v.land_loc_orig||'[LOCATION]') + '.','',
+        '3 .\tTHAT the said property has since been lawfully sold to a new purchaser who requires vacant possession, and the existence of the grave prevents the purchaser from taking possession.','',
+        '4 .\tTHAT it has therefore become necessary to exhume and relocate the remains in a respectful and lawful manner.','',
+        '5 .\tTHAT all family members have consented to the exhumation and re-interment.','',
+        '6 .\tTHAT the Respondent is the statutory authority mandated to supervise exhumations under the Public Health Act.','',
+        '7 .\tTHAT it is in the interests of justice that this application be allowed.','',
+        'DATED at ' + _nmp_city + ' this ................ day of ...................... ' + (v.date ? (v.date.split('/')[2]||'20     ') : '20     '),'',
+        '_________________________________',
+        _nmp_adv,
+        'ADVOCATE FOR THE APPLICANT','',
+        'DRAWN & FILED BY',
+        _nmp_fl + _nmp_ref,'',
+        'TO BE SERVED UPON',
+        (v.respondent||'[RESPONDENT]').toUpperCase(),
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'certificate-urgency':{
+      const _cu_city = (v.sworn_city||'NAIROBI').toUpperCase();
+      const _cu_adv = (typeof currentProfile!=='undefined'&&currentProfile?.full_name)||'DENNIS KIMANI MUTONGA, ADVOCATE';
+      const _cu_fd = (typeof firmContact!=='undefined'&&firmContact)||{};
+      const _cu_fl = _cu_fd.contact_postal ? (_cu_fd.contact_firm_name||'Dennis Kimani Mutonga, Advocate') + '\n' + _cu_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
+      const _cu_ref = _cu_fd.contact_ref ? ' (REF: ' + _cu_fd.contact_ref + ')' : '';
+      const _cu_adv_name = (typeof currentProfile!=='undefined'&&currentProfile?.full_name)||'Dennis Kimani Mutonga';
+      const _cu_phys = _cu_fd.contact_physical||'c/o Kazilife Workspace, 2nd Floor, Office No. 201, Gracewood Plaza, Kikuyu-Nderi Road, Kikuyu';
+      const _cu_email = _cu_fd.contact_email||'info@dkma.co.ke / service@dkma.co.ke';
+      const _cu_po = _cu_fd.contact_postal||'P.O. Box 70638 \u2013 00400';
+      const _cu_grounds = (v.urgency_grounds||'[STATE URGENCY GROUNDS]').split('\n').filter(Boolean).map((g,i)=>'  '+(i+1)+' .\tTHAT '+g.replace(/^THAT\s*/i,'').trim()).join('\n\n');
+      return [
+        'REPUBLIC OF KENYA','',
+        'IN THE ' + (v.court||"CHIEF MAGISTRATE'S COURT AT KIAMBU").toUpperCase(),'',
+        v.case_no||'MISC. APPLICATION NO.            OF 20     ','',
+        'IN THE MATTER OF THE PUBLIC HEALTH ACT (CAP 242)','',
+        'AND','',
+        'IN THE MATTER OF THE ' + (v.matter_desc||'EXHUMATION AND RE-INTERMENT OF THE LATE [NAME] (DECEASED)').toUpperCase(),'',
+        'BETWEEN','',
+        (v.applicant||'[APPLICANT]').toUpperCase() + ' \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026  APPLICANT','',
+        'VERSUS','',
+        (v.respondent||'[RESPONDENT]').toUpperCase() + ' \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026  RESPONDENT','',
+        'CERTIFICATE OF URGENCY','',
+        'I, ' + _cu_adv_name.toUpperCase() + ', practicing as an Advocate at ' + _cu_phys + ' and ' + _cu_po + ' Nairobi \u2014 Email: ' + _cu_email + ', acting for the Applicant herein, do hereby certify that this application is urgent and should be placed before the duty Magistrate on a priority basis on the following grounds:-','',
+        _cu_grounds,'',
+        'DATED at ' + _cu_city + ' this ................ day of ...................... ' + (v.date ? (v.date.split('/')[2]||'20     ') : '20     '),'',
+        '_________________________________',
+        _cu_adv,
+        'ADVOCATE FOR THE APPLICANT','',
+        'DRAWN & FILED BY',
+        _cu_fl + _cu_ref,'',
+        'TO BE SERVED UPON',
+        v.respondent_address||v.respondent||'[RESPONDENT ADDRESS]',
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'hearing-notice':{
+      const _hn_city = (v.sworn_city||'NAIROBI').toUpperCase();
+      const _hn_adv = (typeof currentProfile!=='undefined'&&currentProfile?.full_name)||'DENNIS KIMANI MUTONGA, ADVOCATE';
+      const _hn_fd = (typeof firmContact!=='undefined'&&firmContact)||{};
+      const _hn_fl = _hn_fd.contact_postal ? (_hn_fd.contact_firm_name||'Dennis Kimani Mutonga, Advocate') + '\n' + _hn_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
+      const _hn_ref = _hn_fd.contact_ref ? ' (REF: ' + _hn_fd.contact_ref + ')' : '';
+      return [
+        'REPUBLIC OF KENYA','',
+        'IN THE ' + (v.court||"CHIEF MAGISTRATE'S COURT AT KIAMBU").toUpperCase(),'',
+        v.case_no||'MISC. APPLICATION NO.            OF 20     ','',
+        'IN THE MATTER OF THE PUBLIC HEALTH ACT (CAP 242)','',
+        'AND','',
+        'IN THE MATTER OF THE ' + (v.matter_desc||'EXHUMATION AND RE-INTERMENT OF THE LATE [NAME] (DECEASED)').toUpperCase(),'',
+        'BETWEEN','',
+        (v.applicant||'[APPLICANT]').toUpperCase() + ' \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026  APPLICANT','',
+        'VERSUS','',
+        (v.respondent||'[RESPONDENT]').toUpperCase() + ' \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026  RESPONDENT','',
+        'HEARING NOTICE','',
+        'TO:',
+        v.to_address||v.to_name||'[ADDRESSEE AND ADDRESS]','',
+        'TAKE NOTICE that the hearing of our application dated ' + (v.app_date||'[DATE OF APPLICATION]') + ' in this suit has been fixed for the ' + (v.hearing_date||'[HEARING DATE]') + ' at ' + (v.hearing_time||"9 o'clock in the forenoon") + ' or soon thereafter at the ' + (v.court||"Magistrates Court at Kiambu") + ' before ' + (v.magistrate||'[MAGISTRATE NAME]') + (v.courtroom ? ', ' + v.courtroom : '') + '.','',
+        'TAKE FURTHER NOTICE if you do not attend by yourself, your advocate or by someone authorized by law to act for you, the case may be heard and decided in your absence.','',
+        'DATED at ' + _hn_city + ' this ................ day of ...................... ' + (v.date ? (v.date.split('/')[2]||'20     ') : '20     '),'',
+        '_________________________________',
+        _hn_adv,
+        'ADVOCATE FOR THE APPLICANT','',
+        'DRAWN & FILED BY',
+        _hn_fl + _hn_ref,'',
+        'TO BE SERVED UPON',
+        v.to_address||v.to_name||'[RESPONDENT ADDRESS]',
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'affidavit-service-electronic':{
+      const _ase_server = (v.server||'[DEPONENT NAME]').toUpperCase();
+      const _ase_city = (v.sworn_city||'NAIROBI').toUpperCase();
+      const _ase_fd = (typeof firmContact!=='undefined'&&firmContact)||{};
+      const _ase_fl = _ase_fd.contact_postal ? (_ase_fd.contact_firm_name||'Dennis Kimani Mutonga, Advocate') + '\n' + _ase_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
+      const _ase_ref = _ase_fd.contact_ref ? ' (REF: ' + _ase_fd.contact_ref + ')' : '';
+      const _ase_docs = (v.docs_served||'[DOCUMENT 1]').split('\n').filter(Boolean).map(d=>'\t- A copy of ' + d.trim()).join('\n');
+      return [
+        'REPUBLIC OF KENYA','',
+        'IN THE ' + (v.court||"CHIEF MAGISTRATE'S COURT AT KIAMBU").toUpperCase(),'',
+        v.case_no||'MISC. APPLICATION NO.            OF 20     ','',
+        'IN THE MATTER OF THE PUBLIC HEALTH ACT (CAP 242)','',
+        'AND','',
+        'IN THE MATTER OF THE ' + (v.matter_desc||'EXHUMATION AND RE-INTERMENT OF THE LATE [NAME]').toUpperCase(),'',
+        'BETWEEN','',
+        (v.applicant||'[APPLICANT]').toUpperCase() + ' \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026  APPLICANT','',
+        'VERSUS','',
+        (v.respondent||'[RESPONDENT]').toUpperCase() + ' \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026  RESPONDENT','',
+        'AFFIDAVIT OF SERVICE','',
+        'I, ' + _ase_server + ' of ' + (v.server_address||'[ADDRESS]') + ' within the Republic of Kenya, do hereby make oath and state as follows:','',
+        '1 .\tTHAT I am an adult Kenyan of sound mind and the Advocate for the Applicant herein and therefore competent to swear this Affidavit.','',
+        '2 .\tTHAT on ' + (v.service_date||'[DATE AND TIME]') + ', I effected service of the documents listed hereunder upon the Respondent through electronic means via ' + (v.served_via||'WhatsApp') + '.','',
+        '3 .\tTHAT service was effected to ' + (v.served_via||'WhatsApp') + ' number/address ' + (v.served_number||'[NUMBER/EMAIL]') + ', being the contact previously used by me to communicate with ' + (v.served_contact||'[NAME AND DESIGNATION OF RECIPIENT]') + ', who had earlier accepted service of court documents in this matter.','',
+        '4 .\tTHAT I sent via ' + (v.served_via||'WhatsApp') + ':',
+        '',
+        _ase_docs,
+        '',
+        '5 .\tTHAT the said message was successfully sent and delivered to the said number/address.','',
+        '6 .\tTHAT I verily believe that the Respondent has received the said documents.','',
+        '7 .\tTHAT annexed hereto and marked "' + (v.exhibit_ref||'[EXHIBIT REF]') + '" are screenshots of the ' + (v.served_via||'WhatsApp') + ' message showing the contact served, documents sent, and confirmation of delivery.','',
+        '8 .\tTHAT what is deponed to herein is true to the best of my knowledge, information and belief.','',
+        jurat(_ase_server, _ase_city, 'DEPONENT'),'',
+        'DRAWN & FILED BY',
+        _ase_fl + _ase_ref,
+      ].filter(l=>l!==null&&l!==undefined).join(nl);
+    }
+
+    case 'supporting-affidavit-exhumation':{
+      const _sae_dep = (v.deponent||'[DEPONENT NAME]').toUpperCase();
+      const _sae_city = (v.sworn_city||'NAIROBI').toUpperCase();
+      const _sae_fd = (typeof firmContact!=='undefined'&&firmContact)||{};
+      const _sae_fl = _sae_fd.contact_postal ? (_sae_fd.contact_firm_name||'Dennis Kimani Mutonga, Advocate') + '\n' + _sae_fd.contact_postal + ', Nairobi' : 'Dennis Kimani Mutonga, Advocate\nP.O. Box 70638 \u2013 00400, Nairobi';
+      const _sae_ref = _sae_fd.contact_ref ? ' (REF: ' + _sae_fd.contact_ref + ')' : '';
+      const _sae_d1 = (v.deceased1||'[DECEASED 1]').toUpperCase();
+      const _sae_d2 = v.deceased2 ? v.deceased2.toUpperCase() : null;
+      return [
+        'REPUBLIC OF KENYA','',
+        'IN THE ' + (v.court||"CHIEF MAGISTRATE'S COURT AT KIAMBU").toUpperCase(),'',
+        v.case_no||'MISC. APPLICATION NO.            OF 20     ','',
+        'IN THE MATTER OF THE PUBLIC HEALTH ACT (CAP 242)','',
+        'AND','',
+        'IN THE MATTER OF THE ' + (v.matter_desc||'EXHUMATION AND RE-INTERMENT OF THE LATE [NAME]').toUpperCase(),'',
+        'BETWEEN','',
+        (v.applicant||'[APPLICANT]').toUpperCase() + ' \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026  APPLICANT','',
+        'VERSUS','',
+        (v.respondent||'[RESPONDENT]').toUpperCase() + ' \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026  RESPONDENT','',
+        'SUPPORTING AFFIDAVIT','',
+        'I, ' + _sae_dep + ' of ' + (v.deponent_address||'[ADDRESS]') + ' within the Republic of Kenya, do hereby make oath and state as follows:','',
+        '1 .\tTHAT I am the applicant herein and the biological son/daughter of the Late ' + _sae_d1 + ' (Deceased) who passed away on ' + (v.deceased1_date||'[DATE]') + (_sae_d2 ? ' and the Late ' + _sae_d2 + ' (Deceased) who passed away on ' + (v.deceased2_date||'[DATE]') : '') + ' (herein ' + (_sae_d2 ? 'jointly ' : '') + 'referred to as the "deceased"). (Herewith annexed and labelled as ' + (v.exhibit_death||'[EXHIBIT REF]') + ' is a certified copy of the death certificate and/or burial permit of the deceased).','',
+        '2 .\tTHAT the deceased ' + (_sae_d2 ? 'were' : 'was') + ' buried in property registered as ' + (v.land_ref_orig||'[LAND REF]') + ' situated in ' + (v.land_loc_orig||'[LOCATION]') + ' (hereinafter referred to as the "original burial site").','',
+        '3 .\tTHAT the original burial site has since been sold off to a purchaser and as part of the terms of the sale agreement, the original burial site requires vacant possession before the full purchase is completed.','',
+        '4 .\tTHAT I seek leave to re-inter the deceased in the property registered as ' + (v.land_ref_new||'[NEW LAND REF]') + ' situated in ' + (v.land_loc_new||'[NEW LOCATION]') + ' to which I am the registered owner (hereinafter referred to as the "new burial site"). (Herewith annexed and labelled as ' + (v.exhibit_title||'[EXHIBIT REF]') + ' is a certified copy of the title deed).','',
+        '5 .\tTHAT I make this application with the consent of all my siblings to re-inter the deceased. (Herewith annexed and labelled as ' + (v.exhibit_consent||'[EXHIBIT REF]') + ' is a certified copy of the consent).','',
+        '6 .\tTHAT what is deponed to herein is true to the best of my knowledge, information and belief.','',
+        jurat(_sae_dep, _sae_city, 'DEPONENT'),'',
+        'DRAWN & FILED BY',
+        _sae_fl + _sae_ref,'',
+        'TO BE SERVED UPON',
+        (v.respondent||'[RESPONDENT]').toUpperCase(),
       ].filter(l=>l!==null&&l!==undefined).join(nl);
     }
 
@@ -12641,8 +12923,12 @@ function dgRenderPreview(text,d){
     }
     if(!line.trim()){html+='<br>';return;}
     const f=line.replace(/\[([^\]]+)\]/g,'<span class="dg-blank">[$1]</span>');
-    // Centred ALL-CAPS headings (headings, title lines)
-    if(/^[A-Z\s\u2014\-]{6,}$/.test(line.trim())&&line.trim().length<80) html+=`<p style="font-weight:700;margin-top:14px;margin-bottom:6px;text-align:center;text-decoration:underline">${f}</p>`;
+    // Centred ALL-CAPS headings — strip leading spaces/tabs, use CSS text-align:center
+    const _trimLine = line.trimStart();
+    if(/^[A-Z][A-Z\s\u2014\-\.\(\)\/\*]{4,}$/.test(_trimLine) && _trimLine.length < 120 && _trimLine.length > 3){
+      const _ft = _trimLine.replace(/\[([^\]]+)\]/g,'<span class="dg-blank">[$1]</span>');
+      html+=`<p style="font-weight:700;margin-top:10px;margin-bottom:6px;text-align:center">${_ft}</p>`;
+    }
     // Numbered paragraphs — format "1 .\tTHAT ..." — render as proper hanging indent table
     else if(/^\d+\s*\.\s*\t/.test(line)){
       const numMatch=line.match(/^(\d+)\s*\.\s*\t(.*)/);
@@ -12679,6 +12965,7 @@ function dgToggleEdit() {
   dgEditMode = !dgEditMode;
 
   if (dgEditMode) {
+    // Enter edit mode
     wrap.contentEditable = 'true';
     wrap.setAttribute('spellcheck', 'true');
     toolbar.style.display = 'flex';
@@ -12686,13 +12973,21 @@ function dgToggleEdit() {
     btn.style.background = 'var(--green)';
     btn.style.color = '#fff';
     btn.style.borderColor = 'var(--green)';
+    // Add editing badge to sub title
     const badge = document.createElement('span');
     badge.className = 'dg-edit-mode-badge';
     badge.id = 'dg-edit-badge';
     badge.textContent = 'EDITING';
     if (sub) sub.appendChild(badge);
     wrap.focus();
+    // Move toolbar inside the preview column so it sticks correctly
+    const previewCol = wrap.parentElement;
+    previewCol.style.position = 'relative';
+    previewCol.insertBefore(toolbar, wrap);
+    toolbar.style.position = 'sticky';
+    toolbar.style.top = '0';
   } else {
+    // Exit edit mode — save innerHTML as the new rendered state
     wrap.contentEditable = 'false';
     toolbar.style.display = 'none';
     btn.textContent = '✏️ Edit';
@@ -12701,7 +12996,8 @@ function dgToggleEdit() {
     btn.style.borderColor = '';
     const badge = document.getElementById('dg-edit-badge');
     if (badge) badge.remove();
-    dgGeneratedText = '__html__';
+    // Sync dgGeneratedText from edited HTML for print
+    dgGeneratedText = '__html__'; // flag that we now use innerHTML directly
   }
 }
 
@@ -12774,17 +13070,15 @@ function _dgPrintBase(){
   const previewHtml = document.getElementById('dg-preview-wrap').innerHTML;
   const content=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:2.5cm 3cm;color:#111}
-    h1,h2,h3{font-family:inherit}
     p{margin-bottom:4px;margin-top:0}
     br{display:block;margin-bottom:8px}
     table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
-    .dg-blank{background:#FFF5CC;padding:0 2px}
+    .dg-blank{padding:0 2px}
     .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9}
     .dg-jurat td{padding:0;vertical-align:top}
-    @page{margin:2.5cm 3cm;size:A4;marks:none}
-    @media print{
-      body{margin:0}
-    }
+    .dg-edit-mode-badge{display:none !important}
+    @page{size:A4;margin:2.5cm 3cm}
+    @media print{body{margin:0}}
   </style></head><body>${previewHtml}</body></html>`;
   frame.contentDocument.open();
   frame.contentDocument.write(content);
