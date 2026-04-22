@@ -10186,83 +10186,75 @@ document.addEventListener('DOMContentLoaded', function() {
           Select a document<br>to see fields
         </div>
       </div>
-      <!-- Right: preview -->
-      <div style="flex:1;overflow-y:auto;padding:20px 24px;background:#fff" id="dg-preview-wrap">
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px;color:var(--txt3);font-size:12px;text-align:center">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Fill in the form and click Generate
+      <!-- Right: preview column — flex column so toolbar sits above scrollable doc -->
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#fff">
+        <!-- Editor toolbar — shown in edit mode -->
+        <div id="dg-editor-toolbar" style="display:none;flex-shrink:0;background:#f4f2ee;border-bottom:1px solid var(--brd);padding:6px 10px;flex-wrap:wrap;gap:4px;align-items:center">
+          <div class="dg-tb-group">
+            <button class="dg-tb-btn" title="Bold" onclick="dge('bold')"><b>B</b></button>
+            <button class="dg-tb-btn" title="Italic" onclick="dge('italic')"><i>I</i></button>
+            <button class="dg-tb-btn" title="Underline" onclick="dge('underline')"><u>U</u></button>
+            <button class="dg-tb-btn" title="Strikethrough" onclick="dge('strikethrough')"><s>S</s></button>
+          </div>
+          <div class="dg-tb-sep"></div>
+          <div class="dg-tb-group">
+            <select class="dg-tb-sel" title="Font size" onchange="dge('fontSize',false,this.value);this.blur()">
+              <option value="">Size</option>
+              <option value="1">8pt</option>
+              <option value="2">10pt</option>
+              <option value="3">12pt</option>
+              <option value="4">14pt</option>
+              <option value="5">18pt</option>
+              <option value="6">24pt</option>
+              <option value="7">36pt</option>
+            </select>
+            <select class="dg-tb-sel" title="Font family" onchange="dgSetFont(this.value);this.blur()">
+              <option value="">Font</option>
+              <option value="Georgia,serif">Georgia</option>
+              <option value="Times New Roman,serif">Times New Roman</option>
+              <option value="Arial,sans-serif">Arial</option>
+              <option value="Courier New,monospace">Courier New</option>
+            </select>
+          </div>
+          <div class="dg-tb-sep"></div>
+          <div class="dg-tb-group">
+            <button class="dg-tb-btn" title="Align left" onclick="dge('justifyLeft')">&#8676; L</button>
+            <button class="dg-tb-btn" title="Centre" onclick="dge('justifyCenter')">C</button>
+            <button class="dg-tb-btn" title="Align right" onclick="dge('justifyRight')">R &#8677;</button>
+            <button class="dg-tb-btn" title="Justify" onclick="dge('justifyFull')">&#8644;</button>
+          </div>
+          <div class="dg-tb-sep"></div>
+          <div class="dg-tb-group">
+            <button class="dg-tb-btn" title="Bullet list" onclick="dge('insertUnorderedList')">&#8226; List</button>
+            <button class="dg-tb-btn" title="Numbered list" onclick="dge('insertOrderedList')">1. List</button>
+            <button class="dg-tb-btn" title="Indent" onclick="dge('indent')">&#8594;</button>
+            <button class="dg-tb-btn" title="Outdent" onclick="dge('outdent')">&#8592;</button>
+          </div>
+          <div class="dg-tb-sep"></div>
+          <div class="dg-tb-group">
+            <label style="font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;gap:3px" title="Text colour">
+              A <input type="color" id="dg-color-pick" value="#111111" oninput="dge('foreColor',false,this.value)" style="width:22px;height:18px;padding:0;border:1px solid var(--brd);border-radius:3px;cursor:pointer">
+            </label>
+            <label style="font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;gap:3px;margin-left:6px" title="Highlight">
+              H <input type="color" id="dg-hl-pick" value="#FFFF88" oninput="dge('hiliteColor',false,this.value)" style="width:22px;height:18px;padding:0;border:1px solid var(--brd);border-radius:3px;cursor:pointer">
+            </label>
+          </div>
+          <div class="dg-tb-sep"></div>
+          <div class="dg-tb-group">
+            <button class="dg-tb-btn" title="Undo" onclick="dge('undo')">&#8617;</button>
+            <button class="dg-tb-btn" title="Redo" onclick="dge('redo')">&#8618;</button>
+            <button class="dg-tb-btn" title="Clear formatting" onclick="dge('removeFormat')" style="font-size:10px;margin-left:2px">&#215; fmt</button>
+          </div>
+        </div>
+        <!-- Scrollable document preview / editable area -->
+        <div style="flex:1;overflow-y:auto;padding:20px 24px;" id="dg-preview-wrap">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px;color:var(--txt3);font-size:12px;text-align:center">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Fill in the form and click Generate
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- Rich text editor toolbar (shown when in edit mode) -->
-<div id="dg-editor-toolbar" style="display:none;position:sticky;top:0;z-index:10;background:#f4f2ee;border-bottom:1px solid var(--brd);padding:6px 10px;display:none;flex-wrap:wrap;gap:4px;align-items:center">
-  <!-- Text style -->
-  <div class="dg-tb-group">
-    <button class="dg-tb-btn" title="Bold" onclick="dge('bold')"><b>B</b></button>
-    <button class="dg-tb-btn" title="Italic" onclick="dge('italic')"><i>I</i></button>
-    <button class="dg-tb-btn" title="Underline" onclick="dge('underline')"><u>U</u></button>
-    <button class="dg-tb-btn" title="Strikethrough" onclick="dge('strikethrough')"><s>S</s></button>
-  </div>
-  <div class="dg-tb-sep"></div>
-  <!-- Font size -->
-  <div class="dg-tb-group">
-    <select class="dg-tb-sel" title="Font size" onchange="dge('fontSize',false,this.value);this.blur()">
-      <option value="">Size</option>
-      <option value="1">8pt</option>
-      <option value="2">10pt</option>
-      <option value="3">12pt</option>
-      <option value="4">14pt</option>
-      <option value="5">18pt</option>
-      <option value="6">24pt</option>
-      <option value="7">36pt</option>
-    </select>
-    <select class="dg-tb-sel" title="Font family" onchange="dgSetFont(this.value);this.blur()">
-      <option value="">Font</option>
-      <option value="Georgia,serif">Georgia</option>
-      <option value="'Times New Roman',serif">Times New Roman</option>
-      <option value="Arial,sans-serif">Arial</option>
-      <option value="'Courier New',monospace">Courier New</option>
-    </select>
-  </div>
-  <div class="dg-tb-sep"></div>
-  <!-- Alignment -->
-  <div class="dg-tb-group">
-    <button class="dg-tb-btn" title="Align left" onclick="dge('justifyLeft')">⬛︎ L</button>
-    <button class="dg-tb-btn" title="Centre" onclick="dge('justifyCenter')">≡ C</button>
-    <button class="dg-tb-btn" title="Align right" onclick="dge('justifyRight')">R ⬛︎</button>
-    <button class="dg-tb-btn" title="Justify" onclick="dge('justifyFull')">≣</button>
-  </div>
-  <div class="dg-tb-sep"></div>
-  <!-- Lists & indent -->
-  <div class="dg-tb-group">
-    <button class="dg-tb-btn" title="Bullet list" onclick="dge('insertUnorderedList')">• List</button>
-    <button class="dg-tb-btn" title="Numbered list" onclick="dge('insertOrderedList')">1. List</button>
-    <button class="dg-tb-btn" title="Indent" onclick="dge('indent')">→</button>
-    <button class="dg-tb-btn" title="Outdent" onclick="dge('outdent')">←</button>
-  </div>
-  <div class="dg-tb-sep"></div>
-  <!-- Colour -->
-  <div class="dg-tb-group" style="align-items:center">
-    <label style="font-size:10px;color:var(--txt3);cursor:pointer" title="Text colour">
-      A <input type="color" id="dg-color-pick" value="#111111" oninput="dge('foreColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
-    </label>
-    <label style="font-size:10px;color:var(--txt3);cursor:pointer;margin-left:6px" title="Highlight colour">
-      H <input type="color" id="dg-hl-pick" value="#FFFF88" oninput="dge('hiliteColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
-    </label>
-  </div>
-  <div class="dg-tb-sep"></div>
-  <!-- Undo/redo -->
-  <div class="dg-tb-group">
-    <button class="dg-tb-btn" title="Undo" onclick="dge('undo')">↩</button>
-    <button class="dg-tb-btn" title="Redo" onclick="dge('redo')">↪</button>
-  </div>
-  <div class="dg-tb-sep"></div>
-  <!-- Clear formatting -->
-  <div class="dg-tb-group">
-    <button class="dg-tb-btn" title="Clear formatting" onclick="dge('removeFormat')" style="font-size:10px">Clear fmt</button>
   </div>
 </div>
 
@@ -12687,7 +12679,6 @@ function dgToggleEdit() {
   dgEditMode = !dgEditMode;
 
   if (dgEditMode) {
-    // Enter edit mode
     wrap.contentEditable = 'true';
     wrap.setAttribute('spellcheck', 'true');
     toolbar.style.display = 'flex';
@@ -12695,21 +12686,13 @@ function dgToggleEdit() {
     btn.style.background = 'var(--green)';
     btn.style.color = '#fff';
     btn.style.borderColor = 'var(--green)';
-    // Add editing badge to sub title
     const badge = document.createElement('span');
     badge.className = 'dg-edit-mode-badge';
     badge.id = 'dg-edit-badge';
     badge.textContent = 'EDITING';
     if (sub) sub.appendChild(badge);
     wrap.focus();
-    // Move toolbar inside the preview column so it sticks correctly
-    const previewCol = wrap.parentElement;
-    previewCol.style.position = 'relative';
-    previewCol.insertBefore(toolbar, wrap);
-    toolbar.style.position = 'sticky';
-    toolbar.style.top = '0';
   } else {
-    // Exit edit mode — save innerHTML as the new rendered state
     wrap.contentEditable = 'false';
     toolbar.style.display = 'none';
     btn.textContent = '✏️ Edit';
@@ -12718,8 +12701,7 @@ function dgToggleEdit() {
     btn.style.borderColor = '';
     const badge = document.getElementById('dg-edit-badge');
     if (badge) badge.remove();
-    // Sync dgGeneratedText from edited HTML for print
-    dgGeneratedText = '__html__'; // flag that we now use innerHTML directly
+    dgGeneratedText = '__html__';
   }
 }
 
