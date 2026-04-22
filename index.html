@@ -10543,35 +10543,27 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </div>
 
-    <!-- Toolbar -->
-    <div id="dg-editor-toolbar2" style="flex-shrink:0;background:#f8f6f2;border-bottom:1px solid var(--brd);padding:5px 16px;display:flex;flex-wrap:wrap;gap:3px;align-items:center">
-      <div class="dg-tb-group">
-        <button class="dg-tb-btn" title="Bold" onclick="dge2('bold')"><b>B</b></button>
-        <button class="dg-tb-btn" title="Italic" onclick="dge2('italic')"><i>I</i></button>
-        <button class="dg-tb-btn" title="Underline" onclick="dge2('underline')"><u>U</u></button>
-        <button class="dg-tb-btn" title="Strikethrough" onclick="dge2('strikethrough')"><s>S</s></button>
-      </div>
-      <div class="dg-tb-sep"></div>
-      <div class="dg-tb-group">
-        <select class="dg-tb-sel" title="Font size" id="dg-fontsize-sel2" onchange="dgSetFontSize(this.value,'dg-editor-content');this.blur()">
-          <option value="">Size</option>
-          <option value="8">8pt</option>
-          <option value="9">9pt</option>
-          <option value="10">10pt</option>
-          <option value="11">11pt</option>
-          <option value="12">12pt</option>
-          <option value="14">14pt</option>
-          <option value="16">16pt</option>
-          <option value="18">18pt</option>
-          <option value="20">20pt</option>
-          <option value="22">22pt</option>
-          <option value="24">24pt</option>
-          <option value="28">28pt</option>
-          <option value="36">36pt</option>
-          <option value="48">48pt</option>
-          <option value="72">72pt</option>
+    <!-- Ribbon Toolbar -->
+    <div id="dg-editor-toolbar2" style="flex-shrink:0;background:#f4f2ee;border-bottom:1px solid var(--brd)">
+
+      <!-- Row 1: Font, size, style, colour -->
+      <div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center;padding:4px 10px;border-bottom:1px solid rgba(0,0,0,0.06)">
+
+        <!-- Paragraph style -->
+        <select class="dg-tb-sel" title="Paragraph style" style="min-width:110px" onchange="dgApplyParaStyle(this.value);this.blur()">
+          <option value="">¶ Style</option>
+          <option value="p">Normal</option>
+          <option value="h1">Heading 1</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+          <option value="h4">Heading 4</option>
+          <option value="blockquote">Block Quote</option>
+          <option value="pre">Preformatted</option>
         </select>
-        <select class="dg-tb-sel" title="Font" style="min-width:150px" onchange="dge2('fontName',false,this.value);this.blur()">
+        <div class="dg-tb-sep"></div>
+
+        <!-- Font family -->
+        <select class="dg-tb-sel" title="Font" id="dg-font-sel2" style="min-width:140px" onchange="dge2('fontName',false,this.value);this.blur()">
           <option value="">Font</option>
           <optgroup label="── Serif ──">
           <option value="'Sitka Text','Sitka',Georgia,serif">Sitka Text</option>
@@ -10608,69 +10600,165 @@ document.addEventListener('DOMContentLoaded', function() {
           <option value="'Rockwell','Arial Rounded MT Bold',sans-serif">Rockwell</option>
           <option value="'Copperplate Gothic Bold',sans-serif">Copperplate Gothic</option>
           <option value="'Tw Cen MT','Century Gothic',sans-serif">Tw Cen MT</option>
-          <option value="'Haettenschweiler',Impact,sans-serif">Haettenschweiler</option>
           </optgroup>
         </select>
+
+        <!-- Font size -->
+        <select class="dg-tb-sel" title="Font size" id="dg-fontsize-sel2" style="width:68px" onchange="dgSetFontSize(this.value,'dg-editor-content');this.blur()">
+          <option value="">pt</option>
+          <option value="8">8</option><option value="9">9</option><option value="10">10</option>
+          <option value="11">11</option><option value="12">12</option><option value="14">14</option>
+          <option value="16">16</option><option value="18">18</option><option value="20">20</option>
+          <option value="22">22</option><option value="24">24</option><option value="28">28</option>
+          <option value="36">36</option><option value="48">48</option><option value="72">72</option>
+        </select>
+        <div class="dg-tb-sep"></div>
+
+        <!-- Text formatting -->
+        <div class="dg-tb-group">
+          <button class="dg-tb-btn" id="dg-btn-bold" title="Bold (Ctrl+B)" onclick="dge2('bold')"><b>B</b></button>
+          <button class="dg-tb-btn" id="dg-btn-italic" title="Italic (Ctrl+I)" onclick="dge2('italic')"><i>I</i></button>
+          <button class="dg-tb-btn" id="dg-btn-underline" title="Underline (Ctrl+U)" onclick="dge2('underline')"><u>U</u></button>
+          <button class="dg-tb-btn" id="dg-btn-strike" title="Strikethrough" onclick="dge2('strikeThrough')"><s>S</s></button>
+          <button class="dg-tb-btn" title="Superscript" onclick="dge2('superscript')" style="font-size:10px">x²</button>
+          <button class="dg-tb-btn" title="Subscript" onclick="dge2('subscript')" style="font-size:10px">x₂</button>
+        </div>
+        <div class="dg-tb-sep"></div>
+
+        <!-- Colours -->
+        <div class="dg-tb-group" style="align-items:center;gap:4px">
+          <label title="Text colour" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;gap:1px">
+            <span style="font-size:11px;font-weight:700;color:var(--txt);line-height:1">A</span>
+            <input type="color" id="dg-color-pick2" value="#111111" oninput="dge2('foreColor',false,this.value)" style="width:22px;height:6px;padding:0;border:none;cursor:pointer;border-radius:2px">
+          </label>
+          <label title="Highlight colour" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;gap:1px">
+            <span style="font-size:10px;color:var(--txt3);line-height:1">▐H</span>
+            <input type="color" id="dg-hl-pick2" value="#FFFF88" oninput="dge2('hiliteColor',false,this.value)" style="width:22px;height:6px;padding:0;border:none;cursor:pointer;border-radius:2px">
+          </label>
+        </div>
+        <div class="dg-tb-sep"></div>
+
+        <!-- Undo / Redo / Clear -->
+        <div class="dg-tb-group">
+          <button class="dg-tb-btn" title="Undo (Ctrl+Z)" onclick="dge2('undo')">↩</button>
+          <button class="dg-tb-btn" title="Redo (Ctrl+Y)" onclick="dge2('redo')">↪</button>
+          <button class="dg-tb-btn" title="Clear formatting" onclick="dge2('removeFormat')" style="font-size:9px">✕fmt</button>
+        </div>
       </div>
-      <div class="dg-tb-sep"></div>
-      <div class="dg-tb-group">
-        <button class="dg-tb-btn" title="Align left" onclick="dge2('justifyLeft')">⬛︎ L</button>
-        <button class="dg-tb-btn" title="Centre" onclick="dge2('justifyCenter')">≡ C</button>
-        <button class="dg-tb-btn" title="Align right" onclick="dge2('justifyRight')">R ⬛︎</button>
-        <button class="dg-tb-btn" title="Justify" onclick="dge2('justifyFull')">≣</button>
-      </div>
-      <div class="dg-tb-sep"></div>
-      <div class="dg-tb-group">
-        <button class="dg-tb-btn" title="Bullet list" onclick="dge2('insertUnorderedList')">• List</button>
-        <button class="dg-tb-btn" title="Numbered list" onclick="dge2('insertOrderedList')">1. List</button>
-        <button class="dg-tb-btn" title="Indent" onclick="dge2('indent')">→</button>
-        <button class="dg-tb-btn" title="Outdent" onclick="dge2('outdent')">←</button>
-      </div>
-      <div class="dg-tb-sep"></div>
-      <div class="dg-tb-group" style="align-items:center">
-        <label style="font-size:10px;color:var(--txt3);cursor:pointer" title="Text colour">
-          A <input type="color" id="dg-color-pick2" value="#111111" oninput="dge2('foreColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
-        </label>
-        <label style="font-size:10px;color:var(--txt3);cursor:pointer;margin-left:6px" title="Highlight">
-          H <input type="color" id="dg-hl-pick2" value="#FFFF88" oninput="dge2('hiliteColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
-        </label>
-      </div>
-      <div class="dg-tb-sep"></div>
-      <div class="dg-tb-group">
-        <button class="dg-tb-btn" title="Insert page break" onclick="dgInsertPageBreak2()" style="font-size:10px">⊞ Page Break</button>
-        <button class="dg-tb-btn" title="Toggle page numbers" id="dg-pgnums-btn2" onclick="dgTogglePageNumbers2()" style="font-size:10px">¶ Page #</button>
-      </div>
-      <div class="dg-tb-sep"></div>
-      <div class="dg-tb-group">
-        <button class="dg-tb-btn" title="Undo" onclick="dge2('undo')">↩</button>
-        <button class="dg-tb-btn" title="Redo" onclick="dge2('redo')">↪</button>
-        <button class="dg-tb-btn" title="Clear formatting" onclick="dge2('removeFormat')" style="font-size:10px">Clear fmt</button>
-      </div>
-      <div class="dg-tb-sep"></div>
-      <!-- Margin controls -->
-      <div class="dg-tb-group" style="align-items:center;gap:6px">
-        <span style="font-size:10px;color:var(--txt3);font-weight:500;letter-spacing:.3px">MARGINS:</span>
-        <label style="font-size:10px;color:var(--txt3)">L
-          <input type="number" id="dg-margin-left" value="25" min="0" max="80" step="1"
-            style="width:44px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;margin-left:3px"
-            oninput="dgApplyMargins()" title="Left margin (mm)"> mm
-        </label>
-        <label style="font-size:10px;color:var(--txt3)">R
-          <input type="number" id="dg-margin-right" value="25" min="0" max="80" step="1"
-            style="width:44px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;margin-left:3px"
-            oninput="dgApplyMargins()" title="Right margin (mm)"> mm
-        </label>
-        <label style="font-size:10px;color:var(--txt3)">T
-          <input type="number" id="dg-margin-top" value="20" min="0" max="60" step="1"
-            style="width:44px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;margin-left:3px"
-            oninput="dgApplyMargins()" title="Top margin (mm)"> mm
-        </label>
-        <label style="font-size:10px;color:var(--txt3)">B
-          <input type="number" id="dg-margin-bottom" value="20" min="0" max="60" step="1"
-            style="width:44px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;margin-left:3px"
-            oninput="dgApplyMargins()" title="Bottom margin (mm)"> mm
-        </label>
-        <button onclick="dgResetMargins()" class="dg-tb-btn" style="font-size:10px" title="Reset to defaults">↺ Reset</button>
+
+      <!-- Row 2: Alignment, lists, spacing, insert, page -->
+      <div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center;padding:4px 10px">
+
+        <!-- Alignment -->
+        <div class="dg-tb-group">
+          <button class="dg-tb-btn" title="Align Left" onclick="dge2('justifyLeft')" style="font-size:13px">&#8676;</button>
+          <button class="dg-tb-btn" title="Center" onclick="dge2('justifyCenter')" style="font-size:13px">&#8596;</button>
+          <button class="dg-tb-btn" title="Align Right" onclick="dge2('justifyRight')" style="font-size:13px">&#8677;</button>
+          <button class="dg-tb-btn" title="Justify" onclick="dge2('justifyFull')" style="font-size:11px">≣</button>
+        </div>
+        <div class="dg-tb-sep"></div>
+
+        <!-- Line spacing -->
+        <select class="dg-tb-sel" title="Line spacing" style="width:68px" onchange="dgSetLineSpacing(this.value);this.blur()">
+          <option value="">↕ Sp.</option>
+          <option value="1">1.0</option>
+          <option value="1.15">1.15</option>
+          <option value="1.5">1.5</option>
+          <option value="1.85">1.85</option>
+          <option value="2">2.0</option>
+          <option value="2.5">2.5</option>
+          <option value="3">3.0</option>
+        </select>
+        <div class="dg-tb-sep"></div>
+
+        <!-- Lists -->
+        <div class="dg-tb-group">
+          <button class="dg-tb-btn" title="Bullet list — disc" onclick="dgInsertList('disc')" style="font-size:12px">•</button>
+          <button class="dg-tb-btn dg-has-dropdown" title="Bullet style ▾" onclick="dgShowDropdown('dg-bullet-dd')" style="font-size:9px;padding:2px 4px">▾</button>
+          <button class="dg-tb-btn" title="Numbered list — decimal" onclick="dgInsertList('decimal')" style="font-size:11px">1.</button>
+          <button class="dg-tb-btn dg-has-dropdown" title="Number style ▾" onclick="dgShowDropdown('dg-num-dd')" style="font-size:9px;padding:2px 4px">▾</button>
+          <button class="dg-tb-btn" title="Increase indent" onclick="dge2('indent')" style="font-size:12px">⇥</button>
+          <button class="dg-tb-btn" title="Decrease indent" onclick="dge2('outdent')" style="font-size:12px">⇤</button>
+        </div>
+
+        <!-- Bullet style dropdown -->
+        <div id="dg-bullet-dd" class="dg-dropdown" style="display:none">
+          <div class="dg-dd-item" onclick="dgInsertList('disc')">● Disc</div>
+          <div class="dg-dd-item" onclick="dgInsertList('circle')">○ Circle</div>
+          <div class="dg-dd-item" onclick="dgInsertList('square')">■ Square</div>
+          <div class="dg-dd-item" onclick="dgInsertList('none','ul')">— None (indent only)</div>
+        </div>
+        <!-- Number style dropdown -->
+        <div id="dg-num-dd" class="dg-dropdown" style="display:none">
+          <div class="dg-dd-item" onclick="dgInsertList('decimal')">1. 2. 3. Decimal</div>
+          <div class="dg-dd-item" onclick="dgInsertList('lower-alpha')">a. b. c. Lower Alpha</div>
+          <div class="dg-dd-item" onclick="dgInsertList('upper-alpha')">A. B. C. Upper Alpha</div>
+          <div class="dg-dd-item" onclick="dgInsertList('lower-roman')">i. ii. iii. Lower Roman</div>
+          <div class="dg-dd-item" onclick="dgInsertList('upper-roman')">I. II. III. Upper Roman</div>
+          <div class="dg-dd-item" onclick="dgInsertList('lower-latin')">a. b. c. Lower Latin</div>
+        </div>
+        <div class="dg-tb-sep"></div>
+
+        <!-- Table insert -->
+        <div class="dg-tb-group" style="position:relative">
+          <button class="dg-tb-btn" title="Insert table" onclick="dgShowDropdown('dg-table-dd')" style="font-size:11px">⊞ Table ▾</button>
+          <div id="dg-table-dd" class="dg-dropdown" style="display:none;min-width:180px">
+            <div style="padding:6px 10px;font-size:10px;color:var(--txt3);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Insert Table</div>
+            <div id="dg-table-grid" style="display:grid;grid-template-columns:repeat(8,18px);gap:2px;padding:6px 10px">
+            </div>
+            <div style="padding:4px 10px 6px;font-size:10px;color:var(--txt3)" id="dg-table-size-label">0 × 0</div>
+            <div style="border-top:1px solid var(--brd);padding:4px 10px">
+              <div class="dg-dd-item" onclick="dgInsertTableCustom()">Custom size…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Image insert -->
+        <div class="dg-tb-group">
+          <button class="dg-tb-btn" title="Insert image from file" onclick="document.getElementById('dg-img-upload').click()" style="font-size:11px">🖼 Image</button>
+          <input type="file" id="dg-img-upload" accept="image/*" style="display:none" onchange="dgInsertImage(this)">
+          <button class="dg-tb-btn" title="Insert image from URL" onclick="dgInsertImageUrl()" style="font-size:11px">🔗 Img URL</button>
+        </div>
+        <div class="dg-tb-sep"></div>
+
+        <!-- Special inserts -->
+        <div class="dg-tb-group">
+          <button class="dg-tb-btn" title="Insert horizontal rule" onclick="dge2('insertHorizontalRule')" style="font-size:11px">— Rule</button>
+          <button class="dg-tb-btn" title="Insert link" onclick="dgInsertLink()" style="font-size:11px">🔗 Link</button>
+          <button class="dg-tb-btn" title="Insert date" onclick="dgInsertDate()" style="font-size:11px">📅 Date</button>
+          <button class="dg-tb-btn" title="Insert special character" onclick="dgShowDropdown('dg-special-dd')" style="font-size:11px">Ω Chars ▾</button>
+          <div id="dg-special-dd" class="dg-dropdown" style="display:none;min-width:220px">
+            <div style="padding:6px 10px;font-size:10px;color:var(--txt3);font-weight:600;text-transform:uppercase">Special Characters</div>
+            <div style="display:flex;flex-wrap:wrap;padding:4px 8px;gap:2px" id="dg-special-chars"></div>
+          </div>
+        </div>
+        <div class="dg-tb-sep"></div>
+
+        <!-- Page controls -->
+        <div class="dg-tb-group">
+          <button class="dg-tb-btn" title="Insert page break" onclick="dgInsertPageBreak2()" style="font-size:10px">⊞ Pg Break</button>
+          <button class="dg-tb-btn dg-has-dropdown" title="Page numbers ▾" onclick="dgShowDropdown('dg-pgnum-dd')" style="font-size:10px">¶ Pg # ▾</button>
+          <div id="dg-pgnum-dd" class="dg-dropdown" style="display:none;min-width:190px">
+            <div style="padding:6px 10px;font-size:10px;color:var(--txt3);font-weight:600;text-transform:uppercase">Page Number Format</div>
+            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('n')">1 &nbsp;&nbsp;(page number only)</div>
+            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('page-n')">Page 1</div>
+            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('n-of-t')">1 of 5</div>
+            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('page-n-of-t')">Page 1 of 5</div>
+            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('pg-n-slash-t')">Pg 1/5</div>
+            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('none')">✕ Remove page numbers</div>
+          </div>
+        </div>
+        <div class="dg-tb-sep"></div>
+
+        <!-- Margins -->
+        <div class="dg-tb-group" style="align-items:center;gap:4px">
+          <span style="font-size:9px;color:var(--txt3);font-weight:600;letter-spacing:.3px">MARGINS</span>
+          <label style="font-size:9px;color:var(--txt3)">L <input type="number" id="dg-margin-left" value="25" min="0" max="80" step="1" style="width:38px;padding:2px 3px;border:1px solid var(--brd);border-radius:3px;font-size:10px;font-family:'DM Sans',sans-serif" oninput="dgApplyMargins()"></label>
+          <label style="font-size:9px;color:var(--txt3)">R <input type="number" id="dg-margin-right" value="25" min="0" max="80" step="1" style="width:38px;padding:2px 3px;border:1px solid var(--brd);border-radius:3px;font-size:10px;font-family:'DM Sans',sans-serif" oninput="dgApplyMargins()"></label>
+          <label style="font-size:9px;color:var(--txt3)">T <input type="number" id="dg-margin-top" value="20" min="0" max="60" step="1" style="width:38px;padding:2px 3px;border:1px solid var(--brd);border-radius:3px;font-size:10px;font-family:'DM Sans',sans-serif" oninput="dgApplyMargins()"></label>
+          <label style="font-size:9px;color:var(--txt3)">B <input type="number" id="dg-margin-bottom" value="20" min="0" max="60" step="1" style="width:38px;padding:2px 3px;border:1px solid var(--brd);border-radius:3px;font-size:10px;font-family:'DM Sans',sans-serif" oninput="dgApplyMargins()"></label>
+          <button onclick="dgResetMargins()" class="dg-tb-btn" style="font-size:9px" title="Reset margins">↺</button>
+        </div>
       </div>
     </div>
 
@@ -10992,11 +11080,26 @@ document.addEventListener('DOMContentLoaded', function() {
   #dg-vruler-wrap{display:none}
 }
 .dg-tb-sep{width:1px;height:18px;background:var(--brd2);margin:0 3px}
-.dg-tb-btn{background:none;border:1px solid transparent;border-radius:4px;padding:3px 7px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--txt);line-height:1;min-width:26px;transition:background 0.1s}
+.dg-tb-btn{background:none;border:1px solid transparent;border-radius:4px;padding:3px 7px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--txt);line-height:1;min-width:26px;transition:background 0.1s;white-space:nowrap}
 .dg-tb-btn:hover{background:rgba(13,27,42,0.1);border-color:var(--brd2)}
-.dg-tb-btn:active{background:var(--navy);color:#fff}
+.dg-tb-btn:active,.dg-tb-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 .dg-tb-sel{border:1px solid var(--brd);border-radius:4px;padding:3px 5px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;cursor:pointer;outline:none}
 .dg-tb-sel:focus{border-color:var(--navy)}
+/* Dropdowns */
+.dg-dropdown{position:absolute;z-index:2000;background:#fff;border:1px solid var(--brd);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,0.14);min-width:140px;margin-top:2px}
+.dg-dd-item{padding:7px 14px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);cursor:pointer;transition:background 0.1s}
+.dg-dd-item:hover{background:var(--cream)}
+/* Table grid cells */
+.dg-tg-cell{width:16px;height:16px;border:1px solid var(--brd);border-radius:2px;cursor:pointer;transition:background 0.1s,border-color 0.1s}
+.dg-tg-cell:hover,.dg-tg-cell.sel{background:rgba(184,149,58,0.25);border-color:var(--gold)}
+/* Inserted tables */
+#dg-editor-content table,.dg-page table{border-collapse:collapse;width:100%;margin:8px 0}
+#dg-editor-content td,#dg-editor-content th,.dg-page td,.dg-page th{border:1px solid #ccc;padding:5px 8px;min-width:30px;vertical-align:top}
+#dg-editor-content th,.dg-page th{background:#f0ede7;font-weight:600}
+/* Image resize handle */
+#dg-editor-content img,.dg-page img{max-width:100%;cursor:pointer}
+#dg-editor-content img.dg-img-selected,.dg-page img.dg-img-selected{outline:2px solid var(--gold)}
+
 /* Editable preview */
 #dg-preview-wrap[contenteditable="true"]{outline:none;cursor:text}
 #dg-preview-wrap[contenteditable="true"]:focus{box-shadow:inset 0 0 0 2px rgba(184,149,58,0.25)}
@@ -13978,6 +14081,278 @@ function dge2(cmd, showUI, val) {
   const ec = document.getElementById('dg-editor-content');
   if (ec) { ec.focus(); document.execCommand(cmd, showUI||false, val||null); }
 }
+// ── DROPDOWN SYSTEM ────────────────────────────────────────────────
+function dgShowDropdown(id) {
+  // Close all other dropdowns first
+  document.querySelectorAll('.dg-dropdown').forEach(d => { if (d.id !== id) d.style.display = 'none'; });
+  const dd = document.getElementById(id);
+  if (!dd) return;
+  const isOpen = dd.style.display !== 'none';
+  dd.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    // Position below trigger button
+    const btn = dd.previousElementSibling || dd.parentElement;
+    const rect = btn.getBoundingClientRect();
+    const modal = document.getElementById('dg-editor-modal');
+    const mRect = modal ? modal.getBoundingClientRect() : {left:0,top:0};
+    dd.style.position = 'fixed';
+    dd.style.left = rect.left + 'px';
+    dd.style.top = (rect.bottom + 2) + 'px';
+    dd.style.zIndex = '3000';
+  }
+}
+// Close dropdowns on outside click
+document.addEventListener('mousedown', e => {
+  if (!e.target.closest('.dg-dropdown') && !e.target.classList.contains('dg-has-dropdown')) {
+    document.querySelectorAll('.dg-dropdown').forEach(d => d.style.display = 'none');
+  }
+});
+
+// ── PARAGRAPH STYLES ───────────────────────────────────────────────
+function dgApplyParaStyle(tag) {
+  if (!tag) return;
+  const ed = document.getElementById('dg-editor-content');
+  if (!ed) return;
+  ed.focus();
+  document.execCommand('formatBlock', false, tag);
+}
+
+// ── LINE SPACING ────────────────────────────────────────────────────
+function dgSetLineSpacing(val) {
+  if (!val) return;
+  const ed = document.getElementById('dg-editor-content');
+  if (!ed) return;
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) { ed.style.lineHeight = val; return; }
+  // Apply to selected paragraphs
+  const range = sel.getRangeAt(0);
+  let node = range.commonAncestorContainer;
+  if (node.nodeType === 3) node = node.parentElement;
+  // Walk up to block elements within editor
+  const blocks = ed.querySelectorAll('p,div,li,h1,h2,h3,h4,h5,h6,blockquote');
+  let applied = false;
+  blocks.forEach(b => {
+    if (sel.containsNode(b, true)) { b.style.lineHeight = val; applied = true; }
+  });
+  if (!applied) { // no block selected — apply to whole editor
+    ed.style.lineHeight = val;
+  }
+}
+
+// ── LIST INSERTION WITH CUSTOM STYLE ───────────────────────────────
+function dgInsertList(listStyle, type) {
+  const ed = document.getElementById('dg-editor-content');
+  if (!ed) return;
+  ed.focus();
+  const isOrdered = ['decimal','lower-alpha','upper-alpha','lower-roman','upper-roman','lower-latin'].includes(listStyle);
+  document.execCommand(isOrdered ? 'insertOrderedList' : 'insertUnorderedList', false, null);
+  // Find the just-created list and apply the style
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) {
+    let node = sel.anchorNode;
+    while (node && node !== ed) {
+      if (node.tagName === 'UL' || node.tagName === 'OL') {
+        node.style.listStyleType = listStyle === 'none' ? 'none' : listStyle;
+        if (listStyle === 'none') node.style.paddingLeft = '20px';
+        break;
+      }
+      node = node.parentElement;
+    }
+  }
+  dgShowDropdown('dg-bullet-dd'); // close
+  dgShowDropdown('dg-num-dd');
+}
+
+// ── TABLE INSERTION ─────────────────────────────────────────────────
+let _dgTableRows = 0, _dgTableCols = 0;
+
+function dgInitTableGrid() {
+  const grid = document.getElementById('dg-table-grid');
+  if (!grid || grid.children.length > 0) return;
+  for (let r = 1; r <= 8; r++) {
+    for (let c = 1; c <= 8; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'dg-tg-cell';
+      cell.dataset.r = r; cell.dataset.c = c;
+      cell.addEventListener('mouseover', () => {
+        _dgTableRows = r; _dgTableCols = c;
+        document.querySelectorAll('.dg-tg-cell').forEach(el => {
+          el.classList.toggle('sel', +el.dataset.r <= r && +el.dataset.c <= c);
+        });
+        const lbl = document.getElementById('dg-table-size-label');
+        if (lbl) lbl.textContent = r + ' × ' + c;
+      });
+      cell.addEventListener('click', () => { dgInsertTable(r, c); dgShowDropdown('dg-table-dd'); });
+      grid.appendChild(cell);
+    }
+  }
+}
+// Init grid when dropdown opens
+document.addEventListener('click', e => { if (e.target.closest('#dg-table-dd') || (e.target.textContent && e.target.textContent.includes('Table'))) dgInitTableGrid(); });
+
+function dgInsertTable(rows, cols) {
+  const ed = document.getElementById('dg-editor-content');
+  if (!ed) return;
+  ed.focus();
+  let html = '<table style="border-collapse:collapse;width:100%;margin:8px 0"><tbody>';
+  for (let r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) {
+      const tag = r === 0 ? 'th' : 'td';
+      html += `<${tag} style="border:1px solid #ccc;padding:5px 8px;min-width:40px">&nbsp;</${tag}>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table><p><br></p>';
+  document.execCommand('insertHTML', false, html);
+}
+
+function dgInsertTableCustom() {
+  dgShowDropdown('dg-table-dd');
+  const r = parseInt(prompt('Number of rows:', '3') || '0');
+  const c = parseInt(prompt('Number of columns:', '3') || '0');
+  if (r > 0 && c > 0) dgInsertTable(r, c);
+}
+
+// ── IMAGE INSERTION ─────────────────────────────────────────────────
+function dgInsertImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const ed = document.getElementById('dg-editor-content');
+    if (!ed) return;
+    ed.focus();
+    document.execCommand('insertHTML', false,
+      `<img src="${e.target.result}" style="max-width:100%;height:auto;display:block;margin:4px 0" alt="${file.name}">`
+    );
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function dgInsertImageUrl() {
+  const url = prompt('Enter image URL:');
+  if (!url) return;
+  const ed = document.getElementById('dg-editor-content');
+  if (!ed) return;
+  ed.focus();
+  document.execCommand('insertHTML', false,
+    `<img src="${url}" style="max-width:100%;height:auto;display:block;margin:4px 0" alt="image">`
+  );
+}
+
+// ── LINK INSERTION ───────────────────────────────────────────────────
+function dgInsertLink() {
+  const url = prompt('Enter URL:', 'https://');
+  if (!url) return;
+  const ed = document.getElementById('dg-editor-content');
+  if (!ed) return;
+  ed.focus();
+  const sel = window.getSelection();
+  if (sel && !sel.isCollapsed) {
+    document.execCommand('createLink', false, url);
+  } else {
+    const text = prompt('Link text:', url) || url;
+    document.execCommand('insertHTML', false, `<a href="${url}" target="_blank">${text}</a>`);
+  }
+}
+
+// ── DATE INSERTION ───────────────────────────────────────────────────
+function dgInsertDate() {
+  const ed = document.getElementById('dg-editor-content');
+  if (!ed) return;
+  ed.focus();
+  const d = new Date().toLocaleDateString('en-KE', { day: '2-digit', month: 'long', year: 'numeric' });
+  document.execCommand('insertText', false, d);
+}
+
+// ── SPECIAL CHARACTERS ───────────────────────────────────────────────
+const DG_SPECIAL_CHARS = [
+  '©','®','™','°','±','×','÷','≠','≤','≥','∞','√','∑','∏','π','∂','∫',
+  '←','→','↑','↓','↔','⇒','⇔','•','–','—','…','«','»','‹','›',
+  '¼','½','¾','⅓','⅔','£','€','¥','¢','§','¶','†','‡','‰','′','″',
+  'Ω','α','β','γ','δ','ε','λ','μ','σ','φ','ψ','ω',
+  '\u00A0'  // non-breaking space
+];
+
+function dgInitSpecialChars() {
+  const wrap = document.getElementById('dg-special-chars');
+  if (!wrap || wrap.children.length > 0) return;
+  DG_SPECIAL_CHARS.forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = 'dg-tb-btn';
+    btn.style.cssText = 'width:26px;height:26px;font-size:13px;padding:2px;text-align:center';
+    btn.title = ch === '\u00A0' ? 'Non-breaking space' : ch;
+    btn.textContent = ch === '\u00A0' ? '⎵' : ch;
+    btn.onclick = () => {
+      const ed = document.getElementById('dg-editor-content');
+      if (ed) { ed.focus(); document.execCommand('insertText', false, ch); }
+      dgShowDropdown('dg-special-dd');
+    };
+    wrap.appendChild(btn);
+  });
+}
+document.addEventListener('click', e => { if (e.target.textContent && e.target.textContent.includes('Chars')) dgInitSpecialChars(); });
+
+// ── PAGE NUMBER FORMATS ──────────────────────────────────────────────
+let _dgPageNumFormat = 'none';
+
+function dgSetPageNumberFormat(format) {
+  _dgPageNumFormat = format;
+  dgShowDropdown('dg-pgnum-dd');
+  _dgApplyPageNumbers();
+  if (format !== 'none') {
+    const btn = document.getElementById('dg-pgnums-btn2');
+    if (btn) { btn.style.background = 'var(--navy)'; btn.style.color = '#fff'; }
+  }
+}
+
+function _dgApplyPageNumbers() {
+  const pages = document.querySelectorAll('.dg-page');
+  const total = pages.length;
+  pages.forEach((page, i) => {
+    let footer = page.querySelector('.dg-page-num-footer');
+    if (!footer) {
+      footer = document.createElement('div');
+      footer.className = 'dg-page-num-footer';
+      page.appendChild(footer);
+    }
+    if (_dgPageNumFormat === 'none' || _dgPageNumFormat === undefined) {
+      footer.style.display = 'none';
+      return;
+    }
+    footer.style.display = 'block';
+    const n = i + 1, t = total;
+    switch (_dgPageNumFormat) {
+      case 'n':           footer.textContent = `${n}`; break;
+      case 'page-n':      footer.textContent = `Page ${n}`; break;
+      case 'n-of-t':      footer.textContent = `${n} of ${t}`; break;
+      case 'page-n-of-t': footer.textContent = `Page ${n} of ${t}`; break;
+      case 'pg-n-slash-t':footer.textContent = `Pg ${n}/${t}`; break;
+      default:            footer.textContent = `${n}`;
+    }
+  });
+}
+// Override old toggle functions to route through new format system
+function dgTogglePageNumbers() { dgSetPageNumberFormat(_dgPageNumFormat === 'none' ? 'page-n-of-t' : 'none'); }
+function dgTogglePageNumbers2() { dgSetPageNumberFormat(_dgPageNumFormat === 'none' ? 'page-n-of-t' : 'none'); }
+
+// ── TOOLBAR STATE SYNC (bold/italic/underline active states) ─────────
+function dgSyncToolbarState() {
+  const states = ['bold','italic','underline','strikeThrough'];
+  const ids = ['dg-btn-bold','dg-btn-italic','dg-btn-underline','dg-btn-strike'];
+  states.forEach((cmd, i) => {
+    try {
+      const active = document.queryCommandState(cmd);
+      const btn = document.getElementById(ids[i]);
+      if (btn) btn.classList.toggle('active', active);
+    } catch(e) {}
+  });
+  dgUpdateFontSizeSelectors();
+}
+document.addEventListener('selectionchange', dgSyncToolbarState);
+
 function dgSetFont(fontFamily) {
   if (!fontFamily) return;
   const wrap = document.getElementById('dg-preview-wrap');
