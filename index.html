@@ -14949,32 +14949,81 @@ function _dgBuildPrintHtml() {
   const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
   const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
   const pages = document.querySelectorAll('#dg-pages-container .dg-page');
+  const docTitle = document.getElementById('dg-editor-title')?.textContent || 'Document';
+  const now = new Date();
+  const printDate = now.toLocaleDateString('en-KE', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  const printTime = now.toLocaleTimeString('en-KE', {hour:'2-digit', minute:'2-digit'});
+  const systemUrl = window.location.hostname || 'dkma.co.ke';
+
   let bodyHtml = '';
   if (pages.length > 0) {
     const total = pages.length;
     pages.forEach((pg, i) => {
       const ed = pg.querySelector('[contenteditable]');
       const pgHtml = ed ? ed.innerHTML : '';
-      const numHtml = _dgPageNumbersOn ? `<div style="text-align:center;font-size:10px;color:#888;font-family:Georgia,serif;margin-top:8px">${i+1} / ${total}</div>` : '';
-      bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'}">${pgHtml}${numHtml}</div>`;
+      bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'};position:relative">${pgHtml}</div>`;
     });
   } else {
     const ed = document.getElementById('dg-editor-content');
     const preview = document.getElementById('dg-preview-wrap');
     bodyHtml = (ed ? ed.innerHTML : '') || (preview ? preview.innerHTML : '');
   }
+
+  const pageNumCss = _dgPageNumbersOn ? `
+    @page { @bottom-center { content: counter(page) " / " counter(pages); font-family:Georgia,serif; font-size:9pt; color:#888; } }
+  ` : '';
+
   return `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>${(document.getElementById('dg-editor-title')?.textContent || 'Document')}</title>
+<title>${docTitle}</title>
 <style>
-  body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
+  *{box-sizing:border-box}
+  body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:0;color:#111}
   p{margin-bottom:4px;margin-top:0}br{display:block;margin-bottom:8px}
   table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
   .dg-blank{padding:0 2px}
   .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px}.dg-jurat td{padding:0;vertical-align:top}
   .dg-edit-mode-badge,.dg-page-break-marker{display:none!important}
+  /* ── PRINT HEADER ── */
+  .print-header{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:10px;border-bottom:2.5px solid #0D1B2A;margin-bottom:14px}
+  .print-header-firm{font-size:13pt;font-weight:700;color:#0D1B2A;letter-spacing:0.3px;text-transform:uppercase;font-family:Georgia,serif}
+  .print-header-sub{font-size:8pt;color:#6a6a6a;letter-spacing:1.2px;text-transform:uppercase;margin-top:2px;font-family:sans-serif}
+  .print-header-right{text-align:right;font-size:8pt;color:#8a8a8a;font-family:sans-serif;line-height:1.7}
+  .print-doc-bar{background:#0D1B2A;color:#fff;padding:9px 14px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
+  .print-doc-bar-title{font-size:13pt;font-weight:700;font-family:Georgia,serif}
+  .print-doc-bar-meta{font-size:8pt;color:rgba(255,255,255,0.55);font-family:sans-serif;text-align:right;line-height:1.7}
+  /* ── PRINT FOOTER ── */
+  .print-footer{margin-top:24px;padding-top:10px;border-top:1.5px solid #0D1B2A;display:flex;align-items:center;justify-content:space-between;font-size:8pt;color:#8a8a8a;font-family:sans-serif}
+  /* ── PAGE NUMBERS (CSS counter fallback) ── */
+  .dg-page-num{text-align:center;font-size:9pt;color:#888;font-family:Georgia,serif;margin-top:10px}
   @page{size:A4;margin:${t}mm ${r}mm ${b}mm ${l}mm}
-  @media print{body{margin:0}}
-</style></head><body>${bodyHtml}</body></html>`;
+  @media print{body{margin:0}-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  ${pageNumCss}
+</style></head><body>
+  <!-- SYSTEM HEADER -->
+  <div class="print-header">
+    <div>
+      <div class="print-header-firm">Dennis Kimani Mutonga</div>
+      <div class="print-header-sub">Advocate of the High Court of Kenya &nbsp;|&nbsp; DKMA</div>
+    </div>
+    <div class="print-header-right">
+      P.O. Box — Nairobi, Kenya<br>
+      ${systemUrl}<br>
+      Printed: ${printDate}, ${printTime}
+    </div>
+  </div>
+  <!-- DOCUMENT TITLE BAR -->
+  <div class="print-doc-bar">
+    <div class="print-doc-bar-title">${docTitle}</div>
+    <div class="print-doc-bar-meta">DKMA Law Firm Management System<br>Generated: ${printDate}</div>
+  </div>
+  <!-- DOCUMENT CONTENT -->
+  ${bodyHtml}
+  <!-- SYSTEM FOOTER -->
+  <div class="print-footer">
+    <span>DKMA — Dennis Kimani Mutonga, Advocate &nbsp;|&nbsp; ${systemUrl}</span>
+    <span>Printed: ${printDate}, ${printTime}</span>
+  </div>
+</body></html>`;
 }
 
 
@@ -15283,33 +15332,35 @@ function dgResetMargins() {
 // Override dgPrint to handle edited HTML mode (multi-page aware)
 function dgPrint() {
   if (dgGeneratedText === '__html__') {
-    // Collect all pages content
     const pages = document.querySelectorAll('#dg-pages-container .dg-page');
     const editContent = document.getElementById('dg-editor-content');
     const wrapEl = document.getElementById('dg-preview-wrap');
+    const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
+    const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
+    const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
+    const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
+    const docTitle = document.getElementById('dg-editor-title')?.textContent || 'Document';
+    const now = new Date();
+    const printDate = now.toLocaleDateString('en-KE', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+    const printTime = now.toLocaleTimeString('en-KE', {hour:'2-digit', minute:'2-digit'});
+    const systemUrl = window.location.hostname || 'dkma.co.ke';
+    const pageNumCss = _dgPageNumbersOn ? `@page { @bottom-center { content: counter(page) " / " counter(pages); font-family:Georgia,serif; font-size:9pt; color:#888; } }` : '';
+
     let allPagesHtml = '';
     if (pages.length > 0) {
-      const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
-      const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
-      const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
-      const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
       pages.forEach((pg, i) => {
         const ed = pg.querySelector('[contenteditable]');
         const pgHtml = ed ? ed.innerHTML : '';
-        const numHtml = _dgPageNumbersOn ? `<div style="position:fixed;bottom:${b}mm;left:0;right:0;text-align:center;font-size:10px;color:#888;font-family:Georgia,serif">${i+1} / ${pages.length}</div>` : '';
-        allPagesHtml += `<div style="page-break-after:${i < pages.length-1 ? 'always' : 'auto'};position:relative;padding:0">${pgHtml}${numHtml}</div>`;
+        allPagesHtml += `<div style="page-break-after:${i < pages.length-1 ? 'always' : 'auto'};position:relative">${pgHtml}</div>`;
       });
     } else {
       const previewHtml = (dgEditMode && editContent) ? editContent.innerHTML : wrapEl.innerHTML;
       allPagesHtml = previewHtml;
     }
     const frame = document.getElementById('dg-print-frame');
-    const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
-    const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
-    const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
-    const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
     const content = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-      body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
+      *{box-sizing:border-box}
+      body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:0;color:#111}
       p{margin-bottom:4px;margin-top:0}
       br{display:block;margin-bottom:8px}
       table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
@@ -15317,9 +15368,39 @@ function dgPrint() {
       .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9}
       .dg-jurat td{padding:0;vertical-align:top}
       .dg-edit-mode-badge,.dg-page-break-marker{display:none}
+      .print-header{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:10px;border-bottom:2.5px solid #0D1B2A;margin-bottom:14px}
+      .print-header-firm{font-size:13pt;font-weight:700;color:#0D1B2A;letter-spacing:0.3px;text-transform:uppercase;font-family:Georgia,serif}
+      .print-header-sub{font-size:8pt;color:#6a6a6a;letter-spacing:1.2px;text-transform:uppercase;margin-top:2px;font-family:sans-serif}
+      .print-header-right{text-align:right;font-size:8pt;color:#8a8a8a;font-family:sans-serif;line-height:1.7}
+      .print-doc-bar{background:#0D1B2A;color:#fff;padding:9px 14px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
+      .print-doc-bar-title{font-size:13pt;font-weight:700;font-family:Georgia,serif}
+      .print-doc-bar-meta{font-size:8pt;color:rgba(255,255,255,0.55);font-family:sans-serif;text-align:right;line-height:1.7}
+      .print-footer{margin-top:24px;padding-top:10px;border-top:1.5px solid #0D1B2A;display:flex;align-items:center;justify-content:space-between;font-size:8pt;color:#8a8a8a;font-family:sans-serif}
       @page{margin:${t}mm ${r}mm ${b}mm ${l}mm;size:A4}
-      @media print{body{margin:0}}
-    </style></head><body>${allPagesHtml}</body></html>`;
+      @media print{body{margin:0};-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      ${pageNumCss}
+    </style></head><body>
+      <div class="print-header">
+        <div>
+          <div class="print-header-firm">Dennis Kimani Mutonga</div>
+          <div class="print-header-sub">Advocate of the High Court of Kenya &nbsp;|&nbsp; DKMA</div>
+        </div>
+        <div class="print-header-right">
+          P.O. Box — Nairobi, Kenya<br>
+          ${systemUrl}<br>
+          Printed: ${printDate}, ${printTime}
+        </div>
+      </div>
+      <div class="print-doc-bar">
+        <div class="print-doc-bar-title">${docTitle}</div>
+        <div class="print-doc-bar-meta">DKMA Law Firm Management System<br>Generated: ${printDate}</div>
+      </div>
+      ${allPagesHtml}
+      <div class="print-footer">
+        <span>DKMA — Dennis Kimani Mutonga, Advocate &nbsp;|&nbsp; ${systemUrl}</span>
+        <span>Printed: ${printDate}, ${printTime}</span>
+      </div>
+    </body></html>`;
     frame.contentDocument.open();
     frame.contentDocument.write(content);
     frame.contentDocument.close();
@@ -15358,8 +15439,16 @@ function _dgPrintBase(){
   const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
   const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
   const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
+  const docTitle = document.getElementById('dg-editor-title')?.textContent || 'Document';
+  const now = new Date();
+  const printDate = now.toLocaleDateString('en-KE', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  const printTime = now.toLocaleTimeString('en-KE', {hour:'2-digit', minute:'2-digit'});
+  const systemUrl = window.location.hostname || 'dkma.co.ke';
+  const pageNumCss = _dgPageNumbersOn ? `@page { @bottom-center { content: counter(page) " / " counter(pages); font-family:Georgia,serif; font-size:9pt; color:#888; } }` : '';
+
   const content=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-    body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
+    *{box-sizing:border-box}
+    body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:0;color:#111}
     p{margin-bottom:4px;margin-top:0}
     br{display:block;margin-bottom:8px}
     table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
@@ -15368,9 +15457,39 @@ function _dgPrintBase(){
     .dg-jurat td{padding:0;vertical-align:top}
     .dg-edit-mode-badge{display:none !important}
     .dg-page-break-marker{display:none !important}
+    .print-header{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:10px;border-bottom:2.5px solid #0D1B2A;margin-bottom:14px}
+    .print-header-firm{font-size:13pt;font-weight:700;color:#0D1B2A;letter-spacing:0.3px;text-transform:uppercase;font-family:Georgia,serif}
+    .print-header-sub{font-size:8pt;color:#6a6a6a;letter-spacing:1.2px;text-transform:uppercase;margin-top:2px;font-family:sans-serif}
+    .print-header-right{text-align:right;font-size:8pt;color:#8a8a8a;font-family:sans-serif;line-height:1.7}
+    .print-doc-bar{background:#0D1B2A;color:#fff;padding:9px 14px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
+    .print-doc-bar-title{font-size:13pt;font-weight:700;font-family:Georgia,serif}
+    .print-doc-bar-meta{font-size:8pt;color:rgba(255,255,255,0.55);font-family:sans-serif;text-align:right;line-height:1.7}
+    .print-footer{margin-top:24px;padding-top:10px;border-top:1.5px solid #0D1B2A;display:flex;align-items:center;justify-content:space-between;font-size:8pt;color:#8a8a8a;font-family:sans-serif}
     @page{size:A4;margin:${t}mm ${r}mm ${b}mm ${l}mm}
-    @media print{body{margin:0}}
-  </style></head><body>${previewHtml}</body></html>`;
+    @media print{body{margin:0};-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    ${pageNumCss}
+  </style></head><body>
+    <div class="print-header">
+      <div>
+        <div class="print-header-firm">Dennis Kimani Mutonga</div>
+        <div class="print-header-sub">Advocate of the High Court of Kenya &nbsp;|&nbsp; DKMA</div>
+      </div>
+      <div class="print-header-right">
+        P.O. Box — Nairobi, Kenya<br>
+        ${systemUrl}<br>
+        Printed: ${printDate}, ${printTime}
+      </div>
+    </div>
+    <div class="print-doc-bar">
+      <div class="print-doc-bar-title">${docTitle}</div>
+      <div class="print-doc-bar-meta">DKMA Law Firm Management System<br>Generated: ${printDate}</div>
+    </div>
+    ${previewHtml}
+    <div class="print-footer">
+      <span>DKMA — Dennis Kimani Mutonga, Advocate &nbsp;|&nbsp; ${systemUrl}</span>
+      <span>Printed: ${printDate}, ${printTime}</span>
+    </div>
+  </body></html>`;
   frame.contentDocument.open();
   frame.contentDocument.write(content);
   frame.contentDocument.close();
