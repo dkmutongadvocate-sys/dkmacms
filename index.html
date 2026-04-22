@@ -1362,6 +1362,7 @@ setTimeout(function() {
         <div class="profile-tab active" id="fstab-contact" onclick="switchFirmTab('contact')">Contact &amp; Address</div>
         <div class="profile-tab" id="fstab-mattertypes" onclick="switchFirmTab('mattertypes')">Matter Types</div>
         <div class="profile-tab" id="fstab-departments" onclick="switchFirmTab('departments')">Departments</div>
+        <div class="profile-tab" id="fstab-officedocs" onclick="switchFirmTab('officedocs');loadOfficeDocuments()">🏛 Office Documents</div>
       </div>
       <div class="profile-panel active" id="fspanel-contact">
         <div class="card" style="max-width:680px">
@@ -1405,6 +1406,20 @@ setTimeout(function() {
           <div id="fs-departments-list" style="padding:8px 0;min-height:60px"></div>
           <div style="padding:14px 24px;border-top:1px solid var(--brd);display:flex;justify-content:flex-end">
             <button class="btn-primary" id="fs-departments-btn" onclick="saveFirmList('departments')">Save Changes</button>
+          </div>
+        </div>
+      </div>
+      <div class="profile-panel" id="fspanel-officedocs">
+        <div class="card">
+          <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+            <span class="card-title">🏛 Office Documents</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:10px;color:var(--txt3)">Documents saved without a client or matter</span>
+              <button class="card-action" onclick="loadOfficeDocuments()">↺ Refresh</button>
+            </div>
+          </div>
+          <div id="office-docs-list" style="min-height:80px;padding:8px 0">
+            <div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">Click the tab to load office documents.</div>
           </div>
         </div>
       </div>
@@ -9233,11 +9248,77 @@ let firmMatterTypes=[...DEFAULT_MATTER_TYPES];
 let firmDepartments=[...DEFAULT_DEPARTMENTS];
 
 function switchFirmTab(tab){
-  ['contact','mattertypes','departments'].forEach(t=>{
-    document.getElementById('fstab-'+t).classList.toggle('active',t===tab);
-    document.getElementById('fspanel-'+t).classList.toggle('active',t===tab);
+  ['contact','mattertypes','departments','officedocs'].forEach(t=>{
+    const tabEl = document.getElementById('fstab-'+t);
+    const panelEl = document.getElementById('fspanel-'+t);
+    if (tabEl) tabEl.classList.toggle('active',t===tab);
+    if (panelEl) panelEl.classList.toggle('active',t===tab);
   });
 }
+
+async function loadOfficeDocuments(){
+  const list = document.getElementById('office-docs-list');
+  if (!list) return;
+  list.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">Loading…</div>';
+  try {
+    const { data, error } = await sb.storage.from(STORAGE_BUCKET).list('office-general', {
+      limit: 200, sortBy: { column: 'created_at', order: 'desc' }
+    });
+    if (error) throw error;
+    const files = (data || []).filter(f => f.name && !f.name.endsWith('/'));
+    if (!files.length) {
+      list.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--txt3)">No office documents yet.<br><span style="color:var(--gold)">Use ✦ New Blank Document → 💾 Save to File → 🏛 Office File to save documents here.</span></div>';
+      return;
+    }
+    let html = '';
+    files.forEach(f => {
+      const parts = f.name.split('__');
+      const cat = parts[0] || 'document';
+      // Extract original display name: last part after final underscore-timestamp pattern
+      const rawDisplay = parts.slice(2).join('__') || f.name;
+      const displayName = rawDisplay.replace(/^\d+_/, '').replace(/_/g, ' ');
+      const sizeMB = f.metadata?.size ? (f.metadata.size / 1024).toFixed(1) + ' KB' : '';
+      const date = f.created_at ? new Date(f.created_at).toLocaleDateString('en-KE', {day:'2-digit',month:'short',year:'numeric'}) : '';
+      const safeName = esc(f.name);
+      html += `<div style="display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid var(--brd);transition:background 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''">
+        <div style="width:34px;height:34px;border-radius:7px;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:1px solid var(--brd)">📄</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(displayName)}</div>
+          <div style="font-size:10px;color:var(--txt3);margin-top:2px">${esc(cat)} · ${date}${sizeMB ? ' · ' + sizeMB : ''}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button onclick="viewOfficeDoc('${safeName}')" style="font-size:11px;padding:4px 10px;border:1px solid var(--brd);border-radius:5px;background:#fff;cursor:pointer;color:var(--txt2);font-family:'DM Sans',sans-serif">View</button>
+          <button onclick="downloadOfficeDoc('${safeName}')" style="font-size:11px;padding:4px 10px;border:1px solid var(--brd);border-radius:5px;background:#fff;cursor:pointer;color:var(--txt2);font-family:'DM Sans',sans-serif">↓</button>
+          <button onclick="deleteOfficeDoc('${safeName}',this)" style="font-size:11px;padding:4px 10px;border:1px solid #f5c6c6;border-radius:5px;background:#fff;cursor:pointer;color:var(--red);font-family:'DM Sans',sans-serif">✕</button>
+        </div>
+      </div>`;
+    });
+    list.innerHTML = html || '<div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">No files found.</div>';
+  } catch(e) {
+    list.innerHTML = `<div style="padding:20px;color:var(--red);font-size:12px">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+async function viewOfficeDoc(name) {
+  const { data, error } = await sb.storage.from(STORAGE_BUCKET).createSignedUrl('office-general/' + name, 600);
+  if (error) { toast('Could not open document.', true); return; }
+  window.open(data.signedUrl, '_blank');
+}
+async function downloadOfficeDoc(name) {
+  const { data, error } = await sb.storage.from(STORAGE_BUCKET).createSignedUrl('office-general/' + name, 300);
+  if (error) { toast('Could not download.', true); return; }
+  const a = document.createElement('a'); a.href = data.signedUrl; a.download = name; a.target = '_blank';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+async function deleteOfficeDoc(name, btn) {
+  if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+  btn.disabled = true;
+  const { error } = await sb.storage.from(STORAGE_BUCKET).remove(['office-general/' + name]);
+  if (error) { toast('Delete failed: ' + error.message, true); btn.disabled = false; return; }
+  toast('File deleted.');
+  loadOfficeDocuments();
+}
+
 
 async function loadFirmSettings(){
   try{
@@ -10253,6 +10334,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <span id="dg-edit-badge2" style="display:none;background:#FFF5CC;color:#7A5C00;font-size:9px;padding:2px 8px;border-radius:8px;font-weight:600;letter-spacing:.3px">EDITING</span>
       <button onclick="dgToggleClientPanel()" id="dg-client-panel-btn" title="Fill in client details" style="background:rgba(255,255,255,0.13);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:6px 13px;border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:5px">👤 Client Details</button>
+      <button onclick="dgSaveToFile()" id="dg-save-to-file-btn" title="Save PDF to client/matter file" style="background:rgba(184,149,58,0.25);color:#fff;border:1px solid rgba(184,149,58,0.5);padding:6px 13px;border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:5px">💾 Save to File</button>
       <button onclick="dgToggleEdit()" id="dg-btn-done" style="background:var(--green);color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px"><span>✅</span> Done editing</button>
       <button onclick="dgPrint()" style="background:var(--gold);color:var(--navy);border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Print / Save PDF</button>
       <button onclick="dgCloseEditor()" style="background:rgba(255,255,255,0.12);color:#fff;border:none;width:32px;height:32px;border-radius:6px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
@@ -10594,6 +10676,72 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Clear formatting -->
   <div class="dg-tb-group">
     <button class="dg-tb-btn" title="Clear formatting" onclick="dge('removeFormat')" style="font-size:10px">Clear fmt</button>
+  </div>
+</div>
+
+<!-- Save to File modal -->
+<div id="dg-save-modal" style="display:none;position:fixed;inset:0;z-index:1400;background:rgba(13,27,42,0.55);display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;width:420px;max-width:94vw;box-shadow:0 24px 60px rgba(0,0,0,0.25);overflow:hidden">
+    <div style="background:var(--navy);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:15px;color:#fff;font-weight:500">💾 Save to File</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px">Save this document as PDF to a client matter or office file</div>
+      </div>
+      <button onclick="dgCloseSaveModal()" style="background:rgba(255,255,255,0.12);color:#fff;border:none;width:30px;height:30px;border-radius:6px;font-size:18px;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div style="padding:20px">
+      <!-- Destination selector -->
+      <div style="margin-bottom:14px">
+        <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;font-weight:600">Save destination</label>
+        <div style="display:flex;gap:8px">
+          <button id="dg-save-dest-matter" onclick="dgSetSaveDest('matter')" style="flex:1;padding:8px;border-radius:7px;border:2px solid var(--navy);background:var(--navy);color:#fff;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">📁 Client Matter</button>
+          <button id="dg-save-dest-client" onclick="dgSetSaveDest('client')" style="flex:1;padding:8px;border-radius:7px;border:2px solid var(--brd);background:#fff;color:var(--txt2);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer">👤 Client (no matter)</button>
+          <button id="dg-save-dest-office" onclick="dgSetSaveDest('office')" style="flex:1;padding:8px;border-radius:7px;border:2px solid var(--brd);background:#fff;color:var(--txt2);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer">🏛 Office File</button>
+        </div>
+      </div>
+      <!-- Client picker (hidden for office) -->
+      <div id="dg-save-client-row" style="margin-bottom:12px">
+        <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;font-weight:500">Client</label>
+        <select id="dg-save-client-sel" onchange="dgSaveClientChanged(this.value)" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+          <option value="">— Select client —</option>
+        </select>
+      </div>
+      <!-- Matter picker (only for matter destination) -->
+      <div id="dg-save-matter-row" style="margin-bottom:12px">
+        <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;font-weight:500">Matter</label>
+        <select id="dg-save-matter-sel" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+          <option value="">— Select matter —</option>
+        </select>
+      </div>
+      <!-- Filename -->
+      <div style="margin-bottom:12px">
+        <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;font-weight:500">File name</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input id="dg-save-filename" placeholder="e.g. Affidavit_of_Service" style="flex:1;border:1px solid var(--brd);border-radius:6px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+          <span style="font-size:11px;color:var(--txt3);flex-shrink:0">.pdf</span>
+        </div>
+      </div>
+      <!-- Category -->
+      <div style="margin-bottom:16px">
+        <label style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;font-weight:500">Category</label>
+        <select id="dg-save-category" style="width:100%;border:1px solid var(--brd);border-radius:6px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+          <option value="document">Document</option>
+          <option value="affidavit">Affidavit</option>
+          <option value="contract">Contract / Agreement</option>
+          <option value="court">Court Filing</option>
+          <option value="correspondence">Correspondence</option>
+          <option value="invoice">Invoice / Finance</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <!-- Status / error -->
+      <div id="dg-save-status" style="display:none;font-size:12px;padding:8px 12px;border-radius:6px;margin-bottom:12px"></div>
+      <!-- Actions -->
+      <div style="display:flex;gap:8px">
+        <button id="dg-save-confirm-btn" onclick="dgConfirmSaveToFile()" style="flex:1;background:var(--navy);color:#fff;border:none;padding:9px;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">💾 Save PDF to File</button>
+        <button onclick="dgCloseSaveModal()" style="background:transparent;border:1px solid var(--brd2);color:var(--txt2);padding:9px 16px;border-radius:7px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer">Cancel</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -13984,6 +14132,209 @@ document.addEventListener('change', function(e) {
     dgAutofillMatterDetails(e.target.value);
   }
 });
+
+// ── SAVE TO FILE ──────────────────────────────────────────────────
+let _dgSaveDest = 'matter'; // 'matter' | 'client' | 'office'
+
+function dgSaveToFile() {
+  const modal = document.getElementById('dg-save-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  // Pre-fill from client panel if values are already set
+  const cpClient = document.getElementById('dg-cp-client')?.value || '';
+  const cpMatter = document.getElementById('dg-cp-matter')?.value || '';
+  const cpTitle  = document.getElementById('dg-cp-doctitle')?.value || '';
+  const edTitle  = document.getElementById('dg-editor-title')?.textContent || 'Document';
+
+  // Populate client dropdown
+  const clientSel = document.getElementById('dg-save-client-sel');
+  if (clientSel && typeof clients !== 'undefined') {
+    clientSel.innerHTML = '<option value="">— Select client —</option>';
+    clients.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name + (c.file_number ? ' (' + c.file_number + ')' : '');
+      clientSel.appendChild(opt);
+    });
+    if (cpClient) { clientSel.value = cpClient; dgSaveClientChanged(cpClient); }
+  }
+
+  // Pre-fill matter
+  if (cpMatter) {
+    setTimeout(() => {
+      const mSel = document.getElementById('dg-save-matter-sel');
+      if (mSel) mSel.value = cpMatter;
+    }, 50);
+  }
+
+  // Pre-fill filename
+  const nameEl = document.getElementById('dg-save-filename');
+  if (nameEl) {
+    const suggested = (cpTitle || edTitle).replace(/[^a-zA-Z0-9\s\-_]/g, '').trim().replace(/\s+/g, '_') || 'Document';
+    nameEl.value = suggested + '_' + new Date().toISOString().slice(0,10);
+  }
+
+  // Auto-detect destination
+  if (cpMatter) dgSetSaveDest('matter');
+  else if (cpClient) dgSetSaveDest('client');
+  else dgSetSaveDest('office');
+
+  const st = document.getElementById('dg-save-status');
+  if (st) st.style.display = 'none';
+  const btn = document.getElementById('dg-save-confirm-btn');
+  if (btn) { btn.disabled = false; btn.textContent = '💾 Save PDF to File'; btn.style.background = ''; }
+}
+
+function dgCloseSaveModal() {
+  const modal = document.getElementById('dg-save-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function dgSetSaveDest(dest) {
+  _dgSaveDest = dest;
+  const map = { matter: 'dg-save-dest-matter', client: 'dg-save-dest-client', office: 'dg-save-dest-office' };
+  Object.entries(map).forEach(([k, id]) => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    const active = k === dest;
+    b.style.background = active ? 'var(--navy)' : '#fff';
+    b.style.color = active ? '#fff' : 'var(--txt2)';
+    b.style.borderColor = active ? 'var(--navy)' : 'var(--brd)';
+    b.style.fontWeight = active ? '500' : '400';
+  });
+  const clientRow = document.getElementById('dg-save-client-row');
+  const matterRow = document.getElementById('dg-save-matter-row');
+  if (clientRow) clientRow.style.display = dest === 'office' ? 'none' : 'block';
+  if (matterRow) matterRow.style.display = dest === 'matter' ? 'block' : 'none';
+}
+
+function dgSaveClientChanged(clientId) {
+  const mSel = document.getElementById('dg-save-matter-sel');
+  if (!mSel || typeof matters === 'undefined') return;
+  mSel.innerHTML = '<option value="">— Select matter —</option>';
+  if (!clientId) return;
+  matters.filter(m => m.client_id === clientId).forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = (m.file_number ? m.file_number + ' — ' : '') + (m.title || m.matter_title || 'Untitled');
+    mSel.appendChild(opt);
+  });
+  if (mSel.options.length === 2) mSel.selectedIndex = 1;
+}
+
+async function dgConfirmSaveToFile() {
+  const btn = document.getElementById('dg-save-confirm-btn');
+  const filename = (document.getElementById('dg-save-filename')?.value || 'Document').trim().replace(/[^a-zA-Z0-9\-_]/g, '_');
+  const category = document.getElementById('dg-save-category')?.value || 'document';
+  const clientId = document.getElementById('dg-save-client-sel')?.value || '';
+  const matterId = document.getElementById('dg-save-matter-sel')?.value || '';
+
+  if (_dgSaveDest === 'matter' && !matterId) { _dgSaveStatus('Please select a matter.', 'error'); return; }
+  if (_dgSaveDest === 'client' && !clientId) { _dgSaveStatus('Please select a client.', 'error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Saving…';
+  _dgSaveStatus('Building document…', 'info');
+
+  try {
+    const htmlContent = _dgBuildPrintHtml();
+    const ts = Date.now();
+    const safeFile = filename.replace(/\.pdf$/i, '');
+
+    // Store as HTML file with .html extension — opens perfectly in browsers
+    // and is fully faithful to the document layout
+    let storagePath;
+    if (_dgSaveDest === 'matter') {
+      storagePath = `${matterId}/${category}__generated__${ts}_${safeFile}.html`;
+    } else if (_dgSaveDest === 'client') {
+      storagePath = `client-general/${clientId}/${category}__generated__${ts}_${safeFile}.html`;
+    } else {
+      storagePath = `office-general/${category}__generated__${ts}_${safeFile}.html`;
+    }
+
+    _dgSaveStatus('Uploading…', 'info');
+
+    const fileBlob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const { error } = await sb.storage.from(STORAGE_BUCKET).upload(
+      storagePath, fileBlob, { upsert: false, contentType: 'text/html' }
+    );
+
+    if (error) throw new Error(error.message);
+
+    // Describe destination for toast
+    let destLabel = '🏛 Office file';
+    if (_dgSaveDest === 'matter' && typeof matters !== 'undefined') {
+      const m = matters.find(x => x.id === matterId);
+      destLabel = m ? '📁 ' + (m.file_number || m.title || 'Matter') : 'Matter';
+    } else if (_dgSaveDest === 'client' && typeof clients !== 'undefined') {
+      const c = clients.find(x => x.id === clientId);
+      destLabel = c ? '👤 ' + c.name : 'Client file';
+    }
+
+    _dgSaveStatus('✓ Saved to ' + destLabel, 'success');
+    btn.textContent = '✓ Saved!';
+    btn.style.background = 'var(--green)';
+    if (typeof toast === 'function') toast('Document saved to ' + destLabel + ' ✓');
+
+    // Refresh matter documents tab if viewing that matter
+    if (_dgSaveDest === 'matter' && matterId === activeMatterId && typeof loadMatterDocuments === 'function') {
+      setTimeout(() => loadMatterDocuments(true), 800);
+    }
+
+    setTimeout(() => dgCloseSaveModal(), 1600);
+
+  } catch (err) {
+    _dgSaveStatus('Error: ' + err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '💾 Save PDF to File';
+    btn.style.background = '';
+  }
+}
+
+function _dgSaveStatus(msg, type) {
+  const el = document.getElementById('dg-save-status');
+  if (!el) return;
+  el.style.display = 'block';
+  el.textContent = msg;
+  el.style.background = type === 'error' ? '#FCEBEB' : type === 'success' ? '#EAF3DE' : '#E6F1FB';
+  el.style.color = type === 'error' ? '#A33' : type === 'success' ? '#2D6A4F' : '#185FA5';
+  el.style.border = '1px solid ' + (type === 'error' ? '#f5c6c6' : type === 'success' ? '#a8d5b5' : '#b8d4f0');
+}
+
+function _dgBuildPrintHtml() {
+  const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
+  const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
+  const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
+  const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
+  const pages = document.querySelectorAll('#dg-pages-container .dg-page');
+  let bodyHtml = '';
+  if (pages.length > 0) {
+    const total = pages.length;
+    pages.forEach((pg, i) => {
+      const ed = pg.querySelector('[contenteditable]');
+      const pgHtml = ed ? ed.innerHTML : '';
+      const numHtml = _dgPageNumbersOn ? `<div style="text-align:center;font-size:10px;color:#888;font-family:Georgia,serif;margin-top:8px">${i+1} / ${total}</div>` : '';
+      bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'}">${pgHtml}${numHtml}</div>`;
+    });
+  } else {
+    const ed = document.getElementById('dg-editor-content');
+    const preview = document.getElementById('dg-preview-wrap');
+    bodyHtml = (ed ? ed.innerHTML : '') || (preview ? preview.innerHTML : '');
+  }
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>${(document.getElementById('dg-editor-title')?.textContent || 'Document')}</title>
+<style>
+  body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
+  p{margin-bottom:4px;margin-top:0}br{display:block;margin-bottom:8px}
+  table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
+  .dg-blank{padding:0 2px}
+  .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px}.dg-jurat td{padding:0;vertical-align:top}
+  .dg-edit-mode-badge,.dg-page-break-marker{display:none!important}
+  @page{size:A4;margin:${t}mm ${r}mm ${b}mm ${l}mm}
+  @media print{body{margin:0}}
+</style></head><body>${bodyHtml}</body></html>`;
+}
 
 
 let _dgVRulerRaf = null;
