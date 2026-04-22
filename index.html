@@ -10200,7 +10200,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- ═══════════════ DOCUMENT GENERATOR MODAL ═══════════════ -->
 <div class="modal-overlay hidden" id="docgen-overlay" onclick="if(event.target===this)closeDocGen()" style="z-index:1100">
-  <div class="modal" style="max-width:980px;width:96vw;height:88vh;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
+  <!-- NORMAL modal (doc list + form + preview) -->
+  <div class="modal" id="dg-modal-normal" style="max-width:980px;width:96vw;height:88vh;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
     <div class="modal-head" style="flex-shrink:0">
       <div>
         <div class="modal-title" id="dg-modal-title">Document Generator</div>
@@ -10231,6 +10232,133 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px;color:var(--txt3);font-size:12px;text-align:center">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           Fill in the form and click Generate
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WIDE EDITOR modal (shown when Edit is clicked) -->
+  <div id="dg-editor-modal" style="display:none;width:98vw;max-width:1400px;height:96vh;background:#fff;border-radius:12px;border:0.5px solid var(--brd);flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.25)">
+    <!-- Editor header bar -->
+    <div style="flex-shrink:0;background:var(--navy);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:12px;border-radius:12px 12px 0 0">
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:500" id="dg-editor-title">Document Editor</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:1px">Edit document content — changes are preserved when you save</div>
+      </div>
+      <span id="dg-edit-badge2" style="display:none;background:#FFF5CC;color:#7A5C00;font-size:9px;padding:2px 8px;border-radius:8px;font-weight:600;letter-spacing:.3px">EDITING</span>
+      <button onclick="dgToggleEdit()" id="dg-btn-done" style="background:var(--green);color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px"><span>✅</span> Done editing</button>
+      <button onclick="dgPrint()" style="background:var(--gold);color:var(--navy);border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Print / Save PDF</button>
+      <button onclick="dgCloseEditor()" style="background:rgba(255,255,255,0.12);color:#fff;border:none;width:32px;height:32px;border-radius:6px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div id="dg-editor-toolbar2" style="flex-shrink:0;background:#f8f6f2;border-bottom:1px solid var(--brd);padding:5px 16px;display:flex;flex-wrap:wrap;gap:3px;align-items:center">
+      <div class="dg-tb-group">
+        <button class="dg-tb-btn" title="Bold" onclick="dge2('bold')"><b>B</b></button>
+        <button class="dg-tb-btn" title="Italic" onclick="dge2('italic')"><i>I</i></button>
+        <button class="dg-tb-btn" title="Underline" onclick="dge2('underline')"><u>U</u></button>
+        <button class="dg-tb-btn" title="Strikethrough" onclick="dge2('strikethrough')"><s>S</s></button>
+      </div>
+      <div class="dg-tb-sep"></div>
+      <div class="dg-tb-group">
+        <select class="dg-tb-sel" title="Font size" onchange="dge2('fontSize',false,this.value);this.blur()">
+          <option value="">Size</option>
+          <option value="1">8pt</option>
+          <option value="2">10pt</option>
+          <option value="3">12pt</option>
+          <option value="4">14pt</option>
+          <option value="5">18pt</option>
+          <option value="6">24pt</option>
+          <option value="7">36pt</option>
+        </select>
+        <select class="dg-tb-sel" title="Font" onchange="dge2('fontName',false,this.value);this.blur()">
+          <option value="">Font</option>
+          <option value="Georgia,serif">Georgia</option>
+          <option value="'Times New Roman',serif">Times New Roman</option>
+          <option value="Arial,sans-serif">Arial</option>
+          <option value="'Courier New',monospace">Courier New</option>
+        </select>
+      </div>
+      <div class="dg-tb-sep"></div>
+      <div class="dg-tb-group">
+        <button class="dg-tb-btn" title="Align left" onclick="dge2('justifyLeft')">⬛︎ L</button>
+        <button class="dg-tb-btn" title="Centre" onclick="dge2('justifyCenter')">≡ C</button>
+        <button class="dg-tb-btn" title="Align right" onclick="dge2('justifyRight')">R ⬛︎</button>
+        <button class="dg-tb-btn" title="Justify" onclick="dge2('justifyFull')">≣</button>
+      </div>
+      <div class="dg-tb-sep"></div>
+      <div class="dg-tb-group">
+        <button class="dg-tb-btn" title="Bullet list" onclick="dge2('insertUnorderedList')">• List</button>
+        <button class="dg-tb-btn" title="Numbered list" onclick="dge2('insertOrderedList')">1. List</button>
+        <button class="dg-tb-btn" title="Indent" onclick="dge2('indent')">→</button>
+        <button class="dg-tb-btn" title="Outdent" onclick="dge2('outdent')">←</button>
+      </div>
+      <div class="dg-tb-sep"></div>
+      <div class="dg-tb-group" style="align-items:center">
+        <label style="font-size:10px;color:var(--txt3);cursor:pointer" title="Text colour">
+          A <input type="color" id="dg-color-pick2" value="#111111" oninput="dge2('foreColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
+        </label>
+        <label style="font-size:10px;color:var(--txt3);cursor:pointer;margin-left:6px" title="Highlight">
+          H <input type="color" id="dg-hl-pick2" value="#FFFF88" oninput="dge2('hiliteColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
+        </label>
+      </div>
+      <div class="dg-tb-sep"></div>
+      <div class="dg-tb-group">
+        <button class="dg-tb-btn" title="Undo" onclick="dge2('undo')">↩</button>
+        <button class="dg-tb-btn" title="Redo" onclick="dge2('redo')">↪</button>
+        <button class="dg-tb-btn" title="Clear formatting" onclick="dge2('removeFormat')" style="font-size:10px">Clear fmt</button>
+      </div>
+      <div class="dg-tb-sep"></div>
+      <!-- Margin controls -->
+      <div class="dg-tb-group" style="align-items:center;gap:6px">
+        <span style="font-size:10px;color:var(--txt3);font-weight:500;letter-spacing:.3px">MARGINS:</span>
+        <label style="font-size:10px;color:var(--txt3)">L
+          <input type="number" id="dg-margin-left" value="25" min="0" max="80" step="1"
+            style="width:44px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;margin-left:3px"
+            oninput="dgApplyMargins()" title="Left margin (mm)"> mm
+        </label>
+        <label style="font-size:10px;color:var(--txt3)">R
+          <input type="number" id="dg-margin-right" value="25" min="0" max="80" step="1"
+            style="width:44px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;margin-left:3px"
+            oninput="dgApplyMargins()" title="Right margin (mm)"> mm
+        </label>
+        <label style="font-size:10px;color:var(--txt3)">T
+          <input type="number" id="dg-margin-top" value="20" min="0" max="60" step="1"
+            style="width:44px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;margin-left:3px"
+            oninput="dgApplyMargins()" title="Top margin (mm)"> mm
+        </label>
+        <label style="font-size:10px;color:var(--txt3)">B
+          <input type="number" id="dg-margin-bottom" value="20" min="0" max="60" step="1"
+            style="width:44px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;margin-left:3px"
+            oninput="dgApplyMargins()" title="Bottom margin (mm)"> mm
+        </label>
+        <button onclick="dgResetMargins()" class="dg-tb-btn" style="font-size:10px" title="Reset to defaults">↺ Reset</button>
+      </div>
+    </div>
+
+    <!-- Ruler -->
+    <div id="dg-ruler-wrap" style="flex-shrink:0;background:#e8e6e0;border-bottom:1px solid #ccc;position:relative;height:28px;overflow:hidden;user-select:none">
+      <canvas id="dg-ruler" style="display:block;width:100%;height:28px"></canvas>
+      <!-- Left margin handle -->
+      <div id="dg-ruler-lm" title="Drag to set left margin"
+        style="position:absolute;top:0;bottom:0;width:10px;cursor:ew-resize;z-index:5;display:flex;align-items:center;justify-content:center"
+      >
+        <div style="width:4px;height:20px;background:var(--navy);border-radius:2px;opacity:0.7"></div>
+      </div>
+      <!-- Right margin handle -->
+      <div id="dg-ruler-rm" title="Drag to set right margin"
+        style="position:absolute;top:0;bottom:0;width:10px;cursor:ew-resize;z-index:5;display:flex;align-items:center;justify-content:center"
+      >
+        <div style="width:4px;height:20px;background:var(--navy);border-radius:2px;opacity:0.7"></div>
+      </div>
+    </div>
+
+    <!-- Editor body: page simulation -->
+    <div id="dg-editor-body" style="flex:1;overflow-y:auto;background:#d0cec8;padding:24px 0;display:flex;flex-direction:column;align-items:center">
+      <!-- A4 page simulation -->
+      <div id="dg-page-sim" style="background:#fff;width:794px;min-height:1123px;box-shadow:0 2px 16px rgba(0,0,0,0.18);border-radius:2px;position:relative;box-sizing:border-box;padding:20mm 25mm 20mm 25mm">
+        <div id="dg-editor-content" contenteditable="true" spellcheck="true"
+          style="outline:none;font-family:Georgia,serif;font-size:12.5px;line-height:1.85;color:#111;min-height:600px;white-space:pre-wrap;word-break:break-word">
         </div>
       </div>
     </div>
@@ -10338,6 +10466,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /* Rich text editor toolbar */
 .dg-tb-group{display:flex;align-items:center;gap:2px}
+
+/* ── Wide Editor Modal ───────────────────────────────────────────────── */
+#dg-editor-modal{
+  position:fixed;inset:0;margin:auto;z-index:1200;
+  box-shadow:0 24px 80px rgba(0,0,0,0.35);
+}
+#dg-editor-content{
+  outline:none;font-family:Georgia,serif;font-size:12.5px;
+  line-height:1.85;color:#111;min-height:600px;
+  white-space:pre-wrap;word-break:break-word;
+}
+#dg-editor-content:focus{outline:none}
+#dg-editor-body::-webkit-scrollbar{width:8px}
+#dg-editor-body::-webkit-scrollbar-thumb{background:#bbb;border-radius:4px}
+#dg-editor-body::-webkit-scrollbar-track{background:#d0cec8}
+/* Ruler cursor area */
+#dg-ruler-lm:hover > div,#dg-ruler-rm:hover > div{opacity:1!important;background:var(--gold)!important}
+/* Margin spinners compact */
+#dg-editor-toolbar2 input[type=number]{
+  -moz-appearance:textfield;
+}
+#dg-editor-toolbar2 input[type=number]::-webkit-inner-spin-button,
+#dg-editor-toolbar2 input[type=number]::-webkit-outer-spin-button{
+  opacity:1;
+}
+/* Page shadow */
+#dg-page-sim{
+  transition:padding 0.15s ease;
+}
+@media(max-width:900px){
+  #dg-page-sim{width:calc(100vw - 48px)!important;min-height:auto!important}
+  #dg-editor-modal{width:100vw!important;height:100vh!important;border-radius:0!important}
+}
 .dg-tb-sep{width:1px;height:18px;background:var(--brd2);margin:0 3px}
 .dg-tb-btn{background:none;border:1px solid transparent;border-radius:4px;padding:3px 7px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--txt);line-height:1;min-width:26px;transition:background 0.1s}
 .dg-tb-btn:hover{background:rgba(13,27,42,0.1);border-color:var(--brd2)}
@@ -10648,6 +10809,7 @@ function openDocGen(preselect){
 }
 
 function closeDocGen(){
+  if (dgEditMode) { dgCloseEditor(); }
   document.getElementById('docgen-overlay').classList.add('hidden');
 }
 
@@ -13152,18 +13314,8 @@ function dgBuildDocument(id, v){
 
 function dgGenerate(){
   if(!dgCurrentId)return;
-  // Reset edit mode if active
-  if (dgEditMode) {
-    dgEditMode = false;
-    const wrap2 = document.getElementById('dg-preview-wrap');
-    if (wrap2) wrap2.contentEditable = 'false';
-    const toolbar2 = document.getElementById('dg-editor-toolbar');
-    if (toolbar2) toolbar2.style.display = 'none';
-    const btn2 = document.getElementById('dg-btn-edit');
-    if (btn2) { btn2.textContent = '✏️ Edit'; btn2.style.background=''; btn2.style.color=''; btn2.style.borderColor=''; }
-    const badge2 = document.getElementById('dg-edit-badge');
-    if (badge2) badge2.remove();
-  }
+  // Reset editor if open
+  if (dgEditMode) { dgCloseEditor(); }
   const d=DG_DOCS[dgCurrentId];
   const vals=dgGetVals();
   const btn=document.getElementById('dg-gen-btn');
@@ -13267,75 +13419,221 @@ function dgRenderPreview(text,d){
   document.getElementById('dg-preview-wrap').innerHTML=html;
 }
 
-// ── Rich Text Editor ─────────────────────────────────────────────────────────
+// ── Wide Editor ──────────────────────────────────────────────────────────────
 
 let dgEditMode = false;
 
+// Open wide editor overlay
 function dgToggleEdit() {
-  const wrap = document.getElementById('dg-preview-wrap');
-  const toolbar = document.getElementById('dg-editor-toolbar');
-  const btn = document.getElementById('dg-btn-edit');
-  const sub = document.getElementById('dg-modal-sub');
-
-  dgEditMode = !dgEditMode;
-
   if (dgEditMode) {
-    // Enter edit mode
-    wrap.contentEditable = 'true';
-    wrap.setAttribute('spellcheck', 'true');
-    toolbar.style.display = 'flex';
-    btn.textContent = '✅ Done editing';
-    btn.style.background = 'var(--green)';
-    btn.style.color = '#fff';
-    btn.style.borderColor = 'var(--green)';
-    // Add editing badge to sub title
-    const badge = document.createElement('span');
-    badge.className = 'dg-edit-mode-badge';
-    badge.id = 'dg-edit-badge';
-    badge.textContent = 'EDITING';
-    if (sub) sub.appendChild(badge);
-    wrap.focus();
-    // Move toolbar inside the preview column so it sticks correctly
-    const previewCol = wrap.parentElement;
-    previewCol.style.position = 'relative';
-    previewCol.insertBefore(toolbar, wrap);
-    toolbar.style.position = 'sticky';
-    toolbar.style.top = '0';
-  } else {
-    // Exit edit mode — save innerHTML as the new rendered state
-    wrap.contentEditable = 'false';
-    toolbar.style.display = 'none';
-    btn.textContent = '✏️ Edit';
-    btn.style.background = '';
-    btn.style.color = '';
-    btn.style.borderColor = '';
-    const badge = document.getElementById('dg-edit-badge');
-    if (badge) badge.remove();
-    // Sync dgGeneratedText from edited HTML for print
-    dgGeneratedText = '__html__'; // flag that we now use innerHTML directly
+    dgCloseEditor();
+    return;
   }
+  dgEditMode = true;
+
+  // Copy current preview HTML into the wide editor content area
+  const preview = document.getElementById('dg-preview-wrap');
+  const editorContent = document.getElementById('dg-editor-content');
+  editorContent.innerHTML = preview.innerHTML;
+
+  // Set title
+  const title = document.getElementById('dg-modal-title');
+  const editorTitle = document.getElementById('dg-editor-title');
+  if (editorTitle && title) editorTitle.textContent = title.textContent;
+
+  // Show editor modal, hide normal modal
+  document.getElementById('dg-modal-normal').style.display = 'none';
+  const em = document.getElementById('dg-editor-modal');
+  em.style.display = 'flex';
+
+  // Show editing badge
+  const badge2 = document.getElementById('dg-edit-badge2');
+  if (badge2) badge2.style.display = 'inline-block';
+
+  // Init ruler and apply default margins
+  setTimeout(() => {
+    dgInitRuler();
+    dgApplyMargins();
+    editorContent.focus();
+  }, 50);
 }
 
-// execCommand wrapper — keeps focus in editable area
+function dgCloseEditor() {
+  dgEditMode = false;
+
+  // Sync edits back to preview
+  const editorContent = document.getElementById('dg-editor-content');
+  const preview = document.getElementById('dg-preview-wrap');
+  if (editorContent && preview) {
+    preview.innerHTML = editorContent.innerHTML;
+    dgGeneratedText = '__html__';
+  }
+
+  // Hide editor, show normal modal
+  document.getElementById('dg-editor-modal').style.display = 'none';
+  document.getElementById('dg-modal-normal').style.display = 'flex';
+
+  const badge2 = document.getElementById('dg-edit-badge2');
+  if (badge2) badge2.style.display = 'none';
+}
+
+// execCommand wrapper for both editors
 function dge(cmd, showUI, val) {
   const wrap = document.getElementById('dg-preview-wrap');
-  wrap.focus();
-  document.execCommand(cmd, showUI || false, val || null);
+  if (wrap && !dgEditMode) { wrap.focus(); document.execCommand(cmd, showUI||false, val||null); }
 }
-
+function dge2(cmd, showUI, val) {
+  const ec = document.getElementById('dg-editor-content');
+  if (ec) { ec.focus(); document.execCommand(cmd, showUI||false, val||null); }
+}
 function dgSetFont(fontFamily) {
   if (!fontFamily) return;
   const wrap = document.getElementById('dg-preview-wrap');
-  wrap.focus();
-  document.execCommand('fontName', false, fontFamily);
+  if (wrap) { wrap.focus(); document.execCommand('fontName', false, fontFamily); }
+}
+
+// ── Ruler ──────────────────────────────────────────────────────────────────
+
+const DG_PAGE_W = 794;   // px — A4 width at 96dpi
+const DG_RULER_PX_PER_MM = DG_PAGE_W / 210; // ~3.78 px/mm
+
+let dgRulerInited = false;
+let dgRulerDragging = null; // 'left' | 'right'
+let dgRulerPageOffsetX = 0;
+
+function dgInitRuler() {
+  const canvas = document.getElementById('dg-ruler');
+  const rulerWrap = document.getElementById('dg-ruler-wrap');
+  const body = document.getElementById('dg-editor-body');
+  if (!canvas || !rulerWrap) return;
+
+  function getPageLeft() {
+    const page = document.getElementById('dg-page-sim');
+    if (!page) return 0;
+    const bodyRect = body.getBoundingClientRect();
+    const pageRect = page.getBoundingClientRect();
+    return pageRect.left - bodyRect.left + body.scrollLeft;
+  }
+
+  function drawRuler() {
+    const W = rulerWrap.offsetWidth;
+    const H = 28;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    ctx.fillStyle = '#e8e6e0';
+    ctx.fillRect(0, 0, W, H);
+
+    // Page area highlight (white)
+    const pageLeft = getPageLeft();
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(pageLeft, 0, DG_PAGE_W, H);
+
+    // Margin shading
+    const lmMm = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
+    const rmMm = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
+    const lmPx = lmMm * DG_RULER_PX_PER_MM;
+    const rmPx = rmMm * DG_RULER_PX_PER_MM;
+    ctx.fillStyle = 'rgba(180,178,172,0.45)';
+    ctx.fillRect(pageLeft, 0, lmPx, H);
+    ctx.fillRect(pageLeft + DG_PAGE_W - rmPx, 0, rmPx, H);
+
+    // Tick marks and labels
+    ctx.fillStyle = '#666';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+    for (let mm = 0; mm <= 210; mm += 5) {
+      const x = pageLeft + mm * DG_RULER_PX_PER_MM;
+      const isTen = mm % 10 === 0;
+      const tickH = isTen ? 10 : 5;
+      ctx.fillStyle = '#888';
+      ctx.fillRect(x, H - tickH, 1, tickH);
+      if (isTen && mm > 0 && mm < 210) {
+        ctx.fillStyle = '#555';
+        ctx.fillText(mm, x, H - 12);
+      }
+    }
+
+    // Margin handle positions
+    const lhX = pageLeft + lmPx;
+    const rhX = pageLeft + DG_PAGE_W - rmPx;
+
+    const lmEl = document.getElementById('dg-ruler-lm');
+    const rmEl = document.getElementById('dg-ruler-rm');
+    if (lmEl) lmEl.style.left = (lhX - 5) + 'px';
+    if (rmEl) rmEl.style.left = (rhX - 5) + 'px';
+  }
+
+  // Draw initially and on resize/scroll
+  drawRuler();
+  if (!dgRulerInited) {
+    window.addEventListener('resize', drawRuler);
+    body.addEventListener('scroll', drawRuler);
+
+    // Drag logic for margin handles
+    function startDrag(e, side) {
+      dgRulerDragging = side;
+      e.preventDefault();
+    }
+    document.getElementById('dg-ruler-lm').addEventListener('mousedown', e => startDrag(e, 'left'));
+    document.getElementById('dg-ruler-rm').addEventListener('mousedown', e => startDrag(e, 'right'));
+    document.addEventListener('mousemove', e => {
+      if (!dgRulerDragging) return;
+      const bodyRect = body.getBoundingClientRect();
+      const page = document.getElementById('dg-page-sim');
+      const pageRect = page.getBoundingClientRect();
+      const relX = e.clientX - pageRect.left;
+      const mm = Math.max(0, Math.min(relX / DG_RULER_PX_PER_MM, 100));
+      if (dgRulerDragging === 'left') {
+        const inp = document.getElementById('dg-margin-left');
+        if (inp) { inp.value = Math.round(mm); dgApplyMargins(); }
+      } else {
+        const mm2 = Math.max(0, Math.min((DG_PAGE_W - relX) / DG_RULER_PX_PER_MM, 100));
+        const inp = document.getElementById('dg-margin-right');
+        if (inp) { inp.value = Math.round(mm2); dgApplyMargins(); }
+      }
+      drawRuler();
+    });
+    document.addEventListener('mouseup', () => {
+      if (dgRulerDragging) { dgRulerDragging = null; }
+    });
+    dgRulerInited = true;
+  }
+  // Store drawRuler for external callers
+  window._dgDrawRuler = drawRuler;
+}
+
+function dgApplyMargins() {
+  const page = document.getElementById('dg-page-sim');
+  if (!page) return;
+  const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
+  const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
+  const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
+  const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
+  page.style.padding = `${t}mm ${r}mm ${b}mm ${l}mm`;
+  if (window._dgDrawRuler) window._dgDrawRuler();
+}
+
+function dgResetMargins() {
+  ['dg-margin-left','dg-margin-right'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = 25;
+  });
+  ['dg-margin-top','dg-margin-bottom'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = 20;
+  });
+  dgApplyMargins();
 }
 
 // Override dgPrint to handle edited HTML mode
 function dgPrint() {
   if (dgGeneratedText === '__html__') {
-    // Print the edited HTML directly
+    // Print from wide editor or preview, whichever has the latest content
+    const editContent = document.getElementById('dg-editor-content');
     const wrap = document.getElementById('dg-preview-wrap');
-    const previewHtml = wrap.innerHTML;
+    const previewHtml = (dgEditMode && editContent) ? editContent.innerHTML : wrap.innerHTML;
     const frame = document.getElementById('dg-print-frame');
     const content = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
       body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:2.5cm 3cm;color:#111}
