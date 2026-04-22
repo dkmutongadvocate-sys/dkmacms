@@ -10271,12 +10271,44 @@ document.addEventListener('DOMContentLoaded', function() {
           <option value="6">24pt</option>
           <option value="7">36pt</option>
         </select>
-        <select class="dg-tb-sel" title="Font" onchange="dge2('fontName',false,this.value);this.blur()">
+        <select class="dg-tb-sel" title="Font" style="min-width:150px" onchange="dge2('fontName',false,this.value);this.blur()">
           <option value="">Font</option>
+          <optgroup label="── Serif ──">
           <option value="Georgia,serif">Georgia</option>
-          <option value="'Times New Roman',serif">Times New Roman</option>
-          <option value="Arial,sans-serif">Arial</option>
-          <option value="'Courier New',monospace">Courier New</option>
+          <option value="'Times New Roman',Times,serif">Times New Roman</option>
+          <option value="'Book Antiqua','Palatino Linotype',Palatino,serif">Book Antiqua</option>
+          <option value="Garamond,serif">Garamond</option>
+          <option value="'Cambria',Georgia,serif">Cambria</option>
+          <option value="'Constantia',Georgia,serif">Constantia</option>
+          </optgroup>
+          <optgroup label="── Sans-serif ──">
+          <option value="Arial,Helvetica,sans-serif">Arial</option>
+          <option value="'Arial Narrow',Arial,sans-serif">Arial Narrow</option>
+          <option value="'Arial Black',Arial,sans-serif">Arial Black</option>
+          <option value="'Calibri',Arial,sans-serif">Calibri</option>
+          <option value="'Candara',Arial,sans-serif">Candara</option>
+          <option value="'Corbel',Arial,sans-serif">Corbel</option>
+          <option value="'Franklin Gothic Medium','Arial Narrow',Arial,sans-serif">Franklin Gothic Medium</option>
+          <option value="'Gill Sans MT','Gill Sans',sans-serif">Gill Sans MT</option>
+          <option value="'Century Gothic',sans-serif">Century Gothic</option>
+          <option value="Tahoma,Geneva,sans-serif">Tahoma</option>
+          <option value="'Trebuchet MS',Helvetica,sans-serif">Trebuchet MS</option>
+          <option value="Verdana,Geneva,sans-serif">Verdana</option>
+          </optgroup>
+          <optgroup label="── Monospace ──">
+          <option value="'Courier New',Courier,monospace">Courier New</option>
+          <option value="'Lucida Console',Monaco,monospace">Lucida Console</option>
+          <option value="'Consolas','Courier New',monospace">Consolas</option>
+          </optgroup>
+          <optgroup label="── Display ──">
+          <option value="Impact,Charcoal,sans-serif">Impact</option>
+          <option value="'Palatino Linotype',Palatino,serif">Palatino Linotype</option>
+          <option value="'Century Schoolbook','Century',serif">Century Schoolbook</option>
+          <option value="'Rockwell','Arial Rounded MT Bold',sans-serif">Rockwell</option>
+          <option value="'Copperplate Gothic Bold',sans-serif">Copperplate Gothic</option>
+          <option value="'Tw Cen MT','Century Gothic',sans-serif">Tw Cen MT</option>
+          <option value="'Haettenschweiler',Impact,sans-serif">Haettenschweiler</option>
+          </optgroup>
         </select>
       </div>
       <div class="dg-tb-sep"></div>
@@ -10301,6 +10333,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <label style="font-size:10px;color:var(--txt3);cursor:pointer;margin-left:6px" title="Highlight">
           H <input type="color" id="dg-hl-pick2" value="#FFFF88" oninput="dge2('hiliteColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
         </label>
+      </div>
+      <div class="dg-tb-sep"></div>
+      <div class="dg-tb-group">
+        <button class="dg-tb-btn" title="Insert page break" onclick="dgInsertPageBreak2()" style="font-size:10px">⊞ Page Break</button>
+        <button class="dg-tb-btn" title="Toggle page numbers" id="dg-pgnums-btn2" onclick="dgTogglePageNumbers2()" style="font-size:10px">¶ Page #</button>
       </div>
       <div class="dg-tb-sep"></div>
       <div class="dg-tb-group">
@@ -10353,12 +10390,21 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </div>
 
-    <!-- Editor body: page simulation -->
-    <div id="dg-editor-body" style="flex:1;overflow-y:auto;background:#d0cec8;padding:24px 0;display:flex;flex-direction:column;align-items:center">
-      <!-- A4 page simulation -->
-      <div id="dg-page-sim" style="background:#fff;width:794px;min-height:1123px;box-shadow:0 2px 16px rgba(0,0,0,0.18);border-radius:2px;position:relative;box-sizing:border-box;padding:20mm 25mm 20mm 25mm">
-        <div id="dg-editor-content" contenteditable="true" spellcheck="true"
-          style="outline:none;font-family:Georgia,serif;font-size:12.5px;line-height:1.85;color:#111;min-height:600px;white-space:pre-wrap;word-break:break-word">
+    <!-- Editor body: page simulation with vertical ruler -->
+    <div id="dg-editor-body" style="flex:1;overflow-y:auto;background:#d0cec8;padding:24px 0;display:flex;flex-direction:row;align-items:flex-start;position:relative">
+      <!-- Vertical ruler -->
+      <div id="dg-vruler-wrap" style="width:28px;flex-shrink:0;position:sticky;left:0;top:0;background:#e8e6e0;border-right:1px solid #ccc;user-select:none;align-self:stretch;z-index:5">
+        <canvas id="dg-vruler" style="display:block;width:28px;height:100%;min-height:1200px"></canvas>
+      </div>
+      <!-- Pages container -->
+      <div id="dg-pages-container" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:0 24px 40px">
+        <!-- A4 page simulation (first page) -->
+        <div id="dg-page-sim" class="dg-page" data-page="1" style="background:#fff;width:794px;min-height:1123px;box-shadow:0 2px 16px rgba(0,0,0,0.18);border-radius:2px;position:relative;box-sizing:border-box;padding:20mm 25mm 20mm 25mm;margin-bottom:24px">
+          <div id="dg-editor-content" contenteditable="true" spellcheck="true"
+            style="outline:none;font-family:Georgia,serif;font-size:12.5px;line-height:1.85;color:#111;min-height:600px;white-space:pre-wrap;word-break:break-word">
+          </div>
+          <!-- Page number footer (hidden by default) -->
+          <div class="dg-page-num-footer" style="display:none;position:absolute;bottom:10mm;left:0;right:0;text-align:center;font-size:10px;color:#888;font-family:Georgia,serif;pointer-events:none">1</div>
         </div>
       </div>
     </div>
@@ -10387,12 +10433,44 @@ document.addEventListener('DOMContentLoaded', function() {
       <option value="6">24pt</option>
       <option value="7">36pt</option>
     </select>
-    <select class="dg-tb-sel" title="Font family" onchange="dgSetFont(this.value);this.blur()">
+    <select class="dg-tb-sel" title="Font family" style="min-width:150px" onchange="dgSetFont(this.value);this.blur()">
       <option value="">Font</option>
+      <optgroup label="── Serif ──">
       <option value="Georgia,serif">Georgia</option>
-      <option value="'Times New Roman',serif">Times New Roman</option>
-      <option value="Arial,sans-serif">Arial</option>
-      <option value="'Courier New',monospace">Courier New</option>
+      <option value="'Times New Roman',Times,serif">Times New Roman</option>
+      <option value="'Book Antiqua','Palatino Linotype',Palatino,serif">Book Antiqua</option>
+      <option value="Garamond,serif">Garamond</option>
+      <option value="'Cambria',Georgia,serif">Cambria</option>
+      <option value="'Constantia',Georgia,serif">Constantia</option>
+      </optgroup>
+      <optgroup label="── Sans-serif ──">
+      <option value="Arial,Helvetica,sans-serif">Arial</option>
+      <option value="'Arial Narrow',Arial,sans-serif">Arial Narrow</option>
+      <option value="'Arial Black',Arial,sans-serif">Arial Black</option>
+      <option value="'Calibri',Arial,sans-serif">Calibri</option>
+      <option value="'Candara',Arial,sans-serif">Candara</option>
+      <option value="'Corbel',Arial,sans-serif">Corbel</option>
+      <option value="'Franklin Gothic Medium','Arial Narrow',Arial,sans-serif">Franklin Gothic Medium</option>
+      <option value="'Gill Sans MT','Gill Sans',sans-serif">Gill Sans MT</option>
+      <option value="'Century Gothic',sans-serif">Century Gothic</option>
+      <option value="Tahoma,Geneva,sans-serif">Tahoma</option>
+      <option value="'Trebuchet MS',Helvetica,sans-serif">Trebuchet MS</option>
+      <option value="Verdana,Geneva,sans-serif">Verdana</option>
+      </optgroup>
+      <optgroup label="── Monospace ──">
+      <option value="'Courier New',Courier,monospace">Courier New</option>
+      <option value="'Lucida Console',Monaco,monospace">Lucida Console</option>
+      <option value="'Consolas','Courier New',monospace">Consolas</option>
+      </optgroup>
+      <optgroup label="── Display ──">
+      <option value="Impact,Charcoal,sans-serif">Impact</option>
+      <option value="'Palatino Linotype',Palatino,serif">Palatino Linotype</option>
+      <option value="'Century Schoolbook','Century',serif">Century Schoolbook</option>
+      <option value="'Rockwell','Arial Rounded MT Bold',sans-serif">Rockwell</option>
+      <option value="'Copperplate Gothic Bold',sans-serif">Copperplate Gothic</option>
+      <option value="'Tw Cen MT','Century Gothic',sans-serif">Tw Cen MT</option>
+      <option value="'Haettenschweiler',Impact,sans-serif">Haettenschweiler</option>
+      </optgroup>
     </select>
   </div>
   <div class="dg-tb-sep"></div>
@@ -10420,6 +10498,12 @@ document.addEventListener('DOMContentLoaded', function() {
     <label style="font-size:10px;color:var(--txt3);cursor:pointer;margin-left:6px" title="Highlight colour">
       H <input type="color" id="dg-hl-pick" value="#FFFF88" oninput="dge('hiliteColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
     </label>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Page break / page numbers -->
+  <div class="dg-tb-group">
+    <button class="dg-tb-btn" title="Insert page break" onclick="dgInsertPageBreak()" style="font-size:10px">⊞ Page Break</button>
+    <button class="dg-tb-btn" title="Toggle page numbers" id="dg-pgnums-btn" onclick="dgTogglePageNumbers()" style="font-size:10px">¶ Page #</button>
   </div>
   <div class="dg-tb-sep"></div>
   <!-- Undo/redo -->
@@ -10495,9 +10579,41 @@ document.addEventListener('DOMContentLoaded', function() {
 #dg-page-sim{
   transition:padding 0.15s ease;
 }
+/* Multi-page support */
+.dg-page {
+  background:#fff;width:794px;min-height:1123px;
+  box-shadow:0 2px 16px rgba(0,0,0,0.18);border-radius:2px;
+  position:relative;box-sizing:border-box;
+  padding:20mm 25mm 20mm 25mm;margin-bottom:24px;
+}
+.dg-page-break-marker {
+  display:block;width:100%;height:2px;
+  background:repeating-linear-gradient(90deg,var(--navy) 0,var(--navy) 8px,transparent 8px,transparent 16px);
+  margin:8px 0;position:relative;cursor:default;
+  font-size:9px;color:var(--navy);text-align:right;
+  line-height:0;opacity:0.5;
+}
+.dg-page-break-marker::after{
+  content:'page break';font-size:9px;color:var(--navy);
+  position:absolute;right:4px;top:-7px;opacity:0.6;font-family:sans-serif;
+}
+.dg-page-num-footer {
+  position:absolute;bottom:10mm;left:0;right:0;
+  text-align:center;font-size:10.5px;color:#666;
+  font-family:Georgia,serif;pointer-events:none;
+  letter-spacing:.3px;
+}
+/* Vertical ruler */
+#dg-vruler-wrap {
+  position:sticky;top:0;left:0;
+  background:#e8e6e0;border-right:1px solid #ccc;
+  user-select:none;z-index:5;flex-shrink:0;
+}
+#dg-vruler { display:block;width:28px; }
 @media(max-width:900px){
-  #dg-page-sim{width:calc(100vw - 48px)!important;min-height:auto!important}
+  #dg-page-sim{width:calc(100vw - 76px)!important;min-height:auto!important}
   #dg-editor-modal{width:100vw!important;height:100vh!important;border-radius:0!important}
+  #dg-vruler-wrap{display:none}
 }
 .dg-tb-sep{width:1px;height:18px;background:var(--brd2);margin:0 3px}
 .dg-tb-btn{background:none;border:1px solid transparent;border-radius:4px;padding:3px 7px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--txt);line-height:1;min-width:26px;transition:background 0.1s}
@@ -13606,15 +13722,295 @@ function dgInitRuler() {
   window._dgDrawRuler = drawRuler;
 }
 
-function dgApplyMargins() {
+// ── VERTICAL RULER ────────────────────────────────────────────────
+let _dgVRulerRaf = null;
+function dgDrawVRuler() {
+  const canvas = document.getElementById('dg-vruler');
+  if (!canvas) return;
+  const body = document.getElementById('dg-editor-body');
+  if (!body) return;
+  const totalH = Math.max(body.scrollHeight, body.clientHeight, 1200);
+  canvas.height = totalH;
+  canvas.style.height = totalH + 'px';
+  const ctx = canvas.getContext('2d');
+  const W = 28, DPR = window.devicePixelRatio || 1;
+  canvas.width = W * DPR;
+  canvas.height = totalH * DPR;
+  ctx.scale(DPR, DPR);
+  // Background
+  ctx.fillStyle = '#e8e6e0';
+  ctx.fillRect(0, 0, W, totalH);
+  // Get page positions relative to editor body
+  const pages = body.querySelectorAll('.dg-page');
+  const PX_PER_MM = DG_RULER_PX_PER_MM || 3.78;
+  ctx.font = `9px sans-serif`;
+  ctx.fillStyle = '#777';
+  ctx.textAlign = 'right';
+  pages.forEach(page => {
+    const pageRect = page.getBoundingClientRect();
+    const bodyRect = body.getBoundingClientRect();
+    const pageTop = pageRect.top - bodyRect.top + body.scrollTop;
+    const paddingTopMM = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
+    const paddingBotMM = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
+    const pageHeightPx = pageRect.height || 1123;
+    const contentTop = pageTop + paddingTopMM * PX_PER_MM;
+    const contentBottom = pageTop + pageHeightPx - paddingBotMM * PX_PER_MM;
+    const contentHeightPx = contentBottom - contentTop;
+    // Draw tick marks every 5mm, labels every 10mm
+    for (let mm = 0; mm * PX_PER_MM <= contentHeightPx + 5; mm++) {
+      const y = contentTop + mm * PX_PER_MM;
+      if (y > pageTop + pageHeightPx + 4) break;
+      const isMajor = mm % 10 === 0;
+      const isMid = mm % 5 === 0;
+      const tickW = isMajor ? 12 : (isMid ? 8 : 5);
+      ctx.fillStyle = isMajor ? '#555' : '#999';
+      ctx.fillRect(W - tickW, y - 0.5, tickW, 1);
+      if (isMajor && mm > 0) {
+        ctx.fillStyle = '#555';
+        ctx.fillText(mm + '', W - 13, y + 3.5);
+      }
+    }
+    // Zero line at top of content area
+    ctx.fillStyle = '#aaa';
+    ctx.fillRect(W - 16, contentTop - 0.5, 16, 1.5);
+  });
+  // Right edge line
+  ctx.fillStyle = '#ccc';
+  ctx.fillRect(W - 1, 0, 1, totalH);
+}
+
+function dgInitVRuler() {
+  const body = document.getElementById('dg-editor-body');
+  if (!body) return;
+  function rafDraw() {
+    _dgVRulerRaf = null;
+    dgDrawVRuler();
+  }
+  function scheduleDraw() {
+    if (_dgVRulerRaf) return;
+    _dgVRulerRaf = requestAnimationFrame(rafDraw);
+  }
+  body.addEventListener('scroll', scheduleDraw);
+  window.addEventListener('resize', scheduleDraw);
+  const obs = new MutationObserver(scheduleDraw);
+  obs.observe(body, { childList: true, subtree: true, characterData: true });
+  scheduleDraw();
+}
+
+// ── PAGE NUMBERS ──────────────────────────────────────────────────
+let _dgPageNumbersOn = false;
+
+function dgTogglePageNumbers() {
+  _dgPageNumbersOn = !_dgPageNumbersOn;
+  _dgApplyPageNumbers();
+  const btn = document.getElementById('dg-pgnums-btn');
+  if (btn) btn.style.background = _dgPageNumbersOn ? 'var(--navy)' : '';
+  if (btn) btn.style.color = _dgPageNumbersOn ? '#fff' : '';
+}
+
+function dgTogglePageNumbers2() {
+  _dgPageNumbersOn = !_dgPageNumbersOn;
+  _dgApplyPageNumbers();
+  const btn = document.getElementById('dg-pgnums-btn2');
+  if (btn) btn.style.background = _dgPageNumbersOn ? 'var(--navy)' : '';
+  if (btn) btn.style.color = _dgPageNumbersOn ? '#fff' : '';
+  // Sync other button
+  const btn1 = document.getElementById('dg-pgnums-btn');
+  if (btn1) { btn1.style.background = _dgPageNumbersOn ? 'var(--navy)' : ''; btn1.style.color = _dgPageNumbersOn ? '#fff' : ''; }
+}
+
+function _dgApplyPageNumbers() {
+  const pages = document.querySelectorAll('.dg-page');
+  const total = pages.length;
+  pages.forEach((page, i) => {
+    let footer = page.querySelector('.dg-page-num-footer');
+    if (!footer) {
+      footer = document.createElement('div');
+      footer.className = 'dg-page-num-footer';
+      page.appendChild(footer);
+    }
+    footer.textContent = `${i + 1} / ${total}`;
+    footer.style.display = _dgPageNumbersOn ? 'block' : 'none';
+  });
+}
+
+// ── PAGE BREAK INSERTION ──────────────────────────────────────────
+function dgInsertPageBreak() {
+  const editorContent = document.getElementById('dg-editor-content');
+  if (!editorContent) return;
+  editorContent.focus();
+  document.execCommand('insertHTML', false,
+    '<div class="dg-page-break-marker" contenteditable="false">&nbsp;</div><p><br></p>'
+  );
+  dgCheckPagination();
+}
+
+function dgInsertPageBreak2() {
+  const editorContent = document.getElementById('dg-editor-content');
+  if (!editorContent) return;
+  editorContent.focus();
+  document.execCommand('insertHTML', false,
+    '<div class="dg-page-break-marker" contenteditable="false">&nbsp;</div><p><br></p>'
+  );
+  dgCheckPagination();
+}
+
+// ── AUTO-PAGINATION (text spillage to new pages) ──────────────────
+let _dgPaginationTimer = null;
+const DG_A4_CONTENT_PX = 1123 - (20 * 3.78 * 2); // A4 px minus top+bottom margins at 96dpi
+
+function dgCheckPagination() {
   const page = document.getElementById('dg-page-sim');
-  if (!page) return;
+  const content = document.getElementById('dg-editor-content');
+  if (!page || !content) return;
+  // Get current padding
+  const ml = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
+  const mr = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
+  const mt = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
+  const mb = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
+  const PX_PER_MM = DG_RULER_PX_PER_MM || 3.78;
+  const maxContentH = 1123 - (mt + mb) * PX_PER_MM;
+  const container = document.getElementById('dg-pages-container');
+  if (!container) return;
+
+  // Collect all page divs
+  let pages = Array.from(container.querySelectorAll('.dg-page'));
+
+  // Check if first page content overflows
+  pages.forEach((pg, pgIdx) => {
+    const edContent = pg.querySelector('[contenteditable]');
+    if (!edContent) return;
+    if (edContent.scrollHeight > maxContentH + 20) {
+      // Need to create an overflow page
+      dgSpillToNextPage(pg, pgIdx, pages, container, mt, mr, mb, ml, maxContentH, PX_PER_MM);
+    }
+  });
+
+  // Refresh page numbers
+  _dgApplyPageNumbers();
+  // Refresh vertical ruler
+  dgDrawVRuler();
+}
+
+function dgSpillToNextPage(pg, pgIdx, allPages, container, mt, mr, mb, ml, maxContentH, PX_PER_MM) {
+  const edContent = pg.querySelector('[contenteditable]');
+  if (!edContent) return;
+
+  // Find or create next page
+  let nextPage = allPages[pgIdx + 1];
+  if (!nextPage) {
+    nextPage = _dgCreateNewPage(container, pgIdx + 2, mt, mr, mb, ml);
+    allPages.push(nextPage);
+  }
+  const nextContent = nextPage.querySelector('[contenteditable]');
+  if (!nextContent) return;
+
+  // Move overflow nodes to next page
+  // Use binary search by child nodes
+  const children = Array.from(edContent.childNodes);
+  let splitIdx = children.length;
+  // Find the last node that fits
+  for (let i = children.length - 1; i >= 0; i--) {
+    // Temporarily remove trailing nodes and measure
+    const toMove = children.slice(i);
+    toMove.forEach(n => n.remove());
+    const fits = edContent.scrollHeight <= maxContentH + 10;
+    // Put them back
+    toMove.forEach(n => edContent.appendChild(n));
+    if (fits) { splitIdx = i + 1; break; }
+  }
+
+  if (splitIdx < children.length) {
+    // Move nodes from splitIdx to end into next page (prepend)
+    const frag = document.createDocumentFragment();
+    for (let i = splitIdx; i < children.length; i++) {
+      frag.appendChild(children[i].cloneNode(true));
+    }
+    // Remove them from current page
+    for (let i = children.length - 1; i >= splitIdx; i--) {
+      children[i].remove();
+    }
+    // Prepend to next page content
+    nextContent.insertBefore(frag, nextContent.firstChild);
+  }
+}
+
+function _dgCreateNewPage(container, pageNum, mt, mr, mb, ml) {
+  const newPage = document.createElement('div');
+  newPage.id = pageNum === 2 ? 'dg-page-2' : 'dg-page-' + pageNum;
+  newPage.className = 'dg-page';
+  newPage.setAttribute('data-page', pageNum);
+  newPage.style.cssText = `padding:${mt}mm ${mr}mm ${mb}mm ${ml}mm`;
+  const newContent = document.createElement('div');
+  newContent.contentEditable = 'true';
+  newContent.spellcheck = true;
+  newContent.style.cssText = 'outline:none;font-family:Georgia,serif;font-size:12.5px;line-height:1.85;color:#111;min-height:400px;white-space:pre-wrap;word-break:break-word';
+  newPage.appendChild(newContent);
+  const numFooter = document.createElement('div');
+  numFooter.className = 'dg-page-num-footer';
+  numFooter.style.display = _dgPageNumbersOn ? 'block' : 'none';
+  numFooter.textContent = pageNum;
+  newPage.appendChild(numFooter);
+  container.appendChild(newPage);
+
+  // Attach input listener to new page for cascade pagination
+  newContent.addEventListener('input', () => {
+    clearTimeout(_dgPaginationTimer);
+    _dgPaginationTimer = setTimeout(dgCheckPagination, 600);
+  });
+  return newPage;
+}
+
+// Hook pagination to content changes on first page
+(function dgAttachPaginationHook() {
+  function _hook() {
+    const ed = document.getElementById('dg-editor-content');
+    if (!ed) { setTimeout(_hook, 500); return; }
+    ed.addEventListener('input', () => {
+      clearTimeout(_dgPaginationTimer);
+      _dgPaginationTimer = setTimeout(dgCheckPagination, 800);
+    });
+    // Also init v-ruler once the editor is shown
+    const modal = document.getElementById('dg-editor-modal');
+    if (modal) {
+      const obs = new MutationObserver(() => {
+        if (modal.style.display !== 'none') {
+          dgInitVRuler();
+          dgDrawVRuler();
+          obs.disconnect();
+        }
+      });
+      obs.observe(modal, { attributes: true, attributeFilter: ['style'] });
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _hook);
+  } else {
+    setTimeout(_hook, 300);
+  }
+})();
+
+// Also update dgToggleEdit to init v-ruler when editor opens
+const _origDgToggleEdit = typeof dgToggleEdit === 'function' ? dgToggleEdit : null;
+function dgToggleEdit() {
+  if (_origDgToggleEdit) _origDgToggleEdit();
+  setTimeout(() => {
+    dgInitVRuler();
+    dgDrawVRuler();
+  }, 100);
+}
+
+// Override dgApplyMargins to apply to ALL pages + refresh rulers
+function dgApplyMargins() {
   const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
   const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
   const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
   const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
-  page.style.padding = `${t}mm ${r}mm ${b}mm ${l}mm`;
+  document.querySelectorAll('.dg-page').forEach(pg => {
+    pg.style.padding = `${t}mm ${r}mm ${b}mm ${l}mm`;
+  });
   if (window._dgDrawRuler) window._dgDrawRuler();
+  dgDrawVRuler();
 }
 
 function dgResetMargins() {
@@ -13627,26 +14023,46 @@ function dgResetMargins() {
   dgApplyMargins();
 }
 
-// Override dgPrint to handle edited HTML mode
+// Override dgPrint to handle edited HTML mode (multi-page aware)
 function dgPrint() {
   if (dgGeneratedText === '__html__') {
-    // Print from wide editor or preview, whichever has the latest content
+    // Collect all pages content
+    const pages = document.querySelectorAll('#dg-pages-container .dg-page');
     const editContent = document.getElementById('dg-editor-content');
-    const wrap = document.getElementById('dg-preview-wrap');
-    const previewHtml = (dgEditMode && editContent) ? editContent.innerHTML : wrap.innerHTML;
+    const wrapEl = document.getElementById('dg-preview-wrap');
+    let allPagesHtml = '';
+    if (pages.length > 0) {
+      const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
+      const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
+      const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
+      const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
+      pages.forEach((pg, i) => {
+        const ed = pg.querySelector('[contenteditable]');
+        const pgHtml = ed ? ed.innerHTML : '';
+        const numHtml = _dgPageNumbersOn ? `<div style="position:fixed;bottom:${b}mm;left:0;right:0;text-align:center;font-size:10px;color:#888;font-family:Georgia,serif">${i+1} / ${pages.length}</div>` : '';
+        allPagesHtml += `<div style="page-break-after:${i < pages.length-1 ? 'always' : 'auto'};position:relative;padding:0">${pgHtml}${numHtml}</div>`;
+      });
+    } else {
+      const previewHtml = (dgEditMode && editContent) ? editContent.innerHTML : wrapEl.innerHTML;
+      allPagesHtml = previewHtml;
+    }
     const frame = document.getElementById('dg-print-frame');
+    const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
+    const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
+    const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
+    const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
     const content = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-      body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:2.5cm 3cm;color:#111}
+      body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
       p{margin-bottom:4px;margin-top:0}
       br{display:block;margin-bottom:8px}
       table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
       .dg-blank{padding:0 2px}
       .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9}
       .dg-jurat td{padding:0;vertical-align:top}
-      .dg-edit-mode-badge{display:none}
-      @page{margin:2.5cm 3cm;size:A4;marks:none}
+      .dg-edit-mode-badge,.dg-page-break-marker{display:none}
+      @page{margin:${t}mm ${r}mm ${b}mm ${l}mm;size:A4}
       @media print{body{margin:0}}
-    </style></head><body>${previewHtml}</body></html>`;
+    </style></head><body>${allPagesHtml}</body></html>`;
     frame.contentDocument.open();
     frame.contentDocument.write(content);
     frame.contentDocument.close();
@@ -13681,8 +14097,12 @@ function _dgPrintBase(){
   const frame=document.getElementById('dg-print-frame');
   // Re-render preview HTML into print frame — jurat tables already in innerHTML
   const previewHtml = document.getElementById('dg-preview-wrap').innerHTML;
+  const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
+  const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
+  const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
+  const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
   const content=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-    body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:2.5cm 3cm;color:#111}
+    body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
     p{margin-bottom:4px;margin-top:0}
     br{display:block;margin-bottom:8px}
     table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
@@ -13690,7 +14110,8 @@ function _dgPrintBase(){
     .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9}
     .dg-jurat td{padding:0;vertical-align:top}
     .dg-edit-mode-badge{display:none !important}
-    @page{size:A4;margin:2.5cm 3cm}
+    .dg-page-break-marker{display:none !important}
+    @page{size:A4;margin:${t}mm ${r}mm ${b}mm ${l}mm}
     @media print{body{margin:0}}
   </style></head><body>${previewHtml}</body></html>`;
   frame.contentDocument.open();
