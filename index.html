@@ -13990,15 +13990,17 @@ function _dgCreateNewPage(container, pageNum, mt, mr, mb, ml) {
   }
 })();
 
-// Also update dgToggleEdit to init v-ruler when editor opens
-const _origDgToggleEdit = typeof dgToggleEdit === 'function' ? dgToggleEdit : null;
-function dgToggleEdit() {
-  if (_origDgToggleEdit) _origDgToggleEdit();
-  setTimeout(() => {
-    dgInitVRuler();
-    dgDrawVRuler();
-  }, 100);
-}
+// Patch dgToggleEdit to init v-ruler when editor opens (safe wrap — no hoisting issue)
+(function() {
+  const _orig = typeof dgToggleEdit === 'function' ? dgToggleEdit.bind(window) : null;
+  window.dgToggleEdit = function dgToggleEdit() {
+    if (_orig) _orig();
+    setTimeout(() => {
+      dgInitVRuler();
+      dgDrawVRuler();
+    }, 100);
+  };
+})();
 
 // Override dgApplyMargins to apply to ALL pages + refresh rulers
 function dgApplyMargins() {
