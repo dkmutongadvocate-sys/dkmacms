@@ -10237,15 +10237,15 @@ document.addEventListener('DOMContentLoaded', function() {
 const DG_DOCS={
 
   // ── SWORN STATEMENTS ─────────────────────────────────────────────
-  'affidavit':{title:'Affidavit (general)',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'e.g. EVELYN NETTAH SAYO'},{id:'id_no',l:'ID / Passport number',ph:'e.g. 12345678'},{id:'occupation',l:'Description (adult Kenyan female/male)',ph:'e.g. adult Kenyan female'},{id:'address',l:'Full address',ph:'e.g. P.O. Box 45233 - 00800, Nairobi'},{id:'court',l:'Court (if court affidavit)',ph:'e.g. High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'e.g. Civil Case No. 123 of 2025'},{id:'facts',l:'Facts (one paragraph per line)',ph:'Paragraph 1 fact\nParagraph 2 fact\nParagraph 3 fact',ta:1},{id:'purpose',l:'Purpose / closing paragraph',ph:'e.g. I swear this affidavit affirming that I do not owe any rental income...'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+  'affidavit':{title:'Affidavit (general)',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'e.g. EVELYN NETTAH SAYO'},{id:'id_no',l:'ID / Passport number',ph:'e.g. 12345678'},{id:'occupation',l:'Description (adult Kenyan female/male)',ph:'e.g. adult Kenyan female'},{id:'address',l:'Full address',ph:'e.g. P.O. Box 45233 - 00800, Nairobi'},{id:'court',l:'Court (if court affidavit)',ph:'e.g. High Court of Kenya at Nairobi',opt:1},{id:'case_no',l:'Case number',ph:'e.g. Civil Case No. 123 of 2025',opt:1},{id:'facts',l:'Facts (one paragraph per line)',ph:'Paragraph 1 fact\nParagraph 2 fact\nParagraph 3 fact',ta:1},{id:'purpose',l:'Purpose / closing paragraph',ph:'e.g. I swear this affidavit affirming that I do not owe any rental income...'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
   'affidavit-probate':{title:'Affidavit — Grant of Probate',sub:'Law of Succession Act (Cap. 160) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'address',l:'Address',ph:'Full address'},{id:'deceased',l:'Deceased full name',ph:'Full name of deceased'},{id:'deceased_id',l:'Deceased ID number',ph:'National ID of deceased'},{id:'date_death',l:'Date of death',ph:'DD/MM/YYYY'},{id:'place_death',l:'Place of death',ph:'e.g. Nairobi'},{id:'will',l:'Was there a will?',ph:'',sel:['Yes — will is attached','No — intestate succession']},{id:'estate',l:'Brief description of estate',ph:'e.g. Land parcel No. X, bank accounts, motor vehicle…',ta:1},{id:'relationship',l:'Relationship to deceased',ph:'e.g. Spouse, child, administrator'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
   'affidavit-financial-support':{title:'Affidavit of Financial Support',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'address',l:'Address',ph:'Full address'},{id:'beneficiary',l:'Person being supported',ph:'Full name of supported person'},{id:'relationship',l:'Relationship',ph:'e.g. son, daughter, spouse'},{id:'amount',l:'Monthly support amount (KES)',ph:'e.g. 50,000',num:1},{id:'period',l:'Period of support',ph:'e.g. 24 months or indefinitely'},{id:'purpose',l:'Purpose (immigration, education, etc.)',ph:'e.g. University studies in Kenya'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
-  'affidavit-lost-passport':{title:'Affidavit — Lost Passport',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'address',l:'Address',ph:'Full address'},{id:'passport_no',l:'Lost passport number',ph:'e.g. A1234567'},{id:'date_issued',l:'Date passport was issued',ph:'DD/MM/YYYY'},{id:'circumstances',l:'Circumstances of loss',ph:'Describe how, when and where passport was lost…',ta:1},{id:'report_no',l:'Police abstract / report number (if any)',ph:'e.g. OB/1234/2025'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+  'affidavit-lost-passport':{title:'Affidavit — Lost Passport',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'address',l:'Address',ph:'Full address'},{id:'passport_no',l:'Lost passport number',ph:'e.g. A1234567'},{id:'date_issued',l:'Date passport was issued',ph:'DD/MM/YYYY'},{id:'circumstances',l:'Circumstances of loss',ph:'Describe how, when and where passport was lost…',ta:1},{id:'report_no',l:'Police abstract / report number (if any)',ph:'e.g. OB/1234/2025',opt:1},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
-  'affidavit-lost-docs':{title:'Affidavit — Lost Documents',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'address',l:'Address',ph:'Full address'},{id:'docs_lost',l:'Documents lost (describe each)',ph:'e.g. Title deed LR No. 123, logbook for KBX 123A…',ta:1},{id:'circumstances',l:'Circumstances of loss',ph:'Describe how the documents were lost…',ta:1},{id:'report_no',l:'Police report number (if any)',ph:'OB/1234/2025'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+  'affidavit-lost-docs':{title:'Affidavit — Lost Documents',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'address',l:'Address',ph:'Full address'},{id:'docs_lost',l:'Documents lost (describe each)',ph:'e.g. Title deed LR No. 123, logbook for KBX 123A…',ta:1},{id:'circumstances',l:'Circumstances of loss',ph:'Describe how the documents were lost…',ta:1},{id:'report_no',l:'Police report number (if any)',ph:'OB/1234/2025',opt:1},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
   'affidavit-motor-vehicle':{title:'Affidavit — Purchase of Motor Vehicle',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'deponent',l:'Deponent full name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'address',l:'Address',ph:'Full address'},{id:'reg_no',l:'Vehicle registration number',ph:'e.g. KBX 123A'},{id:'make',l:'Make and model',ph:'e.g. Toyota Harrier, 2018'},{id:'chassis',l:'Chassis number',ph:'e.g. JTMBE33V0X0123456'},{id:'seller',l:'Seller full name',ph:'Full name of seller'},{id:'price',l:'Purchase price (KES)',ph:'e.g. 2,500,000',num:1},{id:'date_purchase',l:'Date of purchase',ph:'DD/MM/YYYY'},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
@@ -10253,12 +10253,12 @@ const DG_DOCS={
 
   'stat-dec-id':{title:'Statutory Declaration of Identity',sub:'Oaths and Statutory Declarations Act (Cap. 15) — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'declarant',l:'Declarant full name',ph:'Full legal name'},{id:'id_no',l:'ID / Passport number',ph:'National ID'},{id:'address',l:'Address',ph:'Full address'},{id:'other_names',l:'Other name(s) previously used',ph:'e.g. JANE MARY WANJIKU'},{id:'reason',l:'Reason for declaration',ph:'e.g. The names on my academic certificates differ from my current legal name'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'affidavit-service':{title:'Affidavit of service',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'server',l:'Process server name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'court',l:'Court',ph:'e.g. High Court at Nairobi'},{id:'doc_served',l:'Document(s) served',ph:'e.g. Plaint and summons'},{id:'served_on',l:'Person served',ph:'Full name'},{id:'service_address',l:'Address of service',ph:'Where service was effected'},{id:'service_date',l:'Date and time of service',ph:'DD/MM/YYYY at HH:MM'},{id:'mode',l:'Mode of service',ph:'',sel:['Personal service','Substituted service','Postal service','Electronic service']},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
+  'affidavit-service':{title:'Affidavit of service',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Sworn statements',color:'#378ADD',fields:[{id:'server',l:'Process server name',ph:'Full legal name'},{id:'id_no',l:'ID number',ph:'National ID'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'court',l:'Court',ph:'e.g. High Court at Nairobi',opt:1},{id:'doc_served',l:'Document(s) served',ph:'e.g. Plaint and summons'},{id:'served_on',l:'Person served',ph:'Full name'},{id:'service_address',l:'Address of service',ph:'Where service was effected'},{id:'service_date',l:'Date and time of service',ph:'DD/MM/YYYY at HH:MM'},{id:'mode',l:'Mode of service',ph:'',sel:['Personal service','Substituted service','Postal service','Electronic service']},{id:'date',l:'Date of swearing',ph:'DD/MM/YYYY'}]},
 
   // ── COURT APPLICATIONS ───────────────────────────────────────────
   'chamber-summons':{title:'Chamber summons',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'In the High Court of Kenya at Nairobi'},{id:'case_no',l:'Case number',ph:'Civil Case No. 45 of 2025'},{id:'applicant',l:'Applicant name',ph:'Full legal name'},{id:'respondent',l:'Respondent name',ph:'Full legal name'},{id:'orders',l:'Orders sought',ph:'1. An order that…\n2. Costs of and incidental to this application…',ta:1},{id:'grounds',l:'Grounds',ph:'Brief grounds for the application…',ta:1},{id:'return_date',l:'Proposed return date',ph:'DD/MM/YYYY'},{id:'advocate',l:'Advocate on record',ph:'Name and firm'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'notice-motion':{title:'Notice of motion',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'division',l:'Division',ph:'e.g. Commercial Division'},{id:'case_no',l:'Case number',ph:'e.g. Petition No. 12 of 2025'},{id:'applicant',l:'Applicant',ph:'Full legal name'},{id:'respondent',l:'Respondent',ph:'Full legal name'},{id:'orders',l:'Orders sought',ph:'1. An order that…\n2. Costs…',ta:1},{id:'grounds',l:'Grounds',ph:'This application is premised on the grounds that…',ta:1},{id:'supporting',l:'Supporting documents',ph:'e.g. Affidavit of [Name], documents annexed hereto'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'notice-motion':{title:'Notice of motion',sub:'Civil Procedure Rules 2010 — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court of Kenya at Nairobi'},{id:'division',l:'Division',ph:'e.g. Commercial Division',opt:1},{id:'case_no',l:'Case number',ph:'e.g. Petition No. 12 of 2025'},{id:'applicant',l:'Applicant',ph:'Full legal name'},{id:'respondent',l:'Respondent',ph:'Full legal name'},{id:'orders',l:'Orders sought',ph:'1. An order that…\n2. Costs…',ta:1},{id:'grounds',l:'Grounds',ph:'This application is premised on the grounds that…',ta:1},{id:'supporting',l:'Supporting documents',ph:'e.g. Affidavit of [Name], documents annexed hereto'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
   'plaint':{title:'Plaint',sub:'Civil Procedure Act (Cap. 21) — Kenya',cat:'Court applications',color:'#993C1D',fields:[{id:'court',l:'Court',ph:'High Court / Magistrates Court at…'},{id:'plaintiff',l:'Plaintiff',ph:'Full name, ID, address'},{id:'defendant',l:'Defendant',ph:'Full name, ID, address'},{id:'cause',l:'Cause of action',ph:'e.g. Breach of contract, negligence'},{id:'particulars',l:'Particulars of claim',ph:'1. On or about [date] the Defendant…',ta:1},{id:'amount',l:'Amount claimed (KES)',ph:'e.g. 1,500,000',num:1},{id:'interest',l:'Interest claimed',ph:'e.g. 14% p.a. from date of breach'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
@@ -10295,14 +10295,14 @@ const DG_DOCS={
 
   'confidentiality-agreement':{title:'Confidentiality / NDA agreement',sub:'Law of Contract Act (Cap. 23) — Kenya',cat:'Contracts & agreements',color:'#639922',fields:[{id:'disclosing',l:'Disclosing party',ph:'Full name / company'},{id:'receiving',l:'Receiving party',ph:'Full name / company'},{id:'purpose',l:'Purpose of disclosure',ph:'e.g. Due diligence for potential acquisition of shares'},{id:'duration',l:'Duration of confidentiality obligation',ph:'',sel:['1 year','2 years','3 years','5 years','Indefinite']},{id:'scope',l:'Scope of confidential information',ph:'e.g. Financial data, trade secrets, client lists, technical specifications'},{id:'exclusions',l:'Exclusions (if any)',ph:'e.g. Information already in the public domain'},{id:'governing_law',l:'Governing law',ph:'',sel:['Laws of Kenya','Laws of England & Wales']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
-  'partnership-deed':{title:'Partnership deed',sub:'Partnership Act (Cap. 29) — Kenya',cat:'Contracts & agreements',color:'#639922',fields:[{id:'partner1',l:'Partner 1 full name',ph:'Full legal name'},{id:'partner2',l:'Partner 2 full name',ph:'Full legal name'},{id:'partner3',l:'Partner 3 (if any)',ph:'Leave blank if only 2 partners'},{id:'firm_name',l:'Firm / partnership name',ph:'e.g. ABC Trading Partners'},{id:'business',l:'Nature of business',ph:'e.g. General trade and supply of goods'},{id:'capital1',l:"Partner 1's capital contribution (KES)",ph:'e.g. 1,000,000',num:1},{id:'capital2',l:"Partner 2's capital contribution (KES)",ph:'e.g. 500,000',num:1},{id:'profit_ratio',l:'Profit / loss sharing ratio',ph:'e.g. 2:1 (Partner 1 : Partner 2)'},{id:'management',l:'Management responsibilities',ph:'Describe each partner\'s role…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'partnership-deed':{title:'Partnership deed',sub:'Partnership Act (Cap. 29) — Kenya',cat:'Contracts & agreements',color:'#639922',fields:[{id:'partner1',l:'Partner 1 full name',ph:'Full legal name'},{id:'partner2',l:'Partner 2 full name',ph:'Full legal name'},{id:'partner3',l:'Partner 3 (if any)',ph:'Leave blank if only 2 partners',opt:1},{id:'firm_name',l:'Firm / partnership name',ph:'e.g. ABC Trading Partners'},{id:'business',l:'Nature of business',ph:'e.g. General trade and supply of goods'},{id:'capital1',l:"Partner 1's capital contribution (KES)",ph:'e.g. 1,000,000',num:1},{id:'capital2',l:"Partner 2's capital contribution (KES)",ph:'e.g. 500,000',num:1},{id:'profit_ratio',l:'Profit / loss sharing ratio',ph:'e.g. 2:1 (Partner 1 : Partner 2)'},{id:'management',l:'Management responsibilities',ph:'Describe each partner\'s role…',ta:1},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
   'hire-purchase':{title:'Hire purchase agreement',sub:'Hire Purchase Act (Cap. 507) — Kenya',cat:'Contracts & agreements',color:'#639922',fields:[{id:'owner',l:'Owner (hire purchase company)',ph:'Full name / company'},{id:'hirer',l:'Hirer full name',ph:'Full legal name'},{id:'goods',l:'Description of goods',ph:'e.g. Motor vehicle Toyota Hilux 2022, Reg. KCX 123Z'},{id:'cash_price',l:'Cash price (KES)',ph:'e.g. 5,000,000',num:1},{id:'deposit',l:'Initial deposit (KES)',ph:'e.g. 1,000,000',num:1},{id:'instalments',l:'Number of instalments',ph:'e.g. 36'},{id:'instalment_amount',l:'Monthly instalment (KES)',ph:'e.g. 130,000',num:1},{id:'interest_rate',l:'Annual interest rate (%)',ph:'e.g. 18'},{id:'completion_date',l:'Expected completion date',ph:'DD/MM/YYYY'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
   // ── CONVEYANCING ─────────────────────────────────────────────────
   'sale-land-agreement':{title:'Sale agreement — Land (conveyancing)',sub:'Land Registration Act 2012 — Kenya',cat:'Conveyancing',color:'#A0522D',fields:[{id:'vendor',l:'Vendor full name',ph:'Full legal name'},{id:'vendor_id',l:'Vendor ID',ph:'National ID'},{id:'purchaser',l:'Purchaser full name',ph:'Full legal name'},{id:'purchaser_id',l:'Purchaser ID',ph:'National ID'},{id:'title_no',l:'Title / LR number',ph:'e.g. Title No. Nairobi/Block 5/123'},{id:'area',l:'Area',ph:'e.g. 0.05 ha'},{id:'location',l:'Location',ph:'e.g. Ruiru, Kiambu County'},{id:'price',l:'Purchase price (KES)',ph:'e.g. 6,500,000',num:1},{id:'deposit',l:'Deposit on signing (KES)',ph:'e.g. 650,000',num:1},{id:'completion',l:'Completion date',ph:'DD/MM/YYYY'},{id:'encumbrances',l:'Encumbrances / charges (if any)',ph:'None / List any charges or cautions'},{id:'date',l:'Date of agreement',ph:'DD/MM/YYYY'}]},
 
-  'poa-land':{title:'Power of attorney — relating to land',sub:'Powers of Attorney Act (Cap. 53), Land Registration Act 2012 — Kenya',cat:'Conveyancing',color:'#A0522D',fields:[{id:'donor',l:'Donor full name',ph:'Full legal name'},{id:'donor_id',l:'Donor ID',ph:'National ID'},{id:'attorney',l:'Attorney full name',ph:'Full legal name'},{id:'attorney_id',l:'Attorney ID',ph:'National ID'},{id:'title_no',l:'Title / LR number(s)',ph:'e.g. Title No. Nairobi/Block X/123'},{id:'powers',l:'Powers granted',ph:'e.g. To sell, transfer, charge, lease, or otherwise deal with the property'},{id:'consideration',l:'Minimum sale consideration (KES)',ph:'e.g. Not less than KES 5,000,000',num:1},{id:'expiry',l:'Expiry of power',ph:'DD/MM/YYYY or "upon completion of sale"'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
+  'poa-land':{title:'Power of attorney — relating to land',sub:'Powers of Attorney Act (Cap. 53), Land Registration Act 2012 — Kenya',cat:'Conveyancing',color:'#A0522D',fields:[{id:'donor',l:'Donor full name',ph:'Full legal name'},{id:'donor_id',l:'Donor ID',ph:'National ID'},{id:'attorney',l:'Attorney full name',ph:'Full legal name'},{id:'attorney_id',l:'Attorney ID',ph:'National ID'},{id:'title_no',l:'Title / LR number(s)',ph:'e.g. Title No. Nairobi/Block X/123'},{id:'powers',l:'Powers granted',ph:'e.g. To sell, transfer, charge, lease, or otherwise deal with the property'},{id:'consideration',l:'Minimum sale consideration (KES)',ph:'e.g. Not less than KES 5,000,000',num:1,opt:1},{id:'expiry',l:'Expiry of power',ph:'DD/MM/YYYY or "upon completion of sale"'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
   'rta-charge':{title:'Charge (RTA) — first legal mortgage',sub:'Land Registration Act 2012, Registered Land Act — Kenya',cat:'Conveyancing',color:'#A0522D',fields:[{id:'chargor',l:'Chargor (borrower) full name',ph:'Full legal name'},{id:'chargee',l:'Chargee (lender) name',ph:'Bank / institution name'},{id:'title_no',l:'Title / LR number',ph:'e.g. LR No. 209/1234'},{id:'loan_amount',l:'Loan / facility amount (KES)',ph:'e.g. 10,000,000',num:1},{id:'interest_rate',l:'Interest rate (% p.a.)',ph:'e.g. 16'},{id:'repayment',l:'Repayment period',ph:'',sel:['1 year','3 years','5 years','10 years','20 years','25 years']},{id:'facility_type',l:'Facility type',ph:'',sel:['Term loan','Overdraft','Mortgage','Invoice discounting']},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
@@ -10340,7 +10340,7 @@ const DG_DOCS={
   'holding-letter':{title:'Holding letter (litigation)',sub:'Civil litigation pre-action — Kenya',cat:'Demand & notice',color:'#5F5E5A',fields:[{id:'recipient',l:'Recipient',ph:'Name and address of opposing party / counsel'},{id:'our_client',l:'Our client',ph:'Full name'},{id:'matter',l:'Matter / case reference',ph:'e.g. Civil Case No. 12 of 2025'},{id:'reason',l:'Reason for holding',ph:'e.g. Awaiting instructions, reviewing documents, pending further evidence'},{id:'timeline',l:'Expected next communication',ph:'e.g. Within 14 days'},{id:'date',l:'Date',ph:'DD/MM/YYYY'}]},
 
   // ── IMMIGRATION ──────────────────────────────────────────────────
-  'entry-permit-bank-letter':{title:'Entry permit — bank letter',sub:'Kenya Immigration Act (Cap. 172) — Kenya',cat:'Immigration',color:'#2C6E8C',fields:[{id:'bank',l:'Bank name',ph:'e.g. Equity Bank Kenya Limited'},{id:'branch',l:'Branch',ph:'e.g. Westlands Branch, Nairobi'},{id:'applicant',l:'Applicant (permit holder) full name',ph:'Full legal name'},{id:'passport',l:'Passport number',ph:'e.g. A1234567'},{id:'employer',l:'Employer / company name',ph:'As per certificate of incorporation'},{id:'position',l:'Position / job title',ph:'e.g. Finance Director'},{id:'salary',l:'Monthly salary (KES)',ph:'e.g. 350,000',num:1},{id:'account',l:'Account number (if appropriate)',ph:'Leave blank if not to be included'},{id:'date',l:'Date of letter',ph:'DD/MM/YYYY'}]},
+  'entry-permit-bank-letter':{title:'Entry permit — bank letter',sub:'Kenya Immigration Act (Cap. 172) — Kenya',cat:'Immigration',color:'#2C6E8C',fields:[{id:'bank',l:'Bank name',ph:'e.g. Equity Bank Kenya Limited'},{id:'branch',l:'Branch',ph:'e.g. Westlands Branch, Nairobi'},{id:'applicant',l:'Applicant (permit holder) full name',ph:'Full legal name'},{id:'passport',l:'Passport number',ph:'e.g. A1234567'},{id:'employer',l:'Employer / company name',ph:'As per certificate of incorporation'},{id:'position',l:'Position / job title',ph:'e.g. Finance Director'},{id:'salary',l:'Monthly salary (KES)',ph:'e.g. 350,000',num:1},{id:'account',l:'Account number (if appropriate)',ph:'Leave blank if not to be included',opt:1},{id:'date',l:'Date of letter',ph:'DD/MM/YYYY'}]},
 
   'application-extension-pass':{title:"Application — extension of visitor's pass",sub:'Kenya Immigration Act (Cap. 172) — Kenya',cat:'Immigration',color:'#2C6E8C',fields:[{id:'applicant',l:'Applicant full name',ph:'Full legal name'},{id:'passport',l:'Passport number',ph:'e.g. A1234567'},{id:'nationality',l:'Nationality',ph:'e.g. British, Indian'},{id:'current_expiry',l:'Current pass expiry date',ph:'DD/MM/YYYY'},{id:'extension_period',l:'Extension requested',ph:'',sel:['30 days','60 days','90 days','6 months']},{id:'purpose',l:'Purpose of stay',ph:'e.g. Medical treatment, business, tourism'},{id:'address',l:'Address in Kenya',ph:'Full address while in Kenya'},{id:'date',l:'Date of application',ph:'DD/MM/YYYY'}]}
 
@@ -10615,9 +10615,10 @@ function dgGetVals(){
   const v={};
   d.fields.forEach(f=>{
     const el=document.getElementById('dgf_'+f.id);
-    if(!el){v[f.id]='['+f.l+']';return;}
-    // For num fields, store the raw numeric string (no commas) for template use
-    v[f.id]= f.num ? (el.value?dgRawNum(el.value).toLocaleString('en-KE'):'['+f.l+']') : (el.value||'['+f.l+']');
+    if(!el){v[f.id]=f.opt?'':'['+f.l+']';return;}
+    // For num fields, store formatted number; for optional empty fields return ''
+    if(f.num) { v[f.id]=el.value?dgRawNum(el.value).toLocaleString('en-KE'):''; }
+    else { v[f.id]=el.value; }  // empty string if blank — templates use ||'[placeholder]' for required, conditional check for optional
   });
   return v;
 }
@@ -10632,56 +10633,10 @@ function dgBuildDocument(id, v){
   const witness = nl+nl+`SIGNED by the above-named in our presence and in the presence of each other:${nl+nl}_________________________________${nl}Witness 1 — Full Name: _____________________ ID No.: _______________ Date: _______________${nl+nl}_________________________________${nl}Witness 2 — Full Name: _____________________ ID No.: _______________ Date: _______________`;
   const stampNote = nl+nl+'─────────────────────────────────────────'+nl+'NOTE: This document may attract stamp duty under the Stamp Duty Act (Cap. 480, Laws of Kenya). Please seek advice on applicable stamp duty before execution.';
 
-  // Authentic Kenyan jurat — matches official affidavit layout with } column on right
-  // deponentName: UPPERCASE name, swornAt: city, role: 'DEPONENT' or 'DECLARANT'
-  const jurat = (deponentName, swornAt, role) => {
-    const yr = new Date().getFullYear();
-    const R = '  }';  // right-column brace
-    return [
-      '',
-      `SWORN at ${swornAt} by the said                              ${R}`,
-      `${deponentName}                                              ${R}  .......................................`,
-      `This         Day of                    ,  ${yr}             ${R}  ${role||'DEPONENT'}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      ``,
-      `BEFORE ME:`,
-      ``,
-      `_________________________________`,
-      `COMMISSIONER OF OATHS`,
-    ].join(nl);
-  };
-
-  // Declared version for statutory declarations
-  const juratDeclared = (declarantName, declaredAt, role) => {
-    const yr = new Date().getFullYear();
-    const R = '  }';
-    return [
-      '',
-      `DECLARED at ${declaredAt} by the said                        ${R}`,
-      `${declarantName}                                             ${R}  .......................................`,
-      `This         Day of                    ,  ${yr}             ${R}  ${role||'DECLARANT'}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      `                                                             ${R}`,
-      ``,
-      `BEFORE ME:`,
-      ``,
-      `_________________________________`,
-      `COMMISSIONER OF OATHS`,
-    ].join(nl);
-  };
+  // Jurat helper — emits a special marker that dgRenderPreview/dgPrint convert to a proper two-column table
+  // Format: %%JURAT%%NAME%%CITY%%ROLE%% or %%JDECL%%NAME%%CITY%%ROLE%%
+  const jurat = (name, city, role) => `%%JURAT%%${name}%%${city}%%${role||'DEPONENT'}%%`;
+  const juratDeclared = (name, city, role) => `%%JDECL%%${name}%%${city}%%${role||'DECLARANT'}%%`;
 
   switch(id){
 
@@ -10704,11 +10659,9 @@ function dgBuildDocument(id, v){
         `          IN THE MATTER OF THE OATHS AND STATUTORY`,
         `          DECLARATIONS ACT, CAP 15 OF THE LAWS OF KENYA`,
         '',
-        v.court||v.case_no ? [
-          v.court ? `                    IN THE ${v.court.toUpperCase()}` : '',
-          v.case_no ? `                    ${v.case_no}` : ''
-        ].filter(Boolean).join(nl) : '',
-        v.court||v.case_no ? '' : '',
+        (v.court&&!v.court.startsWith('[')) ? `                    IN THE ${v.court.toUpperCase()}` : '',
+        (v.case_no&&!v.case_no.startsWith('[')) ? `                    ${v.case_no}` : '',
+        ((v.court&&!v.court.startsWith('['))||(v.case_no&&!v.case_no.startsWith('['))) ? '' : '',
         `                              AFFIDAVIT`,
         '',
         `I, ${deponent.toUpperCase()} of ${v.address||'[ADDRESS]'} within the Republic of Kenya, do hereby make oath and state as follows:`,
@@ -10780,9 +10733,9 @@ function dgBuildDocument(id, v){
         `          IN THE MATTER OF THE OATHS AND STATUTORY`,
         `          DECLARATIONS ACT, CAP 15 OF THE LAWS OF KENYA`,
         '',
-        v.court ? `                    IN THE ${v.court.toUpperCase()}` : '',
-        v.case_no ? `                    ${v.case_no}` : '',
-        v.court||v.case_no ? '' : '',
+        (v.court&&!v.court.startsWith('[')) ? `                    IN THE ${v.court.toUpperCase()}` : '',
+        (v.case_no&&!v.case_no.startsWith('[')) ? `                    ${v.case_no}` : '',
+        ((v.court&&!v.court.startsWith('['))||(v.case_no&&!v.case_no.startsWith('['))) ? '' : '',
         `                         AFFIDAVIT OF SERVICE`,
         '',
         `I, ${server.toUpperCase()} of National Identity Number ${v.id_no||'[ID NUMBER]'} do hereby make oath and state as follows:`,
@@ -12543,16 +12496,70 @@ function dgGenerate(){
   btn.disabled=false;btn.textContent='📄 Regenerate document';
 }
 
+function dgBuildJuratHtml(marker) {
+  // Parse %%JURAT%%NAME%%CITY%%ROLE%% or %%JDECL%%NAME%%CITY%%ROLE%%
+  const parts = marker.split('%%');
+  // parts: ['', 'JURAT'|'JDECL', NAME, CITY, ROLE, '']
+  const type = parts[1];   // JURAT or JDECL
+  const name = parts[2]||'';
+  const city = parts[3]||'NAIROBI';
+  const role = parts[4]||'DEPONENT';
+  const yr = new Date().getFullYear();
+  const verb = type==='JDECL' ? 'DECLARED' : 'SWORN';
+  // Build authentic two-column jurat table
+  // Left col: sworn text, name, date | Right col: brace column with dotted sig line and role
+  return `
+<table class="dg-jurat" style="width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9">
+  <tbody>
+    <tr>
+      <td style="width:60%;vertical-align:top;padding:0">${verb} at <u>${city}</u> by the said</td>
+      <td style="width:5%;vertical-align:top;padding:0;text-align:center">}</td>
+      <td style="width:35%;vertical-align:top;padding:0">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;padding:0"><u>${name}</u></td>
+      <td style="vertical-align:top;padding:0;text-align:center">}</td>
+      <td style="vertical-align:top;padding:0;border-bottom:1px dotted #333">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="vertical-align:top;padding:0">This &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Day of &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ,&nbsp; ${yr}</td>
+      <td style="vertical-align:top;padding:0;text-align:center">}</td>
+      <td style="vertical-align:top;padding:0;font-weight:700">${role}</td>
+    </tr>
+    <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
+    <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
+    <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
+    <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
+    <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
+    <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
+    <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
+    <tr><td style="padding:0">&nbsp;</td><td style="text-align:center;padding:0">}</td><td style="padding:0">&nbsp;</td></tr>
+  </tbody>
+</table>
+<p style="margin-top:16px">BEFORE ME:</p>
+<p style="margin-top:20px;margin-bottom:0">_________________________________</p>
+<p style="font-weight:700;text-decoration:underline;margin-top:2px">COMMISSIONER OF OATHS</p>`;
+}
+
 function dgRenderPreview(text,d){
   const lines=text.split('\n');
   let html='<div class="dg-preview-body">';
   lines.forEach(line=>{
+    // Jurat marker — render as proper two-column table
+    if(/^%%J(URAT|DECL)%%/.test(line)){
+      html += dgBuildJuratHtml(line);
+      return;
+    }
     if(!line.trim()){html+='<br>';return;}
-    const f=line.replace(/\[([^\]]+)\]/g,'<span class="dg-blank">$1</span>');
-    if(/^[A-Z\s]{6,}$/.test(line.trim())&&line.trim().length<80) html+=`<p style="font-weight:700;margin-top:14px;margin-bottom:6px;text-align:center">${f}</p>`;
-    else if(/^\d+ \.\t/.test(line)) html+=`<p style="padding-left:20px">${f}</p>`;
-    else if(/^\t/.test(line)) html+=`<p style="padding-left:40px">${f}</p>`;
-    else if(line.startsWith('   ')) html+=`<p style="padding-left:20px">${f}</p>`;
+    const f=line.replace(/\[([^\]]+)\]/g,'<span class="dg-blank">[$1]</span>');
+    // Centred ALL-CAPS headings
+    if(/^[A-Z\s\u2014\-]{6,}$/.test(line.trim())&&line.trim().length<80) html+=`<p style="font-weight:700;margin-top:14px;margin-bottom:6px;text-align:center">${f}</p>`;
+    // Numbered paragraphs with tab
+    else if(/^\d+ \.\t/.test(line)) html+=`<p style="margin-left:20px">${f}</p>`;
+    // Tab-indented lines
+    else if(/^\t/.test(line)) html+=`<p style="margin-left:40px">${f.replace(/^\t/,'')}</p>`;
+    // Space-indented lines
+    else if(line.startsWith('   ')) html+=`<p style="margin-left:20px">${f.trimStart()}</p>`;
     else html+=`<p>${f}</p>`;
   });
   html+='</div>';
@@ -12560,7 +12567,20 @@ function dgRenderPreview(text,d){
 }
 
 function dgCopyText(){
-  navigator.clipboard.writeText(dgGeneratedText).then(()=>{
+  // Strip jurat markers to clean plain text for clipboard
+  const plain = dgGeneratedText.replace(/%%J(URAT|DECL)%%([^%]*)%%([^%]*)%%([^%]*)%%/g, (m,type,name,city,role)=>{
+    const verb = type==='DECL'?'DECLARED':'SWORN';
+    const yr = new Date().getFullYear();
+    const R = '   }';
+    return [
+      `${verb} at ${city} by the said${R}`,
+      `${name}${R}   ......................................`,
+      `This         Day of                    ,  ${yr}${R}   ${role}`,
+      `${R}`,`${R}`,`${R}`,`${R}`,`${R}`,`${R}`,`${R}`,`${R}`,
+      ``,`BEFORE ME:`,``,`_________________________________`,`COMMISSIONER OF OATHS`
+    ].join('\n');
+  });
+  navigator.clipboard.writeText(plain).then(()=>{
     if(typeof toast==='function') toast('Document copied to clipboard');
     else if(typeof showToast==='function') showToast('Document copied to clipboard');
   });
@@ -12569,14 +12589,19 @@ function dgCopyText(){
 function dgPrint(){
   const d=DG_DOCS[dgCurrentId];
   const frame=document.getElementById('dg-print-frame');
+  // Re-render preview HTML into print frame — jurat tables already in innerHTML
+  const previewHtml = document.getElementById('dg-preview-wrap').innerHTML;
   const content=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:2.5cm 3cm;color:#111}
     h1,h2,h3{font-family:inherit}
+    p{margin-bottom:4px;margin-top:0}
+    br{display:block;margin-bottom:8px}
     .dg-blank{background:#FFF5CC;padding:0 2px}
-    p{margin-bottom:4px}
-    @page{margin:2.5cm 3cm}
+    .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9}
+    .dg-jurat td{padding:0;vertical-align:top}
+    @page{margin:2.5cm 3cm;size:A4}
     @media print{body{margin:0}}
-  </style></head><body>${document.getElementById('dg-preview-wrap').innerHTML}</body></html>`;
+  </style></head><body>${previewHtml}</body></html>`;
   frame.contentDocument.open();
   frame.contentDocument.write(content);
   frame.contentDocument.close();
