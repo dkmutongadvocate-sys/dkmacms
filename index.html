@@ -1781,9 +1781,14 @@ setTimeout(function() {
 
     <!-- ════ DOCUMENT REPORTS VIEW ════ -->
     <div class="view" id="view-view-reports">
-      <div class="reports-hero">
-        <div class="reports-hero-title">📄 Document Reports</div>
-        <div class="reports-hero-sub">DKMA practice document templates — click any card to open the document builder. All documents are generated instantly, no internet required.</div>
+      <div class="reports-hero" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="reports-hero-title">📄 Document Reports</div>
+          <div class="reports-hero-sub">DKMA practice document templates — click any card to open the document builder. All documents are generated instantly, no internet required.</div>
+        </div>
+        <button onclick="dgOpenBlankEditor()" style="background:var(--navy);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:8px;white-space:nowrap;box-shadow:0 2px 8px rgba(13,27,42,0.18);flex-shrink:0">
+          <span style="font-size:16px">✦</span> New Blank Document
+        </button>
       </div>
 
       <div class="reports-section">
@@ -13798,6 +13803,11 @@ function dgInitRuler() {
 
 // ── BLANK EDITOR (New Document) ───────────────────────────────────
 function dgOpenBlankEditor() {
+  // First open the docgen overlay so the editor modal has a parent to show in
+  document.getElementById('docgen-overlay').classList.remove('hidden');
+  // Hide the normal doc-list modal, go straight to editor
+  document.getElementById('dg-modal-normal').style.display = 'none';
+
   dgEditMode = true;
   dgGeneratedText = '__html__';
 
@@ -13811,8 +13821,7 @@ function dgOpenBlankEditor() {
   const editorSub = document.getElementById('dg-editor-subtitle');
   if (editorSub) editorSub.textContent = 'Blank document — use Client Details to autofill fields';
 
-  // Hide normal modal, show editor modal
-  document.getElementById('dg-modal-normal').style.display = 'none';
+  // Show editor modal
   const em = document.getElementById('dg-editor-modal');
   em.style.display = 'flex';
 
