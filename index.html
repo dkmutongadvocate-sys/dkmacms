@@ -10168,6 +10168,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="topbar-btn sec" id="dg-btn-copy" onclick="dgCopyText()" style="display:none;font-size:11px;padding:5px 12px">Copy</button>
+        <button class="topbar-btn sec" id="dg-btn-edit" onclick="dgToggleEdit()" style="display:none;font-size:11px;padding:5px 12px">✏️ Edit</button>
         <button class="topbar-btn gold" id="dg-btn-print" onclick="dgPrint()" style="display:none;font-size:11px;padding:5px 12px">Print / Save PDF</button>
         <button class="modal-close" onclick="closeDocGen()">×</button>
       </div>
@@ -10193,6 +10194,75 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Rich text editor toolbar (shown when in edit mode) -->
+<div id="dg-editor-toolbar" style="display:none;position:sticky;top:0;z-index:10;background:#f4f2ee;border-bottom:1px solid var(--brd);padding:6px 10px;display:none;flex-wrap:wrap;gap:4px;align-items:center">
+  <!-- Text style -->
+  <div class="dg-tb-group">
+    <button class="dg-tb-btn" title="Bold" onclick="dge('bold')"><b>B</b></button>
+    <button class="dg-tb-btn" title="Italic" onclick="dge('italic')"><i>I</i></button>
+    <button class="dg-tb-btn" title="Underline" onclick="dge('underline')"><u>U</u></button>
+    <button class="dg-tb-btn" title="Strikethrough" onclick="dge('strikethrough')"><s>S</s></button>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Font size -->
+  <div class="dg-tb-group">
+    <select class="dg-tb-sel" title="Font size" onchange="dge('fontSize',false,this.value);this.blur()">
+      <option value="">Size</option>
+      <option value="1">8pt</option>
+      <option value="2">10pt</option>
+      <option value="3">12pt</option>
+      <option value="4">14pt</option>
+      <option value="5">18pt</option>
+      <option value="6">24pt</option>
+      <option value="7">36pt</option>
+    </select>
+    <select class="dg-tb-sel" title="Font family" onchange="dgSetFont(this.value);this.blur()">
+      <option value="">Font</option>
+      <option value="Georgia,serif">Georgia</option>
+      <option value="'Times New Roman',serif">Times New Roman</option>
+      <option value="Arial,sans-serif">Arial</option>
+      <option value="'Courier New',monospace">Courier New</option>
+    </select>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Alignment -->
+  <div class="dg-tb-group">
+    <button class="dg-tb-btn" title="Align left" onclick="dge('justifyLeft')">⬛︎ L</button>
+    <button class="dg-tb-btn" title="Centre" onclick="dge('justifyCenter')">≡ C</button>
+    <button class="dg-tb-btn" title="Align right" onclick="dge('justifyRight')">R ⬛︎</button>
+    <button class="dg-tb-btn" title="Justify" onclick="dge('justifyFull')">≣</button>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Lists & indent -->
+  <div class="dg-tb-group">
+    <button class="dg-tb-btn" title="Bullet list" onclick="dge('insertUnorderedList')">• List</button>
+    <button class="dg-tb-btn" title="Numbered list" onclick="dge('insertOrderedList')">1. List</button>
+    <button class="dg-tb-btn" title="Indent" onclick="dge('indent')">→</button>
+    <button class="dg-tb-btn" title="Outdent" onclick="dge('outdent')">←</button>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Colour -->
+  <div class="dg-tb-group" style="align-items:center">
+    <label style="font-size:10px;color:var(--txt3);cursor:pointer" title="Text colour">
+      A <input type="color" id="dg-color-pick" value="#111111" oninput="dge('foreColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
+    </label>
+    <label style="font-size:10px;color:var(--txt3);cursor:pointer;margin-left:6px" title="Highlight colour">
+      H <input type="color" id="dg-hl-pick" value="#FFFF88" oninput="dge('hiliteColor',false,this.value)" style="width:20px;height:16px;padding:0;border:none;cursor:pointer;vertical-align:middle">
+    </label>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Undo/redo -->
+  <div class="dg-tb-group">
+    <button class="dg-tb-btn" title="Undo" onclick="dge('undo')">↩</button>
+    <button class="dg-tb-btn" title="Redo" onclick="dge('redo')">↪</button>
+  </div>
+  <div class="dg-tb-sep"></div>
+  <!-- Clear formatting -->
+  <div class="dg-tb-group">
+    <button class="dg-tb-btn" title="Clear formatting" onclick="dge('removeFormat')" style="font-size:10px">Clear fmt</button>
   </div>
 </div>
 
@@ -10225,6 +10295,19 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Spin */
 @keyframes spin{to{transform:rotate(360deg)}}
 .dg-spin{animation:spin 1s linear infinite}
+
+/* Rich text editor toolbar */
+.dg-tb-group{display:flex;align-items:center;gap:2px}
+.dg-tb-sep{width:1px;height:18px;background:var(--brd2);margin:0 3px}
+.dg-tb-btn{background:none;border:1px solid transparent;border-radius:4px;padding:3px 7px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--txt);line-height:1;min-width:26px;transition:background 0.1s}
+.dg-tb-btn:hover{background:rgba(13,27,42,0.1);border-color:var(--brd2)}
+.dg-tb-btn:active{background:var(--navy);color:#fff}
+.dg-tb-sel{border:1px solid var(--brd);border-radius:4px;padding:3px 5px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;cursor:pointer;outline:none}
+.dg-tb-sel:focus{border-color:var(--navy)}
+/* Editable preview */
+#dg-preview-wrap[contenteditable="true"]{outline:none;cursor:text}
+#dg-preview-wrap[contenteditable="true"]:focus{box-shadow:inset 0 0 0 2px rgba(184,149,58,0.25)}
+.dg-edit-mode-badge{display:inline-block;background:#FFF5CC;color:#7A5C00;font-size:9px;padding:2px 7px;border-radius:8px;font-weight:500;margin-left:8px;vertical-align:middle}
 </style>
 
 <script>
@@ -12480,6 +12563,18 @@ function dgBuildDocument(id, v){
 
 function dgGenerate(){
   if(!dgCurrentId)return;
+  // Reset edit mode if active
+  if (dgEditMode) {
+    dgEditMode = false;
+    const wrap2 = document.getElementById('dg-preview-wrap');
+    if (wrap2) wrap2.contentEditable = 'false';
+    const toolbar2 = document.getElementById('dg-editor-toolbar');
+    if (toolbar2) toolbar2.style.display = 'none';
+    const btn2 = document.getElementById('dg-btn-edit');
+    if (btn2) { btn2.textContent = '✏️ Edit'; btn2.style.background=''; btn2.style.color=''; btn2.style.borderColor=''; }
+    const badge2 = document.getElementById('dg-edit-badge');
+    if (badge2) badge2.remove();
+  }
   const d=DG_DOCS[dgCurrentId];
   const vals=dgGetVals();
   const btn=document.getElementById('dg-gen-btn');
@@ -12489,6 +12584,7 @@ function dgGenerate(){
     dgGeneratedText = text;
     dgRenderPreview(text, d);
     document.getElementById('dg-btn-copy').style.display='inline-block';
+    document.getElementById('dg-btn-edit').style.display='inline-block';
     document.getElementById('dg-btn-print').style.display='inline-block';
   }catch(e){
     document.getElementById('dg-preview-wrap').innerHTML=`<div style="padding:20px;font-size:13px;color:#a33">Error building document: ${e.message}</div>`;
@@ -12578,6 +12674,98 @@ function dgRenderPreview(text,d){
   document.getElementById('dg-preview-wrap').innerHTML=html;
 }
 
+// ── Rich Text Editor ─────────────────────────────────────────────────────────
+
+let dgEditMode = false;
+
+function dgToggleEdit() {
+  const wrap = document.getElementById('dg-preview-wrap');
+  const toolbar = document.getElementById('dg-editor-toolbar');
+  const btn = document.getElementById('dg-btn-edit');
+  const sub = document.getElementById('dg-modal-sub');
+
+  dgEditMode = !dgEditMode;
+
+  if (dgEditMode) {
+    // Enter edit mode
+    wrap.contentEditable = 'true';
+    wrap.setAttribute('spellcheck', 'true');
+    toolbar.style.display = 'flex';
+    btn.textContent = '✅ Done editing';
+    btn.style.background = 'var(--green)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--green)';
+    // Add editing badge to sub title
+    const badge = document.createElement('span');
+    badge.className = 'dg-edit-mode-badge';
+    badge.id = 'dg-edit-badge';
+    badge.textContent = 'EDITING';
+    if (sub) sub.appendChild(badge);
+    wrap.focus();
+    // Move toolbar inside the preview column so it sticks correctly
+    const previewCol = wrap.parentElement;
+    previewCol.style.position = 'relative';
+    previewCol.insertBefore(toolbar, wrap);
+    toolbar.style.position = 'sticky';
+    toolbar.style.top = '0';
+  } else {
+    // Exit edit mode — save innerHTML as the new rendered state
+    wrap.contentEditable = 'false';
+    toolbar.style.display = 'none';
+    btn.textContent = '✏️ Edit';
+    btn.style.background = '';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+    const badge = document.getElementById('dg-edit-badge');
+    if (badge) badge.remove();
+    // Sync dgGeneratedText from edited HTML for print
+    dgGeneratedText = '__html__'; // flag that we now use innerHTML directly
+  }
+}
+
+// execCommand wrapper — keeps focus in editable area
+function dge(cmd, showUI, val) {
+  const wrap = document.getElementById('dg-preview-wrap');
+  wrap.focus();
+  document.execCommand(cmd, showUI || false, val || null);
+}
+
+function dgSetFont(fontFamily) {
+  if (!fontFamily) return;
+  const wrap = document.getElementById('dg-preview-wrap');
+  wrap.focus();
+  document.execCommand('fontName', false, fontFamily);
+}
+
+// Override dgPrint to handle edited HTML mode
+function dgPrint() {
+  if (dgGeneratedText === '__html__') {
+    // Print the edited HTML directly
+    const wrap = document.getElementById('dg-preview-wrap');
+    const previewHtml = wrap.innerHTML;
+    const frame = document.getElementById('dg-print-frame');
+    const content = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+      body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:2.5cm 3cm;color:#111}
+      p{margin-bottom:4px;margin-top:0}
+      br{display:block;margin-bottom:8px}
+      table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
+      .dg-blank{padding:0 2px}
+      .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9}
+      .dg-jurat td{padding:0;vertical-align:top}
+      .dg-edit-mode-badge{display:none}
+      @page{margin:2.5cm 3cm;size:A4;marks:none}
+      @media print{body{margin:0}}
+    </style></head><body>${previewHtml}</body></html>`;
+    frame.contentDocument.open();
+    frame.contentDocument.write(content);
+    frame.contentDocument.close();
+    frame.contentWindow.focus();
+    setTimeout(() => frame.contentWindow.print(), 300);
+  } else {
+    _dgPrintBase();
+  }
+}
+
 function dgCopyText(){
   // Strip jurat markers to clean plain text for clipboard
   const plain = dgGeneratedText.replace(/%%J(URAT|DECL)%%([^%]*)%%([^%]*)%%([^%]*)%%/g, (m,type,name,city,role)=>{
@@ -12589,7 +12777,7 @@ function dgCopyText(){
       `${name}${R}   ......................................`,
       `This         Day of                    ,  ${yr}${R}   ${role}`,
       `${R}`,`${R}`,`${R}`,`${R}`,`${R}`,`${R}`,`${R}`,`${R}`,
-      ``,`BEFORE ME:`,``,`_________________________________`,`COMMISSIONER OF OATHS`
+      ``,`COMMISSIONER OF OATHS`
     ].join('\n');
   });
   navigator.clipboard.writeText(plain).then(()=>{
@@ -12598,8 +12786,7 @@ function dgCopyText(){
   });
 }
 
-function dgPrint(){
-  const d=DG_DOCS[dgCurrentId];
+function _dgPrintBase(){
   const frame=document.getElementById('dg-print-frame');
   // Re-render preview HTML into print frame — jurat tables already in innerHTML
   const previewHtml = document.getElementById('dg-preview-wrap').innerHTML;
