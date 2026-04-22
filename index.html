@@ -10420,15 +10420,23 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="dg-tb-sep"></div>
       <div class="dg-tb-group">
-        <select class="dg-tb-sel" title="Font size" onchange="dge2('fontSize',false,this.value);this.blur()">
+        <select class="dg-tb-sel" title="Font size" id="dg-fontsize-sel2" onchange="dgSetFontSize(this.value,'dg-editor-content');this.blur()">
           <option value="">Size</option>
-          <option value="1">8pt</option>
-          <option value="2">10pt</option>
-          <option value="3">12pt</option>
-          <option value="4">14pt</option>
-          <option value="5">18pt</option>
-          <option value="6">24pt</option>
-          <option value="7">36pt</option>
+          <option value="8">8pt</option>
+          <option value="9">9pt</option>
+          <option value="10">10pt</option>
+          <option value="11">11pt</option>
+          <option value="12">12pt</option>
+          <option value="14">14pt</option>
+          <option value="16">16pt</option>
+          <option value="18">18pt</option>
+          <option value="20">20pt</option>
+          <option value="22">22pt</option>
+          <option value="24">24pt</option>
+          <option value="28">28pt</option>
+          <option value="36">36pt</option>
+          <option value="48">48pt</option>
+          <option value="72">72pt</option>
         </select>
         <select class="dg-tb-sel" title="Font" style="min-width:150px" onchange="dge2('fontName',false,this.value);this.blur()">
           <option value="">Font</option>
@@ -10561,7 +10569,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- A4 page simulation (first page) -->
         <div id="dg-page-sim" class="dg-page" data-page="1" style="background:#fff;width:794px;min-height:1123px;box-shadow:0 2px 16px rgba(0,0,0,0.18);border-radius:2px;position:relative;box-sizing:border-box;padding:20mm 25mm 20mm 25mm;margin-bottom:24px">
           <div id="dg-editor-content" contenteditable="true" spellcheck="true"
-            style="outline:none;font-family:Georgia,serif;font-size:12.5px;line-height:1.85;color:#111;min-height:600px;white-space:pre-wrap;word-break:break-word">
+            style="outline:none;font-family:'Sitka Text','Sitka',Georgia,serif;font-size:12pt;line-height:1.85;color:#111;min-height:600px;white-space:pre-wrap;word-break:break-word">
           </div>
           <!-- Page number footer (hidden by default) -->
           <div class="dg-page-num-footer" style="display:none;position:absolute;bottom:10mm;left:0;right:0;text-align:center;font-size:10px;color:#888;font-family:Georgia,serif;pointer-events:none">1</div>
@@ -10583,15 +10591,23 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="dg-tb-sep"></div>
   <!-- Font size -->
   <div class="dg-tb-group">
-    <select class="dg-tb-sel" title="Font size" onchange="dge('fontSize',false,this.value);this.blur()">
+    <select class="dg-tb-sel" title="Font size" id="dg-fontsize-sel1" onchange="dgSetFontSize(this.value,'dg-preview-wrap');this.blur()">
       <option value="">Size</option>
-      <option value="1">8pt</option>
-      <option value="2">10pt</option>
-      <option value="3">12pt</option>
-      <option value="4">14pt</option>
-      <option value="5">18pt</option>
-      <option value="6">24pt</option>
-      <option value="7">36pt</option>
+      <option value="8">8pt</option>
+      <option value="9">9pt</option>
+      <option value="10">10pt</option>
+      <option value="11">11pt</option>
+      <option value="12">12pt</option>
+      <option value="14">14pt</option>
+      <option value="16">16pt</option>
+      <option value="18">18pt</option>
+      <option value="20">20pt</option>
+      <option value="22">22pt</option>
+      <option value="24">24pt</option>
+      <option value="28">28pt</option>
+      <option value="36">36pt</option>
+      <option value="48">48pt</option>
+      <option value="72">72pt</option>
     </select>
     <select class="dg-tb-sel" title="Font family" style="min-width:150px" onchange="dgSetFont(this.value);this.blur()">
       <option value="">Font</option>
@@ -10769,7 +10785,7 @@ document.addEventListener('DOMContentLoaded', function() {
 .dg-preview-header{text-align:center;border-bottom:2px solid var(--navy);padding-bottom:14px;margin-bottom:20px}
 .dg-preview-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--navy);letter-spacing:.5px}
 .dg-preview-ref{font-size:10px;color:var(--txt3);margin-top:4px}
-.dg-preview-body{font-family:Georgia,serif;font-size:12.5px;line-height:1.85;color:#111;white-space:pre-wrap;word-break:break-word}
+.dg-preview-body{font-family:'Sitka Text','Sitka',Georgia,serif;font-size:12pt;line-height:1.85;color:#111;white-space:pre-wrap;word-break:break-word}
 .dg-blank{background:#FFF5CC;border-bottom:1px dashed #C8A400;padding:0 3px;font-style:italic;color:#7A5C00}
 /* Spin */
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -10784,7 +10800,7 @@ document.addEventListener('DOMContentLoaded', function() {
   box-shadow:0 24px 80px rgba(0,0,0,0.35);
 }
 #dg-editor-content{
-  outline:none;font-family:Georgia,serif;font-size:12.5px;
+  outline:none;font-family:'Sitka Text','Sitka',Georgia,serif;font-size:12pt;
   line-height:1.85;color:#111;min-height:600px;
   white-space:pre-wrap;word-break:break-word;
 }
@@ -13835,7 +13851,121 @@ function dgSetFont(fontFamily) {
   if (wrap) { wrap.focus(); document.execCommand('fontName', false, fontFamily); }
 }
 
-// ── Ruler ──────────────────────────────────────────────────────────────────
+// ── Real pt font size (fixes Word copy-paste size mismatch) ──────
+function dgSetFontSize(ptSize, targetId) {
+  if (!ptSize) return;
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  target.focus();
+
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  const range = sel.getRangeAt(0);
+
+  if (range.collapsed) {
+    // No selection — insert a zero-width span as a typing anchor
+    // so the next typed characters inherit this size
+    document.execCommand('insertHTML', false,
+      `<span style="font-size:${ptSize}pt" id="dg-size-anchor">&#8203;</span>`
+    );
+    // Place cursor inside the span
+    const anchor = document.getElementById('dg-size-anchor');
+    if (anchor) {
+      anchor.removeAttribute('id');
+      const r = document.createRange();
+      r.setStart(anchor, anchor.childNodes.length > 0 ? 1 : 0);
+      r.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+    return;
+  }
+
+  // Has selection — wrap it in a span with exact pt size
+  // Use execCommand surroundContents-style via insertHTML
+  try {
+    const fragment = range.extractContents();
+    const span = document.createElement('span');
+    span.style.fontSize = ptSize + 'pt';
+    span.appendChild(fragment);
+    range.insertNode(span);
+    // Re-select the newly wrapped span
+    const newRange = document.createRange();
+    newRange.selectNodeContents(span);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+  } catch(e) {
+    // Fallback for complex selections
+    document.execCommand('fontSize', false, '7');
+    // Replace all font size=7 elements in the selection with real pt spans
+    target.querySelectorAll('font[size="7"]').forEach(el => {
+      const sp = document.createElement('span');
+      sp.style.fontSize = ptSize + 'pt';
+      sp.innerHTML = el.innerHTML;
+      el.replaceWith(sp);
+    });
+  }
+}
+
+// Track cursor position and update font size selector to reflect current size
+function dgUpdateFontSizeSelectors() {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  let node = sel.anchorNode;
+  if (!node) return;
+  if (node.nodeType === 3) node = node.parentElement; // text node → element
+  // Walk up to find a font-size style
+  let sizeFound = '';
+  let el = node;
+  while (el && el.id !== 'dg-editor-content' && el.id !== 'dg-preview-wrap') {
+    const fs = el.style && el.style.fontSize;
+    if (fs) {
+      // Normalise to pt
+      if (fs.endsWith('pt')) sizeFound = fs.slice(0, -2);
+      else if (fs.endsWith('px')) sizeFound = Math.round(parseFloat(fs) * 0.75).toString();
+      break;
+    }
+    el = el.parentElement;
+  }
+  // Update both selectors
+  ['dg-fontsize-sel1', 'dg-fontsize-sel2'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    if (sizeFound) {
+      // Try to match an existing option
+      const match = Array.from(sel.options).find(o => o.value === sizeFound);
+      sel.value = match ? sizeFound : '';
+      if (!match) {
+        // Show custom size as placeholder text
+        sel.options[0].text = sizeFound + 'pt';
+      } else {
+        sel.options[0].text = 'Size';
+      }
+    } else {
+      sel.value = '';
+      sel.options[0].text = 'Size';
+    }
+  });
+}
+
+// Attach cursor tracking to both editors
+(function dgAttachSizeTracking() {
+  function attach() {
+    ['dg-editor-content', 'dg-preview-wrap'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('keyup', dgUpdateFontSizeSelectors);
+        el.addEventListener('mouseup', dgUpdateFontSizeSelectors);
+        el.addEventListener('selectionchange', dgUpdateFontSizeSelectors);
+      }
+    });
+    document.addEventListener('selectionchange', dgUpdateFontSizeSelectors);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+  else setTimeout(attach, 500);
+})();
+
+
 
 const DG_PAGE_W = 794;   // px — A4 width at 96dpi
 const DG_RULER_PX_PER_MM = DG_PAGE_W / 210; // ~3.78 px/mm
@@ -14558,7 +14688,7 @@ function _dgCreateNewPage(container, pageNum, mt, mr, mb, ml) {
   const newContent = document.createElement('div');
   newContent.contentEditable = 'true';
   newContent.spellcheck = true;
-  newContent.style.cssText = 'outline:none;font-family:Georgia,serif;font-size:12.5px;line-height:1.85;color:#111;min-height:400px;white-space:pre-wrap;word-break:break-word';
+  newContent.style.cssText = "outline:none;font-family:'Sitka Text','Sitka',Georgia,serif;font-size:12pt;line-height:1.85;color:#111;min-height:400px;white-space:pre-wrap;word-break:break-word";
   newPage.appendChild(newContent);
   const numFooter = document.createElement('div');
   numFooter.className = 'dg-page-num-footer';
