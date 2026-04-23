@@ -15513,29 +15513,29 @@ function dgDrawVRuler() {
   const canvas = document.getElementById('dg-vruler');
   if (!canvas) return;
   const body = document.getElementById('dg-editor-body');
-  if (!body) return;
-  const totalH = Math.max(body.scrollHeight, body.clientHeight, 1200);
-  canvas.style.height = totalH + 'px';
   const wrap = document.getElementById('dg-vruler-wrap');
-  if (wrap) wrap.style.minHeight = totalH + 'px';
+  if (!body || !wrap) return;
+  const totalH = Math.max(body.scrollHeight, body.clientHeight, 1200);
+  wrap.style.minHeight = totalH + 'px';
   const ctx = canvas.getContext('2d');
   const W = 28, DPR = window.devicePixelRatio || 1;
   canvas.width = W * DPR;
   canvas.height = totalH * DPR;
+  canvas.style.height = totalH + 'px';
   ctx.scale(DPR, DPR);
-  // Background
   ctx.fillStyle = '#e8e6e0';
   ctx.fillRect(0, 0, W, totalH);
-  // Get page positions relative to editor body
   const pages = body.querySelectorAll('.dg-page');
   const PX_PER_MM = DG_RULER_PX_PER_MM || 3.78;
   ctx.font = `9px sans-serif`;
   ctx.fillStyle = '#777';
   ctx.textAlign = 'right';
-  const pagesContainer = document.getElementById('dg-pages-container');
-  const containerOffsetTop = pagesContainer ? pagesContainer.offsetTop : 24;
+  // Both wrap and pages scroll together as flex siblings inside editor-body.
+  // getBoundingClientRect difference = page top relative to wrap top = canvas coordinate.
+  const wrapRect = wrap.getBoundingClientRect();
   pages.forEach(page => {
-    const pageTop = containerOffsetTop + page.offsetTop;
+    const pageRect = page.getBoundingClientRect();
+    const pageTop = pageRect.top - wrapRect.top;
     const paddingTopMM = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
     const paddingBotMM = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
     const pageHeightPx = page.offsetHeight || 1123;
@@ -15603,17 +15603,10 @@ function _dgPositionVRulerHandles() {
   const page = body.querySelector('.dg-page');
   if (!page) return;
   const PX_PER_MM = DG_RULER_PX_PER_MM || 3.78;
-  // Use offsetTop which is stable regardless of scroll — it's relative to offsetParent
-  // The body has padding-top:24px, page sits inside body's flex layout
-  const bodyPaddingTop = parseInt(getComputedStyle(body).paddingTop) || 24;
-  // page.offsetTop is relative to its offsetParent (the pages container div)
-  // We need page top relative to the vruler-wrap which is a sibling of pages-container inside body
-  // Both vruler-wrap and pages-container are direct children of editor-body (flex row)
-  // So page top relative to body = pages-container offsetTop + page offsetTop
-  const pagesContainer = document.getElementById('dg-pages-container');
-  const containerOffsetTop = pagesContainer ? pagesContainer.offsetTop : bodyPaddingTop;
-  const pageOffsetTop = page.offsetTop; // relative to pages-container
-  const pageTop = containerOffsetTop + pageOffsetTop; // relative to editor-body content
+  // Same coordinate system as dgDrawVRuler: page position relative to wrap via getBoundingClientRect
+  const wrapRect = wrap.getBoundingClientRect();
+  const pageRect = page.getBoundingClientRect();
+  const pageTop = pageRect.top - wrapRect.top;
   const pageH = page.offsetHeight || 1123;
   const tMM = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
   const bMM = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
@@ -15625,42 +15618,47 @@ function _dgPositionVRulerHandles() {
 
 function _dgInitVRulerDrag() {
   const body = document.getElementById('dg-editor-body');
+  const wrap = document.getElementById('dg-vruler-wrap');
   const tmEl = document.getElementById('dg-vruler-tm');
   const bmEl = document.getElementById('dg-vruler-bm');
-  if (!body || !tmEl || !bmEl) return;
+  if (!body || !wrap || !tmEl || !bmEl) return;
   const PX_PER_MM = DG_RULER_PX_PER_MM || 3.78;
 
   function startDrag(e, which) {
     e.preventDefault();
     const page = body.querySelector('.dg-page');
     if (!page) return;
-    const pagesContainer = document.getElementById('dg-pages-container');
-    const containerOffsetTop = pagesContainer ? pagesContainer.offsetTop : 24;
-    const pageTop = containerOffsetTop + page.offsetTop;
+    // Use same coord system as draw/position: relative to wrap top via getBoundingClientRect
+    const wrapRect0 = wrap.getBoundingClientRect();
+    const pageRect0 = page.getBoundingClientRect();
+    const pageTop = pageRect0.top - wrapRect0.top;
     const pageH = page.offsetHeight || 1123;
 
-    // Draw guide line overlay
+    // Guide line is positioned inside editor-body (position:relative)
+    // Convert wrap-relative Y back to body-relative by adding wrap's offset from body
+    const bodyRect0 = body.getBoundingClientRect();
+    const wrapOffsetInBody = wrapRect0.top - bodyRect0.top + body.scrollTop;
     const guide = document.createElement('div');
     guide.style.cssText = 'position:absolute;left:0;right:0;height:1px;background:var(--gold,#B8953A);opacity:0.8;pointer-events:none;z-index:100';
-    body.style.position = 'relative';
     body.appendChild(guide);
 
     function onMove(ev) {
       const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
-      const bodyRect2 = body.getBoundingClientRect();
-      // Convert clientY to a position relative to the editor-body's content (accounting for scroll)
-      const yInBody = clientY - bodyRect2.top + body.scrollTop;
+      // Convert mouse clientY to wrap-relative Y (same as canvas coords)
+      const wrapRect2 = wrap.getBoundingClientRect();
+      const yInWrap = clientY - wrapRect2.top;
       let mm;
       if (which === 'top') {
-        mm = Math.max(5, Math.min(60, (yInBody - pageTop) / PX_PER_MM));
+        mm = Math.max(5, Math.min(60, (yInWrap - pageTop) / PX_PER_MM));
         const el = document.getElementById('dg-margin-top');
         if (el) el.value = Math.round(mm);
-        guide.style.top = (pageTop + mm * PX_PER_MM - body.scrollTop) + 'px';
+        // Guide in body coords = wrapOffsetInBody + wrap-relative Y
+        guide.style.top = (wrapOffsetInBody + pageTop + mm * PX_PER_MM) + 'px';
       } else {
-        mm = Math.max(5, Math.min(60, (pageTop + pageH - yInBody) / PX_PER_MM));
+        mm = Math.max(5, Math.min(60, (pageTop + pageH - yInWrap) / PX_PER_MM));
         const el = document.getElementById('dg-margin-bottom');
         if (el) el.value = Math.round(mm);
-        guide.style.top = (pageTop + pageH - mm * PX_PER_MM - body.scrollTop) + 'px';
+        guide.style.top = (wrapOffsetInBody + pageTop + pageH - mm * PX_PER_MM) + 'px';
       }
     }
     function onUp() {
