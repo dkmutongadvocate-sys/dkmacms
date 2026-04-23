@@ -9398,6 +9398,10 @@ async function dgOpenDocInEditor(storagePath, baseName) {
   (function() {
     const tmp = document.createElement('div');
     tmp.innerHTML = bodyHtml;
+    // Remove any saved HF overlay divs (dg-hf-abs) — these are absolute-positioned
+    // header/footer bands baked into the saved HTML; loading them as body content
+    // causes footer text to appear inside the editable area.
+    tmp.querySelectorAll('.dg-hf-abs, .dg-hf-hdr, .dg-hf-ftr, .dg-hf-header, .dg-hf-footer, .dg-page-num-footer').forEach(el => el.remove());
     // Unwrap any direct children that look like saved page wrappers
     // (have both page-break-after and padding with mm units in their inline style)
     Array.from(tmp.children).forEach(child => {
@@ -11010,6 +11014,14 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- Vertical ruler -->
       <div id="dg-vruler-wrap" style="width:28px;flex-shrink:0;position:sticky;left:0;top:0;background:#e8e6e0;border-right:1px solid #ccc;user-select:none;align-self:stretch;z-index:5">
         <canvas id="dg-vruler" style="display:block;width:28px;height:100%;min-height:1200px"></canvas>
+        <!-- Top margin drag handle -->
+        <div id="dg-vruler-tm" title="Drag to set top margin" style="position:absolute;left:0;right:0;height:6px;cursor:ns-resize;z-index:10;display:flex;align-items:center;justify-content:center">
+          <div style="width:18px;height:3px;border-radius:2px;background:#aaa;pointer-events:none"></div>
+        </div>
+        <!-- Bottom margin drag handle -->
+        <div id="dg-vruler-bm" title="Drag to set bottom margin" style="position:absolute;left:0;right:0;height:6px;cursor:ns-resize;z-index:10;display:flex;align-items:center;justify-content:center">
+          <div style="width:18px;height:3px;border-radius:2px;background:#aaa;pointer-events:none"></div>
+        </div>
       </div>
       <!-- Pages container -->
       <div id="dg-pages-container" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:0 24px 40px">
@@ -15440,8 +15452,8 @@ ${stateMeta}
   .dg-edit-mode-badge,.dg-page-break-marker{display:none!important}
   .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
   .dg-hf-abs span{flex:1}
-  .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;border-bottom:0.5px solid #ddd;padding-bottom:2mm}
-  .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
+  .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;padding-bottom:2mm}
+  .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;padding-top:2mm}
   @page{size:A4;margin:0}
   @media print{body{margin:0}
     .dg-hf-abs{position:fixed}
@@ -15484,8 +15496,8 @@ ${stateMeta}
   .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none!important}
   .dg-hf-abs{position:fixed;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
   .dg-hf-abs span{flex:1}
-  .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;border-bottom:0.5px solid #ddd;padding-bottom:2mm}
-  .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
+  .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;padding-bottom:2mm}
+  .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;padding-top:2mm}
   @page{size:A4;margin:0}
   @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}
     .dg-hf-abs{position:fixed}
@@ -15529,6 +15541,15 @@ function dgDrawVRuler() {
     const contentTop = pageTop + paddingTopMM * PX_PER_MM;
     const contentBottom = pageTop + pageHeightPx - paddingBotMM * PX_PER_MM;
     const contentHeightPx = contentBottom - contentTop;
+    // Shade top margin zone (grey)
+    ctx.fillStyle = '#d4d2cc';
+    ctx.fillRect(0, pageTop, W, paddingTopMM * PX_PER_MM);
+    // Shade content zone (lighter)
+    ctx.fillStyle = '#e8e6e0';
+    ctx.fillRect(0, contentTop, W, contentHeightPx);
+    // Shade bottom margin zone (grey)
+    ctx.fillStyle = '#d4d2cc';
+    ctx.fillRect(0, contentBottom, W, paddingBotMM * PX_PER_MM);
     // Draw tick marks every 5mm, labels every 10mm
     for (let mm = 0; mm * PX_PER_MM <= contentHeightPx + 5; mm++) {
       const y = contentTop + mm * PX_PER_MM;
@@ -15558,6 +15579,7 @@ function dgInitVRuler() {
   function rafDraw() {
     _dgVRulerRaf = null;
     dgDrawVRuler();
+    _dgPositionVRulerHandles();
   }
   function scheduleDraw() {
     if (_dgVRulerRaf) return;
@@ -15568,6 +15590,88 @@ function dgInitVRuler() {
   const obs = new MutationObserver(scheduleDraw);
   obs.observe(body, { childList: true, subtree: true, characterData: true });
   scheduleDraw();
+  _dgInitVRulerDrag();
+}
+
+function _dgPositionVRulerHandles() {
+  const body = document.getElementById('dg-editor-body');
+  const tmEl = document.getElementById('dg-vruler-tm');
+  const bmEl = document.getElementById('dg-vruler-bm');
+  if (!body || !tmEl || !bmEl) return;
+  const page = body.querySelector('.dg-page');
+  if (!page) return;
+  const PX_PER_MM = DG_RULER_PX_PER_MM || 3.78;
+  const bodyRect = body.getBoundingClientRect();
+  const pageRect = page.getBoundingClientRect();
+  const pageTop = pageRect.top - bodyRect.top + body.scrollTop;
+  const pageH = page.offsetHeight || 1123;
+  const tMM = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
+  const bMM = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
+  const tmY = pageTop + tMM * PX_PER_MM;
+  const bmY = pageTop + pageH - bMM * PX_PER_MM;
+  tmEl.style.top = (tmY - 3) + 'px';
+  bmEl.style.top = (bmY - 3) + 'px';
+}
+
+function _dgInitVRulerDrag() {
+  const body = document.getElementById('dg-editor-body');
+  const tmEl = document.getElementById('dg-vruler-tm');
+  const bmEl = document.getElementById('dg-vruler-bm');
+  if (!body || !tmEl || !bmEl) return;
+  const PX_PER_MM = DG_RULER_PX_PER_MM || 3.78;
+
+  function startDrag(e, which) {
+    e.preventDefault();
+    const bodyRect = body.getBoundingClientRect();
+    const page = body.querySelector('.dg-page');
+    if (!page) return;
+    const pageRect = page.getBoundingClientRect();
+    const pageTop = pageRect.top - bodyRect.top + body.scrollTop;
+    const pageH = page.offsetHeight || 1123;
+
+    // Draw guide line overlay
+    const guide = document.createElement('div');
+    guide.style.cssText = 'position:absolute;left:0;right:0;height:1px;background:var(--gold,#B8953A);opacity:0.8;pointer-events:none;z-index:100';
+    body.style.position = 'relative';
+    body.appendChild(guide);
+
+    function onMove(ev) {
+      const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+      const bodyRect2 = body.getBoundingClientRect();
+      const yInBody = clientY - bodyRect2.top + body.scrollTop;
+      let mm;
+      if (which === 'top') {
+        mm = Math.max(5, Math.min(60, (yInBody - pageTop) / PX_PER_MM));
+        const el = document.getElementById('dg-margin-top');
+        if (el) el.value = Math.round(mm);
+        guide.style.top = (pageTop + mm * PX_PER_MM) + 'px';
+      } else {
+        mm = Math.max(5, Math.min(60, (pageTop + pageH - yInBody) / PX_PER_MM));
+        const el = document.getElementById('dg-margin-bottom');
+        if (el) el.value = Math.round(mm);
+        guide.style.top = (pageTop + pageH - mm * PX_PER_MM) + 'px';
+      }
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onUp);
+      body.removeChild(guide);
+      dgApplyMargins();
+      dgDrawVRuler();
+      _dgPositionVRulerHandles();
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onUp);
+  }
+
+  tmEl.addEventListener('mousedown', e => startDrag(e, 'top'));
+  bmEl.addEventListener('mousedown', e => startDrag(e, 'bottom'));
+  tmEl.addEventListener('touchstart', e => startDrag(e, 'top'), { passive: false });
+  bmEl.addEventListener('touchstart', e => startDrag(e, 'bottom'), { passive: false });
 }
 
 // ── HEADER / FOOTER ───────────────────────────────────────────────
@@ -15728,7 +15832,7 @@ function _dgRenderHFOnPages() {
     if (!hdrEl) {
       hdrEl = document.createElement('div');
       hdrEl.className = 'dg-hf-header';
-      hdrEl.style.cssText = 'position:absolute;top:0;left:0;right:0;padding:6px 25mm 4px;box-sizing:border-box;border-bottom:1px solid #ddd;pointer-events:none';
+      hdrEl.style.cssText = 'position:absolute;top:0;left:0;right:0;padding:6px 25mm 4px;box-sizing:border-box;pointer-events:none';
       page.insertBefore(hdrEl, page.firstChild);
     }
 
@@ -15737,7 +15841,7 @@ function _dgRenderHFOnPages() {
     if (!ftrEl) {
       ftrEl = document.createElement('div');
       ftrEl.className = 'dg-hf-footer';
-      ftrEl.style.cssText = 'position:absolute;bottom:0;left:0;right:0;padding:4px 25mm 6px;box-sizing:border-box;border-top:1px solid #ddd;pointer-events:none';
+      ftrEl.style.cssText = 'position:absolute;bottom:0;left:0;right:0;padding:4px 25mm 6px;box-sizing:border-box;pointer-events:none';
       page.appendChild(ftrEl);
     }
 
@@ -15763,8 +15867,8 @@ function _dgHFPrintCss(t, b) {
   const hasHdr = _dgHF.hdrL || _dgHF.hdrC || _dgHF.hdrR;
   const hasFtr = _dgHF.ftrL || _dgHF.ftrC || _dgHF.ftrR;
   if (!hasHdr && !hasFtr) return '';
-  const hdrBorder = hasHdr ? 'border-bottom:0.5px solid #ddd' : 'border-bottom:none';
-  const ftrBorder = hasFtr ? 'border-top:0.5px solid #ddd' : 'border-top:none';
+  const hdrBorder = '';
+  const ftrBorder = '';
   return `
     .dg-hf-band{display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box}
     .dg-hf-band span{flex:1}
@@ -16027,8 +16131,8 @@ function dgPrint() {
       .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none}
       .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
       .dg-hf-abs span{flex:1}
-      .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;border-bottom:0.5px solid #ddd;padding-bottom:2mm}
-      .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
+      .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;padding-bottom:2mm}
+      .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;padding-top:2mm}
       @page{margin:0;size:A4}
       @media print{
         body{margin:0;padding:0}
@@ -16088,8 +16192,8 @@ function _dgPrintBase(){
     .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none !important}
     .dg-hf-abs{position:fixed;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
     .dg-hf-abs span{flex:1}
-    .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;border-bottom:0.5px solid #ddd;padding-bottom:2mm}
-    .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
+    .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;padding-bottom:2mm}
+    .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;padding-top:2mm}
     @page{size:A4;margin:0}
     @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}
       .dg-hf-abs{position:fixed}
