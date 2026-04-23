@@ -15090,7 +15090,21 @@ function _dgSaveStatus(msg, type) {
 function _dgCleanPageHtml(html) {
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
+  // Remove overlay elements by class
   tmp.querySelectorAll('.dg-hf-header, .dg-hf-footer, .dg-page-num-footer').forEach(el => el.remove());
+  // Also unwrap any .dg-page shells that snuck in (grab their contenteditable child instead)
+  tmp.querySelectorAll('.dg-page').forEach(pg => {
+    const editable = pg.querySelector('[contenteditable]');
+    const frag = document.createDocumentFragment();
+    if (editable) {
+      editable.querySelectorAll('.dg-hf-header, .dg-hf-footer, .dg-page-num-footer').forEach(el => el.remove());
+      Array.from(editable.childNodes).forEach(n => frag.appendChild(n.cloneNode(true)));
+    } else {
+      pg.querySelectorAll('.dg-hf-header, .dg-hf-footer, .dg-page-num-footer').forEach(el => el.remove());
+      Array.from(pg.childNodes).forEach(n => frag.appendChild(n.cloneNode(true)));
+    }
+    pg.replaceWith(frag);
+  });
   return tmp.innerHTML;
 }
 
@@ -15129,9 +15143,30 @@ function _dgBuildPrintHtml() {
   ${hfCss}
 </style></head><body>${bodyHtml}</body></html>`;
   } else {
-    const ed = document.getElementById('dg-editor-content');
+    // Fresh document — grab content from inside the first .dg-page (or preview wrap as last resort)
+    const hfCss = _dgHFPrintCss(t, b);
+    const hasHFPageNum = _dgHF.ftrL.includes('{{page}}') || _dgHF.ftrC.includes('{{page}}') || _dgHF.ftrR.includes('{{page}}') ||
+                         _dgHF.hdrL.includes('{{page}}') || _dgHF.hdrC.includes('{{page}}') || _dgHF.hdrR.includes('{{page}}');
+    const pageSim = document.getElementById('dg-page-sim');
+    const editorContent = document.getElementById('dg-editor-content');
     const preview = document.getElementById('dg-preview-wrap');
-    bodyHtml = _dgCleanPageHtml((ed ? ed.innerHTML : '') || (preview ? preview.innerHTML : ''));
+    // Prefer content from inside the page simulation div (strips the page shell itself)
+    let rawHtml = '';
+    if (pageSim) {
+      const editable = pageSim.querySelector('[contenteditable]');
+      rawHtml = editable ? editable.innerHTML : _dgCleanPageHtml(pageSim.innerHTML);
+    } else if (editorContent && editorContent.innerHTML.trim()) {
+      rawHtml = editorContent.innerHTML;
+    } else if (preview) {
+      // Last resort: grab content from inside the .dg-page inside preview wrap
+      const innerPage = preview.querySelector('.dg-page [contenteditable]') || preview.querySelector('.dg-page');
+      rawHtml = innerPage ? _dgCleanPageHtml(innerPage.innerHTML) : _dgCleanPageHtml(preview.innerHTML);
+    }
+    bodyHtml = _dgCleanPageHtml(rawHtml);
+    const hfHtml = _dgHFPageHtml(1, 1);
+    const numHtml = (_dgPageNumFormat && _dgPageNumFormat !== 'none' && !hasHFPageNum)
+      ? `<div style="text-align:center;font-size:${_dgPgNumStyle.size};color:${_dgPgNumStyle.color};font-family:${_dgPgNumStyle.font};margin-top:8px">${_dgFormatPageNum(1, 1)}</div>`
+      : '';
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>${(document.getElementById('dg-editor-title')?.textContent || 'Document')}</title>
 <style>
@@ -15140,10 +15175,11 @@ function _dgBuildPrintHtml() {
   table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
   .dg-blank{padding:0 2px}
   .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px}.dg-jurat td{padding:0;vertical-align:top}
-  .dg-edit-mode-badge,.dg-page-break-marker{display:none!important}
+  .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none!important}
   @page{size:A4;margin:0}
   @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}}
-</style></head><body>${bodyHtml}</body></html>`;
+  ${hfCss}
+</style></head><body>${hfHtml.hdr}${bodyHtml}${numHtml}${hfHtml.ftr}</body></html>`;
   }
 }
 
