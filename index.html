@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous" onerror="document.getElementById('loading-splash').style.display='none';document.body.innerHTML='<div style=\"font-family:sans-serif;padding:40px;text-align:center;color:#a33\"><h2>Library Load Error</h2><p style=\"font-size:14px;margin-top:12px\">The Supabase library failed to load from CDN.<br>Check your internet connection and try again.</p></div>'"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js" crossorigin="anonymous"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1803,6 +1804,10 @@ setTimeout(function() {
         </div>
         <button onclick="dgOpenBlankEditor()" style="background:var(--navy);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:8px;white-space:nowrap;box-shadow:0 2px 8px rgba(13,27,42,0.18);flex-shrink:0">
           <span style="font-size:16px">✦</span> New Blank Document
+        </button>
+        <button onclick="document.getElementById('dg-docx-file-input').click()" style="background:#fff;color:var(--navy);border:1px solid var(--brd2);padding:10px 20px;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 2h7l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.4"/><path d="M10 2v3h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5 8l1.5 4L8 9l1.5 3L11 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Open .docx
         </button>
       </div>
 
@@ -10495,6 +10500,11 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="topbar-btn sec" id="dg-btn-new-blank" onclick="dgOpenBlankEditor()" style="font-size:11px;padding:5px 12px" title="Open a blank document in the editor">✦ New Document</button>
+        <button class="topbar-btn sec" onclick="document.getElementById('dg-docx-file-input').click()" style="font-size:11px;padding:5px 12px;display:flex;align-items:center;gap:5px" title="Open a Word document (.docx) from your computer">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 2h7l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.4"/><path d="M10 2v3h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5 8l1.5 4L8 9l1.5 3L11 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Open .docx
+        </button>
+        <input type="file" id="dg-docx-file-input" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" onchange="dgOpenDocxFromFile(event)"/>
         <button class="topbar-btn sec" id="dg-btn-copy" onclick="dgCopyText()" style="display:none;font-size:11px;padding:5px 12px">Copy</button>
         <button class="topbar-btn sec" id="dg-btn-edit" onclick="dgToggleEdit()" style="display:none;font-size:11px;padding:5px 12px">✏️ Edit</button>
         <button class="topbar-btn gold" id="dg-btn-print" onclick="dgPrint()" style="display:none;font-size:11px;padding:5px 12px">Print / Save PDF</button>
@@ -15019,6 +15029,94 @@ function dgInitRuler() {
   }
   // Store drawRuler for external callers
   window._dgDrawRuler = drawRuler;
+}
+
+// ── OPEN .DOCX FROM LOCAL FILE ────────────────────────────────────
+async function dgOpenDocxFromFile(event) {
+  const file = event.target.files && event.target.files[0];
+  // Reset input so same file can be re-opened
+  event.target.value = '';
+  if (!file) return;
+
+  // Ensure mammoth is loaded
+  if (typeof mammoth === 'undefined') {
+    toast('Word converter library not loaded — check your internet connection.', true);
+    return;
+  }
+
+  // Show a loading toast
+  if (typeof toast === 'function') toast('Converting ' + file.name + '…');
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.convertToHtml(
+      { arrayBuffer },
+      {
+        styleMap: [
+          "p[style-name='Heading 1'] => h1:fresh",
+          "p[style-name='Heading 2'] => h2:fresh",
+          "p[style-name='Heading 3'] => h3:fresh",
+          "b => strong",
+          "i => em",
+          "u => u"
+        ],
+        convertImage: mammoth.images.inline(function(element) {
+          return element.read('base64').then(function(imageBase64) {
+            return { src: 'data:' + element.contentType + ';base64,' + imageBase64 };
+          });
+        })
+      }
+    );
+
+    let html = result.value || '';
+
+    // Basic cleanup: collapse empty paragraphs, normalise whitespace
+    html = html.replace(/<p>\s*<\/p>/g, '<p><br></p>');
+
+    // Open in editor (same flow as dgOpenDocxInEditor / dgOpenBlankEditor)
+    document.getElementById('docgen-overlay').classList.remove('hidden');
+    document.getElementById('dg-modal-normal').style.display = 'none';
+
+    dgEditMode = true;
+    dgGeneratedText = '__html__';
+    window._dgCurrentDocBase = file.name.replace(/\.docx$/i, '');
+    window._dgCurrentDocPath = '';
+    window._dgIndentFL = 0;
+    window._dgIndentLI = 0;
+    window._dgIndentRI = 0;
+
+    const editorContent = document.getElementById('dg-editor-content');
+    if (editorContent) editorContent.innerHTML = html;
+
+    const editorTitle = document.getElementById('dg-editor-title');
+    if (editorTitle) editorTitle.textContent = file.name.replace(/\.docx$/i, '');
+    const editorSub = document.getElementById('dg-editor-subtitle');
+    if (editorSub) editorSub.textContent = 'Opened from ' + file.name + ' — save a version with 💾 Save to File';
+
+    const em = document.getElementById('dg-editor-modal');
+    em.style.display = 'flex';
+
+    dgPopulateClientPanel();
+
+    setTimeout(() => {
+      dgInitRuler();
+      dgApplyMargins();
+      if (window._dgDrawRuler) window._dgDrawRuler();
+      dgInitVRuler();
+      dgDrawVRuler();
+      _dgRestoreHF();
+      if (editorContent) editorContent.focus();
+    }, 80);
+
+    if (result.messages && result.messages.length) {
+      console.info('mammoth warnings:', result.messages);
+    }
+    if (typeof toast === 'function') toast('✓ ' + file.name + ' opened in editor');
+
+  } catch (err) {
+    console.error('docx open error', err);
+    if (typeof toast === 'function') toast('Could not open file: ' + err.message, true);
+  }
 }
 
 // ── BLANK EDITOR (New Document) ───────────────────────────────────
