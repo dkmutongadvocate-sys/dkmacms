@@ -9499,7 +9499,11 @@ async function dgOpenDocInEditor(storagePath, baseName) {
     dgInitVRuler();
     dgDrawVRuler();
     _dgRestoreHF();
+    dgApplyHF();
+    _dgRenderHFOnPages();
     if (editorContent) editorContent.focus();
+    // Re-paginate after layout settles so multi-page docs restore all pages correctly
+    setTimeout(() => dgCheckPagination(), 120);
   }, 80);
 
   toast('Document loaded in editor ✓' + (_restoredState ? ' — margins & layout restored' : ''));
@@ -14300,6 +14304,7 @@ function dgToggleEdit() {
     _dgApplyPageNumbers();
     _dgRenderHFOnPages();
     editorContent.focus();
+    setTimeout(() => dgCheckPagination(), 120);
   }, 50);
 }
 
@@ -14320,6 +14325,12 @@ function dgCloseEditor() {
 
   const badge2 = document.getElementById('dg-edit-badge2');
   if (badge2) badge2.style.display = 'none';
+
+  // Reset HF state so it doesn't bleed into the next document opened
+  _dgHF = { hdrL:'', hdrC:'', hdrR:'', ftrL:'', ftrC:'', ftrR:'', firstDiff:false };
+  ['dg-hdr-left','dg-hdr-center','dg-hdr-right','dg-ftr-left','dg-ftr-center','dg-ftr-right'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
 }
 
 // execCommand wrapper for both editors
@@ -15049,6 +15060,98 @@ async function dgOpenDocxFromFile(event) {
 
   try {
     const arrayBuffer = await file.arrayBuffer();
+
+    // ── Step 1: Parse the raw docx ZIP to extract header, footer, and page size
+    //    before mammoth converts the body. Mammoth ignores <w:hdr>/<w:ftr> XML
+    //    entirely, so we read them ourselves via JSZip (bundled inside mammoth).
+    let _docxHdrText = '', _docxFtrText = '', _pageIsLetter = false;
+    try {
+      // mammoth ships JSZip internally; use a fresh FileReader-based approach
+      const zipBytes = new Uint8Array(arrayBuffer.slice(0));
+      // Minimal ZIP reader: find docx XML parts by PK local file header
+      const _readZipEntry = (bytes, name) => {
+        const enc = new TextEncoder();
+        const nameBuf = enc.encode(name);
+        for (let i = 0; i < bytes.length - nameBuf.length - 30; i++) {
+          if (bytes[i] === 0x50 && bytes[i+1] === 0x4B && bytes[i+2] === 0x03 && bytes[i+3] === 0x04) {
+            const fnLen = bytes[i+26] | (bytes[i+27] << 8);
+            const exLen = bytes[i+28] | (bytes[i+29] << 8);
+            const fnStart = i + 30;
+            const fnBytes = bytes.slice(fnStart, fnStart + fnLen);
+            const fn = new TextDecoder().decode(fnBytes);
+            if (fn === name) {
+              const compMethod = bytes[i+8] | (bytes[i+9] << 8);
+              const compSize   = bytes[i+18] | (bytes[i+19] << 8) | (bytes[i+20] << 16) | (bytes[i+21] << 24);
+              const dataStart  = fnStart + fnLen + exLen;
+              const compData   = bytes.slice(dataStart, dataStart + compSize);
+              if (compMethod === 0) return new TextDecoder().decode(compData);
+              if (compMethod === 8) {
+                try {
+                  const ds = new DecompressionStream('deflate-raw');
+                  const writer = ds.writable.getWriter();
+                  writer.write(compData); writer.close();
+                  return new Response(ds.readable).text();
+                } catch(e) { return null; }
+              }
+              return null;
+            }
+          }
+        }
+        return null;
+      };
+
+      // Helper: extract plain text from a word XML part
+      const _xmlText = (xml) => {
+        if (!xml || typeof xml !== 'string') return '';
+        // Strip PAGE field instructions, keep only w:t content outside instrText
+        const noInstr = xml.replace(/<w:instrText[^>]*>[\s\S]*?<\/w:instrText>/gi, '');
+        const noFldChar = noInstr.replace(/<w:fldChar[^>]*\/?>/gi, '');
+        const matches = [...noFldChar.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/gi)];
+        return matches.map(m => m[1]).join(' ').replace(/\s+/g, ' ').trim();
+      };
+
+      // Read header1.xml (default header)
+      const hdrXmlRaw = _readZipEntry(zipBytes, 'word/header1.xml');
+      const hdrXml = (hdrXmlRaw instanceof Promise) ? await hdrXmlRaw : hdrXmlRaw;
+      if (hdrXml) _docxHdrText = _xmlText(hdrXml);
+
+      // Read footer1.xml (default footer) — strip PAGE field cached values
+      const ftrXmlRaw = _readZipEntry(zipBytes, 'word/footer1.xml');
+      const ftrXml = (ftrXmlRaw instanceof Promise) ? await ftrXmlRaw : ftrXmlRaw;
+      if (ftrXml) {
+        // Check if footer contains a PAGE field → use {{page}} token instead
+        const hasPageField = /<w:instrText[^>]*>\s*PAGE\s*/i.test(ftrXml);
+        _docxFtrText = hasPageField ? '{{page}}' : _xmlText(ftrXml);
+      }
+
+      // Read document.xml to get page size
+      const docXmlRaw = _readZipEntry(zipBytes, 'word/document.xml');
+      const docXml = (docXmlRaw instanceof Promise) ? await docXmlRaw : docXmlRaw;
+      if (docXml) {
+        const pgSzMatch = docXml.match(/<w:pgSz[^>]+w:w="(\d+)"[^>]+w:h="(\d+)"/i)
+                       || docXml.match(/<w:pgSz[^>]+w:h="(\d+)"[^>]+w:w="(\d+)"/i);
+        if (pgSzMatch) {
+          // US Letter = 12240 DXA wide; A4 ≈ 11906
+          const wDxa = parseInt(pgSzMatch[1]);
+          _pageIsLetter = wDxa >= 12000;
+        }
+        // Also extract margin info from sectPr
+        const pgMarMatch = docXml.match(/<w:pgMar[^>]+w:top="(\d+)"[^>]+w:right="(\d+)"[^>]+w:bottom="(\d+)"[^>]+w:left="(\d+)"/i);
+        if (pgMarMatch) {
+          // DXA to mm: 1 DXA = 25.4/1440 mm
+          const dxaToMm = v => Math.round(parseInt(v) * 25.4 / 1440);
+          const mt = dxaToMm(pgMarMatch[1]), mr = dxaToMm(pgMarMatch[2]);
+          const mb = dxaToMm(pgMarMatch[3]), ml = dxaToMm(pgMarMatch[4]);
+          const setV = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+          setV('dg-margin-top', mt); setV('dg-margin-right', mr);
+          setV('dg-margin-bottom', mb); setV('dg-margin-left', ml);
+        }
+      }
+    } catch(zipErr) {
+      console.warn('docx ZIP parse warning (non-fatal):', zipErr);
+    }
+
+    // ── Step 2: Convert body with mammoth
     const result = await mammoth.convertToHtml(
       { arrayBuffer },
       {
@@ -15070,10 +15173,40 @@ async function dgOpenDocxFromFile(event) {
 
     let html = result.value || '';
 
+    // ── Step 3: Strip header/footer text that mammoth incorrectly pulled into body.
+    //    Word headers/footers are in separate XML parts; mammoth sometimes leaks
+    //    their text as the first/last paragraph of the body output.
+    if (_docxHdrText) {
+      // Escape for use in regex, then strip the first <p> that matches it exactly
+      const escaped = _docxHdrText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      html = html.replace(new RegExp(`^\\s*<p>\\s*(?:<strong>)?\\s*${escaped}\\s*(?:</strong>)?\\s*</p>`, 'i'), '');
+    }
+    // Strip stray PAGE field cached values (lone digits in a paragraph at the end)
+    html = html.replace(/<p>\s*\d{1,3}\s*<\/p>\s*$/i, '');
+
     // Basic cleanup: collapse empty paragraphs, normalise whitespace
     html = html.replace(/<p>\s*<\/p>/g, '<p><br></p>');
 
-    // Open in editor (same flow as dgOpenDocxInEditor / dgOpenBlankEditor)
+    // ── Step 4: Populate the app header/footer system from what we extracted
+    if (_docxHdrText || _docxFtrText) {
+      // Place header text right-aligned (matching the docx default) and footer centred
+      _dgHF.hdrR  = _docxHdrText  || '';
+      _dgHF.hdrL  = '';
+      _dgHF.hdrC  = '';
+      _dgHF.ftrC  = _docxFtrText  || '';
+      _dgHF.ftrL  = '';
+      _dgHF.ftrR  = '';
+      // Reflect in UI inputs
+      const setV = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+      setV('dg-hdr-right',   _dgHF.hdrR);
+      setV('dg-hdr-left',    '');
+      setV('dg-hdr-center',  '');
+      setV('dg-ftr-center',  _dgHF.ftrC);
+      setV('dg-ftr-left',    '');
+      setV('dg-ftr-right',   '');
+    }
+
+    // ── Step 5: Open editor
     document.getElementById('docgen-overlay').classList.remove('hidden');
     document.getElementById('dg-modal-normal').style.display = 'none';
 
@@ -15098,14 +15231,20 @@ async function dgOpenDocxFromFile(event) {
 
     dgPopulateClientPanel();
 
+    // ── Step 6: Init ruler/margins/HF, then trigger pagination so content
+    //    correctly spills across multiple pages before the user sees it.
     setTimeout(() => {
       dgInitRuler();
       dgApplyMargins();
       if (window._dgDrawRuler) window._dgDrawRuler();
       dgInitVRuler();
       dgDrawVRuler();
-      _dgRestoreHF();
+      // Apply HF overlays from the extracted docx header/footer
+      dgApplyHF();
+      _dgRenderHFOnPages();
       if (editorContent) editorContent.focus();
+      // Trigger pagination AFTER layout is settled so scrollHeight is accurate
+      setTimeout(() => dgCheckPagination(), 120);
     }, 80);
 
     if (result.messages && result.messages.length) {
@@ -15157,7 +15296,12 @@ function dgOpenBlankEditor() {
     dgApplyMargins();
     dgInitVRuler();
     dgDrawVRuler();
-    _dgRestoreHF();
+    // Reset HF to empty for a fresh document — don't inherit previous doc's header/footer
+    _dgHF = { hdrL:'', hdrC:'', hdrR:'', ftrL:'', ftrC:'', ftrR:'', firstDiff:false };
+    ['dg-hdr-left','dg-hdr-center','dg-hdr-right','dg-ftr-left','dg-ftr-center','dg-ftr-right'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    dgApplyHF();
     if (editorContent) editorContent.focus();
   }, 80);
 }
@@ -15527,9 +15671,6 @@ function _dgBuildPrintHtml() {
   let bodyHtml = '';
   if (pages.length > 0) {
     const total = pages.length;
-    const hfCss = _dgHFPrintCss(t, b);
-    const hasHFPageNum = _dgHF.ftrL.includes('{{page}}') || _dgHF.ftrC.includes('{{page}}') || _dgHF.ftrR.includes('{{page}}') ||
-                         _dgHF.hdrL.includes('{{page}}') || _dgHF.hdrC.includes('{{page}}') || _dgHF.hdrR.includes('{{page}}');
     pages.forEach((pg, i) => {
       const ed = pg.querySelector('[contenteditable]');
       const pgHtml = _dgCleanPageHtml(ed ? ed.innerHTML : '');
@@ -15553,16 +15694,10 @@ ${stateMeta}
   .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;padding-bottom:2mm}
   .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;padding-top:2mm}
   @page{size:A4;margin:0}
-  @media print{body{margin:0}
-    .dg-hf-abs{position:fixed}
-    .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm}
-    .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm}}
+  @media print{body{margin:0}}
 </style></head><body>${bodyHtml}</body></html>`;
   } else {
     // Fresh document — grab content from inside the first .dg-page (or preview wrap as last resort)
-    const hfCss = _dgHFPrintCss(t, b);
-    const hasHFPageNum = _dgHF.ftrL.includes('{{page}}') || _dgHF.ftrC.includes('{{page}}') || _dgHF.ftrR.includes('{{page}}') ||
-                         _dgHF.hdrL.includes('{{page}}') || _dgHF.hdrC.includes('{{page}}') || _dgHF.hdrR.includes('{{page}}');
     const pageSim = document.getElementById('dg-page-sim');
     const editorContent = document.getElementById('dg-editor-content');
     const preview = document.getElementById('dg-preview-wrap');
@@ -15592,16 +15727,13 @@ ${stateMeta}
   .dg-blank{padding:0 2px}
   .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px}.dg-jurat td{padding:0;vertical-align:top}
   .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none!important}
-  .dg-hf-abs{position:fixed;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
+  .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
   .dg-hf-abs span{flex:1}
   .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;padding-bottom:2mm}
   .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;padding-top:2mm}
   @page{size:A4;margin:0}
-  @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}
-    .dg-hf-abs{position:fixed}
-    .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm}
-    .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm}}
-</style></head><body>${hfHtml.hdr}${bodyHtml}${hfHtml.ftr}</body></html>`;
+  @media print{body{margin:0;padding:0}}
+</style></head><body><div style="position:relative;min-height:297mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${bodyHtml}${hfHtml.ftr}</div></body></html>`;
   }
 }
 
@@ -15929,6 +16061,11 @@ function _dgHFBandHtml(l, c, r) {
 function _dgRenderHFOnPages() {
   const pages = document.querySelectorAll('.dg-page');
   const total = pages.length;
+  // Use actual margin inputs so HF aligns with content column
+  const ml = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
+  const mr = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
+  const mt = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
+  const mb = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
   pages.forEach((page, i) => {
     const pageNum = i + 1;
     const isFirst = pageNum === 1;
@@ -15939,18 +16076,18 @@ function _dgRenderHFOnPages() {
     if (!hdrEl) {
       hdrEl = document.createElement('div');
       hdrEl.className = 'dg-hf-header';
-      hdrEl.style.cssText = 'position:absolute;top:0;left:0;right:0;padding:6px 25mm 4px;box-sizing:border-box;pointer-events:none';
       page.insertBefore(hdrEl, page.firstChild);
     }
+    hdrEl.style.cssText = `position:absolute;top:0;left:0;right:0;padding:6px ${mr}mm 4px ${ml}mm;box-sizing:border-box;pointer-events:none`;
 
     // Footer overlay
     let ftrEl = page.querySelector('.dg-hf-footer');
     if (!ftrEl) {
       ftrEl = document.createElement('div');
       ftrEl.className = 'dg-hf-footer';
-      ftrEl.style.cssText = 'position:absolute;bottom:0;left:0;right:0;padding:4px 25mm 6px;box-sizing:border-box;pointer-events:none';
       page.appendChild(ftrEl);
     }
+    ftrEl.style.cssText = `position:absolute;bottom:0;left:0;right:0;padding:4px ${mr}mm 6px ${ml}mm;box-sizing:border-box;pointer-events:none`;
 
     const hdrHtml = skip ? '' : _dgHFBandHtml(
       _dgHFResolve(_dgHF.hdrL, pageNum, total),
@@ -15974,13 +16111,11 @@ function _dgHFPrintCss(t, b) {
   const hasHdr = _dgHF.hdrL || _dgHF.hdrC || _dgHF.hdrR;
   const hasFtr = _dgHF.ftrL || _dgHF.ftrC || _dgHF.ftrR;
   if (!hasHdr && !hasFtr) return '';
-  const hdrBorder = '';
-  const ftrBorder = '';
   return `
     .dg-hf-band{display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box}
     .dg-hf-band span{flex:1}
-    .dg-hf-hdr{position:fixed;top:0;left:0;right:0;padding:${Math.max(t-8,2)}mm 25mm 2mm;${hdrBorder}}
-    .dg-hf-ftr{position:fixed;bottom:0;left:0;right:0;padding:2mm 25mm ${Math.max(b-8,2)}mm;${ftrBorder}}
+    .dg-hf-hdr{position:absolute;top:0;left:0;right:0;padding:${Math.max(t-8,2)}mm 25mm 2mm}
+    .dg-hf-ftr{position:absolute;bottom:0;left:0;right:0;padding:2mm 25mm ${Math.max(b-8,2)}mm}
   `;
 }
 
@@ -16078,32 +16213,78 @@ function dgSpillToNextPage(pg, pgIdx, allPages, container, mt, mr, mb, ml, maxCo
   const nextContent = nextPage.querySelector('[contenteditable]');
   if (!nextContent) return;
 
-  // Move overflow nodes to next page
-  // Use binary search by child nodes
   const children = Array.from(edContent.childNodes);
-  let splitIdx = children.length;
-  // Find the last node that fits
-  for (let i = children.length - 1; i >= 0; i--) {
-    // Temporarily remove trailing nodes and measure
-    const toMove = children.slice(i);
-    toMove.forEach(n => n.remove());
-    const fits = edContent.scrollHeight <= maxContentH + 10;
-    // Put them back
-    toMove.forEach(n => edContent.appendChild(n));
-    if (fits) { splitIdx = i + 1; break; }
+  if (children.length === 0) return;
+
+  // Check for a forced page-break-marker first — always split there
+  let forcedSplit = -1;
+  for (let i = 0; i < children.length; i++) {
+    const n = children[i];
+    if (n.nodeType === 1 && n.classList && n.classList.contains('dg-page-break-marker')) {
+      forcedSplit = i;
+      break;
+    }
   }
 
-  if (splitIdx < children.length) {
-    // Move nodes from splitIdx to end into next page (prepend)
+  let splitIdx;
+  if (forcedSplit !== -1) {
+    // Split after the marker (the marker itself is removed)
+    splitIdx = forcedSplit + 1;
+    children[forcedSplit].remove();
+    // Rebuild children array without the removed marker
+    const remaining = Array.from(edContent.childNodes);
     const frag = document.createDocumentFragment();
-    for (let i = splitIdx; i < children.length; i++) {
-      frag.appendChild(children[i].cloneNode(true));
+    // Move everything from splitIdx-1 onward (marker was at forcedSplit, now gone)
+    while (edContent.childNodes.length > forcedSplit) {
+      frag.appendChild(edContent.childNodes[forcedSplit]);
     }
-    // Remove them from current page
-    for (let i = children.length - 1; i >= splitIdx; i--) {
-      children[i].remove();
+    nextContent.insertBefore(frag, nextContent.firstChild);
+    return;
+  }
+
+  // No forced break — binary search for the split point.
+  // Strategy: move a suffix of nodes into a detached fragment, measure scrollHeight,
+  // then bisect. This avoids the re-append ordering issue of the old linear scan.
+  let lo = 1, hi = children.length - 1, bestSplit = children.length;
+  // Move all children except the first into a holding fragment
+  const holding = document.createDocumentFragment();
+  for (let i = children.length - 1; i >= 1; i--) {
+    holding.insertBefore(children[i], holding.firstChild);
+  }
+  // Now edContent has only children[0]; check if even that overflows
+  if (edContent.scrollHeight > maxContentH + 10) {
+    // Even a single child overflows — can't split further, give up
+    edContent.appendChild(holding);
+    return;
+  }
+  // Binary search: find the largest prefix that still fits
+  // We'll append from holding one by one (or bisect) and test
+  // For simplicity and correctness, use a linear forward scan with appending
+  // (much faster than the old backward removal scan and order-safe)
+  const holdingNodes = Array.from(holding.childNodes).map(n => n); // snapshot
+  // Re-attach holding so we start fresh
+  edContent.appendChild(holding);
+  // Now use a forward binary search: keep lo..hi as candidate split index
+  lo = 0; hi = children.length;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    // Temporarily detach children[mid..end]
+    const removed = [];
+    for (let i = children.length - 1; i >= mid; i--) {
+      removed.unshift(edContent.removeChild(children[i]));
     }
-    // Prepend to next page content
+    const fits = edContent.scrollHeight <= maxContentH + 10;
+    // Restore
+    removed.forEach(n => edContent.appendChild(n));
+    if (fits) { lo = mid; } else { hi = mid - 1; }
+  }
+  bestSplit = lo;
+
+  if (bestSplit < children.length) {
+    const frag = document.createDocumentFragment();
+    for (let i = children.length - 1; i >= bestSplit; i--) {
+      frag.insertBefore(edContent.removeChild(children[i]), frag.firstChild);
+    }
     nextContent.insertBefore(frag, nextContent.firstChild);
   }
 }
@@ -16113,7 +16294,7 @@ function _dgCreateNewPage(container, pageNum, mt, mr, mb, ml) {
   newPage.id = pageNum === 2 ? 'dg-page-2' : 'dg-page-' + pageNum;
   newPage.className = 'dg-page';
   newPage.setAttribute('data-page', pageNum);
-  newPage.style.cssText = `padding:${mt}mm ${mr}mm ${mb}mm ${ml}mm`;
+  newPage.style.cssText = `background:#fff;width:794px;min-height:1123px;box-shadow:0 2px 16px rgba(0,0,0,0.18);border-radius:2px;position:relative;box-sizing:border-box;margin-bottom:24px;padding:${mt}mm ${mr}mm ${mb}mm ${ml}mm`;
   const newContent = document.createElement('div');
   newContent.contentEditable = 'true';
   newContent.spellcheck = true;
@@ -16203,28 +16384,41 @@ function dgPrint() {
   // Always sync HF state from DOM inputs before printing
   dgApplyHF();
   if (dgGeneratedText === '__html__') {
-    // Collect all pages content
-    const pages = document.querySelectorAll('#dg-pages-container .dg-page');
-    const editContent = document.getElementById('dg-editor-content');
-    const wrapEl = document.getElementById('dg-preview-wrap');
-    let allPagesHtml = '';
     const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
     const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
     const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
     const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
+
+    // Collect all pages — if none exist yet (e.g. freshly opened docx before
+    // pagination fires) fall back to the single editor-content div.
+    let pages = Array.from(document.querySelectorAll('#dg-pages-container .dg-page'));
+    const editContent = document.getElementById('dg-editor-content');
+    if (pages.length === 0 && editContent) {
+      // Force pagination synchronously so we capture correct page count
+      dgCheckPagination();
+      pages = Array.from(document.querySelectorAll('#dg-pages-container .dg-page'));
+    }
+
+    let allPagesHtml = '';
     if (pages.length > 0) {
-      const hasHFPageNum = _dgHF.ftrL.includes('{{page}}') || _dgHF.ftrC.includes('{{page}}') || _dgHF.ftrR.includes('{{page}}') ||
-                           _dgHF.hdrL.includes('{{page}}') || _dgHF.hdrC.includes('{{page}}') || _dgHF.hdrR.includes('{{page}}');
       pages.forEach((pg, i) => {
         const ed = pg.querySelector('[contenteditable]');
         const pgHtml = _dgCleanPageHtml(ed ? ed.innerHTML : '');
         const hfHtml = _dgHFPageHtml(i+1, pages.length);
+        // HF divs use position:absolute inside each page wrapper (position:relative).
+        // Do NOT switch to position:fixed in @media print — fixed positioning causes
+        // headers/footers to float over body text on every page instead of sitting
+        // in the margin zone of their own page div.
         allPagesHtml += `<div style="page-break-after:${i < pages.length-1 ? 'always' : 'auto'};position:relative;min-height:${297-(t+b)}mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
       });
     } else {
-      const previewHtml = (dgEditMode && editContent) ? editContent.innerHTML : wrapEl.innerHTML;
-      allPagesHtml = previewHtml;
+      // Single-page fallback: wrap in one page div so HF absolute positioning works
+      const rawHtml = editContent ? editContent.innerHTML : '';
+      const pgHtml = _dgCleanPageHtml(rawHtml);
+      const hfHtml = _dgHFPageHtml(1, 1);
+      allPagesHtml = `<div style="page-break-after:auto;position:relative;min-height:${297-(t+b)}mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
     }
+
     const frame = document.getElementById('dg-print-frame');
     const content = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
       body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:0;color:#111}
@@ -16243,9 +16437,6 @@ function dgPrint() {
       @page{margin:0;size:A4}
       @media print{
         body{margin:0;padding:0}
-        .dg-hf-abs{position:fixed}
-        .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm}
-        .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm}
       }
     </style></head><body>${allPagesHtml}</body></html>`;
     frame.contentDocument.open();
@@ -16297,16 +16488,13 @@ function _dgPrintBase(){
     .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.85}
     .dg-jurat td{padding:0;vertical-align:top}
     .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none !important}
-    .dg-hf-abs{position:fixed;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
+    .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
     .dg-hf-abs span{flex:1}
     .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;padding-bottom:2mm}
     .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;padding-top:2mm}
     @page{size:A4;margin:0}
-    @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}
-      .dg-hf-abs{position:fixed}
-      .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm}
-      .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm}}
-  </style></head><body>${hfHtml.hdr}${previewHtml}${hfHtml.ftr}</body></html>`;
+    @media print{body{margin:0;padding:0}}
+  </style></head><body><div style="position:relative;min-height:297mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${previewHtml}${hfHtml.ftr}</div></body></html>`;
   frame.contentDocument.open();
   frame.contentDocument.write(content);
   frame.contentDocument.close();
