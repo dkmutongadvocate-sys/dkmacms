@@ -15128,19 +15128,25 @@ function _dgBuildPrintHtml() {
       const ed = pg.querySelector('[contenteditable]');
       const pgHtml = _dgCleanPageHtml(ed ? ed.innerHTML : '');
       const hfHtml = _dgHFPageHtml(i+1, total);
-      bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'};position:relative;padding:${t}mm ${r}mm ${b}mm ${l}mm">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
+      bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'};position:relative;min-height:${297-(t+b)}mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
     });
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>${(document.getElementById('dg-editor-title')?.textContent || 'Document')}</title>
 <style>
-  body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:0;padding:0;color:#111}
-  p{margin-bottom:4px;margin-top:0}br{display:block;margin-bottom:8px}
-  table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
+  body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:0;color:#111;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}
+  p{margin-bottom:4px;margin-top:0;white-space:pre-wrap}
+  br{display:block;margin-bottom:4px}
+  table{font-family:Georgia,serif;font-size:12pt;line-height:1.85;white-space:normal}
+  td,th{white-space:normal;word-break:break-word}
   .dg-blank{padding:0 2px}
   .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px}.dg-jurat td{padding:0;vertical-align:top}
   .dg-edit-mode-badge,.dg-page-break-marker{display:none!important}
+  .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 25mm}
+  .dg-hf-abs span{flex:1}
+  .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;border-bottom:0.5px solid #ddd;padding-bottom:2mm}
+  .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
   @page{size:A4;margin:0}
-  ${hfCss}
+  @media print{body{margin:0}}
 </style></head><body>${bodyHtml}</body></html>`;
   } else {
     // Fresh document — grab content from inside the first .dg-page (or preview wrap as last resort)
@@ -15167,15 +15173,21 @@ function _dgBuildPrintHtml() {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>${(document.getElementById('dg-editor-title')?.textContent || 'Document')}</title>
 <style>
-  body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
-  p{margin-bottom:4px;margin-top:0}br{display:block;margin-bottom:8px}
-  table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
+  body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm;color:#111;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}
+  p{margin-bottom:4px;margin-top:0;white-space:pre-wrap}
+  br{display:block;margin-bottom:4px}
+  table{font-family:Georgia,serif;font-size:12pt;line-height:1.85;white-space:normal}
+  td,th{white-space:normal;word-break:break-word}
   .dg-blank{padding:0 2px}
   .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px}.dg-jurat td{padding:0;vertical-align:top}
   .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none!important}
+  .dg-hf-abs{position:fixed;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
+  .dg-hf-abs span{flex:1}
+  .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;border-bottom:0.5px solid #ddd;padding-bottom:2mm}
+  .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
   @page{size:A4;margin:0}
-  @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}}
-  ${hfCss}
+  @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}
+    .dg-hf-abs{position:fixed}}
 </style></head><body>${hfHtml.hdr}${bodyHtml}${hfHtml.ftr}</body></html>`;
   }
 }
@@ -15356,12 +15368,12 @@ function _dgHFPageHtml(pageNum, total) {
   const hasFtr = _dgHF.ftrL || _dgHF.ftrC || _dgHF.ftrR;
   const skip   = pageNum === 1 && _dgHF.firstDiff;
   if (skip) return { hdr:'', ftr:'' };
-  const hdr = hasHdr ? `<div class="dg-hf-hdr dg-hf-band">
+  const hdr = hasHdr ? `<div class="dg-hf-abs dg-hf-abs-hdr">
     <span style="text-align:left">${_dgHFResolve(_dgHF.hdrL,pageNum,total)}</span>
     <span style="text-align:center">${_dgHFResolve(_dgHF.hdrC,pageNum,total)}</span>
     <span style="text-align:right">${_dgHFResolve(_dgHF.hdrR,pageNum,total)}</span>
   </div>` : '';
-  const ftr = hasFtr ? `<div class="dg-hf-ftr dg-hf-band">
+  const ftr = hasFtr ? `<div class="dg-hf-abs dg-hf-abs-ftr">
     <span style="text-align:left">${_dgHFResolve(_dgHF.ftrL,pageNum,total)}</span>
     <span style="text-align:center">${_dgHFResolve(_dgHF.ftrC,pageNum,total)}</span>
     <span style="text-align:right">${_dgHFResolve(_dgHF.ftrR,pageNum,total)}</span>
@@ -15584,26 +15596,29 @@ function dgPrint() {
         const ed = pg.querySelector('[contenteditable]');
         const pgHtml = _dgCleanPageHtml(ed ? ed.innerHTML : '');
         const hfHtml = _dgHFPageHtml(i+1, pages.length);
-        allPagesHtml += `<div style="page-break-after:${i < pages.length-1 ? 'always' : 'auto'};position:relative;padding:${t}mm ${r}mm ${b}mm ${l}mm">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
+        allPagesHtml += `<div style="page-break-after:${i < pages.length-1 ? 'always' : 'auto'};position:relative;min-height:${297-(t+b)}mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
       });
     } else {
       const previewHtml = (dgEditMode && editContent) ? editContent.innerHTML : wrapEl.innerHTML;
       allPagesHtml = previewHtml;
     }
     const frame = document.getElementById('dg-print-frame');
-    const hfCss = _dgHFPrintCss(t, b);
     const content = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-      body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:0;padding:0;color:#111}
-      p{margin-bottom:4px;margin-top:0}
-      br{display:block;margin-bottom:8px}
-      table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
+      body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:0;color:#111;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}
+      p{margin-bottom:4px;margin-top:0;white-space:pre-wrap}
+      br{display:block;margin-bottom:4px}
+      table{font-family:Georgia,serif;font-size:12pt;line-height:1.85;white-space:normal}
+      td,th{white-space:normal;word-break:break-word}
       .dg-blank{padding:0 2px}
-      .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9}
+      .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.85}
       .dg-jurat td{padding:0;vertical-align:top}
       .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none}
+      .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
+      .dg-hf-abs span{flex:1}
+      .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;border-bottom:0.5px solid #ddd;padding-bottom:2mm}
+      .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
       @page{margin:0;size:A4}
       @media print{body{margin:0;padding:0}}
-      ${hfCss}
     </style></head><body>${allPagesHtml}</body></html>`;
     frame.contentDocument.open();
     frame.contentDocument.write(content);
@@ -15643,20 +15658,24 @@ function _dgPrintBase(){
   const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
   const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
   const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
-  const hfCss = _dgHFPrintCss(t, b);
   const hfHtml = _dgHFPageHtml(1, 1);
   const content=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-    body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
-    p{margin-bottom:4px;margin-top:0}
-    br{display:block;margin-bottom:8px}
-    table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
+    body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm;color:#111;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}
+    p{margin-bottom:4px;margin-top:0;white-space:pre-wrap}
+    br{display:block;margin-bottom:4px}
+    table{font-family:Georgia,serif;font-size:12pt;line-height:1.85;white-space:normal}
+    td,th{white-space:normal;word-break:break-word}
     .dg-blank{padding:0 2px}
-    .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9}
+    .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.85}
     .dg-jurat td{padding:0;vertical-align:top}
     .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none !important}
+    .dg-hf-abs{position:fixed;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
+    .dg-hf-abs span{flex:1}
+    .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;border-bottom:0.5px solid #ddd;padding-bottom:2mm}
+    .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
     @page{size:A4;margin:0}
-    @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}}
-    ${hfCss}
+    @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}
+      .dg-hf-abs{position:fixed}}
   </style></head><body>${hfHtml.hdr}${previewHtml}${hfHtml.ftr}</body></html>`;
   frame.contentDocument.open();
   frame.contentDocument.write(content);
