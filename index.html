@@ -9391,6 +9391,23 @@ async function dgOpenDocInEditor(storagePath, baseName) {
   const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
   const bodyHtml = bodyMatch ? bodyMatch[1].trim() : htmlContent;
 
+  // Restore editor state (margins, indents) from saved meta tag if present
+  const stateMetaMatch = htmlContent.match(/<meta\s+name="dg-editor-state"\s+content='([^']+)'/i);
+  let _restoredState = null;
+  if (stateMetaMatch) {
+    try { _restoredState = JSON.parse(stateMetaMatch[1]); } catch(e) {}
+  }
+  if (_restoredState) {
+    const setV = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
+    setV('dg-margin-left',   _restoredState.ml);
+    setV('dg-margin-right',  _restoredState.mr);
+    setV('dg-margin-top',    _restoredState.mt);
+    setV('dg-margin-bottom', _restoredState.mb);
+    window._dgIndentFL = _restoredState.fl || 0;
+    window._dgIndentLI = _restoredState.li || 0;
+    window._dgIndentRI = _restoredState.ri || 0;
+  }
+
   // Open blank editor with this content
   document.getElementById('docgen-overlay').classList.remove('hidden');
   document.getElementById('dg-modal-normal').style.display = 'none';
@@ -9424,14 +9441,15 @@ async function dgOpenDocInEditor(storagePath, baseName) {
 
   setTimeout(() => {
     dgInitRuler();
-    dgApplyMargins();
+    dgApplyMargins(); // applies restored margin values to all page padding
+    if (window._dgDrawRuler) window._dgDrawRuler(); // reposition indent handles
     dgInitVRuler();
     dgDrawVRuler();
     _dgRestoreHF();
     if (editorContent) editorContent.focus();
   }, 80);
 
-  toast('Document loaded in editor ✓');
+  toast('Document loaded in editor ✓' + (_restoredState ? ' — margins & layout restored' : ''));
 }
 
 async function viewOfficeDoc(name) {
@@ -10857,8 +10875,8 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 
     <!-- Ruler -->
-    <div id="dg-ruler-wrap" style="flex-shrink:0;background:#e8e6e0;border-bottom:1px solid #ccc;position:relative;height:28px;overflow:hidden;user-select:none">
-      <canvas id="dg-ruler" style="display:block;width:100%;height:28px"></canvas>
+    <div id="dg-ruler-wrap" style="flex-shrink:0;background:#e8e6e0;border-bottom:1px solid #ccc;position:relative;height:36px;overflow:hidden;user-select:none">
+      <canvas id="dg-ruler" style="display:block;width:100%;height:36px"></canvas>
       <!-- Left margin handle -->
       <div id="dg-ruler-lm" title="Drag to set left margin"
         style="position:absolute;top:0;bottom:0;width:10px;cursor:ew-resize;z-index:5;display:flex;align-items:center;justify-content:center"
@@ -10870,6 +10888,18 @@ document.addEventListener('DOMContentLoaded', function() {
         style="position:absolute;top:0;bottom:0;width:10px;cursor:ew-resize;z-index:5;display:flex;align-items:center;justify-content:center"
       >
         <div style="width:4px;height:20px;background:var(--navy);border-radius:2px;opacity:0.7"></div>
+      </div>
+      <!-- First-line indent triangle (top, points down) -->
+      <div id="dg-indent-fl" title="First-line indent — drag to move first line" style="position:absolute;top:0;z-index:8;cursor:ew-resize;width:16px;height:14px;display:flex;align-items:flex-start;justify-content:center;pointer-events:all">
+        <svg width="12" height="12" viewBox="0 0 12 12" style="pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.25))"><polygon points="0,0 12,0 6,11" fill="#334"/></svg>
+      </div>
+      <!-- Left (hanging) indent triangle (bottom, points up) -->
+      <div id="dg-indent-li" title="Left indent — drag to move all lines except first" style="position:absolute;bottom:0;z-index:8;cursor:ew-resize;width:16px;height:14px;display:flex;align-items:flex-end;justify-content:center;pointer-events:all">
+        <svg width="12" height="12" viewBox="0 0 12 12" style="pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.25))"><polygon points="6,0 12,12 0,12" fill="#334"/></svg>
+      </div>
+      <!-- Right indent triangle (bottom, points up, on right side) -->
+      <div id="dg-indent-ri" title="Right indent — drag to move right edge of text" style="position:absolute;bottom:0;z-index:8;cursor:ew-resize;width:16px;height:14px;display:flex;align-items:flex-end;justify-content:center;pointer-events:all">
+        <svg width="12" height="12" viewBox="0 0 12 12" style="pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.25))"><polygon points="6,0 12,12 0,12" fill="#553"/></svg>
       </div>
     </div>
 
@@ -14645,7 +14675,7 @@ function dgInitRuler() {
 
   function drawRuler() {
     const W = rulerWrap.offsetWidth;
-    const H = 28;
+    const H = 36;
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d');
@@ -14693,6 +14723,35 @@ function dgInitRuler() {
     const rmEl = document.getElementById('dg-ruler-rm');
     if (lmEl) lmEl.style.left = (lhX - 5) + 'px';
     if (rmEl) rmEl.style.left = (rhX - 5) + 'px';
+
+    // Position indent handles (in content-area coordinates)
+    const textAreaLeft = pageLeft + lmPx; // px where text starts (left margin end)
+    const textAreaRight = pageLeft + DG_PAGE_W - rmPx; // px where text ends
+
+    // fl = first-line indent (offset from text area left, in px)
+    const flPx = (window._dgIndentFL || 0) * DG_RULER_PX_PER_MM;
+    // li = left indent (hanging/paragraph indent, offset from text area left)
+    const liPx = (window._dgIndentLI || 0) * DG_RULER_PX_PER_MM;
+    // ri = right indent (offset inward from text area right)
+    const riPx = (window._dgIndentRI || 0) * DG_RULER_PX_PER_MM;
+
+    const flEl = document.getElementById('dg-indent-fl');
+    const liEl = document.getElementById('dg-indent-li');
+    const riEl = document.getElementById('dg-indent-ri');
+    if (flEl) flEl.style.left = (textAreaLeft + liPx + flPx - 8) + 'px';
+    if (liEl) liEl.style.left = (textAreaLeft + liPx - 8) + 'px';
+    if (riEl) riEl.style.left = (textAreaRight - riPx - 8) + 'px';
+
+    // Draw indent markers on canvas (subtle ticks)
+    if (flEl && liEl && riEl) {
+      ctx.fillStyle = 'rgba(51,51,68,0.18)';
+      // fl tick
+      ctx.fillRect(textAreaLeft + liPx + flPx, H - 5, 1, 5);
+      // li tick
+      ctx.fillRect(textAreaLeft + liPx, H - 5, 1, 5);
+      // ri tick
+      ctx.fillRect(textAreaRight - riPx, H - 5, 1, 5);
+    }
   }
 
   // Draw initially and on resize/scroll
@@ -14728,6 +14787,120 @@ function dgInitRuler() {
     document.addEventListener('mouseup', () => {
       if (dgRulerDragging) { dgRulerDragging = null; }
     });
+
+    // ── INDENT HANDLES DRAG LOGIC ──────────────────────────────────────
+    // State: window._dgIndentFL (first-line offset mm), _dgIndentLI (left/hanging mm), _dgIndentRI (right mm)
+    if (!window._dgIndentFL) window._dgIndentFL = 0;
+    if (!window._dgIndentLI) window._dgIndentLI = 0;
+    if (!window._dgIndentRI) window._dgIndentRI = 0;
+
+    let _indentDragging = null; // 'fl' | 'li' | 'ri'
+
+    function _applyIndentToSelection() {
+      // Apply current indent values to all paragraphs in the active page's contenteditable
+      const pages = document.querySelectorAll('#dg-pages-container .dg-page');
+      pages.forEach(pg => {
+        const ed = pg.querySelector('[contenteditable]');
+        if (!ed) return;
+        const lmMm = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
+        const rmMm = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
+        const flMm = window._dgIndentFL || 0;
+        const liMm = window._dgIndentLI || 0;
+        const riMm = window._dgIndentRI || 0;
+        // Apply to all block-level children (p, div)
+        const children = ed.querySelectorAll('p, div');
+        if (children.length === 0) {
+          // No paragraphs yet, apply to the editor itself
+          ed.style.textIndent = flMm !== 0 ? (flMm * (96/25.4)) + 'px' : '';
+          ed.style.paddingLeft = liMm !== 0 ? (liMm * (96/25.4)) + 'px' : '';
+          ed.style.paddingRight = riMm !== 0 ? (riMm * (96/25.4)) + 'px' : '';
+        } else {
+          children.forEach(p => {
+            p.style.textIndent = flMm !== 0 ? (flMm * (96/25.4)) + 'px' : '';
+            p.style.marginLeft = liMm !== 0 ? (liMm * (96/25.4)) + 'px' : '';
+            p.style.marginRight = riMm !== 0 ? (riMm * (96/25.4)) + 'px' : '';
+          });
+        }
+      });
+    }
+
+    function _getPageXInfo() {
+      const page = document.getElementById('dg-page-sim');
+      if (!page) return null;
+      const pageRect = page.getBoundingClientRect();
+      const lmMm = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
+      const rmMm = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
+      return {
+        pageRect,
+        lmPx: lmMm * DG_RULER_PX_PER_MM,
+        rmPx: rmMm * DG_RULER_PX_PER_MM
+      };
+    }
+
+    ['dg-indent-fl','dg-indent-li','dg-indent-ri'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('mousedown', ev => {
+        _indentDragging = id === 'dg-indent-fl' ? 'fl' : id === 'dg-indent-li' ? 'li' : 'ri';
+        ev.preventDefault();
+        ev.stopPropagation();
+      });
+    });
+
+    document.addEventListener('mousemove', ev => {
+      if (!_indentDragging) return;
+      const info = _getPageXInfo();
+      if (!info) return;
+      const { pageRect, lmPx, rmPx } = info;
+      // relX is position relative to page left edge
+      const relX = ev.clientX - pageRect.left;
+      // Content area bounds in px (relative to page left)
+      const contentLeft = lmPx;
+      const contentRight = DG_PAGE_W - rmPx;
+      const liMm = window._dgIndentLI || 0;
+      if (_indentDragging === 'fl') {
+        // First-line indent: offset relative to left-indent position
+        const rawMm = (relX - contentLeft - liMm * DG_RULER_PX_PER_MM) / DG_RULER_PX_PER_MM;
+        // Allow negative (hanging indent style) but clamp to reasonable range
+        window._dgIndentFL = Math.max(-50, Math.min(rawMm, (contentRight - contentLeft) / DG_RULER_PX_PER_MM - liMm));
+      } else if (_indentDragging === 'li') {
+        const rawMm = (relX - contentLeft) / DG_RULER_PX_PER_MM;
+        window._dgIndentLI = Math.max(0, Math.min(rawMm, (contentRight - contentLeft) / DG_RULER_PX_PER_MM - 5));
+      } else if (_indentDragging === 'ri') {
+        const rawMm = (contentRight - relX) / DG_RULER_PX_PER_MM;
+        window._dgIndentRI = Math.max(0, Math.min(rawMm, (contentRight - contentLeft) / DG_RULER_PX_PER_MM - 5));
+      }
+      _applyIndentToSelection();
+      drawRuler();
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (_indentDragging) { _indentDragging = null; }
+    });
+
+    // Update indent handles when cursor moves into a paragraph (read its current indent)
+    document.addEventListener('selectionchange', () => {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      let node = sel.anchorNode;
+      if (!node) return;
+      // Walk up to nearest block element inside the editor
+      let block = node.nodeType === 3 ? node.parentElement : node;
+      while (block && block.id !== 'dg-editor-content' && !['P','DIV','LI'].includes(block.tagName)) {
+        block = block.parentElement;
+      }
+      if (!block) return;
+      const cs = window.getComputedStyle(block);
+      const pxPerMm = DG_RULER_PX_PER_MM;
+      const tiPx = parseFloat(cs.textIndent) || 0;
+      const mlPx = parseFloat(cs.marginLeft) || parseFloat(cs.paddingLeft) || 0;
+      const mrPx = parseFloat(cs.marginRight) || parseFloat(cs.paddingRight) || 0;
+      window._dgIndentLI = mlPx / (96/25.4);
+      window._dgIndentFL = tiPx / (96/25.4);
+      window._dgIndentRI = mrPx / (96/25.4);
+      drawRuler();
+    });
+
     dgRulerInited = true;
   }
   // Store drawRuler for external callers
@@ -14745,6 +14918,10 @@ function dgOpenBlankEditor() {
   dgGeneratedText = '__html__';
   window._dgCurrentDocBase = '';
   window._dgCurrentDocPath = '';
+  // Reset indent handles to zero for a fresh document
+  window._dgIndentFL = 0;
+  window._dgIndentLI = 0;
+  window._dgIndentRI = 0;
   const editorContent = document.getElementById('dg-editor-content');
   if (editorContent) editorContent.innerHTML = '<p><br></p>';
 
@@ -15121,6 +15298,14 @@ function _dgBuildPrintHtml() {
   const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
   const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
   const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
+  // Embed editor state as a hidden meta tag so margins & indent restore on reopen
+  const stateJson = JSON.stringify({
+    ml: l, mr: r, mt: t, mb: b,
+    fl: window._dgIndentFL || 0,
+    li: window._dgIndentLI || 0,
+    ri: window._dgIndentRI || 0
+  });
+  const stateMeta = `<meta name="dg-editor-state" content='${stateJson}'/>`;
   const pages = document.querySelectorAll('#dg-pages-container .dg-page');
   let bodyHtml = '';
   if (pages.length > 0) {
@@ -15135,6 +15320,7 @@ function _dgBuildPrintHtml() {
       bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'};position:relative;min-height:${297-(t+b)}mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
     });
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+${stateMeta}
 <title>${(document.getElementById('dg-editor-title')?.textContent || 'Document')}</title>
 <style>
   body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:0;color:#111}
@@ -15178,6 +15364,7 @@ function _dgBuildPrintHtml() {
     bodyHtml = _dgCleanPageHtml(rawHtml);
     const hfHtml = _dgHFPageHtml(1, 1);
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+${stateMeta}
 <title>${(document.getElementById('dg-editor-title')?.textContent || 'Document')}</title>
 <style>
   body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
