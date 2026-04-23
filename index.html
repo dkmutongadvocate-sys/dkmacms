@@ -14371,6 +14371,17 @@ function dgSetPageNumberFormat(format) {
   if (btn2) { btn2.style.background = on ? 'var(--navy)' : ''; btn2.style.color = on ? '#fff' : ''; }
 }
 
+function _dgFormatPageNum(n, t) {
+  switch (_dgPageNumFormat) {
+    case 'n':             return `${n}`;
+    case 'page-n':        return `Page ${n}`;
+    case 'n-of-t':        return `${n} of ${t}`;
+    case 'page-n-of-t':   return `Page ${n} of ${t}`;
+    case 'pg-n-slash-t':  return `Pg ${n}/${t}`;
+    default:              return `${n}`;
+  }
+}
+
 function _dgApplyPageNumbers() {
   const pages = document.querySelectorAll('.dg-page');
   const total = pages.length;
@@ -14387,14 +14398,7 @@ function _dgApplyPageNumbers() {
     }
     footer.style.display = 'block';
     const n = i + 1, t = total;
-    switch (_dgPageNumFormat) {
-      case 'n':           footer.textContent = `${n}`; break;
-      case 'page-n':      footer.textContent = `Page ${n}`; break;
-      case 'n-of-t':      footer.textContent = `${n} of ${t}`; break;
-      case 'page-n-of-t': footer.textContent = `Page ${n} of ${t}`; break;
-      case 'pg-n-slash-t':footer.textContent = `Pg ${n}/${t}`; break;
-      default:            footer.textContent = `${n}`;
-    }
+    footer.textContent = _dgFormatPageNum(n, t);
   });
 }
 // Override old toggle functions to route through new format system
@@ -15051,7 +15055,7 @@ function _dgBuildPrintHtml() {
     pages.forEach((pg, i) => {
       const ed = pg.querySelector('[contenteditable]');
       const pgHtml = ed ? ed.innerHTML : '';
-      const numHtml = _dgPageNumbersOn ? `<div style="text-align:center;font-size:10px;color:#888;font-family:Georgia,serif;margin-top:8px">${i+1} / ${total}</div>` : '';
+      const numHtml = (_dgPageNumFormat && _dgPageNumFormat !== 'none') ? `<div style="text-align:center;font-size:10px;color:#888;font-family:Georgia,serif;margin-top:8px">${_dgFormatPageNum(i+1, total)}</div>` : '';
       bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'}">${pgHtml}${numHtml}</div>`;
     });
   } else {
@@ -15472,7 +15476,7 @@ function dgPrint() {
       pages.forEach((pg, i) => {
         const ed = pg.querySelector('[contenteditable]');
         const pgHtml = ed ? ed.innerHTML : '';
-        const numHtml = _dgPageNumbersOn ? `<div style="position:fixed;bottom:${b}mm;left:0;right:0;text-align:center;font-size:10px;color:#888;font-family:Georgia,serif">${i+1} / ${pages.length}</div>` : '';
+        const numHtml = (_dgPageNumFormat && _dgPageNumFormat !== 'none') ? `<div style="position:fixed;bottom:${b}mm;left:0;right:0;text-align:center;font-size:10px;color:#888;font-family:Georgia,serif">${_dgFormatPageNum(i+1, pages.length)}</div>` : '';
         const hfHtml = _dgHFPageHtml(i+1, pages.length);
         allPagesHtml += `<div style="page-break-after:${i < pages.length-1 ? 'always' : 'auto'};position:relative;padding:${t}mm ${r}mm ${b}mm ${l}mm">${hfHtml.hdr}${pgHtml}${numHtml}${hfHtml.ftr}</div>`;
       });
