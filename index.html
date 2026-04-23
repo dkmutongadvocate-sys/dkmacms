@@ -11349,7 +11349,7 @@ document.addEventListener('DOMContentLoaded', function() {
 #dg-editor-content td,#dg-editor-content th,.dg-page td,.dg-page th{border:1px solid #ccc;padding:5px 8px;min-width:30px;vertical-align:top}
 #dg-editor-content th,.dg-page th{background:#f0ede7;font-weight:600}
 /* Image resize handle */
-#dg-editor-content img,.dg-page img{max-width:100%;cursor:pointer}
+#dg-editor-content img,.dg-page img{max-width:100%;height:auto;max-height:900px;cursor:pointer}
 #dg-editor-content img.dg-img-selected,.dg-page img.dg-img-selected{outline:2px solid var(--gold)}
 
 /* Editable preview */
@@ -15675,7 +15675,7 @@ function _dgBuildPrintHtml() {
       const ed = pg.querySelector('[contenteditable]');
       const pgHtml = _dgCleanPageHtml(ed ? ed.innerHTML : '');
       const hfHtml = _dgHFPageHtml(i+1, total);
-      bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'};position:relative;min-height:${297-(t+b)}mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
+      bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'};page-break-inside:avoid;position:relative;height:297mm;overflow:hidden;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
     });
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
 ${stateMeta}
@@ -15689,6 +15689,7 @@ ${stateMeta}
   .dg-blank{padding:0 2px}
   .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px}.dg-jurat td{padding:0;vertical-align:top}
   .dg-edit-mode-badge,.dg-page-break-marker{display:none!important}
+  img{max-width:100%;height:auto;max-height:${Math.round((297-(t+b))*3.78*0.85)}px}
   .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
   .dg-hf-abs span{flex:1}
   .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;padding-bottom:2mm}
@@ -15727,13 +15728,14 @@ ${stateMeta}
   .dg-blank{padding:0 2px}
   .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px}.dg-jurat td{padding:0;vertical-align:top}
   .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none!important}
+  img{max-width:100%;height:auto;max-height:${Math.round((297-(t+b))*3.78*0.85)}px}
   .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
   .dg-hf-abs span{flex:1}
   .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;padding-bottom:2mm}
   .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;padding-top:2mm}
   @page{size:A4;margin:0}
   @media print{body{margin:0;padding:0}}
-</style></head><body><div style="position:relative;min-height:297mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${bodyHtml}${hfHtml.ftr}</div></body></html>`;
+</style></head><body><div style="position:relative;height:297mm;overflow:hidden;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${bodyHtml}${hfHtml.ftr}</div></body></html>`;
   }
 }
 
@@ -16253,7 +16255,14 @@ function dgSpillToNextPage(pg, pgIdx, allPages, container, mt, mr, mb, ml, maxCo
   }
   // Now edContent has only children[0]; check if even that overflows
   if (edContent.scrollHeight > maxContentH + 10) {
-    // Even a single child overflows — can't split further, give up
+    // Even a single child overflows (e.g. a large image like a coat of arms).
+    // Move it to the next page rather than giving up — otherwise it blocks
+    // all subsequent content from paginating correctly.
+    const oversizedNode = edContent.firstChild;
+    if (oversizedNode) {
+      nextContent.insertBefore(oversizedNode, nextContent.firstChild);
+    }
+    // Restore any remaining holding nodes
     edContent.appendChild(holding);
     return;
   }
@@ -16409,14 +16418,14 @@ function dgPrint() {
         // Do NOT switch to position:fixed in @media print — fixed positioning causes
         // headers/footers to float over body text on every page instead of sitting
         // in the margin zone of their own page div.
-        allPagesHtml += `<div style="page-break-after:${i < pages.length-1 ? 'always' : 'auto'};position:relative;min-height:${297-(t+b)}mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
+        allPagesHtml += `<div style="page-break-after:${i < pages.length-1 ? 'always' : 'auto'};page-break-inside:avoid;position:relative;height:297mm;overflow:hidden;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
       });
     } else {
       // Single-page fallback: wrap in one page div so HF absolute positioning works
       const rawHtml = editContent ? editContent.innerHTML : '';
       const pgHtml = _dgCleanPageHtml(rawHtml);
       const hfHtml = _dgHFPageHtml(1, 1);
-      allPagesHtml = `<div style="page-break-after:auto;position:relative;min-height:${297-(t+b)}mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
+      allPagesHtml = `<div style="page-break-after:auto;position:relative;height:297mm;overflow:hidden;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${pgHtml}${hfHtml.ftr}</div>`;
     }
 
     const frame = document.getElementById('dg-print-frame');
@@ -16430,6 +16439,7 @@ function dgPrint() {
       .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.85}
       .dg-jurat td{padding:0;vertical-align:top}
       .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none}
+      img{max-width:100%;height:auto;max-height:${Math.round((297-(t+b))*3.78*0.85)}px}
       .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
       .dg-hf-abs span{flex:1}
       .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;padding-bottom:2mm}
@@ -16488,13 +16498,14 @@ function _dgPrintBase(){
     .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.85}
     .dg-jurat td{padding:0;vertical-align:top}
     .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none !important}
+    img{max-width:100%;height:auto;max-height:${Math.round((297-(t+b))*3.78*0.85)}px}
     .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
     .dg-hf-abs span{flex:1}
     .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;padding-bottom:2mm}
     .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;padding-top:2mm}
     @page{size:A4;margin:0}
     @media print{body{margin:0;padding:0}}
-  </style></head><body><div style="position:relative;min-height:297mm;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${previewHtml}${hfHtml.ftr}</div></body></html>`;
+  </style></head><body><div style="position:relative;height:297mm;overflow:hidden;padding:${t}mm ${r}mm ${b}mm ${l}mm;box-sizing:border-box">${hfHtml.hdr}${previewHtml}${hfHtml.ftr}</div></body></html>`;
   frame.contentDocument.open();
   frame.contentDocument.write(content);
   frame.contentDocument.close();
