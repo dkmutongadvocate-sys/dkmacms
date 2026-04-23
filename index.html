@@ -9427,6 +9427,7 @@ async function dgOpenDocInEditor(storagePath, baseName) {
     dgApplyMargins();
     dgInitVRuler();
     dgDrawVRuler();
+    _dgRestoreHF();
     if (editorContent) editorContent.focus();
   }, 80);
 
@@ -14767,6 +14768,7 @@ function dgOpenBlankEditor() {
     dgApplyMargins();
     dgInitVRuler();
     dgDrawVRuler();
+    _dgRestoreHF();
     if (editorContent) editorContent.focus();
   }, 80);
 }
@@ -15287,7 +15289,29 @@ function dgApplyHF() {
   _dgHF.ftrC      = (document.getElementById('dg-ftr-center')?.value || '').trim();
   _dgHF.ftrR      = (document.getElementById('dg-ftr-right')?.value  || '').trim();
   _dgHF.firstDiff = !!(document.getElementById('dg-hf-first-diff')?.checked);
+  // Persist HF state so it survives page reloads
+  try { localStorage.setItem('dkma_dg_hf', JSON.stringify(_dgHF)); } catch(e) {}
   _dgRenderHFOnPages();
+}
+
+// Restore HF state from localStorage and re-populate the input fields
+function _dgRestoreHF() {
+  try {
+    const saved = localStorage.getItem('dkma_dg_hf');
+    if (!saved) return;
+    const hf = JSON.parse(saved);
+    _dgHF = Object.assign(_dgHF, hf);
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    set('dg-hdr-left',   _dgHF.hdrL);
+    set('dg-hdr-center', _dgHF.hdrC);
+    set('dg-hdr-right',  _dgHF.hdrR);
+    set('dg-ftr-left',   _dgHF.ftrL);
+    set('dg-ftr-center', _dgHF.ftrC);
+    set('dg-ftr-right',  _dgHF.ftrR);
+    const cb = document.getElementById('dg-hf-first-diff');
+    if (cb) cb.checked = !!_dgHF.firstDiff;
+    _dgRenderHFOnPages();
+  } catch(e) {}
 }
 
 function _dgHFResolve(tpl, n, total) {
@@ -15618,7 +15642,12 @@ function dgPrint() {
       .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;border-bottom:0.5px solid #ddd;padding-bottom:2mm}
       .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
       @page{margin:0;size:A4}
-      @media print{body{margin:0;padding:0}}
+      @media print{
+        body{margin:0;padding:0}
+        .dg-hf-abs{position:fixed}
+        .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm}
+        .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm}
+      }
     </style></head><body>${allPagesHtml}</body></html>`;
     frame.contentDocument.open();
     frame.contentDocument.write(content);
