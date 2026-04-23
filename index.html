@@ -9389,7 +9389,38 @@ async function dgOpenDocInEditor(storagePath, baseName) {
 
   // Extract just the <body> content
   const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-  const bodyHtml = bodyMatch ? bodyMatch[1].trim() : htmlContent;
+  let bodyHtml = bodyMatch ? bodyMatch[1].trim() : htmlContent;
+
+  // Strip the outer padding wrapper divs that _dgBuildPrintHtml bakes in.
+  // When saved, each page is wrapped in <div style="page-break-after:...;padding:Xmm ...">
+  // Re-injecting those inside dg-page-sim (which already has padding) doubles the whitespace.
+  // We use a temporary DOM element to safely unwrap them.
+  (function() {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = bodyHtml;
+    // Unwrap any direct children that look like saved page wrappers
+    // (have both page-break-after and padding with mm units in their inline style)
+    Array.from(tmp.children).forEach(child => {
+      const s = child.style || {};
+      const hasPadMm = (child.getAttribute('style') || '').includes('mm');
+      const hasPageBreak = (child.getAttribute('style') || '').includes('page-break');
+      if (hasPadMm && hasPageBreak) {
+        // Replace the wrapper with its children
+        while (child.firstChild) tmp.insertBefore(child.firstChild, child);
+        tmp.removeChild(child);
+      }
+    });
+    // Also handle single-page: if the entire body is one div with padding in mm, unwrap it
+    if (tmp.children.length === 1) {
+      const only = tmp.children[0];
+      const style = only.getAttribute('style') || '';
+      if (style.includes('mm') && (style.includes('padding') || style.includes('margin'))) {
+        bodyHtml = only.innerHTML;
+        return;
+      }
+    }
+    bodyHtml = tmp.innerHTML;
+  })();
 
   // Restore editor state (margins, indents) from saved meta tag if present
   const stateMetaMatch = htmlContent.match(/<meta\s+name="dg-editor-state"\s+content='([^']+)'/i);
@@ -9406,6 +9437,19 @@ async function dgOpenDocInEditor(storagePath, baseName) {
     window._dgIndentFL = _restoredState.fl || 0;
     window._dgIndentLI = _restoredState.li || 0;
     window._dgIndentRI = _restoredState.ri || 0;
+    // Restore HF from document (overrides localStorage so each doc keeps its own HF)
+    if (_restoredState.hf) {
+      const hf = _restoredState.hf;
+      _dgHF = Object.assign(_dgHF, hf);
+      setV('dg-hdr-left',   hf.hdrL);
+      setV('dg-hdr-center', hf.hdrC);
+      setV('dg-hdr-right',  hf.hdrR);
+      setV('dg-ftr-left',   hf.ftrL);
+      setV('dg-ftr-center', hf.ftrC);
+      setV('dg-ftr-right',  hf.ftrR);
+      const cb = document.getElementById('dg-hf-first-diff');
+      if (cb) cb.checked = !!hf.firstDiff;
+    }
   }
 
   // Open blank editor with this content
@@ -10821,55 +10865,113 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 
     <!-- Header / Footer Panel -->
-    <div id="dg-hf-panel" style="display:none;flex-shrink:0;background:#f7f5f0;border-bottom:2px solid var(--brd2);padding:14px 20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-size:11px;font-weight:600;color:var(--navy);letter-spacing:.3px;text-transform:uppercase">Header &amp; Footer</div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt2);cursor:pointer">
+    <div id="dg-hf-panel" style="display:none;flex-shrink:0;background:#f7f5f0;border-bottom:2px solid var(--brd2);">
+      <!-- Tab bar -->
+      <div style="display:flex;align-items:center;border-bottom:1px solid var(--brd);background:#eee9e2;padding:0 14px;gap:0">
+        <button id="dg-hf-tab-pgnum" onclick="dgHFSwitchTab('pgnum')" style="background:var(--navy);color:#fff;border:none;border-bottom:2px solid var(--navy);padding:7px 14px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600;border-radius:0;margin-right:2px">🔢 Page Numbers</button>
+        <button id="dg-hf-tab-hf" onclick="dgHFSwitchTab('hf')" style="background:transparent;color:var(--txt2);border:none;border-bottom:2px solid transparent;padding:7px 14px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;border-radius:0;margin-right:2px">☰ Header / Footer</button>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;padding:4px 0">
+          <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2);cursor:pointer">
             <input type="checkbox" id="dg-hf-first-diff" onchange="dgApplyHF()" style="cursor:pointer"> Different first page
           </label>
-          <button onclick="dgApplyHF()" style="background:var(--navy);color:#fff;border:none;padding:5px 14px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer">Apply</button>
-          <button onclick="dgToggleHFPanel()" style="background:none;border:none;color:var(--txt3);font-size:18px;cursor:pointer;line-height:1;padding:0 2px">×</button>
+          <button onclick="dgToggleHFPanel()" style="background:none;border:none;color:var(--txt3);font-size:18px;cursor:pointer;line-height:1;padding:0 4px">×</button>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <!-- Header -->
-        <div>
-          <div style="font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Header</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
-            <div>
-              <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Left</div>
-              <input id="dg-hdr-left" placeholder="e.g. DKMA Advocates" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
-            </div>
-            <div>
-              <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Centre</div>
-              <input id="dg-hdr-center" placeholder="e.g. Confidential" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
-            </div>
-            <div>
-              <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Right</div>
-              <input id="dg-hdr-right" placeholder="e.g. {{date}}" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
-            </div>
-          </div>
-          <div style="font-size:9px;color:var(--txt3);margin-top:2px">Use <code style="background:var(--cream2);padding:1px 4px;border-radius:3px">{{page}}</code> for page number, <code style="background:var(--cream2);padding:1px 4px;border-radius:3px">{{pages}}</code> for total, <code style="background:var(--cream2);padding:1px 4px;border-radius:3px">{{date}}</code> for today</div>
+
+      <!-- Tab: Page Numbers -->
+      <div id="dg-hf-content-pgnum" style="padding:14px 20px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+          <!-- Position presets -->
+          <button onclick="dgInsertPageNum('ftrC','{{page}}')" style="border:1px solid var(--brd);border-radius:6px;padding:10px 8px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--txt2);text-align:center;transition:all 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='#fff'">
+            <div style="font-size:18px;margin-bottom:4px">⬇</div>
+            <div style="font-weight:600;color:var(--txt)">Bottom Centre</div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px">1 &nbsp; 2 &nbsp; 3</div>
+          </button>
+          <button onclick="dgInsertPageNum('ftrR','{{page}}')" style="border:1px solid var(--brd);border-radius:6px;padding:10px 8px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--txt2);text-align:center;transition:all 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='#fff'">
+            <div style="font-size:18px;margin-bottom:4px">↘</div>
+            <div style="font-weight:600;color:var(--txt)">Bottom Right</div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px">1 &nbsp; 2 &nbsp; 3</div>
+          </button>
+          <button onclick="dgInsertPageNum('ftrL','{{page}}')" style="border:1px solid var(--brd);border-radius:6px;padding:10px 8px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--txt2);text-align:center;transition:all 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='#fff'">
+            <div style="font-size:18px;margin-bottom:4px">↙</div>
+            <div style="font-weight:600;color:var(--txt)">Bottom Left</div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px">1 &nbsp; 2 &nbsp; 3</div>
+          </button>
+          <button onclick="dgInsertPageNum('hdrC','{{page}}')" style="border:1px solid var(--brd);border-radius:6px;padding:10px 8px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--txt2);text-align:center;transition:all 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='#fff'">
+            <div style="font-size:18px;margin-bottom:4px">⬆</div>
+            <div style="font-weight:600;color:var(--txt)">Top Centre</div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px">1 &nbsp; 2 &nbsp; 3</div>
+          </button>
+          <button onclick="dgInsertPageNum('hdrR','{{page}}')" style="border:1px solid var(--brd);border-radius:6px;padding:10px 8px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--txt2);text-align:center;transition:all 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='#fff'">
+            <div style="font-size:18px;margin-bottom:4px">↗</div>
+            <div style="font-weight:600;color:var(--txt)">Top Right</div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px">1 &nbsp; 2 &nbsp; 3</div>
+          </button>
+          <button onclick="dgInsertPageNum('hdrL','{{page}}')" style="border:1px solid var(--brd);border-radius:6px;padding:10px 8px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--txt2);text-align:center;transition:all 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='#fff'">
+            <div style="font-size:18px;margin-bottom:4px">↖</div>
+            <div style="font-weight:600;color:var(--txt)">Top Left</div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px">1 &nbsp; 2 &nbsp; 3</div>
+          </button>
         </div>
-        <!-- Footer -->
-        <div>
-          <div style="font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Footer</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
-            <div>
-              <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Left</div>
-              <input id="dg-ftr-left" placeholder="e.g. www.dkma.co.ke" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
-            </div>
-            <div>
-              <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Centre</div>
-              <input id="dg-ftr-center" placeholder="e.g. Page {{page}} of {{pages}}" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
-            </div>
-            <div>
-              <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Right</div>
-              <input id="dg-ftr-right" placeholder="e.g. Nairobi, Kenya" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
-            </div>
+        <!-- Format row -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--txt2);font-weight:600;white-space:nowrap">Format:</span>
+          <button onclick="dgInsertPageNum(null,'{{page}}')" style="border:1px solid var(--brd);border-radius:4px;padding:4px 10px;background:#fff;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt2)" title="Just the number">1</button>
+          <button onclick="dgInsertPageNum(null,'Page {{page}}')" style="border:1px solid var(--brd);border-radius:4px;padding:4px 10px;background:#fff;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt2)">Page 1</button>
+          <button onclick="dgInsertPageNum(null,'{{page}} of {{pages}}')" style="border:1px solid var(--brd);border-radius:4px;padding:4px 10px;background:#fff;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt2)">1 of 5</button>
+          <button onclick="dgInsertPageNum(null,'Page {{page}} of {{pages}}')" style="border:1px solid var(--brd);border-radius:4px;padding:4px 10px;background:#fff;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt2)">Page 1 of 5</button>
+          <button onclick="dgInsertPageNum(null,'Pg {{page}}/{{pages}}')" style="border:1px solid var(--brd);border-radius:4px;padding:4px 10px;background:#fff;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt2)">Pg 1/5</button>
+          <div style="margin-left:auto">
+            <button onclick="dgRemovePageNumbers()" style="border:1px solid #f5c6c6;border-radius:4px;padding:4px 12px;background:#FCEBEB;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;color:#A33;font-weight:500">✕ Remove</button>
           </div>
-          <div style="font-size:9px;color:var(--txt3);margin-top:2px">Same tokens available. Leave all fields blank to remove header/footer.</div>
+        </div>
+        <div style="font-size:9px;color:var(--txt3)">Click a position above to place page numbers. Then pick a format, or use the Header/Footer tab for custom text.</div>
+      </div>
+
+      <!-- Tab: Header / Footer -->
+      <div id="dg-hf-content-hf" style="display:none;padding:14px 20px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <!-- Header -->
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Header</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
+              <div>
+                <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Left</div>
+                <input id="dg-hdr-left" placeholder="e.g. DKMA Advocates" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+              </div>
+              <div>
+                <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Centre</div>
+                <input id="dg-hdr-center" placeholder="e.g. Confidential" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+              </div>
+              <div>
+                <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Right</div>
+                <input id="dg-hdr-right" placeholder="e.g. {{date}}" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+              </div>
+            </div>
+            <div style="font-size:9px;color:var(--txt3);margin-top:2px">Use <code style="background:var(--cream2);padding:1px 4px;border-radius:3px">{{page}}</code> for page number, <code style="background:var(--cream2);padding:1px 4px;border-radius:3px">{{pages}}</code> for total, <code style="background:var(--cream2);padding:1px 4px;border-radius:3px">{{date}}</code> for today</div>
+          </div>
+          <!-- Footer -->
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Footer</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
+              <div>
+                <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Left</div>
+                <input id="dg-ftr-left" placeholder="e.g. www.dkma.co.ke" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+              </div>
+              <div>
+                <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Centre</div>
+                <input id="dg-ftr-center" placeholder="e.g. Page {{page}} of {{pages}}" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+              </div>
+              <div>
+                <div style="font-size:9px;color:var(--txt3);margin-bottom:3px">Right</div>
+                <input id="dg-ftr-right" placeholder="e.g. Nairobi, Kenya" oninput="dgApplyHF()" style="width:100%;border:1px solid var(--brd);border-radius:4px;padding:5px 7px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none"/>
+              </div>
+            </div>
+            <div style="font-size:9px;color:var(--txt3);margin-top:2px">Same tokens available. Leave all fields blank to remove header/footer.</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;text-align:right">
+          <button onclick="dgApplyHF()" style="background:var(--navy);color:#fff;border:none;padding:6px 18px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer">Apply</button>
         </div>
       </div>
     </div>
@@ -15303,7 +15405,12 @@ function _dgBuildPrintHtml() {
     ml: l, mr: r, mt: t, mb: b,
     fl: window._dgIndentFL || 0,
     li: window._dgIndentLI || 0,
-    ri: window._dgIndentRI || 0
+    ri: window._dgIndentRI || 0,
+    hf: {
+      hdrL: _dgHF.hdrL, hdrC: _dgHF.hdrC, hdrR: _dgHF.hdrR,
+      ftrL: _dgHF.ftrL, ftrC: _dgHF.ftrC, ftrR: _dgHF.ftrR,
+      firstDiff: _dgHF.firstDiff
+    }
   });
   const stateMeta = `<meta name="dg-editor-state" content='${stateJson}'/>`;
   const pages = document.querySelectorAll('#dg-pages-container .dg-page');
@@ -15473,6 +15580,91 @@ function dgToggleHFPanel() {
   const isOpen = panel.style.display !== 'none';
   panel.style.display = isOpen ? 'none' : 'block';
   if (btn) { btn.style.background = isOpen ? '' : 'var(--navy)'; btn.style.color = isOpen ? '' : '#fff'; }
+  if (!isOpen) dgHFSwitchTab('pgnum'); // always open on Page Numbers tab
+}
+
+// Switch between tabs in the HF panel
+function dgHFSwitchTab(tab) {
+  const tabs  = ['pgnum','hf'];
+  tabs.forEach(t => {
+    const btn     = document.getElementById('dg-hf-tab-' + t);
+    const content = document.getElementById('dg-hf-content-' + t);
+    const active  = t === tab;
+    if (btn) {
+      btn.style.background    = active ? 'var(--navy)' : 'transparent';
+      btn.style.color         = active ? '#fff' : 'var(--txt2)';
+      btn.style.borderBottom  = active ? '2px solid var(--navy)' : '2px solid transparent';
+      btn.style.fontWeight    = active ? '600' : '400';
+    }
+    if (content) content.style.display = active ? 'block' : 'none';
+  });
+}
+
+// _lastPgNumSlot remembers the last position chosen so format buttons update the same slot
+let _lastPgNumSlot = 'ftrC';
+let _lastPgNumFmt  = '{{page}}';
+
+// Map slot names to input IDs
+const _pgNumSlotMap = {
+  ftrL:'dg-ftr-left', ftrC:'dg-ftr-center', ftrR:'dg-ftr-right',
+  hdrL:'dg-hdr-left', hdrC:'dg-hdr-center', hdrR:'dg-hdr-right'
+};
+
+function dgInsertPageNum(slot, fmt) {
+  // If slot given, update the remembered slot; if only fmt given, update last slot
+  if (slot) _lastPgNumSlot = slot;
+  if (fmt)  _lastPgNumFmt  = fmt;
+
+  // Clear all page-number-bearing HF slots first (so old ones don't stack)
+  const isReplacing = Object.values(_pgNumSlotMap).some(id => {
+    const el = document.getElementById(id);
+    return el && /\{\{page\}\}/i.test(el.value);
+  });
+  if (isReplacing || slot) {
+    // Remove {{page}} from any slot that isn't the target
+    Object.entries(_pgNumSlotMap).forEach(([s, id]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (s !== _lastPgNumSlot && /\{\{page\}\}/i.test(el.value)) {
+        el.value = el.value.replace(/\{\{pages?\}\}/gi,'').replace(/Page\s*/gi,'').replace(/Pg\s*/gi,'').replace(/of\s*/gi,'').replace(/\s+/g,' ').trim();
+        if (el.value === '') el.value = '';
+      }
+    });
+  }
+
+  // Write the format to the chosen slot
+  const targetId = _pgNumSlotMap[_lastPgNumSlot];
+  const targetEl = document.getElementById(targetId);
+  if (targetEl) targetEl.value = _lastPgNumFmt;
+
+  dgApplyHF();
+
+  // Visual feedback — briefly highlight the target input
+  if (targetEl) {
+    targetEl.style.background = '#EAF3DE';
+    setTimeout(() => { targetEl.style.background = '#fff'; }, 800);
+  }
+  if (typeof toast === 'function') toast('Page numbers → ' + _lastPgNumSlot.replace('ftr','Footer ').replace('hdr','Header ').replace('L','Left').replace('C','Centre').replace('R','Right'));
+}
+
+function dgRemovePageNumbers() {
+  // Strip {{page}} / {{pages}} tokens from all HF slots
+  Object.values(_pgNumSlotMap).forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (/\{\{page\}\}/i.test(el.value)) {
+      // Remove common page-number phrases, leaving any other text
+      el.value = el.value
+        .replace(/Page\s+\{\{page\}\}\s+of\s+\{\{pages\}\}/gi,'')
+        .replace(/Pg\s+\{\{page\}\}\/\{\{pages\}\}/gi,'')
+        .replace(/\{\{page\}\}\s+of\s+\{\{pages\}\}/gi,'')
+        .replace(/Page\s+\{\{page\}\}/gi,'')
+        .replace(/\{\{page\}\}/gi,'')
+        .trim();
+    }
+  });
+  dgApplyHF();
+  if (typeof toast === 'function') toast('Page numbers removed');
 }
 
 function dgApplyHF() {
