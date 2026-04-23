@@ -14109,6 +14109,8 @@ function dgToggleEdit() {
   setTimeout(() => {
     dgInitRuler();
     dgApplyMargins();
+    _dgApplyPageNumbers();
+    _dgRenderHFOnPages();
     editorContent.focus();
   }, 50);
 }
@@ -14362,10 +14364,11 @@ function dgSetPageNumberFormat(format) {
   _dgPageNumFormat = format;
   dgShowDropdown('dg-pgnum-dd');
   _dgApplyPageNumbers();
-  if (format !== 'none') {
-    const btn = document.getElementById('dg-pgnums-btn2');
-    if (btn) { btn.style.background = 'var(--navy)'; btn.style.color = '#fff'; }
-  }
+  const on = format !== 'none';
+  const btn1 = document.getElementById('dg-pgnums-btn');
+  const btn2 = document.getElementById('dg-pgnums-btn2');
+  if (btn1) { btn1.style.background = on ? 'var(--navy)' : ''; btn1.style.color = on ? '#fff' : ''; }
+  if (btn2) { btn2.style.background = on ? 'var(--navy)' : ''; btn2.style.color = on ? '#fff' : ''; }
 }
 
 function _dgApplyPageNumbers() {
@@ -14395,8 +14398,41 @@ function _dgApplyPageNumbers() {
   });
 }
 // Override old toggle functions to route through new format system
-function dgTogglePageNumbers() { dgSetPageNumberFormat(_dgPageNumFormat === 'none' ? 'page-n-of-t' : 'none'); }
-function dgTogglePageNumbers2() { dgSetPageNumberFormat(_dgPageNumFormat === 'none' ? 'page-n-of-t' : 'none'); }
+function _dgSyncPageNumToHF(turningOn) {
+  // Auto-populate footer centre with page token when turning on,
+  // and clear it when turning off (only if we set it ourselves).
+  const ftrC = document.getElementById('dg-ftr-center');
+  if (!ftrC) return;
+  if (turningOn) {
+    // Only overwrite if the field is empty or already has our token
+    if (!ftrC.value.trim() || ftrC.value.trim() === 'Page {{page}} of {{pages}}') {
+      ftrC.value = 'Page {{page}} of {{pages}}';
+    }
+  } else {
+    if (ftrC.value.trim() === 'Page {{page}} of {{pages}}') {
+      ftrC.value = '';
+    }
+  }
+  // Sync _dgHF and re-render HF bands
+  dgApplyHF();
+}
+
+function dgTogglePageNumbers() {
+  const turningOn = _dgPageNumFormat === 'none';
+  dgSetPageNumberFormat(turningOn ? 'page-n-of-t' : 'none');
+  _dgSyncPageNumToHF(turningOn);
+  // Sync btn2 visual state
+  const btn2 = document.getElementById('dg-pgnums-btn2');
+  if (btn2) { btn2.style.background = turningOn ? 'var(--navy)' : ''; btn2.style.color = turningOn ? '#fff' : ''; }
+}
+function dgTogglePageNumbers2() {
+  const turningOn = _dgPageNumFormat === 'none';
+  dgSetPageNumberFormat(turningOn ? 'page-n-of-t' : 'none');
+  _dgSyncPageNumToHF(turningOn);
+  // Sync btn visual state
+  const btn1 = document.getElementById('dg-pgnums-btn');
+  if (btn1) { btn1.style.background = turningOn ? 'var(--navy)' : ''; btn1.style.color = turningOn ? '#fff' : ''; }
+}
 
 // ── TOOLBAR STATE SYNC (bold/italic/underline active states) ─────────
 function dgSyncToolbarState() {
@@ -15225,41 +15261,7 @@ function _dgHFPageHtml(pageNum, total) {
 }
 
 // ── PAGE NUMBERS ──────────────────────────────────────────────────
-let _dgPageNumbersOn = false;
-
-function dgTogglePageNumbers() {
-  _dgPageNumbersOn = !_dgPageNumbersOn;
-  _dgApplyPageNumbers();
-  const btn = document.getElementById('dg-pgnums-btn');
-  if (btn) btn.style.background = _dgPageNumbersOn ? 'var(--navy)' : '';
-  if (btn) btn.style.color = _dgPageNumbersOn ? '#fff' : '';
-}
-
-function dgTogglePageNumbers2() {
-  _dgPageNumbersOn = !_dgPageNumbersOn;
-  _dgApplyPageNumbers();
-  const btn = document.getElementById('dg-pgnums-btn2');
-  if (btn) btn.style.background = _dgPageNumbersOn ? 'var(--navy)' : '';
-  if (btn) btn.style.color = _dgPageNumbersOn ? '#fff' : '';
-  // Sync other button
-  const btn1 = document.getElementById('dg-pgnums-btn');
-  if (btn1) { btn1.style.background = _dgPageNumbersOn ? 'var(--navy)' : ''; btn1.style.color = _dgPageNumbersOn ? '#fff' : ''; }
-}
-
-function _dgApplyPageNumbers() {
-  const pages = document.querySelectorAll('.dg-page');
-  const total = pages.length;
-  pages.forEach((page, i) => {
-    let footer = page.querySelector('.dg-page-num-footer');
-    if (!footer) {
-      footer = document.createElement('div');
-      footer.className = 'dg-page-num-footer';
-      page.appendChild(footer);
-    }
-    footer.textContent = `${i + 1} / ${total}`;
-    footer.style.display = _dgPageNumbersOn ? 'block' : 'none';
-  });
-}
+// Page number toggle/apply is handled by dgSetPageNumberFormat / _dgApplyPageNumbers above.
 
 // ── PAGE BREAK INSERTION ──────────────────────────────────────────
 function dgInsertPageBreak() {
@@ -15315,6 +15317,8 @@ function dgCheckPagination() {
 
   // Refresh page numbers
   _dgApplyPageNumbers();
+  // Refresh header/footer on all pages (including newly created)
+  _dgRenderHFOnPages();
   // Refresh vertical ruler
   dgDrawVRuler();
 }
@@ -15375,7 +15379,7 @@ function _dgCreateNewPage(container, pageNum, mt, mr, mb, ml) {
   newPage.appendChild(newContent);
   const numFooter = document.createElement('div');
   numFooter.className = 'dg-page-num-footer';
-  numFooter.style.display = _dgPageNumbersOn ? 'block' : 'none';
+  numFooter.style.display = (_dgPageNumFormat && _dgPageNumFormat !== 'none') ? 'block' : 'none';
   numFooter.textContent = pageNum;
   newPage.appendChild(numFooter);
   container.appendChild(newPage);
