@@ -15115,6 +15115,8 @@ function _dgCleanPageHtml(html) {
 }
 
 function _dgBuildPrintHtml() {
+  // Always sync HF from DOM inputs before building
+  dgApplyHF();
   const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
   const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
   const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
@@ -15135,20 +15137,23 @@ function _dgBuildPrintHtml() {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>${(document.getElementById('dg-editor-title')?.textContent || 'Document')}</title>
 <style>
-  body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:0;color:#111;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}
-  p{margin-bottom:4px;margin-top:0;white-space:pre-wrap}
-  br{display:block;margin-bottom:4px}
-  table{font-family:Georgia,serif;font-size:12pt;line-height:1.85;white-space:normal}
-  td,th{white-space:normal;word-break:break-word}
+  body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:0;color:#111}
+  p{margin-bottom:6px;margin-top:0}
+  br{display:block;margin-bottom:2px}
+  table{font-family:Georgia,serif;font-size:12pt;line-height:1.85}
+  td,th{word-break:break-word}
   .dg-blank{padding:0 2px}
   .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px}.dg-jurat td{padding:0;vertical-align:top}
   .dg-edit-mode-badge,.dg-page-break-marker{display:none!important}
-  .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 25mm}
+  .dg-hf-abs{position:absolute;left:0;right:0;display:flex;align-items:center;font-size:9pt;color:#888;font-family:Georgia,serif;width:100%;box-sizing:border-box;padding:0 ${l}mm}
   .dg-hf-abs span{flex:1}
   .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm;border-bottom:0.5px solid #ddd;padding-bottom:2mm}
   .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
   @page{size:A4;margin:0}
-  @media print{body{margin:0}}
+  @media print{body{margin:0}
+    .dg-hf-abs{position:fixed}
+    .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm}
+    .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm}}
 </style></head><body>${bodyHtml}</body></html>`;
   } else {
     // Fresh document — grab content from inside the first .dg-page (or preview wrap as last resort)
@@ -15175,11 +15180,11 @@ function _dgBuildPrintHtml() {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>${(document.getElementById('dg-editor-title')?.textContent || 'Document')}</title>
 <style>
-  body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm;color:#111;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}
-  p{margin-bottom:4px;margin-top:0;white-space:pre-wrap}
-  br{display:block;margin-bottom:4px}
-  table{font-family:Georgia,serif;font-size:12pt;line-height:1.85;white-space:normal}
-  td,th{white-space:normal;word-break:break-word}
+  body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
+  p{margin-bottom:6px;margin-top:0}
+  br{display:block;margin-bottom:2px}
+  table{font-family:Georgia,serif;font-size:12pt;line-height:1.85}
+  td,th{word-break:break-word}
   .dg-blank{padding:0 2px}
   .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px}.dg-jurat td{padding:0;vertical-align:top}
   .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none!important}
@@ -15189,7 +15194,9 @@ function _dgBuildPrintHtml() {
   .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
   @page{size:A4;margin:0}
   @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}
-    .dg-hf-abs{position:fixed}}
+    .dg-hf-abs{position:fixed}
+    .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm}
+    .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm}}
 </style></head><body>${hfHtml.hdr}${bodyHtml}${hfHtml.ftr}</body></html>`;
   }
 }
@@ -15603,6 +15610,8 @@ function dgResetMargins() {
 
 // Override dgPrint to handle edited HTML mode (multi-page aware)
 function dgPrint() {
+  // Always sync HF state from DOM inputs before printing
+  dgApplyHF();
   if (dgGeneratedText === '__html__') {
     // Collect all pages content
     const pages = document.querySelectorAll('#dg-pages-container .dg-page');
@@ -15628,11 +15637,11 @@ function dgPrint() {
     }
     const frame = document.getElementById('dg-print-frame');
     const content = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-      body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:0;color:#111;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}
-      p{margin-bottom:4px;margin-top:0;white-space:pre-wrap}
-      br{display:block;margin-bottom:4px}
-      table{font-family:Georgia,serif;font-size:12pt;line-height:1.85;white-space:normal}
-      td,th{white-space:normal;word-break:break-word}
+      body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:0;color:#111}
+      p{margin-bottom:6px;margin-top:0}
+      br{display:block;margin-bottom:2px}
+      table{font-family:Georgia,serif;font-size:12pt;line-height:1.85}
+      td,th{word-break:break-word}
       .dg-blank{padding:0 2px}
       .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.85}
       .dg-jurat td{padding:0;vertical-align:top}
@@ -15689,11 +15698,11 @@ function _dgPrintBase(){
   const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
   const hfHtml = _dgHFPageHtml(1, 1);
   const content=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-    body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm;color:#111;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}
-    p{margin-bottom:4px;margin-top:0;white-space:pre-wrap}
-    br{display:block;margin-bottom:4px}
-    table{font-family:Georgia,serif;font-size:12pt;line-height:1.85;white-space:normal}
-    td,th{white-space:normal;word-break:break-word}
+    body{font-family:Georgia,serif;font-size:12pt;line-height:1.85;margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
+    p{margin-bottom:6px;margin-top:0}
+    br{display:block;margin-bottom:2px}
+    table{font-family:Georgia,serif;font-size:12pt;line-height:1.85}
+    td,th{word-break:break-word}
     .dg-blank{padding:0 2px}
     .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.85}
     .dg-jurat td{padding:0;vertical-align:top}
@@ -15704,7 +15713,9 @@ function _dgPrintBase(){
     .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm;border-top:0.5px solid #ddd;padding-top:2mm}
     @page{size:A4;margin:0}
     @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}
-      .dg-hf-abs{position:fixed}}
+      .dg-hf-abs{position:fixed}
+      .dg-hf-abs-hdr{top:${Math.max(t-8,2)}mm}
+      .dg-hf-abs-ftr{bottom:${Math.max(b-8,2)}mm}}
   </style></head><body>${hfHtml.hdr}${previewHtml}${hfHtml.ftr}</body></html>`;
   frame.contentDocument.open();
   frame.contentDocument.write(content);
