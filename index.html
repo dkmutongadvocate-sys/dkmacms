@@ -15043,6 +15043,15 @@ function _dgSaveStatus(msg, type) {
   el.style.border = '1px solid ' + (type === 'error' ? '#f5c6c6' : type === 'success' ? '#a8d5b5' : '#b8d4f0');
 }
 
+// Strip DOM overlay elements (HF bands, page-num footer) from page innerHTML
+// before using it in print/save output — they are visual-only and must not appear twice.
+function _dgCleanPageHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  tmp.querySelectorAll('.dg-hf-header, .dg-hf-footer, .dg-page-num-footer').forEach(el => el.remove());
+  return tmp.innerHTML;
+}
+
 function _dgBuildPrintHtml() {
   const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
   const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
@@ -15052,18 +15061,36 @@ function _dgBuildPrintHtml() {
   let bodyHtml = '';
   if (pages.length > 0) {
     const total = pages.length;
+    const hfCss = _dgHFPrintCss(t, b);
+    const hasHFPageNum = _dgHF.ftrL.includes('{{page}}') || _dgHF.ftrC.includes('{{page}}') || _dgHF.ftrR.includes('{{page}}') ||
+                         _dgHF.hdrL.includes('{{page}}') || _dgHF.hdrC.includes('{{page}}') || _dgHF.hdrR.includes('{{page}}');
     pages.forEach((pg, i) => {
       const ed = pg.querySelector('[contenteditable]');
-      const pgHtml = ed ? ed.innerHTML : '';
-      const numHtml = (_dgPageNumFormat && _dgPageNumFormat !== 'none') ? `<div style="text-align:center;font-size:10px;color:#888;font-family:Georgia,serif;margin-top:8px">${_dgFormatPageNum(i+1, total)}</div>` : '';
-      bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'}">${pgHtml}${numHtml}</div>`;
+      const pgHtml = _dgCleanPageHtml(ed ? ed.innerHTML : '');
+      const hfHtml = _dgHFPageHtml(i+1, total);
+      // Only add standalone numHtml if page numbers are on AND HF isn't already showing them
+      const numHtml = (_dgPageNumFormat && _dgPageNumFormat !== 'none' && !hasHFPageNum)
+        ? `<div style="text-align:center;font-size:10px;color:#888;font-family:Georgia,serif;margin-top:8px">${_dgFormatPageNum(i+1, total)}</div>`
+        : '';
+      bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'};position:relative;padding:${t}mm ${r}mm ${b}mm ${l}mm">${hfHtml.hdr}${pgHtml}${numHtml}${hfHtml.ftr}</div>`;
     });
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>${(document.getElementById('dg-editor-title')?.textContent || 'Document')}</title>
+<style>
+  body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:0;padding:0;color:#111}
+  p{margin-bottom:4px;margin-top:0}br{display:block;margin-bottom:8px}
+  table{font-family:Georgia,serif;font-size:12pt;line-height:1.9}
+  .dg-blank{padding:0 2px}
+  .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px}.dg-jurat td{padding:0;vertical-align:top}
+  .dg-edit-mode-badge,.dg-page-break-marker{display:none!important}
+  @page{size:A4;margin:0}
+  ${hfCss}
+</style></head><body>${bodyHtml}</body></html>`;
   } else {
     const ed = document.getElementById('dg-editor-content');
     const preview = document.getElementById('dg-preview-wrap');
-    bodyHtml = (ed ? ed.innerHTML : '') || (preview ? preview.innerHTML : '');
-  }
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    bodyHtml = _dgCleanPageHtml((ed ? ed.innerHTML : '') || (preview ? preview.innerHTML : ''));
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>${(document.getElementById('dg-editor-title')?.textContent || 'Document')}</title>
 <style>
   body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
@@ -15075,6 +15102,7 @@ function _dgBuildPrintHtml() {
   @page{size:A4;margin:0}
   @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}}
 </style></head><body>${bodyHtml}</body></html>`;
+  }
 }
 
 
@@ -15473,10 +15501,14 @@ function dgPrint() {
     const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
     const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
     if (pages.length > 0) {
+      const hasHFPageNum = _dgHF.ftrL.includes('{{page}}') || _dgHF.ftrC.includes('{{page}}') || _dgHF.ftrR.includes('{{page}}') ||
+                           _dgHF.hdrL.includes('{{page}}') || _dgHF.hdrC.includes('{{page}}') || _dgHF.hdrR.includes('{{page}}');
       pages.forEach((pg, i) => {
         const ed = pg.querySelector('[contenteditable]');
-        const pgHtml = ed ? ed.innerHTML : '';
-        const numHtml = (_dgPageNumFormat && _dgPageNumFormat !== 'none') ? `<div style="position:fixed;bottom:${b}mm;left:0;right:0;text-align:center;font-size:10px;color:#888;font-family:Georgia,serif">${_dgFormatPageNum(i+1, pages.length)}</div>` : '';
+        const pgHtml = _dgCleanPageHtml(ed ? ed.innerHTML : '');
+        const numHtml = (_dgPageNumFormat && _dgPageNumFormat !== 'none' && !hasHFPageNum)
+          ? `<div style="position:fixed;bottom:${b}mm;left:0;right:0;text-align:center;font-size:10px;color:#888;font-family:Georgia,serif">${_dgFormatPageNum(i+1, pages.length)}</div>`
+          : '';
         const hfHtml = _dgHFPageHtml(i+1, pages.length);
         allPagesHtml += `<div style="page-break-after:${i < pages.length-1 ? 'always' : 'auto'};position:relative;padding:${t}mm ${r}mm ${b}mm ${l}mm">${hfHtml.hdr}${pgHtml}${numHtml}${hfHtml.ftr}</div>`;
       });
@@ -15494,7 +15526,7 @@ function dgPrint() {
       .dg-blank{padding:0 2px}
       .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9}
       .dg-jurat td{padding:0;vertical-align:top}
-      .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer{display:none}
+      .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none}
       @page{margin:0;size:A4}
       @media print{body{margin:0;padding:0}}
       ${hfCss}
