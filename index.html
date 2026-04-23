@@ -10738,14 +10738,47 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="dg-tb-group">
           <button class="dg-tb-btn" title="Insert page break" onclick="dgInsertPageBreak2()" style="font-size:10px">⊞ Pg Break</button>
           <button class="dg-tb-btn dg-has-dropdown" title="Page numbers ▾" onclick="dgShowDropdown('dg-pgnum-dd')" style="font-size:10px">¶ Pg # ▾</button>
-          <div id="dg-pgnum-dd" class="dg-dropdown" style="display:none;min-width:190px">
+          <div id="dg-pgnum-dd" class="dg-dropdown" style="display:none;min-width:220px">
             <div style="padding:6px 10px;font-size:10px;color:var(--txt3);font-weight:600;text-transform:uppercase">Page Number Format</div>
             <div class="dg-dd-item" onclick="dgSetPageNumberFormat('n')">1 &nbsp;&nbsp;(page number only)</div>
             <div class="dg-dd-item" onclick="dgSetPageNumberFormat('page-n')">Page 1</div>
             <div class="dg-dd-item" onclick="dgSetPageNumberFormat('n-of-t')">1 of 5</div>
             <div class="dg-dd-item" onclick="dgSetPageNumberFormat('page-n-of-t')">Page 1 of 5</div>
             <div class="dg-dd-item" onclick="dgSetPageNumberFormat('pg-n-slash-t')">Pg 1/5</div>
-            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('none')">✕ Remove page numbers</div>
+            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('none')" style="border-top:1px solid var(--brd);margin-top:2px;padding-top:6px">✕ Remove page numbers</div>
+            <div style="padding:8px 10px;border-top:1px solid var(--brd);margin-top:2px">
+              <div style="font-size:10px;color:var(--txt3);font-weight:600;text-transform:uppercase;margin-bottom:6px">Style</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+                <label style="font-size:10px;color:var(--txt2);width:36px;flex-shrink:0">Font</label>
+                <select onchange="_dgSetPgNumStyle('font', this.value)" style="flex:1;border:1px solid var(--brd);border-radius:3px;padding:2px 4px;font-size:10px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+                  <option value="Georgia, serif">Georgia</option>
+                  <option value="'Times New Roman', serif">Times New Roman</option>
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="'DM Sans', sans-serif">DM Sans</option>
+                  <option value="'Courier New', monospace">Courier New</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+                <label style="font-size:10px;color:var(--txt2);width:36px;flex-shrink:0">Size</label>
+                <select onchange="_dgSetPgNumStyle('size', this.value)" style="flex:1;border:1px solid var(--brd);border-radius:3px;padding:2px 4px;font-size:10px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+                  <option value="8pt">8pt</option>
+                  <option value="9pt">9pt</option>
+                  <option value="10pt" selected>10pt</option>
+                  <option value="11pt">11pt</option>
+                  <option value="12pt">12pt</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <label style="font-size:10px;color:var(--txt2);width:36px;flex-shrink:0">Colour</label>
+                <input type="color" value="#888888" onchange="_dgSetPgNumStyle('color', this.value)" style="width:36px;height:22px;border:1px solid var(--brd);border-radius:3px;padding:1px;cursor:pointer;background:#fff">
+                <select onchange="_dgSetPgNumStyle('color', this.value)" style="flex:1;border:1px solid var(--brd);border-radius:3px;padding:2px 4px;font-size:10px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
+                  <option value="#888888">Grey</option>
+                  <option value="#111111">Black</option>
+                  <option value="#0D1B2A">Navy</option>
+                  <option value="#B8953A">Gold</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
         <div class="dg-tb-sep"></div>
@@ -14359,6 +14392,7 @@ document.addEventListener('click', e => { if (e.target.textContent && e.target.t
 
 // ── PAGE NUMBER FORMATS ──────────────────────────────────────────────
 let _dgPageNumFormat = 'none';
+let _dgPgNumStyle = { size: '10pt', color: '#888888', font: 'Georgia, serif' };
 
 function dgSetPageNumberFormat(format) {
   _dgPageNumFormat = format;
@@ -14382,6 +14416,11 @@ function _dgFormatPageNum(n, t) {
   }
 }
 
+function _dgSetPgNumStyle(prop, val) {
+  _dgPgNumStyle[prop] = val;
+  _dgApplyPageNumbers();
+}
+
 function _dgApplyPageNumbers() {
   const pages = document.querySelectorAll('.dg-page');
   const total = pages.length;
@@ -14397,6 +14436,9 @@ function _dgApplyPageNumbers() {
       return;
     }
     footer.style.display = 'block';
+    footer.style.fontSize = _dgPgNumStyle.size;
+    footer.style.color = _dgPgNumStyle.color;
+    footer.style.fontFamily = _dgPgNumStyle.font;
     const n = i + 1, t = total;
     footer.textContent = _dgFormatPageNum(n, t);
   });
@@ -15070,7 +15112,7 @@ function _dgBuildPrintHtml() {
       const hfHtml = _dgHFPageHtml(i+1, total);
       // Only add standalone numHtml if page numbers are on AND HF isn't already showing them
       const numHtml = (_dgPageNumFormat && _dgPageNumFormat !== 'none' && !hasHFPageNum)
-        ? `<div style="text-align:center;font-size:10px;color:#888;font-family:Georgia,serif;margin-top:8px">${_dgFormatPageNum(i+1, total)}</div>`
+        ? `<div style="text-align:center;font-size:${_dgPgNumStyle.size};color:${_dgPgNumStyle.color};font-family:${_dgPgNumStyle.font};margin-top:8px">${_dgFormatPageNum(i+1, total)}</div>`
         : '';
       bodyHtml += `<div style="page-break-after:${i < total-1 ? 'always':'auto'};position:relative;padding:${t}mm ${r}mm ${b}mm ${l}mm">${hfHtml.hdr}${pgHtml}${numHtml}${hfHtml.ftr}</div>`;
     });
@@ -15507,7 +15549,7 @@ function dgPrint() {
         const ed = pg.querySelector('[contenteditable]');
         const pgHtml = _dgCleanPageHtml(ed ? ed.innerHTML : '');
         const numHtml = (_dgPageNumFormat && _dgPageNumFormat !== 'none' && !hasHFPageNum)
-          ? `<div style="position:fixed;bottom:${b}mm;left:0;right:0;text-align:center;font-size:10px;color:#888;font-family:Georgia,serif">${_dgFormatPageNum(i+1, pages.length)}</div>`
+          ? `<div style="position:fixed;bottom:${b}mm;left:0;right:0;text-align:center;font-size:${_dgPgNumStyle.size};color:${_dgPgNumStyle.color};font-family:${_dgPgNumStyle.font}">${_dgFormatPageNum(i+1, pages.length)}</div>`
           : '';
         const hfHtml = _dgHFPageHtml(i+1, pages.length);
         allPagesHtml += `<div style="page-break-after:${i < pages.length-1 ? 'always' : 'auto'};position:relative;padding:${t}mm ${r}mm ${b}mm ${l}mm">${hfHtml.hdr}${pgHtml}${numHtml}${hfHtml.ftr}</div>`;
@@ -15563,12 +15605,19 @@ function dgCopyText(){
 
 function _dgPrintBase(){
   const frame=document.getElementById('dg-print-frame');
-  // Re-render preview HTML into print frame — jurat tables already in innerHTML
-  const previewHtml = document.getElementById('dg-preview-wrap').innerHTML;
+  const rawHtml = document.getElementById('dg-preview-wrap').innerHTML;
+  const previewHtml = _dgCleanPageHtml(rawHtml);
   const l = parseFloat(document.getElementById('dg-margin-left')?.value || 25);
   const r = parseFloat(document.getElementById('dg-margin-right')?.value || 25);
   const t = parseFloat(document.getElementById('dg-margin-top')?.value || 20);
   const b = parseFloat(document.getElementById('dg-margin-bottom')?.value || 20);
+  const hfCss = _dgHFPrintCss(t, b);
+  const hasHFPageNum = _dgHF.ftrL.includes('{{page}}') || _dgHF.ftrC.includes('{{page}}') || _dgHF.ftrR.includes('{{page}}') ||
+                       _dgHF.hdrL.includes('{{page}}') || _dgHF.hdrC.includes('{{page}}') || _dgHF.hdrR.includes('{{page}}');
+  const numHtml = (_dgPageNumFormat && _dgPageNumFormat !== 'none' && !hasHFPageNum)
+    ? `<div style="text-align:center;font-size:${_dgPgNumStyle.size};color:${_dgPgNumStyle.color};font-family:${_dgPgNumStyle.font};margin-top:8px">${_dgFormatPageNum(1, 1)}</div>`
+    : '';
+  const hfHtml = _dgHFPageHtml(1, 1);
   const content=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     body{font-family:Georgia,serif;font-size:12pt;line-height:1.9;margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm;color:#111}
     p{margin-bottom:4px;margin-top:0}
@@ -15577,11 +15626,11 @@ function _dgPrintBase(){
     .dg-blank{padding:0 2px}
     .dg-jurat{width:100%;border-collapse:collapse;margin-top:20px;font-family:Georgia,serif;font-size:12pt;line-height:1.9}
     .dg-jurat td{padding:0;vertical-align:top}
-    .dg-edit-mode-badge{display:none !important}
-    .dg-page-break-marker{display:none !important}
+    .dg-edit-mode-badge,.dg-page-break-marker,.dg-hf-header,.dg-hf-footer,.dg-page-num-footer{display:none !important}
     @page{size:A4;margin:0}
     @media print{body{margin:0;padding:${t}mm ${r}mm ${b}mm ${l}mm}}
-  </style></head><body>${previewHtml}</body></html>`;
+    ${hfCss}
+  </style></head><body>${hfHtml.hdr}${previewHtml}${numHtml}${hfHtml.ftr}</body></html>`;
   frame.contentDocument.open();
   frame.contentDocument.write(content);
   frame.contentDocument.close();
