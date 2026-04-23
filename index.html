@@ -10737,49 +10737,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Page controls -->
         <div class="dg-tb-group">
           <button class="dg-tb-btn" title="Insert page break" onclick="dgInsertPageBreak2()" style="font-size:10px">⊞ Pg Break</button>
-          <button class="dg-tb-btn dg-has-dropdown" title="Page numbers ▾" onclick="dgShowDropdown('dg-pgnum-dd')" style="font-size:10px">¶ Pg # ▾</button>
-          <div id="dg-pgnum-dd" class="dg-dropdown" style="display:none;min-width:220px">
-            <div style="padding:6px 10px;font-size:10px;color:var(--txt3);font-weight:600;text-transform:uppercase">Page Number Format</div>
-            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('n')">1 &nbsp;&nbsp;(page number only)</div>
-            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('page-n')">Page 1</div>
-            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('n-of-t')">1 of 5</div>
-            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('page-n-of-t')">Page 1 of 5</div>
-            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('pg-n-slash-t')">Pg 1/5</div>
-            <div class="dg-dd-item" onclick="dgSetPageNumberFormat('none')" style="border-top:1px solid var(--brd);margin-top:2px;padding-top:6px">✕ Remove page numbers</div>
-            <div style="padding:8px 10px;border-top:1px solid var(--brd);margin-top:2px">
-              <div style="font-size:10px;color:var(--txt3);font-weight:600;text-transform:uppercase;margin-bottom:6px">Style</div>
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
-                <label style="font-size:10px;color:var(--txt2);width:36px;flex-shrink:0">Font</label>
-                <select onchange="_dgSetPgNumStyle('font', this.value)" style="flex:1;border:1px solid var(--brd);border-radius:3px;padding:2px 4px;font-size:10px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
-                  <option value="Georgia, serif">Georgia</option>
-                  <option value="'Times New Roman', serif">Times New Roman</option>
-                  <option value="Arial, sans-serif">Arial</option>
-                  <option value="'DM Sans', sans-serif">DM Sans</option>
-                  <option value="'Courier New', monospace">Courier New</option>
-                </select>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
-                <label style="font-size:10px;color:var(--txt2);width:36px;flex-shrink:0">Size</label>
-                <select onchange="_dgSetPgNumStyle('size', this.value)" style="flex:1;border:1px solid var(--brd);border-radius:3px;padding:2px 4px;font-size:10px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
-                  <option value="8pt">8pt</option>
-                  <option value="9pt">9pt</option>
-                  <option value="10pt" selected>10pt</option>
-                  <option value="11pt">11pt</option>
-                  <option value="12pt">12pt</option>
-                </select>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px">
-                <label style="font-size:10px;color:var(--txt2);width:36px;flex-shrink:0">Colour</label>
-                <input type="color" value="#888888" onchange="_dgSetPgNumStyle('color', this.value)" style="width:36px;height:22px;border:1px solid var(--brd);border-radius:3px;padding:1px;cursor:pointer;background:#fff">
-                <select onchange="_dgSetPgNumStyle('color', this.value)" style="flex:1;border:1px solid var(--brd);border-radius:3px;padding:2px 4px;font-size:10px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;outline:none">
-                  <option value="#888888">Grey</option>
-                  <option value="#111111">Black</option>
-                  <option value="#0D1B2A">Navy</option>
-                  <option value="#B8953A">Gold</option>
-                </select>
-              </div>
-            </div>
-          </div>
         </div>
         <div class="dg-tb-sep"></div>
 
@@ -10852,6 +10809,17 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div style="font-size:9px;color:var(--txt3);margin-top:2px">Same tokens available. Leave all fields blank to remove header/footer.</div>
         </div>
+      </div>
+      <!-- Quick Page Numbers row -->
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--brd2);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Quick Page #:</span>
+        <button onclick="dgHFQuickPageNum('footer','center','{{page}}')" style="font-size:10px;padding:3px 10px;border:1px solid var(--brd2);border-radius:4px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--txt2)" title="Insert page number only in footer centre">1</button>
+        <button onclick="dgHFQuickPageNum('footer','center','Page {{page}}')" style="font-size:10px;padding:3px 10px;border:1px solid var(--brd2);border-radius:4px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--txt2)" title="Insert 'Page 1' in footer centre">Page 1</button>
+        <button onclick="dgHFQuickPageNum('footer','center','{{page}} of {{pages}}')" style="font-size:10px;padding:3px 10px;border:1px solid var(--brd2);border-radius:4px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--txt2)" title="Insert '1 of 5' in footer centre">1 of 5</button>
+        <button onclick="dgHFQuickPageNum('footer','center','Page {{page}} of {{pages}}')" style="font-size:10px;padding:3px 10px;border:1px solid var(--brd2);border-radius:4px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--txt2)" title="Insert 'Page 1 of 5' in footer centre">Page 1 of 5</button>
+        <button onclick="dgHFQuickPageNum('footer','right','{{page}} of {{pages}}')" style="font-size:10px;padding:3px 10px;border:1px solid var(--brd2);border-radius:4px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--txt2)" title="Insert '1 of 5' in footer right">→ Right</button>
+        <button onclick="dgHFQuickPageNum('footer','center','')" style="font-size:10px;padding:3px 10px;border:1px solid var(--brd2);border-radius:4px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;color:#a33" title="Clear page numbers from footer centre">✕ Clear</button>
+        <span style="font-size:9px;color:var(--txt3);margin-left:4px">Inserts into footer — edit fields above for custom placement.</span>
       </div>
     </div>
 
@@ -10994,7 +10962,6 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Page break / page numbers -->
   <div class="dg-tb-group">
     <button class="dg-tb-btn" title="Insert page break" onclick="dgInsertPageBreak()" style="font-size:10px">⊞ Page Break</button>
-    <button class="dg-tb-btn" title="Toggle page numbers" id="dg-pgnums-btn" onclick="dgTogglePageNumbers()" style="font-size:10px">¶ Page #</button>
   </div>
   <div class="dg-tb-sep"></div>
   <!-- Undo/redo -->
@@ -14478,6 +14445,19 @@ function dgTogglePageNumbers2() {
   // Sync btn visual state
   const btn1 = document.getElementById('dg-pgnums-btn');
   if (btn1) { btn1.style.background = turningOn ? 'var(--navy)' : ''; btn1.style.color = turningOn ? '#fff' : ''; }
+}
+
+// Quick page number insert — sets a H/F field to a token and applies
+function dgHFQuickPageNum(zone, pos, token) {
+  // zone: 'header' | 'footer', pos: 'left'|'center'|'right'
+  const prefix = zone === 'header' ? 'dg-hdr' : 'dg-ftr';
+  const id = prefix + '-' + pos;
+  const el = document.getElementById(id);
+  if (el) { el.value = token; }
+  dgApplyHF();
+  // Make sure the HF panel is visible so user sees the change
+  const panel = document.getElementById('dg-hf-panel');
+  if (panel && panel.style.display === 'none') dgToggleHFPanel();
 }
 
 // ── TOOLBAR STATE SYNC (bold/italic/underline active states) ─────────
