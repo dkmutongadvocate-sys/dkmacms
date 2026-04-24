@@ -183,6 +183,33 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .cc-tag{font-size:9px;padding:2px 7px;border-radius:8px;background:var(--cream2);color:var(--txt2);font-weight:500}
 .cc-view-btn{width:100%;margin-top:12px;padding:7px;border:1px solid var(--brd);border-radius:6px;background:transparent;font-size:11px;color:var(--txt2);font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.12s;text-align:center}
 .cc-view-btn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+/* view toggle */
+.view-toggle{display:flex;gap:0;border:1px solid var(--brd);border-radius:7px;overflow:hidden;flex-shrink:0}
+.view-toggle-btn{padding:5px 10px;background:none;border:none;cursor:pointer;color:var(--txt3);font-size:13px;line-height:1;transition:all 0.12s}
+.view-toggle-btn:hover{background:var(--cream);color:var(--txt)}
+.view-toggle-btn.active{background:var(--navy);color:#fff}
+/* clients list view */
+.clients-list{display:flex;flex-direction:column;gap:0;border-radius:10px;border:0.5px solid var(--brd);overflow:hidden;background:#fff}
+.cl-row{display:flex;align-items:center;gap:14px;padding:11px 18px;border-bottom:0.5px solid var(--brd);transition:background 0.12s;cursor:pointer}
+.cl-row:last-child{border-bottom:none}
+.cl-row:hover{background:var(--cream)}
+.cl-row-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.cl-row-name{font-size:13px;font-weight:500;color:var(--txt);font-family:'Playfair Display',serif;min-width:160px}
+.cl-row-meta{font-size:11px;color:var(--txt3);flex:1;display:flex;gap:16px;flex-wrap:wrap}
+.cl-row-actions{display:flex;gap:5px;flex-shrink:0}
+/* groups inline view (not modal) */
+.groups-inline{display:flex;flex-direction:column;gap:14px}
+.gi-card{background:#fff;border-radius:10px;border:0.5px solid var(--brd);overflow:hidden}
+.gi-card-hd{display:flex;align-items:center;gap:12px;padding:16px 20px;cursor:pointer;transition:background 0.12s}
+.gi-card-hd:hover{background:var(--cream)}
+.gi-card-body{border-top:1px solid var(--brd);padding:0}
+.gi-tab-bar{display:flex;border-bottom:1px solid var(--brd)}
+.gi-tab{flex:1;padding:9px 14px;font-size:11px;font-weight:500;color:var(--txt3);cursor:pointer;text-align:center;transition:all 0.12s;border-right:1px solid var(--brd);user-select:none}
+.gi-tab:last-child{border-right:none}
+.gi-tab:hover{background:var(--cream);color:var(--txt)}
+.gi-tab.active{background:var(--navy);color:#fff}
+.gi-panel{display:none;padding:16px 20px}
+.gi-panel.active{display:block}
 
 /* ── CLIENT PROFILE ─────────────────────────────────────────── */
 .profile-back{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txt3);cursor:pointer;margin-bottom:20px;width:fit-content}
@@ -1135,8 +1162,20 @@ setTimeout(function() {
         <button class="filter-btn sel" onclick="setClientFilter('all',this)">All</button>
         <button class="filter-btn" onclick="setClientFilter('Individual',this)">Individual</button>
         <button class="filter-btn" onclick="setClientFilter('Corporate',this)">Corporate</button>
-        <button class="topbar-btn sec" onclick="openGroupModal()" style="white-space:nowrap">👥 Groups</button>
-        <button class="topbar-btn" style="margin-left:auto" onclick="openModal('client')">+ Add Client</button>
+        <button class="filter-btn" id="filter-groups-btn" onclick="setClientFilter('groups',this)">👥 Groups</button>
+        <div class="view-toggle" style="margin-left:auto">
+          <button class="view-toggle-btn active" id="vt-card" title="Card view" onclick="setClientView('card')">⊞</button>
+          <button class="view-toggle-btn" id="vt-list" title="List view" onclick="setClientView('list')">☰</button>
+        </div>
+        <button class="topbar-btn" onclick="openModal('client')">+ Add Client</button>
+      </div>
+      <!-- Groups inline section (shown when Groups filter active) -->
+      <div id="groups-inline-section" style="display:none;margin-bottom:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500;color:var(--txt)">Client Groups</div>
+          <button class="topbar-btn" onclick="openGroupModal()">+ New Group</button>
+        </div>
+        <div class="groups-inline" id="groups-inline-list"></div>
       </div>
       <div class="clients-grid" id="clients-grid"></div>
     </div>
@@ -4030,49 +4069,206 @@ function renderMatters(){
 function openClientFromMatter(matterId){if(matterId)openMatterDetail(matterId);}
 
 // ─── CLIENTS ──────────────────────────────────────────────────────
-function setClientFilter(f,btn){clientFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('sel'));if(btn)btn.classList.add('sel');renderClients();}
+let _clientView='card'; // 'card' | 'list'
+
+function setClientView(v){
+  _clientView=v;
+  document.getElementById('vt-card').classList.toggle('active',v==='card');
+  document.getElementById('vt-list').classList.toggle('active',v==='list');
+  renderClients();
+}
+
+function setClientFilter(f,btn){
+  clientFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('sel'));
+  if(btn)btn.classList.add('sel');
+  // Toggle groups panel
+  const gs=document.getElementById('groups-inline-section');
+  const cg=document.getElementById('clients-grid');
+  if(f==='groups'){
+    if(gs)gs.style.display='block';
+    if(cg)cg.style.display='none';
+    renderGroupsInline();
+  } else {
+    if(gs)gs.style.display='none';
+    if(cg)cg.style.display='';
+    renderClients();
+  }
+}
+
 function renderClients(){
   const q=(document.getElementById('client-search')||{value:''}).value.toLowerCase();
   const g=document.getElementById('clients-grid');
-  const filtered=clients.filter(c=>clientFilter==='all'||c.type===clientFilter).filter(c=>!q||c.name.toLowerCase().includes(q));
+  if(!g)return;
+  const filtered=clients.filter(c=>clientFilter==='all'||clientFilter==='groups'||c.type===clientFilter).filter(c=>!q||c.name.toLowerCase().includes(q));
   if(!filtered.length){g.innerHTML=emptyState('No clients found.');return;}
-  g.innerHTML=filtered.map(c=>{
-    const mc=matters.filter(m=>m.client_id===c.id).length;
-    const hasPortal=!!c.user_id;
-    const portalEnabled=hasPortal&&c.portal_enabled!==false;
-    const sosActive=!!c.sos_enabled;
-    const portalBadge=hasPortal
-      ?(portalEnabled
-        ?'<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:8px;background:#EAF3DE;color:#2D6A4F">● Portal On</span>'
-        :'<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:8px;background:var(--cream2);color:var(--txt3)">● Portal Off</span>')
-      :'<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:var(--cream2);color:var(--txt3)">No Portal</span>';
-    const sosBadge=sosActive
-      ?'<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:8px;background:#FCEBEB;color:#A30000">🆘 SOS On</span>'
-      :'<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:var(--cream2);color:var(--txt3)">SOS Off</span>';
-    const grp=clientGroups.find(g=>Array.isArray(g.member_ids)&&g.member_ids.includes(c.id));
-    const isFocal=grp&&grp.focal_point_id===c.id;
-    const grpBadge=grp?`<span class="group-badge${isFocal?' focal':''}">${isFocal?'⭐':'👥'} ${esc(grp.name)}</span>`:'';
-    return`<div class="client-card">
-      <div class="cc-top"><div class="cc-av ${avColor(c.name)}">${initials(c.name)}</div>
-      <div style="flex:1;min-width:0"><div class="cc-name">${esc(c.name)}</div><div class="cc-since">Since ${fmtDate(c.client_since)}</div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">${portalBadge}${sosBadge}${grpBadge}</div>
-      </div></div>
-      <div class="cc-meta">
-        <div class="cc-meta-item"><div class="cc-meta-label">Type</div><div class="cc-meta-val">${esc(c.type||'—')}</div></div>
-        <div class="cc-meta-item"><div class="cc-meta-label">Matters</div><div class="cc-meta-val">${mc}</div></div>
-        <div class="cc-meta-item"><div class="cc-meta-label">Phone</div><div class="cc-meta-val" style="font-size:11px">${esc(c.phone||'—')}</div></div>
-        <div class="cc-meta-item"><div class="cc-meta-label">Practice</div><div class="cc-meta-val" style="font-size:10px">${esc(c.practice_area||'—')}</div></div>
+
+  if(_clientView==='list'){
+    g.className='clients-list';
+    g.innerHTML=filtered.map(c=>{
+      const mc=matters.filter(m=>m.client_id===c.id).length;
+      const hasPortal=!!c.user_id;
+      const portalEnabled=hasPortal&&c.portal_enabled!==false;
+      const grp=clientGroups.find(g=>Array.isArray(g.member_ids)&&g.member_ids.includes(c.id));
+      const isFocal=grp&&grp.focal_point_id===c.id;
+      return`<div class="cl-row" onclick="openClientProfile('${c.id}')">
+        <div class="cl-row-av ${avColor(c.name)}">${initials(c.name)}</div>
+        <div class="cl-row-name">${esc(c.name)}</div>
+        <div class="cl-row-meta">
+          <span>${esc(c.type||'—')}</span>
+          <span>${mc} matter${mc!==1?'s':''}</span>
+          <span style="color:var(--txt2)">${esc(c.phone||'')}</span>
+          ${grp?`<span style="background:${isFocal?'#FFF8E7':'var(--cream2)'};color:${isFocal?'#7A4800':'var(--txt2)'};padding:1px 7px;border-radius:8px;font-size:10px;font-weight:500">${isFocal?'⭐':'👥'} ${esc(grp.name)}</span>`:''}
+        </div>
+        <div class="cl-row-actions">
+          ${hasPortal?`<button title="${portalEnabled?'Disable portal':'Enable portal'}" onclick="togglePortal('${c.id}','${esc(c.name)}',${portalEnabled},event)" style="padding:5px 9px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer">${portalEnabled?'🔒':'🔓'}</button>`:''}
+          <button title="Edit" onclick="openEditClient('${c.id}');event.stopPropagation()" style="padding:5px 9px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️</button>
+          <button title="Delete" onclick="deleteClient('${c.id}','${esc(c.name)}',event)" style="padding:5px 9px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer">×</button>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    g.className='clients-grid';
+    g.innerHTML=filtered.map(c=>{
+      const mc=matters.filter(m=>m.client_id===c.id).length;
+      const hasPortal=!!c.user_id;
+      const portalEnabled=hasPortal&&c.portal_enabled!==false;
+      const sosActive=!!c.sos_enabled;
+      const portalBadge=hasPortal
+        ?(portalEnabled
+          ?'<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:8px;background:#EAF3DE;color:#2D6A4F">● Portal On</span>'
+          :'<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:8px;background:var(--cream2);color:var(--txt3)">● Portal Off</span>')
+        :'<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:var(--cream2);color:var(--txt3)">No Portal</span>';
+      const sosBadge=sosActive
+        ?'<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:8px;background:#FCEBEB;color:#A30000">🆘 SOS On</span>'
+        :'';
+      const grp=clientGroups.find(g=>Array.isArray(g.member_ids)&&g.member_ids.includes(c.id));
+      const isFocal=grp&&grp.focal_point_id===c.id;
+      const grpBadge=grp?`<span class="group-badge${isFocal?' focal':''}">${isFocal?'⭐':'👥'} ${esc(grp.name)}</span>`:'';
+      return`<div class="client-card">
+        <div class="cc-top"><div class="cc-av ${avColor(c.name)}">${initials(c.name)}</div>
+        <div style="flex:1;min-width:0"><div class="cc-name">${esc(c.name)}</div><div class="cc-since">Since ${fmtDate(c.client_since)}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">${portalBadge}${sosBadge}${grpBadge}</div>
+        </div></div>
+        <div class="cc-meta">
+          <div class="cc-meta-item"><div class="cc-meta-label">Type</div><div class="cc-meta-val">${esc(c.type||'—')}</div></div>
+          <div class="cc-meta-item"><div class="cc-meta-label">Matters</div><div class="cc-meta-val">${mc}</div></div>
+          <div class="cc-meta-item"><div class="cc-meta-label">Phone</div><div class="cc-meta-val" style="font-size:11px">${esc(c.phone||'—')}</div></div>
+          <div class="cc-meta-item"><div class="cc-meta-label">Practice</div><div class="cc-meta-val" style="font-size:10px">${esc(c.practice_area||'—')}</div></div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
+          <button class="cc-view-btn" style="flex:1;margin-top:0;min-width:100px" onclick="openClientProfile('${c.id}')">View Profile →</button>
+          ${hasPortal?`<button title="${portalEnabled?'Disable portal access':'Enable portal access'}" onclick="togglePortal('${c.id}','${esc(c.name)}',${portalEnabled},event)" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='none'">${portalEnabled?'🔒':'🔓'}</button>`:''}
+          ${sosActive?`<button title="Deactivate SOS" onclick="deactivateSos('${c.id}','${jsStr(c.name)}');event.stopPropagation()" style="padding:6px 10px;border-radius:6px;border:1px solid #f5c6c6;background:none;font-size:12px;cursor:pointer;color:#A30000" onmouseover="this.style.background='#FCEBEB'" onmouseout="this.style.background='none'">🆘×</button>`:''}
+          <button class="op-del" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);color:var(--navy);font-size:12px" title="Edit" onclick="openEditClient('${c.id}');event.stopPropagation()" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️</button>
+          <button class="op-del" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd)" title="Delete" onclick="deleteClient('${c.id}','${esc(c.name)}',event)">×</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ── INLINE GROUPS VIEW ──────────────────────────────────────────
+function renderGroupsInline(){
+  const area=document.getElementById('groups-inline-list');
+  if(!area)return;
+  if(!clientGroups.length){
+    area.innerHTML=`<div class="gi-card"><div style="padding:32px;text-align:center;color:var(--txt3);font-size:13px"><div style="font-size:28px;margin-bottom:8px">👥</div>No groups yet. Click + New Group to create one.</div></div>`;
+    return;
+  }
+  const typeLabels={class_action:'Class Action',joint_petitioners:'Joint Petitioners',co_defendants:'Co-Defendants',consortium:'Consortium',family:'Family Group',other:'Group'};
+  area.innerHTML=clientGroups.map(g=>{
+    const members=(g.member_ids||[]).map(id=>clients.find(c=>c.id===id)).filter(Boolean);
+    const focal=clients.find(c=>c.id===g.focal_point_id);
+    const nonMembers=clients.filter(c=>!(g.member_ids||[]).includes(c.id));
+    return`<div class="gi-card" id="gi-card-${g.id}">
+      <div class="gi-card-hd" onclick="toggleGiCard('${g.id}')">
+        <div style="width:36px;height:36px;border-radius:9px;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👥</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:500;color:var(--txt);font-family:'Playfair Display',serif">${esc(g.name)}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:2px">${typeLabels[g.group_type]||'Group'} · ${members.length} member${members.length!==1?'s':''} · Focal: ${focal?esc(focal.name):'—'}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button onclick="event.stopPropagation();closeModal();openGroupHub('${g.id}','clients')" style="font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid var(--navy);color:var(--navy);background:none;cursor:pointer;white-space:nowrap">Open Hub →</button>
+          <button onclick="event.stopPropagation();deleteGroup('${g.id}','${esc(g.name)}')" style="padding:5px 8px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer;color:var(--txt3)">×</button>
+          <span id="gi-chevron-${g.id}" style="font-size:12px;color:var(--txt3);transition:transform 0.2s">▼</span>
+        </div>
       </div>
-      <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
-        <button class="cc-view-btn" style="flex:1;margin-top:0;min-width:100px" onclick="openClientProfile('${c.id}')">View Profile →</button>
-        ${hasPortal?`<button title="${portalEnabled?'Disable portal access':'Enable portal access'}" onclick="togglePortal('${c.id}','${esc(c.name)}',${portalEnabled},event)" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='none'">${portalEnabled?'🔒':'🔓'}</button>`:''}
-        ${sosActive?`<button title="Deactivate SOS" onclick="deactivateSos('${c.id}','${jsStr(c.name)}');event.stopPropagation()" style="padding:6px 10px;border-radius:6px;border:1px solid #f5c6c6;background:none;font-size:12px;cursor:pointer;color:#A30000" onmouseover="this.style.background='#FCEBEB'" onmouseout="this.style.background='none'">🆘×</button>`:''}
-        <button class="op-del" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);color:var(--navy);font-size:12px" title="Edit" onclick="openEditClient('${c.id}');event.stopPropagation()" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️</button>
-        <button class="op-del" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd)" title="Delete" onclick="deleteClient('${c.id}','${esc(c.name)}',event)">×</button>
+      <div class="gi-card-body" id="gi-body-${g.id}" style="display:none">
+        <div class="gi-tab-bar">
+          <div class="gi-tab active" id="gitab-members-${g.id}" onclick="switchGiTab('${g.id}','members')">Members</div>
+          <div class="gi-tab" id="gitab-add-${g.id}" onclick="switchGiTab('${g.id}','add')">Add Clients</div>
+          <div class="gi-tab" id="gitab-hub-${g.id}" onclick="switchGiTab('${g.id}','hub')">Group Hub</div>
+        </div>
+        <div class="gi-panel active" id="gipanel-members-${g.id}">
+          ${members.length===0?'<div style="color:var(--txt3);font-size:12px">No members yet.</div>':members.map(mc=>{
+            const isFocal=mc.id===g.focal_point_id;
+            return`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--brd)">
+              <div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;${avColorStyle(mc.name)}">${initials(mc.name)}</div>
+              <div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--txt)">${isFocal?'⭐ ':''}${esc(mc.name)}</div><div style="font-size:10px;color:var(--txt3)">${esc(mc.type||'—')}</div></div>
+              <button onclick="openClientProfile('${mc.id}')" style="font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid var(--brd);background:none;cursor:pointer;color:var(--txt2)">View →</button>
+              <button onclick="removeClientFromGroup('${g.id}','${mc.id}')" title="Remove" style="padding:3px 7px;border-radius:5px;border:1px solid var(--brd);background:none;font-size:11px;cursor:pointer;color:var(--txt3)">×</button>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="gi-panel" id="gipanel-add-${g.id}">
+          ${nonMembers.length===0?'<div style="font-size:12px;color:var(--txt3)">All clients are already in this group.</div>':`
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:10px">Select clients to add:</div>
+          <div id="gi-add-list-${g.id}" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
+            ${nonMembers.map(c=>`<label style="display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0;cursor:pointer">
+              <input type="checkbox" value="${c.id}" style="width:13px;height:13px;accent-color:var(--navy)"/>
+              <div style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0;${avColorStyle(c.name)}">${initials(c.name)}</div>
+              <span style="flex:1">${esc(c.name)}</span>
+              <span style="font-size:10px;color:var(--txt3)">${esc(c.type||'')}</span>
+            </label>`).join('')}
+          </div>
+          <button onclick="addClientsToGroupInline('${g.id}')" style="margin-top:10px;width:100%;padding:7px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Add Selected Clients</button>`}
+        </div>
+        <div class="gi-panel" id="gipanel-hub-${g.id}">
+          <div style="text-align:center;padding:12px 0">
+            <div style="font-size:13px;color:var(--txt2);margin-bottom:10px">Open the full Group Hub to manage matters, updates, and documents for this group.</div>
+            <button onclick="closeModal();openGroupHub('${g.id}','clients')" style="padding:8px 20px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Open Group Hub →</button>
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
+
+function toggleGiCard(gId){
+  const body=document.getElementById(`gi-body-${gId}`);
+  const chevron=document.getElementById(`gi-chevron-${gId}`);
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  if(chevron)chevron.style.transform=open?'rotate(0)':'rotate(180deg)';
+}
+
+function switchGiTab(gId,tab){
+  ['members','add','hub'].forEach(t=>{
+    document.getElementById(`gitab-${t}-${gId}`)?.classList.toggle('active',t===tab);
+    document.getElementById(`gipanel-${t}-${gId}`)?.classList.toggle('active',t===tab);
+  });
+}
+
+async function addClientsToGroupInline(groupId){
+  const group=clientGroups.find(g=>g.id===groupId);
+  if(!group){toast('Group not found.',true);return;}
+  const checked=[...document.querySelectorAll(`#gi-add-list-${groupId} input[type=checkbox]:checked`)];
+  const newIds=checked.map(cb=>cb.value);
+  if(!newIds.length){toast('Please select at least one client.',true);return;}
+  const updatedMemberIds=[...new Set([...(group.member_ids||[]),...newIds])];
+  try{
+    const{data,error}=await sb.from('client_groups').update({member_ids:updatedMemberIds}).eq('id',groupId).select();
+    if(error){toast('Error: '+error.message,true);return;}
+    const idx=clientGroups.findIndex(g=>g.id===groupId);
+    if(idx>-1)clientGroups[idx]=data[0];
+    toast(`${newIds.length} client${newIds.length!==1?'s':''} added.`);
+    renderGroupsInline();
+    renderClients();
+  }catch(err){toast(err.message,true);}
+}
+
+
 
 async function togglePortal(clientId, clientName, currentlyEnabled, event){
   event.stopPropagation();
@@ -4251,6 +4447,7 @@ async function saveGroup(){
     document.querySelectorAll('#grp-members-list input[type=checkbox]').forEach(cb=>cb.checked=false);
     toast('Group created.');
     renderGroupListInModal();
+    renderGroupsInline();
     renderClients();
     // Refresh matter modal group dropdown if open
     const mGrpSel=document.getElementById('m-group');
@@ -4274,6 +4471,7 @@ async function deleteGroup(id,name){
   clientGroups=clientGroups.filter(g=>g.id!==id);
   toast('Group deleted.');
   renderGroupListInModal();
+  renderGroupsInline();
   renderClients();
 }
 function openClientProfile(clientId){
