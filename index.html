@@ -6064,7 +6064,7 @@ function openModal(type){
     return;
   }
   document.getElementById('modal-overlay').classList.remove('hidden');
-  ['matter','client','party','time','invoice','event','alert','document','email-doc'].forEach(t=>{
+  ['matter','client','party','time','invoice','event','alert','document','email-doc','group'].forEach(t=>{
     document.getElementById('modal-'+t).style.display=t===type?'block':'none';
   });
   const today=new Date().toISOString().split('T')[0];
