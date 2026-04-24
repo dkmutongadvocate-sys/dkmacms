@@ -17693,133 +17693,159 @@ async function downloadInvoiceDocx(invId,e){
   try{lineItems=inv.line_items?JSON.parse(inv.line_items):[];}catch(err){}
   if(!lineItems.length&&inv.amount){lineItems=[{description:inv.description||'Professional Services',qty:1,unit_price:Number(inv.amount),subtotal:Number(inv.amount)}];}
   const sub=lineItems.reduce((s,l)=>s+(Number(l.subtotal)||0),0);
-  const vat=Number(inv.vat_amount)||sub*0.16;
-  const total=Number(inv.amount)||sub+vat;
+  // Fee note: no VAT — total is simply the subtotal of line items
+  const total=sub;
   const fmtMny=n=>'KES '+Number(n).toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});
   const fmtDt=d=>d?new Date(d).toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'}):'—';
 
-  // PDF generation via print window
-  try{
-  // Amount in words utility
+  // Amount in words
   function amountInWords(n){
     const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
     const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
-    function toWords(num){
+    function tw(num){
       if(num===0)return'';
       if(num<20)return ones[num]+' ';
       if(num<100)return tens[Math.floor(num/10)]+' '+(num%10?ones[num%10]+' ':'');
-      if(num<1000)return ones[Math.floor(num/100)]+' Hundred '+(num%100?toWords(num%100):'');
-      if(num<1000000)return toWords(Math.floor(num/1000))+'Thousand '+(num%1000?toWords(num%1000):'');
-      return toWords(Math.floor(num/1000000))+'Million '+(num%1000000?toWords(num%1000000):'');
+      if(num<1000)return ones[Math.floor(num/100)]+' Hundred '+(num%100?tw(num%100):'');
+      if(num<1000000)return tw(Math.floor(num/1000))+'Thousand '+(num%1000?tw(num%1000):'');
+      return tw(Math.floor(num/1000000))+'Million '+(num%1000000?tw(num%1000000):'');
     }
     const intPart=Math.floor(n);
     const cents=Math.round((n-intPart)*100);
-    let w=toWords(intPart).trim()||'Zero';
-    w+=' Kenya Shillings';
-    if(cents)w+=' And '+toWords(cents).trim()+' Cents';
+    let w=(tw(intPart).trim()||'Zero')+' Kenya Shillings';
+    if(cents)w+=' And '+tw(cents).trim()+' Cents';
     return w.toUpperCase()+' ONLY';
   }
 
-    const lineRowsHtml=lineItems.map((l,i)=>`
-      <tr>
-        <td style="padding:8px 12px;border:1px solid #555;text-align:center;">${i+1}</td>
-        <td style="padding:8px 12px;border:1px solid #555;">${l.description||'\u2014'}</td>
-        <td style="padding:8px 12px;border:1px solid #555;text-align:right;">${fmtMny(l.subtotal||l.unit_price||0)}</td>
-      </tr>`).join('');
+  const lineRowsHtml=lineItems.map((l,i)=>`
+    <tr>
+      <td style="padding:8px 12px;border:1px solid #888;text-align:center;">${i+1}</td>
+      <td style="padding:8px 12px;border:1px solid #888;">${l.description||'\u2014'}</td>
+      <td style="padding:8px 12px;border:1px solid #888;text-align:right;">${fmtMny(l.subtotal||l.unit_price||0)}</td>
+    </tr>`).join('');
 
-    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${inv.invoice_no||'Fee Note'}</title>
-    <style>
-      *{box-sizing:border-box;margin:0;padding:0;}
-      html,body{height:100%;}
-      body{font-family:'Times New Roman',Times,serif;font-size:13px;color:#1a1a1a;background:#fff;display:flex;flex-direction:column;}
-      .header-img{width:100%;display:block;flex-shrink:0;}
-      .page-wrap{flex:1;padding:28px 44px 24px;background:#fff;}
-      .date-line{font-size:13px;color:#0D1B2A;font-weight:bold;margin-bottom:14px;}
-      .dear{font-size:13px;margin-bottom:6px;}
-      .dear .cname{color:#0D1B2A;font-weight:bold;}
-      .re{font-size:13px;font-weight:bold;text-decoration:underline;margin-bottom:14px;text-transform:uppercase;}
-      .above-refers{font-size:13px;margin-bottom:12px;}
-      .intro{font-size:13px;margin-bottom:10px;line-height:1.65;}
-      ol.pmt{margin:0 0 18px 22px;font-size:13px;line-height:1.7;}
-      ol.pmt li{margin-bottom:4px;}
-      table{width:100%;border-collapse:collapse;font-size:13px;}
-      table th{padding:9px 12px;background:#0D1B2A;color:#fff;font-weight:bold;border:1px solid #0D1B2A;}
-      table th.left{text-align:left;}
-      table th.center{text-align:center;}
-      .total-row td{font-weight:bold;background:#f0ede8;border:1px solid #555;padding:8px 12px;text-align:center;}
-      .words-row td{font-weight:bold;border:1px solid #555;padding:9px 12px;text-align:center;text-transform:uppercase;letter-spacing:0.3px;}
-      .closing{margin-top:20px;font-size:13px;line-height:1.9;}
-      .sign-name{margin-top:10px;font-size:13px;font-weight:bold;color:#0D1B2A;text-decoration:underline;line-height:1.6;}
-      .footer-img{width:100%;display:block;flex-shrink:0;}
-    </style></head><body>
-    <img class="header-img" src="data:image/png;base64,${_LH_HEADER}">
-    <div class="page-wrap">
-      <div class="date-line">${fmtDt(inv.invoice_date)}</div>
-      <div class="dear">Dear Messrs. <span class="cname">${client?client.name:'\u2014'}</span></div>
-      <div class="re">RE: Fee Note For Services Rendered</div>
-      <div class="above-refers">The above refers.</div>
-      <div class="intro">Kindly receive this fee note for the services rendered by us as itemised below. Please effect any and all payments through either of the following methods:</div>
-      <ol type="a" class="pmt">
-        <li>LIPA NA M-PESA MODE: TILL NUMBER: <strong>5979947</strong> NAME: <strong>DENNIS KIMANI MUTONGA ADVOCATE</strong></li>
-        <li>BANK TRANSFER <strong>KENYA COMMERCIAL BANK (KCB)</strong> BRANCH: <strong>TOM MBOYA</strong> SWIFT CODE: <strong>KCBLKENX</strong> ACCOUNT NUMBER: <strong>1287960448</strong> NAME: <strong>DENNIS KIMANI MUTONGA, ADVOCATE</strong></li>
-      </ol>
-      <table>
-        <thead><tr>
-          <th class="center" style="width:44px;">NO.</th>
-          <th class="left">ITEM</th>
-          <th class="center" style="width:150px;">COST</th>
-        </tr></thead>
-        <tbody>
-          ${lineRowsHtml}
-          <tr class="total-row">
-            <td colspan="2" style="text-align:center;font-weight:bold;">TOTAL</td>
-            <td style="text-align:center;">${fmtMny(total)}</td>
-          </tr>
-          <tr class="words-row">
-            <td colspan="3">${amountInWords(total)}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="closing">Thank you for your continued cooperation.</div>
-      <div class="closing">Yours Faithfully,</div>
-      <div class="sign-name">DENNIS KIMANI MUTONGA<br>ADVOCATE</div>
-    </div>
-    <img class="footer-img" src="data:image/png;base64,${_LH_FOOTER}">
-    </body></html>`;
+  // Use an iframe approach for clean full-width rendering
+  const _iframeDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{width:993px;background:#fff;font-family:'Times New Roman',Times,serif;font-size:13px;color:#1a1a1a;}
+  .hdr{width:993px;display:block;}
+  .body{padding:22px 44px 20px;background:#fff;}
+  .date-line{font-size:13px;color:#0D1B2A;font-weight:bold;margin-bottom:14px;}
+  .dear{font-size:13px;margin-bottom:6px;}
+  .cname{color:#0D1B2A;font-weight:bold;}
+  .re{font-size:13px;font-weight:bold;text-decoration:underline;margin-bottom:14px;}
+  .para{font-size:13px;margin-bottom:10px;line-height:1.65;}
+  ol.pmt{margin:0 0 16px 22px;font-size:13px;line-height:1.7;}
+  ol.pmt li{margin-bottom:4px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;}
+  th{padding:9px 12px;background:#0D1B2A;color:#fff;font-weight:bold;border:1px solid #0D1B2A;}
+  th.left{text-align:left;}th.center{text-align:center;}
+  .total-row td{font-weight:bold;background:#f0ede8;border:1px solid #888;padding:8px 12px;}
+  .words-row td{font-weight:bold;border:1px solid #888;padding:9px 12px;text-align:center;text-transform:uppercase;}
+  .closing{font-size:13px;line-height:2;margin-top:6px;}
+  .sign{font-size:13px;font-weight:bold;color:#0D1B2A;text-decoration:underline;line-height:1.7;margin-top:6px;}
+  .ftr{width:993px;display:block;margin-top:28px;}
+</style></head><body>
+<img class="hdr" src="data:image/png;base64,${_LH_HEADER}">
+<div class="body">
+  <div class="date-line">${fmtDt(inv.invoice_date)}</div>
+  <div class="dear">Dear Messrs. <span class="cname">${client?client.name:'\u2014'}</span></div>
+  <div class="re">RE: FEE NOTE FOR SERVICES RENDERED</div>
+  <div class="para">The above refers.</div>
+  <div class="para">Kindly receive this fee note for the services rendered by us as itemised below. Please effect any and all payments through either of the following methods:</div>
+  <ol type="a" class="pmt">
+    <li>LIPA NA M-PESA MODE: TILL NUMBER: <strong>5979947</strong> NAME: <strong>DENNIS KIMANI MUTONGA ADVOCATE</strong></li>
+    <li>BANK TRANSFER <strong>KENYA COMMERCIAL BANK (KCB)</strong> BRANCH: <strong>TOM MBOYA</strong> SWIFT CODE: <strong>KCBLKENX</strong> ACCOUNT NUMBER: <strong>1287960448</strong> NAME: <strong>DENNIS KIMANI MUTONGA, ADVOCATE</strong></li>
+  </ol>
+  <table>
+    <thead><tr>
+      <th class="center" style="width:50px;">NO.</th>
+      <th class="left">ITEM</th>
+      <th class="center" style="width:160px;">COST</th>
+    </tr></thead>
+    <tbody>
+      ${lineRowsHtml}
+      <tr class="total-row">
+        <td colspan="2" style="text-align:center;">TOTAL</td>
+        <td style="text-align:center;">${fmtMny(total)}</td>
+      </tr>
+      <tr class="words-row"><td colspan="3">${amountInWords(total)}</td></tr>
+    </tbody>
+  </table>
+  <div class="closing">Thank you for your continued cooperation.</div>
+  <div class="closing">Yours Faithfully,</div>
+  <div class="sign">DENNIS KIMANI MUTONGA<br>ADVOCATE</div>
+</div>
+<img class="ftr" src="data:image/png;base64,${_LH_FOOTER}">
+</body></html>`;
 
-        // Download PDF directly using html2canvas + jsPDF
-    const _pdfContainer=document.createElement('div');
-    _pdfContainer.style.cssText='position:fixed;left:-9999px;top:0;width:1050px;background:#fff;';
-    const _bodyMatch=html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-    _pdfContainer.innerHTML=_bodyMatch?_bodyMatch[1]:html;
-    document.body.appendChild(_pdfContainer);
-    toast('Generating PDF…');
-    const _loadLib=(src)=>new Promise((res,rej)=>{if(document.querySelector('script[src="'+src+'"]')){res();return;}const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
-    try{
-      await _loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-      await _loadLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-      const _canvas=await html2canvas(_pdfContainer,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#fff',logging:false});
-      document.body.removeChild(_pdfContainer);
-      const _imgData=_canvas.toDataURL('image/jpeg',0.95);
-      const {jsPDF}=window.jspdf;
-      const _pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-      const _pdfW=_pdf.internal.pageSize.getWidth();
-      const _pdfH=_pdf.internal.pageSize.getHeight();
-      const _imgH=(_canvas.height*_pdfW)/_canvas.width;
-      let _heightLeft=_imgH, _position=0;
+  // Render in off-screen iframe at exact 993px (native image width) for crisp output
+  const _showToast=(msg,isErr)=>{let t=document.getElementById('_inv_toast');if(!t){t=document.createElement('div');t.id='_inv_toast';document.body.appendChild(t);}t.textContent=msg;t.style.cssText='position:fixed;bottom:24px;right:24px;background:'+(isErr?'#c0392b':'#0D1B2A')+';color:#fff;padding:10px 18px;border-radius:8px;z-index:99999;font-size:13px;';clearTimeout(t._timer);t._timer=setTimeout(()=>{if(t.parentNode)t.parentNode.removeChild(t);},3500);};
+  _showToast('Generating PDF…');
+
+  const _loadLib=(src)=>new Promise((res,rej)=>{if(document.querySelector('script[src="'+src+'"]')){res();return;}const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+
+  try{
+    await _loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await _loadLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+    // Create hidden iframe so the HTML renders at full 993px width with proper styles
+    const _iframe = document.createElement('iframe');
+    _iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:993px;height:1px;border:none;visibility:hidden;';
+    document.body.appendChild(_iframe);
+
+    await new Promise(res=>{
+      _iframe.onload = res;
+      _iframe.srcdoc = _iframeDoc;
+    });
+
+    // Wait a tick for images to render inside iframe
+    await new Promise(res=>setTimeout(res, 800));
+
+    const _iframeBody = _iframe.contentDocument.body;
+    const _iframeDoc2 = _iframe.contentDocument.documentElement;
+    const _fullH = Math.max(_iframeBody.scrollHeight, _iframeDoc2.scrollHeight);
+
+    // Resize iframe to full content height before capture
+    _iframe.style.height = _fullH + 'px';
+    _iframe.contentDocument.documentElement.style.height = _fullH + 'px';
+    _iframe.contentDocument.body.style.height = _fullH + 'px';
+
+    await new Promise(res=>setTimeout(res, 100));
+
+    const _canvas = await html2canvas(_iframeBody, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#fff',
+      logging: false,
+      width: 993,
+      windowWidth: 993
+    });
+
+    document.body.removeChild(_iframe);
+
+    const _imgData = _canvas.toDataURL('image/jpeg', 0.97);
+    const {jsPDF} = window.jspdf;
+    const _pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const _pdfW = _pdf.internal.pageSize.getWidth();   // 210mm
+    const _pdfH = _pdf.internal.pageSize.getHeight();  // 297mm
+    const _imgH = (_canvas.height * _pdfW) / _canvas.width;
+    let _heightLeft = _imgH, _position = 0;
+    _pdf.addImage(_imgData,'JPEG',0,_position,_pdfW,_imgH);
+    _heightLeft -= _pdfH;
+    while(_heightLeft > 0){
+      _position = _heightLeft - _imgH;
+      _pdf.addPage();
       _pdf.addImage(_imgData,'JPEG',0,_position,_pdfW,_imgH);
-      _heightLeft-=_pdfH;
-      while(_heightLeft>0){_position=_heightLeft-_imgH;_pdf.addPage();_pdf.addImage(_imgData,'JPEG',0,_position,_pdfW,_imgH);_heightLeft-=_pdfH;}
-      _pdf.save((inv.invoice_no||'Invoice')+'.pdf');
-      toast('Invoice PDF downloaded!');
-    }catch(_pdfErr){
-      if(document.body.contains(_pdfContainer))document.body.removeChild(_pdfContainer);
-      console.error('PDF error:',_pdfErr);
-      toast('Error generating PDF: '+_pdfErr.message,true);
+      _heightLeft -= _pdfH;
     }
-  }catch(err){
-    console.error('PDF error:',err);
-    toast('Error generating PDF: '+err.message,true);
+    _pdf.save((inv.invoice_no||'FeeNote')+'.pdf');
+    _showToast('Fee note PDF downloaded!');
+  }catch(_err){
+    console.error('PDF error:',_err);
+    _showToast('Error generating PDF: '+_err.message, true);
   }
   return; // skip old DOCX path below
 
