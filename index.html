@@ -17700,89 +17700,94 @@ async function downloadInvoiceDocx(invId,e){
 
   // PDF generation via print window
   try{
-    const lineRowsHtml=lineItems.map(l=>`
+  // Amount in words utility
+  function amountInWords(n){
+    const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+    const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+    function toWords(num){
+      if(num===0)return'';
+      if(num<20)return ones[num]+' ';
+      if(num<100)return tens[Math.floor(num/10)]+' '+(num%10?ones[num%10]+' ':'');
+      if(num<1000)return ones[Math.floor(num/100)]+' Hundred '+(num%100?toWords(num%100):'');
+      if(num<1000000)return toWords(Math.floor(num/1000))+'Thousand '+(num%1000?toWords(num%1000):'');
+      return toWords(Math.floor(num/1000000))+'Million '+(num%1000000?toWords(num%1000000):'');
+    }
+    const intPart=Math.floor(n);
+    const cents=Math.round((n-intPart)*100);
+    let w=toWords(intPart).trim()||'Zero';
+    w+=' Kenya Shillings';
+    if(cents)w+=' And '+toWords(cents).trim()+' Cents';
+    return w.toUpperCase()+' ONLY';
+  }
+
+    const lineRowsHtml=lineItems.map((l,i)=>`
       <tr>
-        <td style="padding:8px 10px;border:1px solid #ddd;">${l.description||'—'}</td>
-        <td style="padding:8px 10px;border:1px solid #ddd;text-align:center;">${l.qty||1}</td>
-        <td style="padding:8px 10px;border:1px solid #ddd;text-align:right;">${fmtMny(l.unit_price||0)}</td>
-        <td style="padding:8px 10px;border:1px solid #ddd;text-align:right;">${fmtMny(l.subtotal||0)}</td>
+        <td style="padding:8px 12px;border:1px solid #555;text-align:center;">${i+1}</td>
+        <td style="padding:8px 12px;border:1px solid #555;">${l.description||'\u2014'}</td>
+        <td style="padding:8px 12px;border:1px solid #555;text-align:right;">${fmtMny(l.subtotal||l.unit_price||0)}</td>
       </tr>`).join('');
 
-    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${inv.invoice_no||'Invoice'}</title>
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${inv.invoice_no||'Fee Note'}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0;}
-      body{font-family:Arial,sans-serif;font-size:13px;color:#1a1a1a;padding:0;}
-      .header-img{width:100%;display:block;margin-bottom:0;}
-      .content{padding:32px 40px;}
-      .row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
-      h1{font-size:28px;font-weight:bold;color:#0D1B2A;}
-      .inv-no{font-size:16px;font-weight:bold;color:#B8953A;margin-top:6px;}
-      .meta{text-align:right;font-size:12px;line-height:1.8;}
-      .meta strong{color:#0D1B2A;}
-      .divider{border-top:3px solid #0D1B2A;margin:16px 0;}
-      .bill-to-label{font-size:11px;color:#8a8a8a;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
-      .bill-name{font-size:16px;font-weight:bold;color:#0D1B2A;}
-      .bill-detail{font-size:12px;color:#5a5a5a;line-height:1.7;}
-      .note{font-size:12px;color:#5a5a5a;font-style:italic;margin-top:10px;}
-      .section-label{font-size:11px;color:#8a8a8a;letter-spacing:1px;text-transform:uppercase;margin:24px 0 8px;}
-      table{width:100%;border-collapse:collapse;font-size:12px;}
-      th{padding:8px 10px;background:#F0EDE8;color:#0D1B2A;font-weight:bold;border:1px solid #ccc;text-align:left;}
-      th.right{text-align:right;}th.center{text-align:center;}
-      .totals{margin-top:16px;display:flex;justify-content:flex-end;}
-      .totals-box{width:260px;font-size:12px;}
-      .totals-row{display:flex;justify-content:space-between;padding:6px 10px;border:1px solid #ddd;}
-      .totals-total{display:flex;justify-content:space-between;padding:8px 10px;border:2px solid #0D1B2A;background:#F0EDE8;font-weight:bold;}
-      .totals-total .amt{color:#B8953A;}
-      .payment{margin-top:32px;border-top:1px solid #ddd;padding-top:16px;}
-      .payment h4{font-size:13px;font-weight:bold;color:#0D1B2A;margin-bottom:6px;}
-      .payment p{font-size:12px;color:#5a5a5a;line-height:1.7;}
-      .footer-img{width:100%;display:block;margin-top:0;}
-      @media print{body{padding:0;}@page{margin:0;}}
+      html,body{height:100%;}
+      body{font-family:'Times New Roman',Times,serif;font-size:13px;color:#1a1a1a;background:#fff;display:flex;flex-direction:column;}
+      .header-img{width:100%;display:block;flex-shrink:0;}
+      .page-wrap{flex:1;padding:28px 44px 24px;background:#fff;}
+      .date-line{font-size:13px;color:#0D1B2A;font-weight:bold;margin-bottom:14px;}
+      .dear{font-size:13px;margin-bottom:6px;}
+      .dear .cname{color:#0D1B2A;font-weight:bold;}
+      .re{font-size:13px;font-weight:bold;text-decoration:underline;margin-bottom:14px;text-transform:uppercase;}
+      .above-refers{font-size:13px;margin-bottom:12px;}
+      .intro{font-size:13px;margin-bottom:10px;line-height:1.65;}
+      ol.pmt{margin:0 0 18px 22px;font-size:13px;line-height:1.7;}
+      ol.pmt li{margin-bottom:4px;}
+      table{width:100%;border-collapse:collapse;font-size:13px;}
+      table th{padding:9px 12px;background:#0D1B2A;color:#fff;font-weight:bold;border:1px solid #0D1B2A;}
+      table th.left{text-align:left;}
+      table th.center{text-align:center;}
+      .total-row td{font-weight:bold;background:#f0ede8;border:1px solid #555;padding:8px 12px;text-align:center;}
+      .words-row td{font-weight:bold;border:1px solid #555;padding:9px 12px;text-align:center;text-transform:uppercase;letter-spacing:0.3px;}
+      .closing{margin-top:20px;font-size:13px;line-height:1.9;}
+      .sign-name{margin-top:10px;font-size:13px;font-weight:bold;color:#0D1B2A;text-decoration:underline;line-height:1.6;}
+      .footer-img{width:100%;display:block;flex-shrink:0;}
     </style></head><body>
     <img class="header-img" src="data:image/png;base64,${_LH_HEADER}">
-    <div class="content">
-    <div class="row">
-      <div><h1>INVOICE</h1><div class="inv-no">${inv.invoice_no||''}</div></div>
-      <div class="meta">
-        <div>Invoice Date: <strong>${fmtDt(inv.invoice_date)}</strong></div>
-        <div>Due Date: <strong style="color:${inv.status==='overdue'?'#AA3333':'#1a1a1a'}">${fmtDt(inv.due_date)}</strong></div>
-        <div>Status: <strong style="color:${inv.status==='paid'?'#2D6A4F':inv.status==='overdue'?'#AA3333':'#0D1B2A'}">${(inv.status||'draft').toUpperCase()}</strong></div>
-      </div>
-    </div>
-    <div class="divider"></div>
-    <div class="bill-to-label">BILL TO</div>
-    <div class="bill-name">${client?client.name:'—'}</div>
-    <div class="bill-detail">
-      ${matter?'<div>Re: '+matter.title+'</div>':''}
-      ${client&&client.email?'<div>'+client.email+'</div>':''}
-      ${client&&client.phone?'<div>'+client.phone+'</div>':''}
-    </div>
-    ${inv.description?'<div class="note">'+inv.description+'</div>':''}
-    <div class="section-label">SERVICES RENDERED</div>
-    <table>
-      <thead><tr>
-        <th>Description</th>
-        <th class="center">Qty</th>
-        <th class="right">Unit Price</th>
-        <th class="right">Amount</th>
-      </tr></thead>
-      <tbody>${lineRowsHtml}</tbody>
-    </table>
-    <div class="totals"><div class="totals-box">
-      <div class="totals-row"><span>Subtotal</span><span>${fmtMny(sub)}</span></div>
-      <div class="totals-row"><span>VAT (16%)</span><span>${fmtMny(vat)}</span></div>
-      <div class="totals-total"><span>TOTAL</span><span class="amt">${fmtMny(total)}</span></div>
-    </div></div>
-    <div class="payment">
-      <h4>Payment Instructions</h4>
-      <p>Please make payment to Dennis Kimani Mutonga, Advocate. Reference your invoice number when making payment.</p>
-      <p>Contact: info@dkma.co.ke | +254 757 354 379</p>
-    </div>
+    <div class="page-wrap">
+      <div class="date-line">${fmtDt(inv.invoice_date)}</div>
+      <div class="dear">Dear Messrs. <span class="cname">${client?client.name:'\u2014'}</span></div>
+      <div class="re">RE: Fee Note For Services Rendered</div>
+      <div class="above-refers">The above refers.</div>
+      <div class="intro">Kindly receive this fee note for the services rendered by us as itemised below. Please effect any and all payments through either of the following methods:</div>
+      <ol type="a" class="pmt">
+        <li>LIPA NA M-PESA MODE: TILL NUMBER: <strong>5979947</strong> NAME: <strong>DENNIS KIMANI MUTONGA ADVOCATE</strong></li>
+        <li>BANK TRANSFER <strong>KENYA COMMERCIAL BANK (KCB)</strong> BRANCH: <strong>TOM MBOYA</strong> SWIFT CODE: <strong>KCBLKENX</strong> ACCOUNT NUMBER: <strong>1287960448</strong> NAME: <strong>DENNIS KIMANI MUTONGA, ADVOCATE</strong></li>
+      </ol>
+      <table>
+        <thead><tr>
+          <th class="center" style="width:44px;">NO.</th>
+          <th class="left">ITEM</th>
+          <th class="center" style="width:150px;">COST</th>
+        </tr></thead>
+        <tbody>
+          ${lineRowsHtml}
+          <tr class="total-row">
+            <td colspan="2" style="text-align:center;font-weight:bold;">TOTAL</td>
+            <td style="text-align:center;">${fmtMny(total)}</td>
+          </tr>
+          <tr class="words-row">
+            <td colspan="3">${amountInWords(total)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="closing">Thank you for your continued cooperation.</div>
+      <div class="closing">Yours Faithfully,</div>
+      <div class="sign-name">DENNIS KIMANI MUTONGA<br>ADVOCATE</div>
     </div>
     <img class="footer-img" src="data:image/png;base64,${_LH_FOOTER}">
     </body></html>`;
 
-    // Download PDF directly using html2canvas + jsPDF
+        // Download PDF directly using html2canvas + jsPDF
     const _pdfContainer=document.createElement('div');
     _pdfContainer.style.cssText='position:fixed;left:-9999px;top:0;width:1050px;background:#fff;';
     const _bodyMatch=html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
