@@ -6473,10 +6473,24 @@ function addInvLine(){
   const row=document.createElement('div');
   row.className='inv-line-row';
   row.style.cssText='display:grid;grid-template-columns:1fr 70px 110px 28px;gap:6px;margin-bottom:6px;align-items:center';
-  row.innerHTML='<input class="inv-ld" placeholder="Description of service…" oninput="calcInvTotals()" style="padding:6px 9px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:inherit">'
-    +'<input class="inv-lq" type="number" placeholder="1" value="1" min="0" oninput="calcInvTotals()" style="padding:6px 9px;border:1px solid var(--brd);border-radius:6px;font-size:12px;text-align:center;font-family:inherit">'
-    +'<input class="inv-lp" type="number" placeholder="0.00" min="0" step="0.01" oninput="calcInvTotals()" style="padding:6px 9px;border:1px solid var(--brd);border-radius:6px;font-size:12px;text-align:right;font-family:inherit">'
-    +'<button onclick="this.closest('.inv-line-row').remove();calcInvTotals()" style="background:none;border:none;cursor:pointer;color:var(--txt3);font-size:16px;line-height:1;padding:2px">×</button>';
+  const desc=document.createElement('input');
+  desc.className='inv-ld';desc.placeholder='Description of service…';
+  desc.oninput=calcInvTotals;
+  desc.style.cssText='padding:6px 9px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:inherit;width:100%';
+  const qty=document.createElement('input');
+  qty.className='inv-lq';qty.type='number';qty.placeholder='1';qty.value='1';qty.min='0';
+  qty.oninput=calcInvTotals;
+  qty.style.cssText='padding:6px 9px;border:1px solid var(--brd);border-radius:6px;font-size:12px;text-align:center;font-family:inherit;width:100%';
+  const price=document.createElement('input');
+  price.className='inv-lp';price.type='number';price.placeholder='0.00';price.min='0';price.step='0.01';
+  price.oninput=calcInvTotals;
+  price.style.cssText='padding:6px 9px;border:1px solid var(--brd);border-radius:6px;font-size:12px;text-align:right;font-family:inherit;width:100%';
+  const del=document.createElement('button');
+  del.textContent='×';
+  del.type='button';
+  del.style.cssText='background:none;border:none;cursor:pointer;color:var(--txt3);font-size:16px;line-height:1;padding:2px';
+  del.onclick=function(){this.closest('.inv-line-row').remove();calcInvTotals();};
+  row.append(desc,qty,price,del);
   container.appendChild(row);
 }
 function calcInvTotals(){
