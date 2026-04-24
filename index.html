@@ -768,6 +768,20 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .group-member-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
 .focal-star{color:var(--gold);font-size:12px;margin-left:auto}
 
+/* ── GROUP DETAIL EXPAND ─────────────────────────────────────── */
+.group-card-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--brd)}
+.group-card-btn{background:transparent;border:1px solid var(--brd);border-radius:6px;padding:5px 11px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--txt2);transition:all 0.12s}
+.group-card-btn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.group-card-btn.gold{border-color:var(--gold);color:var(--gold)}
+.group-card-btn.gold:hover{background:var(--gold);color:var(--navy)}
+.group-detail-panel{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--brd)}
+.group-detail-panel.open{display:block}
+.group-detail-member{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;background:var(--cream);margin-bottom:6px}
+.group-detail-member:last-child{margin-bottom:0}
+.group-edit-members{margin-top:10px;padding:10px;background:var(--cream);border-radius:7px;border:1px solid var(--brd)}
+.group-edit-members-list{max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.group-edit-member-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -4062,7 +4076,31 @@ function renderGroupListInModal(){
   area.innerHTML=clientGroups.map(g=>{
     const members=(g.member_ids||[]).map(id=>clients.find(c=>c.id===id)).filter(Boolean);
     const focal=clients.find(c=>c.id===g.focal_point_id);
-    return`<div class="group-card">
+    // Build member detail rows
+    const memberDetailRows=members.map(mc=>{
+      const isFocal=mc.id===g.focal_point_id;
+      const avStyle=avColorStyle(mc.name);
+      return`<div class="group-detail-member">
+        <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;${avStyle}">${initials(mc.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500;color:var(--txt)">${isFocal?'⭐ ':''}${esc(mc.name)}</div>
+          <div style="font-size:10px;color:var(--txt3);margin-top:1px">${esc(mc.type||'—')} ${mc.id_number?'· ID: '+esc(mc.id_number):''}</div>
+        </div>
+        ${isFocal?'<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:#FFF8E7;color:#7A4800;font-weight:600">Focal Point</span>':''}
+        <button class="op-del" title="Remove from group" onclick="removeClientFromGroup('${g.id}','${mc.id}')">×</button>
+      </div>`;
+    }).join('');
+    // Build add-clients checklist (clients NOT already in this group)
+    const nonMembers=clients.filter(c=>!(g.member_ids||[]).includes(c.id));
+    const addClientsList=nonMembers.length===0
+      ?'<div style="font-size:11px;color:var(--txt3);padding:4px 0">All clients are already in this group.</div>'
+      :nonMembers.map(c=>`<label class="group-edit-member-row">
+        <input type="checkbox" value="${c.id}" style="width:14px;height:14px;accent-color:var(--navy)"/>
+        <div style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0;${avColorStyle(c.name)}">${initials(c.name)}</div>
+        <span style="flex:1">${esc(c.name)}</span>
+        <span style="font-size:10px;color:var(--txt3)">${esc(c.type||'')}</span>
+      </label>`).join('');
+    return`<div class="group-card" id="grp-card-${g.id}">
       <div class="group-card-hd">
         <div class="group-card-icon">👥</div>
         <div style="flex:1">
@@ -4074,8 +4112,73 @@ function renderGroupListInModal(){
       <div style="display:flex;flex-wrap:wrap;gap:6px">
         ${members.map(mc=>`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:8px;background:${mc.id===g.focal_point_id?'#FFF8E7':'var(--cream2)'};color:${mc.id===g.focal_point_id?'#7A4800':'var(--txt2)'};font-weight:${mc.id===g.focal_point_id?'600':'400'}">${mc.id===g.focal_point_id?'⭐ ':''}${esc(mc.name)}</span>`).join('')}
       </div>
+      <div class="group-card-actions">
+        <button class="group-card-btn" onclick="toggleGroupDetail('${g.id}','detail')">📋 View Details</button>
+        <button class="group-card-btn gold" onclick="toggleGroupDetail('${g.id}','add')">➕ Add Clients</button>
+      </div>
+      <!-- Detail panel -->
+      <div class="group-detail-panel" id="grp-detail-${g.id}">
+        <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:500">Members</div>
+        ${memberDetailRows||'<div style="font-size:12px;color:var(--txt3)">No members yet.</div>'}
+      </div>
+      <!-- Add clients panel -->
+      <div class="group-detail-panel" id="grp-add-${g.id}">
+        <div class="group-edit-members">
+          <div style="font-size:11px;font-weight:500;color:var(--txt);margin-bottom:8px">Select clients to add to this group:</div>
+          <div class="group-edit-members-list" id="grp-add-list-${g.id}">${addClientsList}</div>
+          <button class="topbar-btn gold" style="width:100%;padding:7px;font-size:12px" onclick="addClientsToGroup('${g.id}')">Add Selected Clients</button>
+        </div>
+      </div>
     </div>`;
   }).join('');
+}
+
+function toggleGroupDetail(groupId, panel){
+  const detailEl=document.getElementById(`grp-detail-${groupId}`);
+  const addEl=document.getElementById(`grp-add-${groupId}`);
+  if(panel==='detail'){
+    const isOpen=detailEl.classList.contains('open');
+    detailEl.classList.toggle('open',!isOpen);
+    addEl.classList.remove('open');
+  } else {
+    const isOpen=addEl.classList.contains('open');
+    addEl.classList.toggle('open',!isOpen);
+    detailEl.classList.remove('open');
+  }
+}
+
+async function addClientsToGroup(groupId){
+  const group=clientGroups.find(g=>g.id===groupId);
+  if(!group){toast('Group not found.',true);return;}
+  const checked=[...document.querySelectorAll(`#grp-add-list-${groupId} input[type=checkbox]:checked`)];
+  const newIds=checked.map(cb=>cb.value);
+  if(!newIds.length){toast('Please select at least one client to add.',true);return;}
+  const updatedMemberIds=[...new Set([...(group.member_ids||[]),...newIds])];
+  try{
+    const{data,error}=await sb.from('client_groups').update({member_ids:updatedMemberIds}).eq('id',groupId).select();
+    if(error){toast('Error: '+error.message,true);return;}
+    const idx=clientGroups.findIndex(g=>g.id===groupId);
+    if(idx>-1)clientGroups[idx]=data[0];
+    toast(`${newIds.length} client${newIds.length!==1?'s':''} added to group.`);
+    renderGroupListInModal();
+    renderClients();
+  }catch(err){toast(err.message,true);}
+}
+
+async function removeClientFromGroup(groupId, clientId){
+  const group=clientGroups.find(g=>g.id===groupId);
+  if(!group){return;}
+  const updatedMemberIds=(group.member_ids||[]).filter(id=>id!==clientId);
+  const updatedFocal=group.focal_point_id===clientId?null:group.focal_point_id;
+  try{
+    const{data,error}=await sb.from('client_groups').update({member_ids:updatedMemberIds,focal_point_id:updatedFocal}).eq('id',groupId).select();
+    if(error){toast('Error: '+error.message,true);return;}
+    const idx=clientGroups.findIndex(g=>g.id===groupId);
+    if(idx>-1)clientGroups[idx]=data[0];
+    toast('Client removed from group.');
+    renderGroupListInModal();
+    renderClients();
+  }catch(err){toast(err.message,true);}
 }
 
 async function saveGroup(){
