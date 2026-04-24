@@ -782,6 +782,35 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .group-edit-members-list{max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
 .group-edit-member-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;cursor:pointer}
 
+/* ── GROUP HUB VIEW ──────────────────────────────────────────── */
+.group-hub-back{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txt3);cursor:pointer;margin-bottom:20px;width:fit-content}
+.group-hub-back:hover{color:var(--navy)}
+.group-hub-hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:12px;padding:24px 28px;margin-bottom:18px;display:flex;align-items:center;gap:18px}
+.group-hub-icon{width:52px;height:52px;border-radius:12px;background:rgba(184,149,58,0.25);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.group-hub-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:500;color:#fff}
+.group-hub-sub{font-size:12px;color:rgba(255,255,255,0.55);margin-top:3px}
+.group-hub-tabs{display:flex;background:#fff;border-radius:10px;border:0.5px solid var(--brd);overflow:hidden;margin-bottom:18px}
+.group-hub-tab{padding:11px 20px;font-size:12px;font-weight:500;color:var(--txt3);cursor:pointer;border-right:1px solid var(--brd);transition:all 0.12s;white-space:nowrap;flex:1;text-align:center}
+.group-hub-tab:last-child{border-right:none}
+.group-hub-tab:hover{background:var(--cream);color:var(--txt)}
+.group-hub-tab.active{background:var(--navy);color:#fff}
+.group-update-row{padding:14px 20px;border-bottom:1px solid var(--brd);display:flex;gap:14px}
+.group-update-row:last-child{border-bottom:none}
+.group-update-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;background:var(--cream2);color:var(--txt2)}
+.group-update-body{flex:1;min-width:0}
+.group-update-author{font-size:11px;font-weight:500;color:var(--navy);margin-bottom:2px}
+.group-update-text{font-size:13px;color:var(--txt);line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.group-update-time{font-size:10px;color:var(--txt3);margin-top:4px}
+.group-update-compose{background:#fff;border-radius:10px;border:0.5px solid var(--brd);padding:16px 20px;margin-bottom:18px}
+.group-update-input{width:100%;border:1px solid var(--brd);border-radius:7px;padding:10px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);resize:vertical;min-height:80px;outline:none;transition:border-color 0.12s}
+.group-update-input:focus{border-color:var(--navy)}
+
+/* ── GROUP TAB IN CLIENT PROFILE ─────────────────────────────── */
+.client-group-card{background:#fff;border-radius:10px;border:0.5px solid var(--brd);margin-bottom:14px;overflow:hidden}
+.client-group-card-hd{padding:14px 18px;background:linear-gradient(90deg,#EEEDFE,#f5f4ff);border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:10px;cursor:pointer}
+.client-group-card-hd:hover{background:linear-gradient(90deg,#e3e2fd,#eeecff)}
+.client-group-open-btn{margin-left:auto;font-size:11px;padding:5px 12px;background:var(--navy);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+
 </style>
 </head>
 <body>
@@ -1127,8 +1156,25 @@ setTimeout(function() {
         <div class="profile-tab" onclick="switchProfileTab('time',this)">Time</div>
         <div class="profile-tab" onclick="switchProfileTab('notes',this)">Notes</div>
         <div class="profile-tab" onclick="switchProfileTab('documents',this)">Documents <span id="client-doc-badge" style="display:none;background:var(--gold);color:var(--navy);font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:3px;vertical-align:middle">0</span></div>
+        <div class="profile-tab" onclick="switchProfileTab('groups',this)">&#128101; Groups <span id="client-groups-badge" style="display:none;background:#EEEDFE;color:#3C3489;font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:3px;vertical-align:middle">0</span></div>
       </div>
       <div id="profile-tab-content"></div>
+    </div>
+
+    <!-- GROUP HUB VIEW -->
+    <div class="view" id="view-group-hub">
+      <div class="group-hub-back" id="group-hub-back-btn" onclick="closeGroupHub()">
+        <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="group-hub-back-label">Back</span>
+      </div>
+      <div id="group-hub-hero-area"></div>
+      <div class="group-hub-tabs">
+        <div class="group-hub-tab active" onclick="switchGroupHubTab('members',this)">&#128101; Members</div>
+        <div class="group-hub-tab" onclick="switchGroupHubTab('matters',this)">&#9878;&#65039; Group Matters</div>
+        <div class="group-hub-tab" onclick="switchGroupHubTab('updates',this)">&#128227; Updates</div>
+        <div class="group-hub-tab" onclick="switchGroupHubTab('documents',this)">&#128193; Documents</div>
+      </div>
+      <div id="group-hub-tab-content"></div>
     </div>
 
     <!-- OTHER PARTIES MAIN VIEW -->
@@ -3009,6 +3055,7 @@ function toPortalEmail(email){
 // ─── STATE ────────────────────────────────────────────────────────
 let clients=[],matters=[],events=[],invoices=[],timeEntries=[],alerts=[],parties=[];
 let clientGroups=[];
+let activeGroupId=null,activeGroupHubTab='members',groupHubReturnView='clients',groupUpdates={},groupHubDocs={};
 let gazettedHolidays=[];   // custom holidays from Supabase — gazetted/ad-hoc
 let currentFilter='all',clientFilter='all';
 let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
@@ -3048,7 +3095,7 @@ function partyTypePill(role){
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────
-const viewTitles={dashboard:'Dashboard',sos:'SOS Alerts',matters:'Matters',clients:'Clients','client-profile':'Client Profile','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox','staff-inbox':'Staff Inbox','firm-settings':'Firm Settings'};
+const viewTitles={dashboard:'Dashboard',sos:'SOS Alerts',matters:'Matters',clients:'Clients','client-profile':'Client Profile','group-hub':'Group Hub','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox','staff-inbox':'Staff Inbox','firm-settings':'Firm Settings'};
 function showView(id,el,fromMobile){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
@@ -4115,6 +4162,7 @@ function renderGroupListInModal(){
       <div class="group-card-actions">
         <button class="group-card-btn" onclick="toggleGroupDetail('${g.id}','detail')">📋 View Details</button>
         <button class="group-card-btn gold" onclick="toggleGroupDetail('${g.id}','add')">➕ Add Clients</button>
+        <button class="group-card-btn" style="margin-left:auto;border-color:var(--navy);color:var(--navy)" onclick="closeModal();openGroupHub('${g.id}','clients')">Open Group Hub →</button>
       </div>
       <!-- Detail panel -->
       <div class="group-detail-panel" id="grp-detail-${g.id}">
@@ -4267,8 +4315,11 @@ function renderProfile(){
 
   // Reset tabs
   document.querySelectorAll('.profile-tab').forEach((t,i)=>{
-    t.classList.toggle('active',['overview','matters','parties','invoices','time','notes','documents'][i]===activeProfileTab);
+    t.classList.toggle('active',['overview','matters','parties','invoices','time','notes','documents','groups'][i]===activeProfileTab);
   });
+  // Update groups badge
+  const _gb=document.getElementById('client-groups-badge');
+  if(_gb){const _gc=clientGroups.filter(g=>Array.isArray(g.member_ids)&&g.member_ids.includes(c.id)).length;_gb.textContent=_gc;_gb.style.display=_gc>0?'inline':'none';}
   renderProfileTab();
 }
 
@@ -4306,23 +4357,27 @@ function renderProfileTab(){
       ${c.conflict_notes?`<div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Conflict Check Notes</span></div><div style="padding:14px 20px;font-size:13px;color:var(--txt2);line-height:1.6">${esc(c.conflict_notes)}</div></div>`:''}
       ${c.notes?`<div class="card"><div class="card-header"><span class="card-title">Internal Notes</span></div><div style="padding:14px 20px;font-size:13px;color:var(--txt2);line-height:1.6">${esc(c.notes)}</div></div>`:''}
       ${(()=>{
-        const grp=clientGroups.find(g=>Array.isArray(g.member_ids)&&g.member_ids.includes(c.id));
-        if(!grp)return'';
+        const myGrps=clientGroups.filter(g=>Array.isArray(g.member_ids)&&g.member_ids.includes(c.id));
+        if(!myGrps.length)return'';
         const typeLabels={class_action:'Class Action',joint_petitioners:'Joint Petitioners',co_defendants:'Co-Defendants',consortium:'Consortium',family:'Family Group',other:'Group'};
-        const isFocal=grp.focal_point_id===c.id;
-        const members=(grp.member_ids||[]).map(id=>clients.find(x=>x.id===id)).filter(Boolean);
-        return`<div class="card" style="margin-top:14px">
-          <div class="card-header">
-            <span class="card-title">👥 Group: ${esc(grp.name)}</span>
-            <span class="group-badge${isFocal?' focal':''}">${typeLabels[grp.group_type]||'Group'}${isFocal?' · ⭐ Focal Point':''}</span>
-          </div>
-          <div style="padding:10px 20px 4px;font-size:11px;color:var(--txt3)">This client is a member of this group. Click any member to view their profile.</div>
-          ${members.map(mc=>`<div style="padding:9px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:10px;cursor:pointer${mc.id===c.id?';background:var(--cream)':''}" onclick="openClientProfile('${mc.id}')">
-            <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0;${avColorStyle(mc.name)}">${initials(mc.name)}</div>
-            <div style="flex:1;font-size:12px;font-weight:${mc.id===c.id?'600':'400'};color:var(--txt)">${esc(mc.name)}${mc.id===c.id?' (you)':''}</div>
-            ${mc.id===grp.focal_point_id?'<span style="font-size:10px;color:var(--gold);font-weight:600">⭐ Focal</span>':''}
-          </div>`).join('')}
-        </div>`;
+        return myGrps.map(grp=>{
+          const isFocal=grp.focal_point_id===c.id;
+          const members=(grp.member_ids||[]).map(id=>clients.find(x=>x.id===id)).filter(Boolean);
+          return`<div class="card" style="margin-top:14px">
+            <div class="card-header">
+              <span class="card-title">&#128101; ${esc(grp.name)}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="group-badge${isFocal?' focal':''}">${typeLabels[grp.group_type]||'Group'}${isFocal?' · &#11088;':''}</span>
+                <button class="topbar-btn" style="font-size:10px;padding:4px 10px" onclick="openGroupHub('${grp.id}','client-profile')">Open Hub &rarr;</button>
+              </div>
+            </div>
+            ${members.map(mc=>`<div style="padding:9px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:10px;cursor:pointer${mc.id===c.id?';background:var(--cream)':''}" onclick="openClientProfile('${mc.id}')">
+              <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0;${avColorStyle(mc.name)}">${initials(mc.name)}</div>
+              <div style="flex:1;font-size:12px;font-weight:${mc.id===c.id?'600':'400'};color:var(--txt)">${esc(mc.name)}${mc.id===c.id?' (you)':''}</div>
+              ${mc.id===grp.focal_point_id?'<span style="font-size:10px;color:var(--gold);font-weight:600">&#11088; Focal</span>':''}
+            </div>`).join('')}
+          </div>`;
+        }).join('');
       })()}`;
   } else if(activeProfileTab==='matters'){
     const mc=matters.filter(m=>m.client_id===c.id);
@@ -4419,6 +4474,42 @@ function renderProfileTab(){
           `:`<div style="text-align:center;color:var(--txt3);padding:32px 0;font-size:13px">No notes recorded for this client.</div>`}
         </div>
       </div>`;
+  }
+
+  else if(activeProfileTab==='groups'){
+    const myGroups=clientGroups.filter(g=>Array.isArray(g.member_ids)&&g.member_ids.includes(c.id));
+    // Update badge
+    const gb=document.getElementById('client-groups-badge');
+    if(gb){gb.textContent=myGroups.length;gb.style.display=myGroups.length>0?'inline':'none';}
+    const typeLabels={class_action:'Class Action',joint_petitioners:'Joint Petitioners',co_defendants:'Co-Defendants',consortium:'Consortium',family:'Family Group',other:'Group'};
+    if(!myGroups.length){
+      el.innerHTML=`<div class="card"><div style="text-align:center;padding:40px 20px;color:var(--txt3);font-size:13px">
+        <div style="font-size:32px;margin-bottom:12px">👥</div>
+        <div style="font-weight:500;color:var(--txt);margin-bottom:6px">No groups yet</div>
+        <div>This client has not been added to any group. Use the <strong>👥 Groups</strong> button in the Clients view to create or edit groups.</div>
+      </div></div>`;
+      return;
+    }
+    el.innerHTML=myGroups.map(g=>{
+      const members=(g.member_ids||[]).map(id=>clients.find(x=>x.id===id)).filter(Boolean);
+      const focal=clients.find(x=>x.id===g.focal_point_id);
+      const isFocal=g.focal_point_id===c.id;
+      const grpMatters=matters.filter(m=>m.group_id===g.id);
+      return`<div class="client-group-card">
+        <div class="client-group-card-hd" onclick="openGroupHub('${g.id}','client-profile')">
+          <div style="width:36px;height:36px;border-radius:8px;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">&#128101;</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:500;color:var(--txt)">${esc(g.name)}</div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px">${typeLabels[g.group_type]||'Group'} &middot; ${members.length} member${members.length!==1?'s':''} &middot; ${grpMatters.length} matter${grpMatters.length!==1?'s':''}${isFocal?' &middot; &#11088; Focal Point':''}</div>
+          </div>
+          <button class="client-group-open-btn" onclick="event.stopPropagation();openGroupHub('${g.id}','client-profile')">Open Group Hub &rarr;</button>
+        </div>
+        <div style="padding:12px 18px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+          ${members.map(mc=>`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:8px;background:${mc.id===g.focal_point_id?'#FFF8E7':'var(--cream2)'};color:${mc.id===g.focal_point_id?'#7A4800':'var(--txt2)'};font-weight:${mc.id===g.focal_point_id?'600':'400'}">${mc.id===g.focal_point_id?'&#11088; ':''}${esc(mc.name)}${mc.id===c.id?' (you)':''}</span>`).join('')}
+          ${focal?`<span style="margin-left:auto;font-size:10px;color:var(--txt3)">Focal: ${esc(focal.name)}</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
   }
 }
 
@@ -16825,6 +16916,485 @@ function _dgPrintBase(){
   frame.contentWindow.focus();
   setTimeout(()=>frame.contentWindow.print(),300);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// GROUP HUB — Full group workspace with Members, Matters, Updates, Documents
+// ═══════════════════════════════════════════════════════════════
+
+const GROUP_TYPE_LABELS={class_action:'Class Action',joint_petitioners:'Joint Petitioners',co_defendants:'Co-Defendants',consortium:'Consortium',family:'Family Group',other:'Group'};
+
+function openGroupHub(groupId, returnView='clients'){
+  activeGroupId=groupId;
+  activeGroupHubTab='members';
+  groupHubReturnView=returnView;
+  // Set back button label
+  const backLabel=document.getElementById('group-hub-back-label');
+  if(backLabel) backLabel.textContent=returnView==='client-profile'?'Back to Client Profile':'Back to Clients';
+  showView('group-hub', null);
+  // Reset tabs
+  document.querySelectorAll('.group-hub-tab').forEach((t,i)=>{
+    t.classList.toggle('active',i===0);
+  });
+  renderGroupHubHero();
+  renderGroupHubTab();
+}
+
+function closeGroupHub(){
+  if(groupHubReturnView==='client-profile' && activeClientId){
+    showView('client-profile', null);
+    document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes('clients'))n.classList.add('active');});
+  } else {
+    showView('clients', document.querySelector('[onclick*="clients"]'));
+  }
+}
+
+function renderGroupHubHero(){
+  const g=clientGroups.find(x=>x.id===activeGroupId);
+  if(!g) return;
+  const members=(g.member_ids||[]).map(id=>clients.find(c=>c.id===id)).filter(Boolean);
+  const focal=clients.find(c=>c.id===g.focal_point_id);
+  const grpMatters=matters.filter(m=>m.group_id===g.id);
+  const heroEl=document.getElementById('group-hub-hero-area');
+  if(!heroEl) return;
+  heroEl.innerHTML=`
+    <div class="group-hub-hero">
+      <div class="group-hub-icon">&#128101;</div>
+      <div style="flex:1;min-width:0">
+        <div class="group-hub-name">${esc(g.name)}</div>
+        <div class="group-hub-sub">${GROUP_TYPE_LABELS[g.group_type]||'Group'} &middot; ${members.length} member${members.length!==1?'s':''} &middot; ${grpMatters.length} matter${grpMatters.length!==1?'s':''}${focal?' &middot; Focal: '+esc(focal.name):''}</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-left:auto">
+        ${members.slice(0,5).map(mc=>`<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;${avColorStyle(mc.name)};border:2px solid rgba(255,255,255,0.3)" title="${esc(mc.name)}">${initials(mc.name)}</div>`).join('')}
+        ${members.length>5?`<div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600">+${members.length-5}</div>`:''}
+      </div>
+    </div>`;
+}
+
+function switchGroupHubTab(tab, el){
+  activeGroupHubTab=tab;
+  document.querySelectorAll('.group-hub-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderGroupHubTab();
+}
+
+function renderGroupHubTab(){
+  const g=clientGroups.find(x=>x.id===activeGroupId);
+  if(!g) return;
+  const el=document.getElementById('group-hub-tab-content');
+  if(!el) return;
+
+  if(activeGroupHubTab==='members'){
+    renderGroupHubMembers(g, el);
+  } else if(activeGroupHubTab==='matters'){
+    renderGroupHubMatters(g, el);
+  } else if(activeGroupHubTab==='updates'){
+    renderGroupHubUpdates(g, el);
+  } else if(activeGroupHubTab==='documents'){
+    renderGroupHubDocuments(g, el);
+  }
+}
+
+// ── MEMBERS TAB ──────────────────────────────────────────────────
+function renderGroupHubMembers(g, el){
+  const members=(g.member_ids||[]).map(id=>clients.find(c=>c.id===id)).filter(Boolean);
+  const nonMembers=clients.filter(c=>!(g.member_ids||[]).includes(c.id));
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-header">
+        <span class="card-title">Members (${members.length})</span>
+        <button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="toggleGroupHubAddMembers()">+ Add Members</button>
+      </div>
+      <div id="group-hub-add-members-panel" style="display:none;padding:14px 20px;border-bottom:1px solid var(--brd);background:var(--cream)">
+        <div style="font-size:11px;font-weight:500;color:var(--txt);margin-bottom:8px">Select clients to add:</div>
+        <div style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:10px" id="group-hub-nonmembers-list">
+          ${nonMembers.length===0?'<div style="font-size:12px;color:var(--txt3)">All clients are already in this group.</div>':
+            nonMembers.map(c=>`<label style="display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;cursor:pointer">
+              <input type="checkbox" value="${c.id}" style="width:14px;height:14px;accent-color:var(--navy)"/>
+              <div style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0;${avColorStyle(c.name)}">${initials(c.name)}</div>
+              <span style="flex:1">${esc(c.name)}</span>
+              <span style="font-size:10px;color:var(--txt3)">${esc(c.type||'')}</span>
+            </label>`).join('')}
+        </div>
+        ${nonMembers.length>0?`<button class="topbar-btn gold" style="font-size:11px;padding:6px 16px" onclick="addMembersFromHub('${g.id}')">Add Selected</button>`:''}
+      </div>
+      ${members.map(mc=>{
+        const isFocal=mc.id===g.focal_point_id;
+        const mc_matters=matters.filter(m=>m.client_id===mc.id);
+        return`<div style="padding:12px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;${avColorStyle(mc.name)}">${initials(mc.name)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;color:var(--txt)">${isFocal?'&#11088; ':''}${esc(mc.name)}</div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px">${esc(mc.type||'—')} &middot; ${mc_matters.length} matter${mc_matters.length!==1?'s':''}</div>
+          </div>
+          ${isFocal?'<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:#FFF8E7;color:#7A4800;font-weight:600">Focal Point</span>':''}
+          <button class="topbar-btn sec" style="font-size:11px;padding:4px 10px" onclick="openClientProfile('${mc.id}')">View Profile</button>
+          <button class="op-del" title="Remove from group" onclick="removeClientFromGroup('${g.id}','${mc.id}')">&#215;</button>
+        </div>`;
+      }).join('')}
+      ${members.length===0?'<div style="padding:28px;text-align:center;color:var(--txt3);font-size:13px">No members yet. Add clients above.</div>':''}
+    </div>`;
+}
+
+function toggleGroupHubAddMembers(){
+  const p=document.getElementById('group-hub-add-members-panel');
+  if(p) p.style.display=p.style.display==='none'?'block':'none';
+}
+
+async function addMembersFromHub(groupId){
+  const checked=[...document.querySelectorAll('#group-hub-nonmembers-list input:checked')];
+  const newIds=checked.map(cb=>cb.value);
+  if(!newIds.length){toast('Select at least one client.',true);return;}
+  const group=clientGroups.find(g=>g.id===groupId);
+  if(!group) return;
+  const updatedIds=[...new Set([...(group.member_ids||[]),...newIds])];
+  try{
+    const{data,error}=await sb.from('client_groups').update({member_ids:updatedIds}).eq('id',groupId).select();
+    if(error){toast('Error: '+error.message,true);return;}
+    const idx=clientGroups.findIndex(g=>g.id===groupId);
+    if(idx>-1) clientGroups[idx]=data[0];
+    toast(newIds.length+' client'+(newIds.length!==1?'s':'')+' added.');
+    renderGroupHubHero();
+    renderGroupHubTab();
+    renderClients();
+  }catch(err){toast(err.message,true);}
+}
+
+// ── MATTERS TAB ──────────────────────────────────────────────────
+function renderGroupHubMatters(g, el){
+  const grpMatters=matters.filter(m=>m.group_id===g.id);
+  const members=(g.member_ids||[]).map(id=>clients.find(c=>c.id===id)).filter(Boolean);
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--txt2)">${grpMatters.length} group matter${grpMatters.length!==1?'s':''} shared across all members</div>
+      <button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openGroupMatterModal('${g.id}')">+ New Group Matter</button>
+    </div>
+    <div class="card">
+      ${!grpMatters.length?`<div style="padding:32px;text-align:center;color:var(--txt3);font-size:13px">
+        <div style="font-size:28px;margin-bottom:8px">&#9878;</div>
+        No group matters yet. Create one above — it will be visible to all ${members.length} members.
+      </div>`:''}
+      ${grpMatters.map(m=>{
+        const cl=clients.find(c=>c.id===m.client_id);
+        return`<div class="pm-row" onclick="openMatterDetail('${m.id}')">
+          <div style="flex-shrink:0;margin-right:4px"><span class="file-no-badge">${esc(m.file_number||'—')}</span></div>
+          <div class="matter-icon civil" style="width:32px;height:32px;font-size:13px;flex-shrink:0">&#9878;&#65039;</div>
+          <div class="matter-info">
+            <div class="matter-title">${esc(m.title)}</div>
+            <div class="matter-client">&#128101; Group Matter &middot; ${esc(m.type||'')}${m.court?' &middot; '+esc(m.court):''}</div>
+          </div>
+          <div class="matter-right">
+            <span class="status-pill ${statusClass(m.status)}">${statusLabel(m.status)}</span>
+            <div class="matter-date">${m.next_date?fmtDate(m.next_date):''}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:18px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--txt3);font-weight:500;margin-bottom:10px">Individual Member Matters</div>
+      ${members.map(mc=>{
+        const mmc=matters.filter(m=>m.client_id===mc.id&&!m.group_id);
+        if(!mmc.length) return'';
+        return`<div class="card" style="margin-bottom:12px">
+          <div class="card-header"><span class="card-title" style="font-size:12px">&#128100; ${esc(mc.name)}</span><span style="font-size:11px;color:var(--txt3)">${mmc.length} matter${mmc.length!==1?'s':''}</span></div>
+          ${mmc.slice(0,3).map(m=>`<div class="pm-row" onclick="openMatterDetail('${m.id}')" style="padding:10px 20px">
+            <div class="matter-info"><div class="matter-title" style="font-size:12px">${esc(m.title)}</div></div>
+            <span class="status-pill ${statusClass(m.status)}" style="font-size:9px">${statusLabel(m.status)}</span>
+          </div>`).join('')}
+          ${mmc.length>3?`<div style="padding:8px 20px;font-size:11px;color:var(--txt3);cursor:pointer" onclick="openClientProfile('${mc.id}')">+${mmc.length-3} more — View profile &rarr;</div>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function openGroupMatterModal(groupId){
+  // Open matter modal pre-filled with group context
+  const g=clientGroups.find(x=>x.id===groupId);
+  if(!g) return;
+  openModal('matter');
+  // Set group dropdown
+  setTimeout(()=>{
+    const gsel=document.getElementById('m-group');
+    if(gsel) gsel.value=groupId;
+    // Pre-select focal point client
+    const csel=document.getElementById('m-client');
+    if(csel&&g.focal_point_id) csel.value=g.focal_point_id;
+    // Show a note
+    toast('Opening matter for group: '+g.name);
+  },100);
+}
+
+// ── UPDATES TAB ──────────────────────────────────────────────────
+function renderGroupHubUpdates(g, el){
+  const updates=groupUpdates[g.id]||[];
+  el.innerHTML=`
+    <div class="group-update-compose">
+      <div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:8px">Post an update to all group members</div>
+      <textarea class="group-update-input" id="group-update-text-${g.id}" placeholder="Share a case update, announcement, or note visible to all ${(g.member_ids||[]).length} members…"></textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px">
+        <button class="topbar-btn gold" style="font-size:12px;padding:7px 18px" onclick="postGroupUpdate('${g.id}')">Post Update</button>
+      </div>
+    </div>
+    <div class="card" id="group-updates-feed-${g.id}">
+      ${updates.length===0?`<div style="padding:32px;text-align:center;color:var(--txt3);font-size:13px">
+        <div style="font-size:28px;margin-bottom:8px">&#128227;</div>
+        No updates yet. Post one above — all ${(g.member_ids||[]).length} members will see it.
+      </div>`:''}
+      ${updates.map(u=>renderUpdateRow(u)).join('')}
+    </div>`;
+  // Load updates from DB
+  loadGroupUpdates(g.id);
+}
+
+function renderUpdateRow(u){
+  const authorName=u.author_name||'Advocate';
+  const timeStr=u.created_at?new Date(u.created_at).toLocaleString('en-KE',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  return`<div class="group-update-row">
+    <div class="group-update-av" style="${avColorStyle(authorName)}">${initials(authorName)}</div>
+    <div class="group-update-body">
+      <div class="group-update-author">${esc(authorName)}</div>
+      <div class="group-update-text">${esc(u.content)}</div>
+      <div class="group-update-time">${timeStr}</div>
+    </div>
+    ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="op-del" title="Delete update" onclick="deleteGroupUpdate('${u.id}','${u.group_id}')">&#215;</button>`:''}
+  </div>`;
+}
+
+async function loadGroupUpdates(groupId){
+  try{
+    const{data,error}=await sb.from('group_updates').select('*').eq('group_id',groupId).order('created_at',{ascending:false});
+    if(error) throw error;
+    groupUpdates[groupId]=data||[];
+    const feed=document.getElementById('group-updates-feed-'+groupId);
+    if(!feed) return;
+    const updates=groupUpdates[groupId];
+    feed.innerHTML=updates.length===0
+      ?`<div style="padding:32px;text-align:center;color:var(--txt3);font-size:13px"><div style="font-size:28px;margin-bottom:8px">&#128227;</div>No updates yet. Post one above.</div>`
+      :updates.map(u=>renderUpdateRow(u)).join('');
+  }catch(e){console.warn('group_updates table may not exist yet:',e.message);}
+}
+
+async function postGroupUpdate(groupId){
+  const ta=document.getElementById('group-update-text-'+groupId);
+  const content=(ta?.value||'').trim();
+  if(!content){toast('Please write something before posting.',true);return;}
+  const authorName=currentProfile?.full_name||currentUser?.email||'Advocate';
+  try{
+    const{data,error}=await sb.from('group_updates').insert([{
+      group_id:groupId,
+      content,
+      author_id:currentUser?.id||null,
+      author_name:authorName
+    }]).select();
+    if(error) throw error;
+    if(ta) ta.value='';
+    if(!groupUpdates[groupId]) groupUpdates[groupId]=[];
+    groupUpdates[groupId]=[data[0],...groupUpdates[groupId]];
+    const feed=document.getElementById('group-updates-feed-'+groupId);
+    if(feed) feed.innerHTML=groupUpdates[groupId].map(u=>renderUpdateRow(u)).join('');
+    toast('Update posted to group.');
+  }catch(e){
+    // Table doesn't exist yet — show helpful message
+    toast('Please create the group_updates table in Supabase first. See console for SQL.',true);
+    console.log('Run this SQL in Supabase:
+CREATE TABLE group_updates (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  group_id UUID NOT NULL,
+  content TEXT NOT NULL,
+  author_id UUID,
+  author_name TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE group_updates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "All authenticated users" ON group_updates FOR ALL USING (auth.role()='authenticated');');
+  }
+}
+
+async function deleteGroupUpdate(updateId, groupId){
+  if(!confirm('Delete this update?')) return;
+  try{
+    const{error}=await sb.from('group_updates').delete().eq('id',updateId);
+    if(error) throw error;
+    groupUpdates[groupId]=(groupUpdates[groupId]||[]).filter(u=>u.id!==updateId);
+    const feed=document.getElementById('group-updates-feed-'+groupId);
+    if(feed) feed.innerHTML=groupUpdates[groupId].length===0
+      ?`<div style="padding:32px;text-align:center;color:var(--txt3);font-size:13px">No updates yet.</div>`
+      :groupUpdates[groupId].map(u=>renderUpdateRow(u)).join('');
+    toast('Update deleted.');
+  }catch(e){toast(e.message,true);}
+}
+
+// ── DOCUMENTS TAB ─────────────────────────────────────────────────
+function renderGroupHubDocuments(g, el){
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-header">
+        <span class="card-title">&#128193; Group Documents</span>
+        <label class="topbar-btn gold" style="font-size:11px;padding:5px 14px;cursor:pointer">
+          &#8679; Upload
+          <input type="file" style="display:none" multiple onchange="uploadGroupDoc('${g.id}',this)"/>
+        </label>
+      </div>
+      <div id="group-docs-list-${g.id}" style="min-height:80px">
+        <div style="padding:24px;text-align:center;color:var(--txt3);font-size:13px"><div class="big-spinner" style="width:20px;height:20px;border-width:2px;margin:0 auto 10px"></div>Loading documents…</div>
+      </div>
+    </div>
+    <div style="background:#FFF8E7;border:1px solid var(--gold);border-radius:8px;padding:12px 16px;font-size:11px;color:#6B4A00;line-height:1.6">
+      &#128161; Group documents are shared with all ${(g.member_ids||[]).length} members and visible in each member's client portal.
+    </div>`;
+  loadGroupDocuments(g.id);
+}
+
+async function loadGroupDocuments(groupId){
+  const listEl=document.getElementById('group-docs-list-'+groupId);
+  try{
+    const{data,error}=await sb.from('group_documents').select('*').eq('group_id',groupId).order('created_at',{ascending:false});
+    if(error) throw error;
+    groupHubDocs[groupId]=data||[];
+    renderGroupDocsList(groupId,listEl);
+  }catch(e){
+    if(listEl) listEl.innerHTML=`<div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">Create the <code>group_documents</code> table to enable group document sharing.<br><button onclick="showGroupDocsSql()" style="margin-top:8px;background:var(--navy);color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer">View SQL</button></div>`;
+  }
+}
+
+function renderGroupDocsList(groupId, el){
+  const docs=groupHubDocs[groupId]||[];
+  if(!el) return;
+  if(!docs.length){
+    el.innerHTML=`<div style="padding:32px;text-align:center;color:var(--txt3);font-size:13px"><div style="font-size:28px;margin-bottom:8px">&#128193;</div>No documents yet. Upload files above — all members will see them.</div>`;
+    return;
+  }
+  el.innerHTML=docs.map(doc=>{
+    const{icon,cls}=typeof docFileIcon==='function'?docFileIcon(doc.file_name):{icon:'&#128196;',cls:''};
+    const size=doc.file_size?fmtFileSize(doc.file_size):'';
+    const dateStr=doc.created_at?new Date(doc.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):'';
+    return`<div style="display:flex;gap:12px;align-items:center;padding:11px 20px;border-bottom:1px solid var(--brd)">
+      <div class="doc-icon ${cls}" style="flex-shrink:0">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(doc.display_name||doc.file_name)}</div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap">
+          <span style="background:#EEEDFE;color:#3C3489;font-size:9px;padding:1px 6px;border-radius:8px;font-weight:600">Group Doc</span>
+          ${size?`<span>${size}</span>`:''}
+          ${dateStr?`<span>${dateStr}</span>`:''}
+          ${doc.uploaded_by_name?`<span>by ${esc(doc.uploaded_by_name)}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="doc-btn" onclick="downloadGroupDoc('${groupId}','${esc(doc.storage_path||'')}','${esc(doc.display_name||doc.file_name)}')">&#11015;</button>
+        <button class="doc-btn" style="color:var(--red)" onclick="deleteGroupDoc('${doc.id}','${groupId}','${esc(doc.storage_path||'')}')">&#215;</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fmtFileSize(bytes){
+  if(!bytes) return '';
+  if(bytes<1024) return bytes+'B';
+  if(bytes<1048576) return (bytes/1024).toFixed(1)+'KB';
+  return (bytes/1048576).toFixed(1)+'MB';
+}
+
+async function uploadGroupDoc(groupId, input){
+  const files=Array.from(input.files);
+  if(!files.length) return;
+  const g=clientGroups.find(x=>x.id===groupId);
+  const uploaderName=currentProfile?.full_name||currentUser?.email||'Advocate';
+  let uploaded=0;
+  for(const file of files){
+    const storagePath=`group-docs/${groupId}/${Date.now()}_${file.name}`;
+    try{
+      const{error:upErr}=await sb.storage.from('matter-documents').upload(storagePath,file,{cacheControl:'3600',upsert:false});
+      if(upErr) throw upErr;
+      const{error:dbErr}=await sb.from('group_documents').insert([{
+        group_id:groupId,
+        file_name:file.name,
+        display_name:file.name,
+        storage_path:storagePath,
+        file_size:file.size,
+        file_type:file.type||'',
+        uploaded_by:currentUser?.id||null,
+        uploaded_by_name:uploaderName
+      }]);
+      if(dbErr) throw dbErr;
+      uploaded++;
+    }catch(e){toast('Error uploading '+file.name+': '+e.message,true);}
+  }
+  if(uploaded>0){
+    toast(uploaded+' file'+(uploaded!==1?'s':'')+' uploaded to group.');
+    await loadGroupDocuments(groupId);
+  }
+  input.value='';
+}
+
+async function downloadGroupDoc(groupId, storagePath, displayName){
+  try{
+    const{data,error}=await sb.storage.from('matter-documents').createSignedUrl(storagePath,300);
+    if(error) throw error;
+    const a=document.createElement('a');a.href=data.signedUrl;a.download=displayName;a.target='_blank';document.body.appendChild(a);a.click();a.remove();
+  }catch(e){toast('Download error: '+e.message,true);}
+}
+
+async function deleteGroupDoc(docId, groupId, storagePath){
+  if(!confirm('Delete this document? This cannot be undone.')) return;
+  try{
+    if(storagePath){await sb.storage.from('matter-documents').remove([storagePath]);}
+    const{error}=await sb.from('group_documents').delete().eq('id',docId);
+    if(error) throw error;
+    groupHubDocs[groupId]=(groupHubDocs[groupId]||[]).filter(d=>d.id!==docId);
+    const listEl=document.getElementById('group-docs-list-'+groupId);
+    if(listEl) renderGroupDocsList(groupId,listEl);
+    toast('Document deleted.');
+  }catch(e){toast(e.message,true);}
+}
+
+function showGroupDocsSql(){
+  const sql=`-- Run this in Supabase SQL Editor:
+
+CREATE TABLE group_updates (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  group_id UUID NOT NULL,
+  content TEXT NOT NULL,
+  author_id UUID,
+  author_name TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE group_updates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "auth_all" ON group_updates FOR ALL USING (auth.role()='authenticated');
+
+CREATE TABLE group_documents (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  group_id UUID NOT NULL,
+  file_name TEXT NOT NULL,
+  display_name TEXT,
+  storage_path TEXT,
+  file_size BIGINT,
+  file_type TEXT,
+  uploaded_by UUID,
+  uploaded_by_name TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE group_documents ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "auth_all" ON group_documents FOR ALL USING (auth.role()='authenticated');`;
+  const box=document.createElement('div');
+  box.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  box.innerHTML=`<div style="background:#fff;border-radius:12px;padding:24px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto">
+    <div style="font-family:'Playfair Display',serif;font-size:16px;margin-bottom:12px">&#128202; Required Supabase Tables</div>
+    <pre style="background:#0D1B2A;color:#B8953A;padding:16px;border-radius:8px;font-size:11px;overflow-x:auto;white-space:pre-wrap">${sql}</pre>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button onclick="navigator.clipboard.writeText(document.querySelector('pre').textContent).then(()=>toast('SQL copied!'))" style="flex:1;background:var(--navy);color:#fff;border:none;padding:9px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer">&#128203; Copy SQL</button>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;background:var(--cream);border:1px solid var(--brd);color:var(--txt2);padding:9px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer">Close</button>
+    </div>
+  </div>`;
+  document.body.appendChild(box);
+  box.addEventListener('click',e=>{if(e.target===box)box.remove();});
+}
+
+// Also update renderGroupListInModal to add "Open Hub" button per group
+// Patch: add Open Hub button in group card actions
+(function patchGroupCardActions(){
+  const orig=window.renderGroupListInModal;
+  if(!orig) return;
+  // Already patched by new renderGroupListInModal definition
+})();
 </script>
 
 </body>
