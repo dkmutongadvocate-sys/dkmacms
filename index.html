@@ -5713,7 +5713,7 @@ function renderFinance(){
       <span><span class="status-pill ${statusClass(i.status)}">${statusLabel(i.status)}</span></span>
       <span style="color:var(--txt3)">${fmtDate(i.due_date)}</span>
       <span style="display:flex;align-items:center;gap:6px">
-        <button class="topbar-btn" style="font-size:10px;padding:3px 8px" title="Download DOCX" onclick="downloadInvoiceDocx('${i.id}',event)">⬇ DOCX</button>
+        <button class="topbar-btn" style="font-size:10px;padding:3px 8px" title="Download PDF" onclick="downloadInvoiceDocx('${i.id}',event)">⬇ PDF</button>
         <button class="op-del" title="Delete" onclick="deleteInvoice('${i.id}','${esc(i.invoice_no||'—')}',event)">×</button>
       </span>
     </div>`;
@@ -6832,7 +6832,7 @@ async function saveInvoice(){
   if(error){toast('Error: '+error.message,true);return;}
   const saved=data[0];
   invoices=[saved,...invoices];
-  closeModal();toast('Invoice saved. Generating DOCX…');
+  closeModal();toast('Invoice saved. Generating PDF…');
   renderFinance();renderDashboard();
   if(activeClientId)renderProfileTab();
   setTimeout(()=>downloadInvoiceDocx(saved.id),400);
@@ -17697,6 +17697,123 @@ async function downloadInvoiceDocx(invId,e){
   const total=Number(inv.amount)||sub+vat;
   const fmtMny=n=>'KES '+Number(n).toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});
   const fmtDt=d=>d?new Date(d).toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'}):'—';
+
+  // PDF generation via print window
+  try{
+    const lineRowsHtml=lineItems.map(l=>`
+      <tr>
+        <td style="padding:8px 10px;border:1px solid #ddd;">${l.description||'—'}</td>
+        <td style="padding:8px 10px;border:1px solid #ddd;text-align:center;">${l.qty||1}</td>
+        <td style="padding:8px 10px;border:1px solid #ddd;text-align:right;">${fmtMny(l.unit_price||0)}</td>
+        <td style="padding:8px 10px;border:1px solid #ddd;text-align:right;">${fmtMny(l.subtotal||0)}</td>
+      </tr>`).join('');
+
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${inv.invoice_no||'Invoice'}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{font-family:Arial,sans-serif;font-size:13px;color:#1a1a1a;padding:40px;}
+      .header-img{width:100%;max-width:600px;display:block;margin-bottom:20px;}
+      .row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+      h1{font-size:28px;font-weight:bold;color:#0D1B2A;}
+      .inv-no{font-size:16px;font-weight:bold;color:#B8953A;margin-top:6px;}
+      .meta{text-align:right;font-size:12px;line-height:1.8;}
+      .meta strong{color:#0D1B2A;}
+      .divider{border-top:3px solid #0D1B2A;margin:16px 0;}
+      .bill-to-label{font-size:11px;color:#8a8a8a;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+      .bill-name{font-size:16px;font-weight:bold;color:#0D1B2A;}
+      .bill-detail{font-size:12px;color:#5a5a5a;line-height:1.7;}
+      .note{font-size:12px;color:#5a5a5a;font-style:italic;margin-top:10px;}
+      .section-label{font-size:11px;color:#8a8a8a;letter-spacing:1px;text-transform:uppercase;margin:24px 0 8px;}
+      table{width:100%;border-collapse:collapse;font-size:12px;}
+      th{padding:8px 10px;background:#F0EDE8;color:#0D1B2A;font-weight:bold;border:1px solid #ccc;text-align:left;}
+      th.right{text-align:right;}th.center{text-align:center;}
+      .totals{margin-top:16px;display:flex;justify-content:flex-end;}
+      .totals-box{width:260px;font-size:12px;}
+      .totals-row{display:flex;justify-content:space-between;padding:6px 10px;border:1px solid #ddd;}
+      .totals-total{display:flex;justify-content:space-between;padding:8px 10px;border:2px solid #0D1B2A;background:#F0EDE8;font-weight:bold;}
+      .totals-total .amt{color:#B8953A;}
+      .payment{margin-top:32px;border-top:1px solid #ddd;padding-top:16px;}
+      .payment h4{font-size:13px;font-weight:bold;color:#0D1B2A;margin-bottom:6px;}
+      .payment p{font-size:12px;color:#5a5a5a;line-height:1.7;}
+      .footer-img{width:100%;max-width:600px;display:block;margin-top:30px;}
+      @media print{body{padding:20px;}@page{margin:10mm;}}
+    </style></head><body>
+    <img class="header-img" src="data:image/png;base64,${_LH_HEADER}">
+    <div class="row">
+      <div><h1>INVOICE</h1><div class="inv-no">${inv.invoice_no||''}</div></div>
+      <div class="meta">
+        <div>Invoice Date: <strong>${fmtDt(inv.invoice_date)}</strong></div>
+        <div>Due Date: <strong style="color:${inv.status==='overdue'?'#AA3333':'#1a1a1a'}">${fmtDt(inv.due_date)}</strong></div>
+        <div>Status: <strong style="color:${inv.status==='paid'?'#2D6A4F':inv.status==='overdue'?'#AA3333':'#0D1B2A'}">${(inv.status||'draft').toUpperCase()}</strong></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="bill-to-label">BILL TO</div>
+    <div class="bill-name">${client?client.name:'—'}</div>
+    <div class="bill-detail">
+      ${matter?'<div>Re: '+matter.title+'</div>':''}
+      ${client&&client.email?'<div>'+client.email+'</div>':''}
+      ${client&&client.phone?'<div>'+client.phone+'</div>':''}
+    </div>
+    ${inv.description?'<div class="note">'+inv.description+'</div>':''}
+    <div class="section-label">SERVICES RENDERED</div>
+    <table>
+      <thead><tr>
+        <th>Description</th>
+        <th class="center">Qty</th>
+        <th class="right">Unit Price</th>
+        <th class="right">Amount</th>
+      </tr></thead>
+      <tbody>${lineRowsHtml}</tbody>
+    </table>
+    <div class="totals"><div class="totals-box">
+      <div class="totals-row"><span>Subtotal</span><span>${fmtMny(sub)}</span></div>
+      <div class="totals-row"><span>VAT (16%)</span><span>${fmtMny(vat)}</span></div>
+      <div class="totals-total"><span>TOTAL</span><span class="amt">${fmtMny(total)}</span></div>
+    </div></div>
+    <div class="payment">
+      <h4>Payment Instructions</h4>
+      <p>Please make payment to Dennis Kimani Mutonga, Advocate. Reference your invoice number when making payment.</p>
+      <p>Contact: info@dkma.co.ke | +254 757 354 379</p>
+    </div>
+    <img class="footer-img" src="data:image/png;base64,${_LH_FOOTER}">
+    </body></html>`;
+
+    // Download PDF directly using html2canvas + jsPDF
+    const _pdfContainer=document.createElement('div');
+    _pdfContainer.style.cssText='position:fixed;left:-9999px;top:0;width:800px;background:#fff;';
+    const _bodyMatch=html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+    _pdfContainer.innerHTML=_bodyMatch?_bodyMatch[1]:html;
+    document.body.appendChild(_pdfContainer);
+    toast('Generating PDF…');
+    const _loadLib=(src)=>new Promise((res,rej)=>{if(document.querySelector('script[src="'+src+'"]')){res();return;}const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+    try{
+      await _loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      await _loadLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      const _canvas=await html2canvas(_pdfContainer,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#fff',logging:false});
+      document.body.removeChild(_pdfContainer);
+      const _imgData=_canvas.toDataURL('image/jpeg',0.95);
+      const {jsPDF}=window.jspdf;
+      const _pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const _pdfW=_pdf.internal.pageSize.getWidth();
+      const _pdfH=_pdf.internal.pageSize.getHeight();
+      const _imgH=(_canvas.height*_pdfW)/_canvas.width;
+      let _heightLeft=_imgH, _position=0;
+      _pdf.addImage(_imgData,'JPEG',0,_position,_pdfW,_imgH);
+      _heightLeft-=_pdfH;
+      while(_heightLeft>0){_position=_heightLeft-_imgH;_pdf.addPage();_pdf.addImage(_imgData,'JPEG',0,_position,_pdfW,_imgH);_heightLeft-=_pdfH;}
+      _pdf.save((inv.invoice_no||'Invoice')+'.pdf');
+      toast('Invoice PDF downloaded!');
+    }catch(_pdfErr){
+      if(document.body.contains(_pdfContainer))document.body.removeChild(_pdfContainer);
+      console.error('PDF error:',_pdfErr);
+      toast('Error generating PDF: '+_pdfErr.message,true);
+    }
+  }catch(err){
+    console.error('PDF error:',err);
+    toast('Error generating PDF: '+err.message,true);
+  }
+  return; // skip old DOCX path below
 
   if(!window.docx){toast('DOCX library not loaded yet — please try again.',true);return;}
   const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,ImageRun,
