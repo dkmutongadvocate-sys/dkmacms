@@ -17195,17 +17195,7 @@ async function postGroupUpdate(groupId){
   }catch(e){
     // Table doesn't exist yet — show helpful message
     toast('Please create the group_updates table in Supabase first. See console for SQL.',true);
-    console.log('Run this SQL in Supabase:
-CREATE TABLE group_updates (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  group_id UUID NOT NULL,
-  content TEXT NOT NULL,
-  author_id UUID,
-  author_name TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE group_updates ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "All authenticated users" ON group_updates FOR ALL USING (auth.role()='authenticated');');
+    console.log(`Run this SQL in Supabase:\nCREATE TABLE group_updates (\n  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,\n  group_id UUID NOT NULL,\n  content TEXT NOT NULL,\n  author_id UUID,\n  author_name TEXT,\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);\nALTER TABLE group_updates ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "All authenticated users" ON group_updates FOR ALL USING (auth.role()='authenticated');`);
   }
 }
 
@@ -17380,7 +17370,7 @@ CREATE POLICY "auth_all" ON group_documents FOR ALL USING (auth.role()='authenti
     <div style="font-family:'Playfair Display',serif;font-size:16px;margin-bottom:12px">&#128202; Required Supabase Tables</div>
     <pre style="background:#0D1B2A;color:#B8953A;padding:16px;border-radius:8px;font-size:11px;overflow-x:auto;white-space:pre-wrap">${sql}</pre>
     <div style="display:flex;gap:10px;margin-top:14px">
-      <button onclick="navigator.clipboard.writeText(document.querySelector('pre').textContent).then(()=>toast('SQL copied!'))" style="flex:1;background:var(--navy);color:#fff;border:none;padding:9px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer">&#128203; Copy SQL</button>
+      <button onclick="navigator.clipboard.writeText(this.closest('div').querySelector('pre').textContent).then(()=>toast('SQL copied!'))" style="flex:1;background:var(--navy);color:#fff;border:none;padding:9px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer">&#128203; Copy SQL</button>
       <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;background:var(--cream);border:1px solid var(--brd);color:var(--txt2);padding:9px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer">Close</button>
     </div>
   </div>`;
