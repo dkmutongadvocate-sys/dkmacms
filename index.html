@@ -17736,13 +17736,31 @@ async function downloadInvoiceDocx(invId,e){
   const _invContactParts = [_invFirmPhone, _invFirmEmail, _invFirmWebsite].filter(Boolean);
   const _invContactLine = _invContactParts.length ? _invContactParts.join(' | ') : '';
 
+  // Build dynamic letterhead values from firm settings
+  const _lhFirmName = _invFirmName || 'Dennis Kimani Mutonga, Advocate';
+  const _lhPhysical = _invFirmPhysical || '';
+  const _lhPostal   = _fc.contact_postal   || '';
+  const _lhPhone    = _invFirmPhone || '';
+  const _lhEmail    = _invFirmEmail || '';
+  const _lhWebsite  = _invFirmWebsite || '';
+  const _lhReg      = _invFirmReg || '';
+
   // Use an iframe approach for clean full-width rendering
   const _iframeDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   html{width:993px;background:#fff;font-family:'Sitka Text',serif;font-size:13px;color:#1a1a1a;display:flex;flex-direction:column;min-height:1404px;}
   body{width:993px;flex:1;display:flex;flex-direction:column;min-height:1404px;}
-  .hdr{width:993px;display:block;flex-shrink:0;}
+  .lh-wrap{width:993px;background:#f2f2f2;border-bottom:4px solid #0D1B2A;display:flex;align-items:center;padding:14px 44px;gap:18px;flex-shrink:0;}
+  .lh-logo{width:72px;height:72px;border-radius:50%;background:#0D1B2A;display:flex;align-items:center;justify-content:center;font-size:32px;color:#B8953A;flex-shrink:0;}
+  .lh-center{flex:1;}
+  .lh-firm{font-family:'Georgia',serif;font-size:17px;font-weight:bold;color:#0D1B2A;text-transform:uppercase;letter-spacing:0.5px;background:#F5D800;padding:2px 8px;display:inline-block;margin-bottom:4px;}
+  .lh-addr{font-size:11px;color:#1a1a1a;margin-top:2px;background:#F5D800;padding:1px 8px;display:inline-block;}
+  .lh-right{text-align:right;font-size:11px;color:#1a1a1a;line-height:1.8;}
+  .lh-right a{color:#1a1a1a;text-decoration:none;}
+  .lh-contact-row{display:flex;align-items:center;justify-content:flex-end;gap:6px;}
+  .lh-contact-icon{width:22px;height:22px;background:#0D1B2A;display:flex;align-items:center;justify-content:center;border-radius:3px;font-size:12px;}
+  .lh-contact-val{background:#F5D800;padding:1px 8px;font-size:11px;}
   .body{padding:22px 44px 20px;background:#fff;flex:1;}
   .date-line{font-size:13px;color:#0D1B2A;font-weight:bold;margin-bottom:14px;}
   .dear{font-size:13px;margin-bottom:6px;}
@@ -17761,7 +17779,19 @@ async function downloadInvoiceDocx(invId,e){
   .contact-line{font-size:11px;color:#5a5a5a;margin-top:4px;}
   .ftr{width:993px;display:block;flex-shrink:0;margin-top:0;}
 </style></head><body>
-<img class="hdr" src="data:image/png;base64,${_LH_HEADER}">
+<!-- DYNAMIC LETTERHEAD FROM FIRM SETTINGS -->
+<div class="lh-wrap">
+  <div class="lh-logo">⚖</div>
+  <div class="lh-center">
+    <div class="lh-firm">${_lhFirmName.toUpperCase()}</div>
+    ${_lhPhysical ? `<div class="lh-addr">${_lhPhysical}</div>` : ''}
+  </div>
+  <div class="lh-right">
+    ${_lhEmail ? `<div class="lh-contact-row"><span class="lh-contact-val">${_lhEmail}</span><span class="lh-contact-icon">✉</span></div>` : ''}
+    ${_lhPhone ? `<div class="lh-contact-row"><span class="lh-contact-val">${_lhPhone}</span><span class="lh-contact-icon">✆</span></div>` : ''}
+    ${_lhPostal ? `<div class="lh-contact-row"><span class="lh-contact-val">${_lhPostal}</span><span class="lh-contact-icon">⊕</span></div>` : ''}
+  </div>
+</div>
 <div class="body">
   <div class="date-line">${fmtDt(inv.invoice_date)}</div>
   <div class="dear">Dear Messrs. <span class="cname">${client?client.name:'\u2014'}</span></div>
@@ -17794,7 +17824,11 @@ async function downloadInvoiceDocx(invId,e){
   ${_invFirmPhysical ? `<div class="contact-line">${_invFirmPhysical}</div>` : ''}
   ${_invFirmReg ? `<div class="contact-line">Reg. No: ${_invFirmReg}</div>` : ''}
 </div>
-<img class="ftr" src="data:image/png;base64,${_LH_FOOTER}">
+<!-- DYNAMIC FOOTER FROM FIRM SETTINGS -->
+<div style="width:993px;background:#0D1B2A;padding:8px 44px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;margin-top:auto;">
+  <span style="font-size:10px;color:#B8953A;font-family:'Georgia',serif;letter-spacing:0.5px;">${_lhFirmName.toUpperCase()}</span>
+  <span style="font-size:10px;color:rgba(255,255,255,0.6);">${[_lhPhone,_lhEmail,_lhWebsite].filter(Boolean).join(' | ')}</span>
+</div>
 </body></html>`;
 
   // Render in off-screen iframe at exact 993px (native image width) for crisp output
