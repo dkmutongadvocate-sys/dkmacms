@@ -17736,34 +17736,18 @@ async function downloadInvoiceDocx(invId,e){
   const _invContactParts = [_invFirmPhone, _invFirmEmail, _invFirmWebsite].filter(Boolean);
   const _invContactLine = _invContactParts.length ? _invContactParts.join(' | ') : '';
 
-  // Build dynamic letterhead values from firm settings
-  const _lhFirmName = _invFirmName || 'Dennis Kimani Mutonga, Advocate';
-  const _lhPhysical = _invFirmPhysical || '';
-  const _lhPostal   = _fc.contact_postal   || '';
-  const _lhPhone    = _invFirmPhone || '';
-  const _lhEmail    = _invFirmEmail || '';
-  const _lhWebsite  = _invFirmWebsite || '';
-  const _lhReg      = _invFirmReg || '';
-
   // Use an iframe approach for clean full-width rendering
   const _iframeDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   html{width:993px;background:#fff;font-family:'Sitka Text',serif;font-size:13px;color:#1a1a1a;display:flex;flex-direction:column;min-height:1404px;}
   body{width:993px;flex:1;display:flex;flex-direction:column;min-height:1404px;}
-  /* LETTERHEAD */
-  .lh-outer{width:993px;background:#e8e8e8;display:flex;align-items:stretch;flex-shrink:0;overflow:hidden;position:relative;}
-  .lh-logo-col{width:108px;display:flex;align-items:center;justify-content:center;padding:14px 10px;flex-shrink:0;}
-  .lh-logo-circle{width:80px;height:80px;border-radius:50%;background:#c8c8c8;border:3px solid #a0a0a0;display:flex;align-items:center;justify-content:center;font-size:36px;color:#4a4a4a;}
-  .lh-main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:14px 10px 14px 4px;}
-  .lh-firm-name{font-family:'Arial',sans-serif;font-size:18px;font-weight:900;color:#1a1a1a;background:#F5D800;padding:3px 10px;display:inline-block;margin-bottom:6px;letter-spacing:0.3px;}
-  .lh-addr-line{font-family:'Arial',sans-serif;font-size:12px;color:#1a1a1a;background:#F5D800;padding:2px 10px;display:inline-block;margin-bottom:3px;}
-  .lh-contacts{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;gap:5px;padding:14px 0 14px 10px;flex-shrink:0;min-width:230px;}
-  .lh-crow{display:flex;align-items:center;gap:0;}
-  .lh-cval{background:#F5D800;font-family:'Arial',sans-serif;font-size:11px;color:#1a1a1a;padding:3px 9px;white-space:nowrap;}
-  .lh-cicon{width:26px;height:26px;background:#1B3A6B;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0;}
-  .lh-wave{width:90px;flex-shrink:0;background:linear-gradient(135deg,#1B3A6B 0%,#2E6DB4 50%,#4a9fd4 100%);position:relative;overflow:hidden;}
-  /* BODY */
+  .hdr-wrap{width:993px;height:88px;position:relative;flex-shrink:0;overflow:hidden;}
+  .hdr{width:993px;height:88px;display:block;position:absolute;top:0;left:0;}
+  .hdr-overlay{position:absolute;top:0;right:0;width:560px;height:88px;background:#fff;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:6px 20px 6px 10px;}
+  .hdr-firm{font-family:'Sitka Text',serif;font-size:13.5px;font-weight:bold;color:#0D1B2A;text-transform:uppercase;letter-spacing:0.5px;text-align:right;line-height:1.3;}
+  .hdr-contact{font-family:'Sitka Text',serif;font-size:10px;color:#5a5a5a;text-align:right;line-height:1.5;margin-top:2px;}
+  .hdr-reg{font-family:'Sitka Text',serif;font-size:9.5px;color:#8a8a8a;text-align:right;margin-top:1px;}
   .body{padding:22px 44px 20px;background:#fff;flex:1;}
   .date-line{font-size:13px;color:#0D1B2A;font-weight:bold;margin-bottom:14px;}
   .dear{font-size:13px;margin-bottom:6px;}
@@ -17780,25 +17764,19 @@ async function downloadInvoiceDocx(invId,e){
   .closing{font-size:13px;line-height:2;margin-top:6px;}
   .sign{font-size:13px;font-weight:bold;color:#0D1B2A;text-decoration:underline;line-height:1.7;margin-top:6px;}
   .contact-line{font-size:11px;color:#5a5a5a;margin-top:4px;}
-  /* FOOTER */
-  .lh-footer{width:993px;background:#e8e8e8;display:flex;align-items:center;justify-content:center;padding:6px 44px;flex-shrink:0;margin-top:auto;border-top:3px solid #1B3A6B;}
-  .lh-footer-text{font-family:'Arial',sans-serif;font-size:10px;color:#333;text-align:center;}
+  .ftr-wrap{width:993px;height:54px;position:relative;flex-shrink:0;overflow:hidden;margin-top:0;}
+  .ftr{width:993px;height:54px;display:block;position:absolute;top:0;left:0;}
+  .ftr-overlay{position:absolute;top:0;right:0;width:600px;height:54px;background:#fff;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:4px 20px 4px 10px;}
+  .ftr-text{font-family:'Sitka Text',serif;font-size:9.5px;color:#5a5a5a;text-align:right;line-height:1.5;}
 </style></head><body>
-<!-- DYNAMIC LETTERHEAD FROM FIRM SETTINGS -->
-<div class="lh-outer">
-  <div class="lh-logo-col">
-    <div class="lh-logo-circle">⚖</div>
+<div class="hdr-wrap">
+  <img class="hdr" src="data:image/png;base64,${_LH_HEADER}">
+  <div class="hdr-overlay">
+    <div class="hdr-firm">${_invFirmName}</div>
+    ${_invFirmPhysical ? `<div class="hdr-contact">${_invFirmPhysical}</div>` : ''}
+    ${_invContactLine ? `<div class="hdr-contact">${_invContactLine}</div>` : ''}
+    ${_invFirmReg ? `<div class="hdr-reg">Reg. No: ${_invFirmReg}</div>` : ''}
   </div>
-  <div class="lh-main">
-    <div class="lh-firm-name">${_lhFirmName.toUpperCase()}</div>
-    ${_lhPhysical ? `<div class="lh-addr-line">${_lhPhysical.split(',').slice(0,2).map(p=>p.trim()).join(', ')}</div>${_lhPhysical.split(',').length>2?'<div class="lh-addr-line">'+_lhPhysical.split(',').slice(2).map(p=>p.trim()).join(', ')+'</div>':''}` : ''}
-  </div>
-  <div class="lh-contacts">
-    ${_lhEmail ? `<div class="lh-crow"><span class="lh-cval">${_lhEmail}</span><span class="lh-cicon">&#9993;</span></div>` : ''}
-    ${_lhPhone ? `<div class="lh-crow"><span class="lh-cval">${_lhPhone}</span><span class="lh-cicon">&#9742;</span></div>` : ''}
-    ${_lhPostal ? `<div class="lh-crow"><span class="lh-cval">${_lhPostal}</span><span class="lh-cicon">&#9741;</span></div>` : ''}
-  </div>
-  <div class="lh-wave"></div>
 </div>
 <div class="body">
   <div class="date-line">${fmtDt(inv.invoice_date)}</div>
@@ -17832,9 +17810,13 @@ async function downloadInvoiceDocx(invId,e){
   ${_invFirmPhysical ? `<div class="contact-line">${_invFirmPhysical}</div>` : ''}
   ${_invFirmReg ? `<div class="contact-line">Reg. No: ${_invFirmReg}</div>` : ''}
 </div>
-<!-- DYNAMIC FOOTER FROM FIRM SETTINGS -->
-<div class="lh-footer">
-  <span class="lh-footer-text">${_lhWebsite || ''}</span>
+<div class="ftr-wrap">
+  <img class="ftr" src="data:image/png;base64,${_LH_FOOTER}">
+  <div class="ftr-overlay">
+    ${_invFirmPhysical ? `<div class="ftr-text">${_invFirmPhysical}</div>` : ''}
+    ${_invContactLine ? `<div class="ftr-text">${_invContactLine}</div>` : ''}
+    ${_invFirmReg ? `<div class="ftr-text">Reg. No: ${_invFirmReg}</div>` : ''}
+  </div>
 </div>
 </body></html>`;
 
