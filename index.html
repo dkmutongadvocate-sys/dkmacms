@@ -17724,6 +17724,18 @@ async function downloadInvoiceDocx(invId,e){
       <td style="padding:8px 12px;border:1px solid #888;text-align:right;">${fmtMny(l.subtotal||l.unit_price||0)}</td>
     </tr>`).join('');
 
+  // Pull firm contact details from firmContact (Firm Settings)
+  const _fc = (typeof firmContact !== 'undefined' && firmContact) || {};
+  const _invFirmName = _fc.contact_firm_name || 'D.K. MUTONGA & CO. ADVOCATES';
+  const _invFirmPhone = _fc.contact_phone || '';
+  const _invFirmEmail = _fc.contact_email || '';
+  const _invFirmPhysical = _fc.contact_physical || '';
+  const _invFirmWebsite = _fc.contact_website || '';
+  const _invFirmReg = _fc.contact_reg || '';
+  // Build contact line for closing section
+  const _invContactParts = [_invFirmPhone, _invFirmEmail, _invFirmWebsite].filter(Boolean);
+  const _invContactLine = _invContactParts.length ? _invContactParts.join(' | ') : '';
+
   // Use an iframe approach for clean full-width rendering
   const _iframeDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
@@ -17746,6 +17758,7 @@ async function downloadInvoiceDocx(invId,e){
   .words-row td{font-weight:bold;border:1px solid #888;padding:9px 12px;text-align:center;text-transform:uppercase;}
   .closing{font-size:13px;line-height:2;margin-top:6px;}
   .sign{font-size:13px;font-weight:bold;color:#0D1B2A;text-decoration:underline;line-height:1.7;margin-top:6px;}
+  .contact-line{font-size:11px;color:#5a5a5a;margin-top:4px;}
   .ftr{width:993px;display:block;flex-shrink:0;margin-top:0;}
 </style></head><body>
 <img class="hdr" src="data:image/png;base64,${_LH_HEADER}">
@@ -17756,8 +17769,8 @@ async function downloadInvoiceDocx(invId,e){
   <div class="para">The above refers.</div>
   <div class="para">Kindly receive this fee note for the services rendered by us as itemised below. Please effect any and all payments through either of the following methods:</div>
   <ol type="a" class="pmt">
-    <li>LIPA NA M-PESA MODE: TILL NUMBER: <strong>5979947</strong> NAME: <strong>DENNIS KIMANI MUTONGA ADVOCATE</strong></li>
-    <li>BANK TRANSFER <strong>KENYA COMMERCIAL BANK (KCB)</strong> BRANCH: <strong>TOM MBOYA</strong> SWIFT CODE: <strong>KCBLKENX</strong> ACCOUNT NUMBER: <strong>1287960448</strong> NAME: <strong>DENNIS KIMANI MUTONGA, ADVOCATE</strong></li>
+    <li>LIPA NA M-PESA MODE: TILL NUMBER: <strong>5979947</strong> NAME: <strong>${_invFirmName.toUpperCase()}</strong></li>
+    <li>BANK TRANSFER <strong>KENYA COMMERCIAL BANK (KCB)</strong> BRANCH: <strong>TOM MBOYA</strong> SWIFT CODE: <strong>KCBLKENX</strong> ACCOUNT NUMBER: <strong>1287960448</strong> NAME: <strong>${_invFirmName.toUpperCase()}</strong></li>
   </ol>
   <table>
     <thead><tr>
@@ -17776,7 +17789,10 @@ async function downloadInvoiceDocx(invId,e){
   </table>
   <div class="closing">Thank you for your continued cooperation.</div>
   <div class="closing">Yours Faithfully,</div>
-  <div class="sign">DENNIS KIMANI MUTONGA<br>ADVOCATE</div>
+  <div class="sign">${_invFirmName.toUpperCase()}<br>ADVOCATE</div>
+  ${_invContactLine ? `<div class="contact-line">${_invContactLine}</div>` : ''}
+  ${_invFirmPhysical ? `<div class="contact-line">${_invFirmPhysical}</div>` : ''}
+  ${_invFirmReg ? `<div class="contact-line">Reg. No: ${_invFirmReg}</div>` : ''}
 </div>
 <img class="ftr" src="data:image/png;base64,${_LH_FOOTER}">
 </body></html>`;
@@ -17946,8 +17962,11 @@ async function downloadInvoiceDocx(invId,e){
 
   invoiceChildren.push(new Paragraph({spacing:{before:360,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:'D9D4CB'}},children:[new TextRun('')]}));
   invoiceChildren.push(new Paragraph({spacing:{before:160,after:60},children:[new TextRun({text:'Payment Instructions',font:'Arial',size:22,bold:true,color:navy})]}));
-  invoiceChildren.push(new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'Please make payment to Dennis Kimani Mutonga, Advocate. Reference your invoice number when making payment.',font:'Arial',size:20,color:'5a5a5a'})]}));
-  invoiceChildren.push(new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'Contact: info@dkma.co.ke | +254 757 354 379',font:'Arial',size:20,color:'5a5a5a'})]}));
+  const _docxFc=(typeof firmContact!=='undefined'&&firmContact)||{};
+  const _docxFirmName=_docxFc.contact_firm_name||'Dennis Kimani Mutonga, Advocate';
+  const _docxContactParts=[_docxFc.contact_phone,_docxFc.contact_email].filter(Boolean);
+  invoiceChildren.push(new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'Please make payment to '+_docxFirmName+'. Reference your invoice number when making payment.',font:'Arial',size:20,color:'5a5a5a'})]}));
+  if(_docxContactParts.length)invoiceChildren.push(new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'Contact: '+_docxContactParts.join(' | '),font:'Arial',size:20,color:'5a5a5a'})]}));
 
   const doc=new Document({
     sections:[{
