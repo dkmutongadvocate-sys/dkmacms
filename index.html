@@ -17736,13 +17736,34 @@ async function downloadInvoiceDocx(invId,e){
   const _invContactParts = [_invFirmPhone, _invFirmEmail, _invFirmWebsite].filter(Boolean);
   const _invContactLine = _invContactParts.length ? _invContactParts.join(' | ') : '';
 
+  // Firm settings overlay values
+  const _postal = (_fc.contact_postal || '').trim();
+  const _phyParts = _invFirmPhysical ? _invFirmPhysical.split(',').map(p=>p.trim()) : [];
+  const _phyLine1 = _phyParts.slice(0,2).join(', ');
+  const _phyLine2 = _phyParts.slice(2).join(', ');
+
   // Use an iframe approach for clean full-width rendering
   const _iframeDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   html{width:993px;background:#fff;font-family:'Sitka Text',serif;font-size:13px;color:#1a1a1a;display:flex;flex-direction:column;min-height:1404px;}
   body{width:993px;flex:1;display:flex;flex-direction:column;min-height:1404px;}
-  .hdr{width:993px;display:block;flex-shrink:0;}
+  /* HEADER: PNG + overlaid text */
+  .hdr-wrap{width:993px;height:88px;position:relative;flex-shrink:0;}
+  .hdr{width:993px;height:88px;display:block;}
+  .ov{position:absolute;font-family:'Arial',sans-serif;white-space:nowrap;overflow:hidden;background:transparent;}
+  .ov-firm{top:20px;left:153px;width:430px;font-size:13.5px;font-weight:900;color:#1a1a1a;padding:2px 7px;letter-spacing:0.2px;}
+  .ov-addr1{top:43px;left:153px;width:320px;font-size:10px;color:#1a1a1a;padding:1px 7px;}
+  .ov-addr2{top:57px;left:153px;width:280px;font-size:10px;color:#1a1a1a;padding:1px 7px;}
+  .ov-email{top:17px;left:601px;width:174px;font-size:9.5px;color:#1a1a1a;padding:2px 7px;text-align:right;}
+  .ov-phone{top:37px;left:601px;width:174px;font-size:9.5px;color:#1a1a1a;padding:2px 7px;text-align:right;}
+  .ov-postal{top:57px;left:601px;width:174px;font-size:9.5px;color:#1a1a1a;padding:2px 7px;text-align:right;}
+  /* FOOTER: PNG + overlaid website */
+  .ftr-wrap{width:993px;height:54px;position:relative;flex-shrink:0;margin-top:auto;}
+  .ftr{width:993px;height:54px;display:block;}
+  .ov-website{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    font-family:'Arial',sans-serif;font-size:10px;color:#fff;white-space:nowrap;}
+  /* BODY */
   .body{padding:22px 44px 20px;background:#fff;flex:1;}
   .date-line{font-size:13px;color:#0D1B2A;font-weight:bold;margin-bottom:14px;}
   .dear{font-size:13px;margin-bottom:6px;}
@@ -17759,9 +17780,17 @@ async function downloadInvoiceDocx(invId,e){
   .closing{font-size:13px;line-height:2;margin-top:6px;}
   .sign{font-size:13px;font-weight:bold;color:#0D1B2A;text-decoration:underline;line-height:1.7;margin-top:6px;}
   .contact-line{font-size:11px;color:#5a5a5a;margin-top:4px;}
-  .ftr{width:993px;display:block;flex-shrink:0;margin-top:0;}
 </style></head><body>
-<img class="hdr" src="data:image/png;base64,${_LH_HEADER}">
+<!-- ORIGINAL PNG HEADER with firm-settings text overlaid -->
+<div class="hdr-wrap">
+  <img class="hdr" src="data:image/png;base64,${_LH_HEADER}">
+  <div class="ov ov-firm">${_invFirmName.toUpperCase()}</div>
+  ${_phyLine1?`<div class="ov ov-addr1">${_phyLine1}</div>`:''}
+  ${_phyLine2?`<div class="ov ov-addr2">${_phyLine2}</div>`:''}
+  ${_invFirmEmail?`<div class="ov ov-email">${_invFirmEmail}</div>`:''}
+  ${_invFirmPhone?`<div class="ov ov-phone">${_invFirmPhone}</div>`:''}
+  ${_postal?`<div class="ov ov-postal">${_postal}</div>`:''}
+</div>
 <div class="body">
   <div class="date-line">${fmtDt(inv.invoice_date)}</div>
   <div class="dear">Dear Messrs. <span class="cname">${client?client.name:'\u2014'}</span></div>
@@ -17794,7 +17823,11 @@ async function downloadInvoiceDocx(invId,e){
   ${_invFirmPhysical ? `<div class="contact-line">${_invFirmPhysical}</div>` : ''}
   ${_invFirmReg ? `<div class="contact-line">Reg. No: ${_invFirmReg}</div>` : ''}
 </div>
-<img class="ftr" src="data:image/png;base64,${_LH_FOOTER}">
+<!-- ORIGINAL PNG FOOTER with website overlaid -->
+<div class="ftr-wrap">
+  <img class="ftr" src="data:image/png;base64,${_LH_FOOTER}">
+  ${_invFirmWebsite?`<div class="ov-website">${_invFirmWebsite}</div>`:''}
+</div>
 </body></html>`;
 
   // Render in off-screen iframe at exact 993px (native image width) for crisp output
