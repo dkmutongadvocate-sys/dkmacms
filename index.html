@@ -865,15 +865,17 @@ setTimeout(function() {
     splash.style.display = 'none';
     var d = document.createElement('div');
     d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;padding:40px;font-family:monospace;font-size:13px;';
-    d.innerHTML = '<h2 style="color:darkorange;margin-bottom:16px">TIMEOUT: Splash still showing after 3s</h2>'
+    d.innerHTML = '<h2 style="color:darkorange;margin-bottom:16px">TIMEOUT: Splash still showing after 12s</h2>'
       + '<b>supabase defined:</b> ' + (typeof supabase !== "undefined") + '<br>'
       + '<b>sb defined:</b> ' + (typeof sb !== "undefined") + '<br>'
       + '<b>initAuth defined:</b> ' + (typeof initAuth !== "undefined") + '<br>'
       + '<b>SUPABASE_URL:</b> ' + (typeof SUPABASE_URL !== "undefined" ? SUPABASE_URL : "NOT DEFINED") + '<br>'
-      + '<b>currentUser:</b> ' + JSON.stringify(typeof currentUser !== "undefined" ? currentUser : "NOT DEFINED");
+      + '<b>currentUser:</b> ' + JSON.stringify(typeof currentUser !== "undefined" ? currentUser : "NOT DEFINED") + '<br>'
+      + '<b>_appInitialized:</b> ' + (typeof _appInitialized !== "undefined" ? _appInitialized : "NOT DEFINED") + '<br>'
+      + '<b>DOMContentLoaded fired:</b> ' + (window._domReady ? 'yes' : 'not yet');
     document.body.appendChild(d);
   }
-}, 3000);
+}, 12000);
 </script>
 <div id="loading-splash" style="display:flex;position:fixed;inset:0;background:var(--navy);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px">
   <div style="font-family:'Playfair Display',serif;font-size:24px;color:#fff;font-weight:500">DKMA</div>
@@ -8753,7 +8755,7 @@ function addEventToGCalById(id, btn) {
 window.addEventListener('load', () => { setTimeout(initGCalClient, 800); });
 
 // ─── BOOT ─────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => { initAuth(); });
+document.addEventListener('DOMContentLoaded', () => { window._domReady = true; initAuth(); });
 
 // ── ORIENTATION / RESIZE: keep viewer body height in sync (Android fix) ──
 (function(){
