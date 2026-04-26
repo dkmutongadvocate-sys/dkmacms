@@ -3517,7 +3517,6 @@ async function loadAll(){
   initBrowserNotifications();
   renderNotifToggle();
   writeSwConfig();
-  subscribeToPush();
   registerPeriodicSync();
   setupVisibilityResume();
 }
@@ -5006,8 +5005,7 @@ async function requestNotifPermission(){
   if(result === 'granted'){
     toast('Notifications enabled ✓');
     startNotificationPolling();
-    subscribeToPush();
-    // Fire a test notification
+      // Fire a test notification
     setTimeout(()=> fireNotification('DKMA Notifications Active', 'You will now receive alerts for messages, uploads, and events.', '🔔'), 800);
   } else {
     toast('Notifications not enabled. You can change this in your browser settings.', true);
@@ -5053,36 +5051,7 @@ async function writeSwConfig(){
 
 // Subscribe to Web Push and store the subscription in Supabase so the
 // Edge Function can send push notifications when panic alerts arrive.
-const VAPID_PUBLIC_KEY='%%VAPID_PUBLIC_KEY%%';
-async function subscribeToPush(){
-  if(!('serviceWorker' in navigator)||!('PushManager' in window)) return;
-  if(VAPID_PUBLIC_KEY.includes('%%')) return;
-  try{
-    const reg=await navigator.serviceWorker.ready;
-    let sub=await reg.pushManager.getSubscription();
-    if(!sub){
-      sub=await reg.pushManager.subscribe({
-        userVisibleOnly:true,
-        applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
-    }
-    const{data:{session}}=await sb.auth.getSession();
-    if(!session) return;
-    await sb.from('push_subscriptions').upsert({
-      user_id:session.user.id,
-      subscription:JSON.stringify(sub),
-      updated_at:new Date().toISOString()
-    },{onConflict:'user_id'});
-    console.log('[DKMA] Push subscription stored.');
-  }catch(e){console.warn('[DKMA] Push subscribe failed:',e);}
-}
 
-function urlBase64ToUint8Array(base64String){
-  const padding='='.repeat((4-base64String.length%4)%4);
-  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
-  const rawData=atob(base64);
-  return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
-}
 
 async function registerPeriodicSync(){
   if(!('serviceWorker' in navigator)||!('periodicSync' in ServiceWorkerRegistration.prototype)) return;
