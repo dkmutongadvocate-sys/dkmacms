@@ -17703,9 +17703,17 @@ async function downloadInvoiceDocx(invId,e){
   const _invFirmPhysical = _fc.contact_physical || '';
   const _invFirmWebsite = _fc.contact_website || '';
   const _invFirmReg = _fc.contact_reg || '';
+  const _invFirmPostal = _fc.contact_postal || '';
   // Build contact line for closing section
   const _invContactParts = [_invFirmPhone, _invFirmEmail, _invFirmWebsite].filter(Boolean);
   const _invContactLine = _invContactParts.length ? _invContactParts.join(' | ') : '';
+  // Build header contact details row (right side)
+  const _hdrContactDetails = [
+    _invFirmPhone ? `<span>&#128222; ${_invFirmPhone}</span>` : '',
+    _invFirmEmail ? `<span>&#9993; ${_invFirmEmail}</span>` : '',
+    _invFirmWebsite ? `<span>&#127760; ${_invFirmWebsite}</span>` : ''
+  ].filter(Boolean).join(' &nbsp;|&nbsp; ');
+  const _hdrAddress = [_invFirmPhysical, _invFirmPostal].filter(Boolean).join(' | ');
 
   // Use an iframe approach for clean full-width rendering
   const _iframeDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -17713,7 +17721,22 @@ async function downloadInvoiceDocx(invId,e){
   *{box-sizing:border-box;margin:0;padding:0;}
   html{width:993px;background:#fff;font-family:'Sitka Text',serif;font-size:13px;color:#1a1a1a;display:flex;flex-direction:column;min-height:1404px;}
   body{width:993px;flex:1;display:flex;flex-direction:column;min-height:1404px;}
-  .hdr{width:993px;display:block;flex-shrink:0;}
+  /* ── Dynamic letterhead header ── */
+  .dyn-hdr{width:993px;display:flex;flex-direction:column;flex-shrink:0;background:#fff;}
+  .dyn-hdr-top{background:#0D1B2A;display:flex;align-items:center;justify-content:space-between;padding:14px 28px 14px 22px;}
+  .dyn-hdr-scales{font-size:38px;color:#B8953A;line-height:1;margin-right:14px;flex-shrink:0;}
+  .dyn-hdr-firm{flex:1;}
+  .dyn-hdr-firm-name{font-family:'Playfair Display',Georgia,serif;font-size:17px;color:#fff;font-weight:600;letter-spacing:0.5px;line-height:1.2;}
+  .dyn-hdr-firm-sub{font-size:10px;color:rgba(255,255,255,0.55);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
+  .dyn-hdr-contact{text-align:right;font-size:10px;color:rgba(255,255,255,0.7);line-height:1.8;}
+  .dyn-hdr-gold-bar{height:4px;background:linear-gradient(90deg,#B8953A 0%,#D4AF5A 50%,#B8953A 100%);}
+  .dyn-hdr-addr-bar{background:#F8F5F0;border-bottom:1px solid #D9D4CB;padding:5px 28px;font-size:10px;color:#5a5a5a;display:flex;justify-content:space-between;align-items:center;}
+  /* ── Dynamic letterhead footer ── */
+  .dyn-ftr{width:993px;display:flex;flex-direction:column;flex-shrink:0;margin-top:auto;}
+  .dyn-ftr-gold-bar{height:3px;background:linear-gradient(90deg,#B8953A 0%,#D4AF5A 50%,#B8953A 100%);}
+  .dyn-ftr-bottom{background:#0D1B2A;display:flex;align-items:center;justify-content:space-between;padding:9px 28px;font-size:10px;color:rgba(255,255,255,0.6);}
+  .dyn-ftr-name{font-family:'Playfair Display',Georgia,serif;font-size:11px;color:#B8953A;font-weight:600;}
+  /* ── Body styles ── */
   .body{padding:22px 44px 20px;background:#fff;flex:1;}
   .date-line{font-size:13px;color:#0D1B2A;font-weight:bold;margin-bottom:14px;}
   .dear{font-size:13px;margin-bottom:6px;}
@@ -17730,9 +17753,24 @@ async function downloadInvoiceDocx(invId,e){
   .closing{font-size:13px;line-height:2;margin-top:6px;}
   .sign{font-size:13px;font-weight:bold;color:#0D1B2A;text-decoration:underline;line-height:1.7;margin-top:6px;}
   .contact-line{font-size:11px;color:#5a5a5a;margin-top:4px;}
-  .ftr{width:993px;display:block;flex-shrink:0;margin-top:0;}
 </style></head><body>
-<img class="hdr" src="data:image/png;base64,${_LH_HEADER}">
+<!-- DYNAMIC LETTERHEAD HEADER -->
+<div class="dyn-hdr">
+  <div class="dyn-hdr-top">
+    <div class="dyn-hdr-scales">&#9878;</div>
+    <div class="dyn-hdr-firm">
+      <div class="dyn-hdr-firm-name">${_invFirmName}</div>
+      <div class="dyn-hdr-firm-sub">Advocates &amp; Legal Consultants</div>
+    </div>
+    <div class="dyn-hdr-contact">
+      ${_invFirmPhone ? `&#128222; ${_invFirmPhone}<br>` : ''}
+      ${_invFirmEmail ? `&#9993; ${_invFirmEmail}<br>` : ''}
+      ${_invFirmWebsite ? `&#127760; ${_invFirmWebsite}` : ''}
+    </div>
+  </div>
+  <div class="dyn-hdr-gold-bar"></div>
+  ${_hdrAddress ? `<div class="dyn-hdr-addr-bar"><span>${_hdrAddress}</span>${_invFirmReg ? `<span>Reg. No: ${_invFirmReg}</span>` : ''}</div>` : ''}
+</div>
 <div class="body">
   <div class="date-line">${fmtDt(inv.invoice_date)}</div>
   <div class="dear">Dear Messrs. <span class="cname">${client?client.name:'\u2014'}</span></div>
@@ -17765,7 +17803,15 @@ async function downloadInvoiceDocx(invId,e){
   ${_invFirmPhysical ? `<div class="contact-line">${_invFirmPhysical}</div>` : ''}
   ${_invFirmReg ? `<div class="contact-line">Reg. No: ${_invFirmReg}</div>` : ''}
 </div>
-<img class="ftr" src="data:image/png;base64,${_LH_FOOTER}">
+<!-- DYNAMIC LETTERHEAD FOOTER -->
+<div class="dyn-ftr">
+  <div class="dyn-ftr-gold-bar"></div>
+  <div class="dyn-ftr-bottom">
+    <div class="dyn-ftr-name">${_invFirmName}</div>
+    <div>${_hdrContactDetails || (_invFirmPhone || _invFirmEmail || '')}</div>
+    ${_invFirmReg ? `<div>Reg. No: ${_invFirmReg}</div>` : ''}
+  </div>
+</div>
 </body></html>`;
 
   // Render in off-screen iframe at exact 993px (native image width) for crisp output
@@ -17841,8 +17887,15 @@ async function downloadInvoiceDocx(invId,e){
   const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,ImageRun,
     AlignmentType,WidthType,BorderStyle,ShadingType,VerticalAlign,PageBreak}=window.docx;
 
-  const headerImg=b64toUint8(_LH_HEADER);
-  const footerImg=b64toUint8(_LH_FOOTER);
+  // Pull DOCX firm contact from firmContact (Firm Settings) — same as PDF above
+  const _docxFc2=(typeof firmContact!=='undefined'&&firmContact)||{};
+  const _dFirmName=_docxFc2.contact_firm_name||'D.K. MUTONGA & CO. ADVOCATES';
+  const _dFirmPhone=_docxFc2.contact_phone||'';
+  const _dFirmEmail=_docxFc2.contact_email||'';
+  const _dFirmPhysical=_docxFc2.contact_physical||'';
+  const _dFirmPostal=_docxFc2.contact_postal||'';
+  const _dFirmWebsite=_docxFc2.contact_website||'';
+  const _dFirmReg=_docxFc2.contact_reg||'';
 
   const noB={top:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},bottom:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
     left:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},right:{style:BorderStyle.NONE,size:0,color:'FFFFFF'}};
@@ -17865,9 +17918,49 @@ async function downloadInvoiceDocx(invId,e){
   // Content width A4 portrait: 11906 - 1134 - 711 = 10061 DXA
   const CW=10061;
 
+  // Dynamic DOCX header built from firm settings
+  const _dHdrContactParts=[_dFirmPhone,_dFirmEmail,_dFirmWebsite].filter(Boolean);
+  const _dHdrContactLine=_dHdrContactParts.join('  |  ');
+  const _dHdrAddrParts=[_dFirmPhysical,_dFirmPostal].filter(Boolean);
+  const _dHdrAddrLine=_dHdrAddrParts.join(' | ');
+
+  const _docxHdrChildren=[
+    new Table({width:{size:CW,type:WidthType.DXA},columnWidths:[Math.round(CW*0.6),Math.round(CW*0.4)],
+      rows:[new TableRow({children:[
+        new TableCell({width:{size:Math.round(CW*0.6),type:WidthType.DXA},borders:noB,shading:{fill:navy,type:ShadingType.CLEAR},margins:{top:120,bottom:100,left:180,right:80},children:[
+          new Paragraph({children:[new TextRun({text:'[ ] '+_dFirmName,font:'Arial',size:28,bold:true,color:'FFFFFF'})]}),
+          new Paragraph({spacing:{before:40},children:[new TextRun({text:'Advocates & Legal Consultants',font:'Arial',size:16,color:'B8953A',italics:true})]})
+        ]}),
+        new TableCell({width:{size:Math.round(CW*0.4),type:WidthType.DXA},borders:noB,shading:{fill:navy,type:ShadingType.CLEAR},margins:{top:120,bottom:100,left:80,right:180},verticalAlign:VerticalAlign.CENTER,children:[
+          ...(_dFirmPhone?[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:'Tel: '+_dFirmPhone,font:'Arial',size:16,color:'CCCCCC'})]})]:[]),
+          ...(_dFirmEmail?[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:_dFirmEmail,font:'Arial',size:16,color:'CCCCCC'})]})]:[]),
+          ...(_dFirmWebsite?[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:_dFirmWebsite,font:'Arial',size:16,color:'CCCCCC'})]})]:[])
+        ]})
+      ]})]
+    }),
+    new Table({width:{size:CW,type:WidthType.DXA},columnWidths:[CW],rows:[new TableRow({children:[
+      new TableCell({width:{size:CW,type:WidthType.DXA},borders:noB,shading:{fill:'B8953A',type:ShadingType.CLEAR},margins:{top:0,bottom:0,left:0,right:0},children:[new Paragraph({children:[new TextRun({text:' ',size:8})]})]})]})]}),
+    ...(_dHdrAddrLine||_dFirmReg?[new Table({width:{size:CW,type:WidthType.DXA},columnWidths:[Math.round(CW*0.65),Math.round(CW*0.35)],
+      rows:[new TableRow({children:[
+        new TableCell({width:{size:Math.round(CW*0.65),type:WidthType.DXA},borders:noB,shading:{fill:'F8F5F0',type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:180,right:80},children:[new Paragraph({children:[new TextRun({text:_dHdrAddrLine,font:'Arial',size:16,color:'5a5a5a'})]})] }),
+        new TableCell({width:{size:Math.round(CW*0.35),type:WidthType.DXA},borders:noB,shading:{fill:'F8F5F0',type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:80,right:180},children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:_dFirmReg?'Reg. No: '+_dFirmReg:'',font:'Arial',size:16,color:'5a5a5a'})]})]})]})]})]:[]),
+    new Paragraph({spacing:{before:120,after:0},children:[new TextRun('')]})
+  ];
+
+  // Dynamic DOCX footer built from firm settings
+  const _docxFtrChildren=[
+    new Table({width:{size:CW,type:WidthType.DXA},columnWidths:[Math.round(CW*0.5),Math.round(CW*0.5)],
+      rows:[new TableRow({children:[
+        new TableCell({width:{size:Math.round(CW*0.5),type:WidthType.DXA},borders:noB,shading:{fill:navy,type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:180,right:80},children:[new Paragraph({children:[new TextRun({text:_dFirmName,font:'Arial',size:18,bold:true,color:'B8953A'})]})] }),
+        new TableCell({width:{size:Math.round(CW*0.5),type:WidthType.DXA},borders:noB,shading:{fill:navy,type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:80,right:180},verticalAlign:VerticalAlign.CENTER,children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:_dHdrContactLine,font:'Arial',size:16,color:'BBBBBB'})]})]})
+      ]})]
+    })
+  ];
+
   const invoiceChildren=[
-    // Spacer after header image
-    new Paragraph({spacing:{before:200,after:100},children:[new TextRun('')]}),
+    // Dynamic header rows (firm letterhead)
+    ..._docxHdrChildren,
+    new Paragraph({spacing:{before:80,after:60},children:[new TextRun('')]}),
 
     // INVOICE TITLE + number row
     new Table({width:{size:CW,type:WidthType.DXA},columnWidths:[CW/2,CW/2],
@@ -17941,17 +18034,9 @@ async function downloadInvoiceDocx(invId,e){
 
   const doc=new Document({
     sections:[{
-      properties:{page:{size:{width:11906,height:16838},margin:{top:2700,right:711,bottom:2200,left:1134}}},
-      headers:{default:{children:[
-        new Paragraph({spacing:{before:0,after:0},children:[
-          new ImageRun({data:headerImg,transformation:{width:583,height:88},type:'png'})
-        ]})
-      ]}},
-      footers:{default:{children:[
-        new Paragraph({spacing:{before:0,after:0},children:[
-          new ImageRun({data:footerImg,transformation:{width:583,height:54},type:'png'})
-        ]})
-      ]}},
+      properties:{page:{size:{width:11906,height:16838},margin:{top:600,right:711,bottom:600,left:1134}}},
+      headers:{default:{children:_docxHdrChildren}},
+      footers:{default:{children:_docxFtrChildren}},
       children:invoiceChildren
     }]
   });
