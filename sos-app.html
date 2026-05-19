@@ -59,7 +59,7 @@
     p{
       margin:0;
       color:var(--muted);
-      line-height:1.6;
+      line-height:1.7;
       font-size:14px;
     }
     .status{
@@ -101,27 +101,14 @@
       color:var(--txt);
       border:1px solid var(--line);
     }
-    .mono{
-      margin-top:14px;
-      padding:12px 14px;
-      border-radius:12px;
-      background:#F9FAFB;
-      border:1px solid #E5E7EB;
-      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-      font-size:12px;
-      color:#374151;
-      word-break:break-all;
-      display:none;
-    }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="badge">DKMA SOS</div>
     <h1>Download the SOS app</h1>
-    <p>This short link always points to the latest published Android SOS app from DKMA.</p>
-    <div class="status" id="status">Checking the latest release…</div>
-    <div class="mono" id="download-url"></div>
+    <p>Install the official DKMA SOS app to activate your emergency button, enter your code, and stay ready in one place.</p>
+    <div class="status" id="status">Checking the latest release...</div>
     <div class="actions">
       <a class="btn primary" id="download-btn" href="#" style="display:none" rel="noopener">Download App</a>
       <button class="btn secondary" id="retry-btn" type="button" style="display:none">Try Again</button>
@@ -130,14 +117,11 @@
   <script>
     const RELEASE_ENDPOINT='https://oolqcrpjuqmzxupaozpu.supabase.co/functions/v1/panic-app-release?versionCode=0';
     const statusEl=document.getElementById('status');
-    const urlEl=document.getElementById('download-url');
     const downloadBtn=document.getElementById('download-btn');
     const retryBtn=document.getElementById('retry-btn');
 
     async function loadRelease(autoOpen=true){
-      statusEl.textContent='Checking the latest release…';
-      urlEl.style.display='none';
-      urlEl.textContent='';
+      statusEl.textContent='Checking the latest release...';
       downloadBtn.style.display='none';
       retryBtn.style.display='none';
       try{
@@ -152,9 +136,7 @@
           return;
         }
         const versionLabel=release?.versionName ? `Version ${release.versionName}` : 'Latest release';
-        statusEl.textContent=`${versionLabel} is ready. Your download should begin automatically.`;
-        urlEl.textContent=url;
-        urlEl.style.display='block';
+        statusEl.textContent=`${versionLabel} is ready. Your download should begin automatically. If it does not, use the button below.`;
         downloadBtn.href=url;
         downloadBtn.download=release?.fileName||'dkma-panic.apk';
         downloadBtn.style.display='inline-flex';
