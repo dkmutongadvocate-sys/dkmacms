@@ -119,11 +119,27 @@
     const statusEl=document.getElementById('status');
     const downloadBtn=document.getElementById('download-btn');
     const retryBtn=document.getElementById('retry-btn');
+    let latestDownloadUrl='';
+
+    async function triggerDownload(url){
+      const res=await fetch(url);
+      if(!res.ok)throw new Error('Could not download the SOS app package.');
+      const blob=await res.blob();
+      const objectUrl=URL.createObjectURL(blob);
+      const link=document.createElement('a');
+      link.href=objectUrl;
+      link.download='dkma-panic.apk';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(()=>URL.revokeObjectURL(objectUrl),2000);
+    }
 
     async function loadRelease(autoOpen=true){
       statusEl.textContent='Checking the latest release...';
       downloadBtn.style.display='none';
       retryBtn.style.display='none';
+      latestDownloadUrl='';
       try{
         const res=await fetch(RELEASE_ENDPOINT,{method:'GET'});
         const data=await res.json().catch(()=>({}));
@@ -137,17 +153,25 @@
         }
         const versionLabel=release?.versionName ? `Version ${release.versionName}` : 'Latest release';
         statusEl.textContent=`${versionLabel} is ready. Your download should begin automatically. If it does not, use the button below.`;
-        downloadBtn.href=url;
-        downloadBtn.download=release?.fileName||'dkma-panic.apk';
+        latestDownloadUrl=url;
         downloadBtn.style.display='inline-flex';
         retryBtn.style.display='inline-flex';
-        if(autoOpen)window.location.href=url;
+        if(autoOpen)await triggerDownload(url);
       }catch(err){
         statusEl.textContent=err?.message||'Could not load the SOS app release.';
         retryBtn.style.display='inline-flex';
       }
     }
 
+    downloadBtn.addEventListener('click',async(event)=>{
+      event.preventDefault();
+      if(!latestDownloadUrl)return;
+      try{
+        await triggerDownload(latestDownloadUrl);
+      }catch(err){
+        statusEl.textContent=err?.message||'Could not download the SOS app release.';
+      }
+    });
     retryBtn.addEventListener('click',()=>loadRelease(false));
     loadRelease(true);
   </script>
