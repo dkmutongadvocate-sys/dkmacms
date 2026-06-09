@@ -4485,15 +4485,11 @@ async function callAdminFormFunction(fnName, formData) {
 
 async function enforcePortalPasswordChange(clientId,userId){
   const resolvedUserId=String(userId||'').trim();
-  if(resolvedUserId){
-    const {error}=await sb.from('profiles').update({force_password_change:true}).eq('id',resolvedUserId);
-    if(error)throw error;
-  }
   const {error:clientErr}=await sb.from('clients').update({portal_force_password_change:true}).eq('id',clientId);
   if(clientErr)throw clientErr;
   const idx=clients.findIndex(c=>c.id===clientId);
   if(idx>=0){
-    clients[idx]={...clients[idx],user_id:resolvedUserId||clients[idx].user_id,force_password_change:true,portal_force_password_change:true};
+    clients[idx]={...clients[idx],user_id:resolvedUserId||clients[idx].user_id,portal_force_password_change:true};
   }
   return true;
 }
@@ -4876,11 +4872,22 @@ function isStaffProfile(p){
   return ['admin','head','senior','associate'].includes(role);
 }
 function staffProfiles(list){return (list||[]).filter(isStaffProfile);}
+function shouldForceStaffPasswordChange(){
+  if(!currentProfile?.force_password_change)return false;
+  const meta=currentUser?.user_metadata||{};
+  if(meta.must_change_password===true||meta.force_password_change===true)return true;
+  console.warn('[auth] Ignoring stale profile-only force_password_change flag for',currentUser?.email);
+  sb.from('profiles').update({force_password_change:false}).eq('id',currentUser.id).then(({error})=>{
+    if(error)console.warn('[auth] Could not clear stale force_password_change flag:',error.message);
+  });
+  currentProfile.force_password_change=false;
+  return false;
+}
 
 function hideSplash(){const s=document.getElementById('loading-splash');if(s)s.style.display='none';}
 function showApp(){
   // If the profile requires a password change, show that screen instead of the app
-  if(currentProfile&&currentProfile.force_password_change){
+  if(shouldForceStaffPasswordChange()){
     document.getElementById('auth-screen').style.display='flex';
     document.getElementById('app-shell').style.display='none';
     showFirmMode('forcechange');
@@ -5102,7 +5109,14 @@ async function firmSetNewPassword(){
   if(pw!==pw2){errEl.textContent='Passwords do not match.';return;}
   const btn=document.getElementById('firm-newpw-btn');
   btn.disabled=true;btn.textContent='Updating⬦';
-  const{error}=await sb.auth.updateUser({password:pw});
+  const{error}=await sb.auth.updateUser({
+    password:pw,
+    data:{
+      ...(currentUser?.user_metadata||{}),
+      must_change_password:false,
+      force_password_change:false
+    }
+  });
   btn.disabled=false;btn.textContent='Set New Password';
   if(error){errEl.textContent=error.message;return;}
   errEl.style.color='var(--green)';
@@ -5127,7 +5141,14 @@ async function forceChangePassword(){
   const btn=document.getElementById('force-newpw-btn');
   btn.disabled=true;btn.textContent='Updating⬦';
   // Update the password in Supabase auth
-  const{error}=await sb.auth.updateUser({password:pw});
+  const{error}=await sb.auth.updateUser({
+    password:pw,
+    data:{
+      ...(currentUser?.user_metadata||{}),
+      must_change_password:false,
+      force_password_change:false
+    }
+  });
   if(error){
     btn.disabled=false;btn.textContent='Set New Password & Continue';
     errEl.textContent=error.message;return;
@@ -7699,15 +7720,8 @@ async function clearPortalForcePasswordChange(clientId, clientName, event){
     toast('Could not clear portal reset flag: '+clientErr.message,true);
     return;
   }
-  if(client.user_id){
-    const { error: profileErr } = await sb.from('profiles').update({ force_password_change:false }).eq('id', client.user_id);
-    if(profileErr){
-      toast('Client flag cleared, but profile flag could not be cleared: '+profileErr.message,true);
-    }
-  }
   Object.assign(client,{
-    portal_force_password_change:false,
-    force_password_change:false
+    portal_force_password_change:false
   });
   refreshPortalSupportViews(clientId);
   toast(`Forced password change cleared for ${clientName}.`);
@@ -12500,7 +12514,6 @@ async function resetTeamMemberPassword(userId,name,e){
   }
   // Flag this user's profile so they are forced to change password on next login
   await sb.from('profiles').update({force_password_change:true}).eq('id',userId);
-  await sb.from('clients').update({portal_force_password_change:true}).eq('user_id',userId);
   // Show the temporary password to the admin so they can share it
   const overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -30238,187 +30251,4 @@ window.downloadInvoiceDocx = downloadInvoiceDocx;
 
   function recOnStop(){
     const isVideo=recMode==='video';
-    const mime=recChunks[0]?.type||(isVideo?'video/webm':'audio/webm');
-    const ext=mime.startsWith('video')?'webm':(mime.includes('ogg')?'ogg':(mime.includes('mp4')?'mp4':'webm'));
-    const blob=new Blob(recChunks,{type:mime});
-    const labelInput=document.getElementById('rec-label-input');
-    const label=(labelInput?.value||'').trim()||('Recording '+(recSavedList.length+1));
-    const finalDuration=Math.max(0,Math.floor(Number(recCompletedDuration)||0));
-    recLastBlob={blob,mime,ext,isVideo,label,duration:finalDuration};
-    const url=URL.createObjectURL(blob);
-    const entry={id:Date.now(),label,mime,ext,isVideo,duration:finalDuration,date:new Date().toLocaleString('en-KE'),url,size:blob.size};
-    recSavedList.unshift(entry);
-    try{localStorage.setItem('dkma_recordings',JSON.stringify(recSavedList.map(r=>({...r,url:null}))));}catch(e){}
-    if(labelInput)labelInput.value='';
-    recSetStatus('Done \u2014 download started');
-    recSeconds=0;
-    recShowControls('idle');
-    recRenderList();
-    recPopulateClients();
-    recPopulateMatters();
-    recUpdateTranscriptUi();
-    if(recTranscriptText())recSetTranscriptStatus('Transcript captured for this recording. Use Transcript PDF or Transcript TXT below.','good');
-    const saveStatus=document.getElementById('rec-save-status');
-    if(saveStatus){saveStatus.style.display='none';saveStatus.textContent='';}
-    const saveBtn=document.getElementById('rec-save-btn');
-    if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='\ud83d\udcc1 Save to Documents';}
-    recDownloadEntry(entry);
-    recCompletedDuration=0;
-  }
-
-  function recDownloadEntry(entry){
-    if(!entry.url)return;
-    const a=document.createElement('a');
-    a.href=entry.url;
-    a.download=entry.label.replace(/[\/\\:*?"<>|]/g,'_')+'.'+entry.ext;
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-  }
-
-  window.recSaveToDocuments=async function(){
-    if(!recLastBlob){if(typeof toast==='function')toast('No recording to save.',true);return;}
-    const saveBtn=document.getElementById('rec-save-btn');
-    const saveStatus=document.getElementById('rec-save-status');
-    const matterId=document.getElementById('rec-matter-select')?.value||'';
-    const clientId=document.getElementById('rec-client-select')?.value||window.activeClientId||null;
-    const category=document.getElementById('rec-doc-category')?.value||'recording';
-    const saveTranscript=document.getElementById('rec-save-transcript')?.checked!==false;
-    const transcriptText=recTranscriptText();
-    const label=(recLastBlob?.label)||recTranscriptDownloadBaseName()||'Recording';
-    const {blob,ext}=recLastBlob;
-    if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Uploading\u2026';}
-    if(saveStatus)saveStatus.style.display='none';
-    if(typeof sb==='undefined'||typeof STORAGE_BUCKET==='undefined'){
-      if(saveStatus){saveStatus.style.display='block';saveStatus.style.color='var(--red)';saveStatus.textContent='\u26a0\ufe0f Not connected to Supabase.';}
-      if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='\ud83d\udcc1 Save to Documents';}
-      return;
-    }
-    const safeName=label.replace(/[^a-zA-Z0-9.\-_]/g,'_');
-    const timestamp=Date.now();
-    const fileName=category+'__'+safeName+'__'+timestamp+'.'+ext;
-    const transcriptFileName=category+'__'+safeName+'__'+timestamp+'__transcript.txt';
-    let storagePath;
-    let transcriptPath;
-    if(matterId){
-      storagePath=matterId+'/'+fileName;
-      transcriptPath=matterId+'/'+transcriptFileName;
-    } else {
-      storagePath=clientId?'client-general/'+clientId+'/'+fileName:'firm-recordings/'+fileName;
-      transcriptPath=clientId?'client-general/'+clientId+'/'+transcriptFileName:'firm-recordings/'+transcriptFileName;
-    }
-    try{
-      const{error}=await sb.storage.from(STORAGE_BUCKET).upload(storagePath,blob,{upsert:false,contentType:blob.type||'application/octet-stream'});
-      if(error)throw error;
-      let transcriptWarning='';
-      let transcriptSaved=false;
-      if(saveTranscript && transcriptText){
-        const transcriptBlob=new Blob([recTranscriptPackageText()],{type:'text/plain;charset=utf-8'});
-        const up=await sb.storage.from(STORAGE_BUCKET).upload(transcriptPath,transcriptBlob,{upsert:false,contentType:'text/plain;charset=utf-8'});
-        if(up.error)transcriptWarning=up.error.message||'Transcript upload failed';
-        else transcriptSaved=true;
-      }
-      if(saveStatus){
-        saveStatus.style.display='block';
-        saveStatus.style.color=transcriptWarning?'var(--gold)':'var(--green)';
-        saveStatus.textContent='\u2713 Saved to Documents'+(matterId?' (matter)':' (general)')+'.'
-          +(transcriptSaved?' Transcript saved too.':'')
-          +(saveTranscript&&!transcriptText?' No transcript text was available.':'')
-          +(transcriptWarning?' Transcript warning: '+transcriptWarning:'');
-      }
-      if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='\u2713 Saved';}
-      if(typeof toast==='function')toast('Recording saved to Documents.');
-      if(matterId&&typeof activeMatterId!=='undefined'&&activeMatterId===matterId&&typeof loadMatterDocuments==='function')loadMatterDocuments(true);
-    }catch(err){
-      console.error('Rec save error:',err);
-      if(saveStatus){saveStatus.style.display='block';saveStatus.style.color='var(--red)';saveStatus.textContent='\u26a0\ufe0f Upload failed: '+(err.message||'Unknown error');}
-      if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='\ud83d\udcc1 Save to Documents';}
-    }
-  };
-
-  function recRenderList(){
-    const el=document.getElementById('rec-list');
-    if(!el)return;
-    if(!recSavedList.length){el.innerHTML='<div class="empty-state"><p>No recordings yet<\/p><\/div>';return;}
-    el.innerHTML=recSavedList.map((r,i)=>{
-      const durStr=r.duration?String(Math.floor(r.duration/60)).padStart(2,'0')+':'+String(r.duration%60).padStart(2,'0'):'\u2014';
-      const sizeStr=r.size?(r.size>1024*1024?(r.size/1024/1024).toFixed(1)+' MB':(r.size/1024).toFixed(0)+' KB'):'';
-      const icon=r.isVideo?'\ud83d\udcf9':'\ud83c\udfa4';
-      const hasUrl=!!r.url;
-      const tag=r.isVideo?'video':'audio';
-      const playerStyle=r.isVideo
-        ?'width:100%;border-radius:7px;outline:none;max-height:220px;background:#000;display:block'
-        :'width:100%;border-radius:7px;outline:none;display:block';
-      return`<div class="rec-entry" id="rec-entry-${r.id}">
-        <div class="rec-entry-icon">${icon}<\/div>
-        <div class="rec-entry-info">
-          <div class="rec-entry-name" title="${r.label}">${r.label}<\/div>
-          <div class="rec-entry-meta">${durStr}${sizeStr?' \u00b7 '+sizeStr:''} \u00b7 ${r.date}<\/div>
-        <\/div>
-        <div class="rec-entry-actions">
-          ${hasUrl?`<button class="rec-entry-btn" onclick="recRedownload(${i})" title="Download">\u2b07<\/button>`:''}
-          ${hasUrl?`<button class="rec-entry-btn play-toggle" id="rec-play-btn-${r.id}" onclick="recTogglePlayer(${i})" title="Play inline">\u25b6<\/button>`:''}
-          <button class="rec-entry-btn del" onclick="recDelete(${i})" title="Delete">\u2715<\/button>
-        <\/div>
-      <\/div>
-      ${hasUrl?`<div id="rec-player-${r.id}" style="display:none;padding:10px 14px 14px;background:var(--cream);border-top:1px solid var(--brd)">
-        <${tag} id="rec-media-${r.id}" src="${r.url}" controls style="${playerStyle}"><\/${tag}>
-      <\/div>`:''}`;
-    }).join('');
-  }
-
-  window.recRedownload=function(i){recDownloadEntry(recSavedList[i]);};
-
-  window.recTogglePlayer=function(i){
-    const entry=recSavedList[i];
-    if(!entry?.url)return;
-    const wrap=document.getElementById('rec-player-'+entry.id);
-    const btn=document.getElementById('rec-play-btn-'+entry.id);
-    const media=document.getElementById('rec-media-'+entry.id);
-    if(!wrap)return;
-    const isVisible=wrap.style.display!=='none';
-    // Close all other open players
-    recSavedList.forEach(r=>{
-      if(r.id===entry.id)return;
-      const w=document.getElementById('rec-player-'+r.id);
-      const b=document.getElementById('rec-play-btn-'+r.id);
-      const m=document.getElementById('rec-media-'+r.id);
-      if(w)w.style.display='none';
-      if(b)b.textContent='\u25b6';
-      if(m){try{m.pause();}catch(e){}}
-    });
-    if(isVisible){
-      wrap.style.display='none';
-      if(btn)btn.textContent='\u25b6';
-      if(media){try{media.pause();}catch(e){}}
-    } else {
-      wrap.style.display='block';
-      if(btn)btn.textContent='\u23f8';
-      if(media){media.currentTime=0;media.play().catch(()=>{});}
-    }
-  };
-  window.recDelete=function(i){
-    const entry=recSavedList[i];
-    if(entry?.url)URL.revokeObjectURL(entry.url);
-    recSavedList.splice(i,1);
-    try{localStorage.setItem('dkma_recordings',JSON.stringify(recSavedList.map(r=>({...r,url:null}))));}catch(e){}
-    recRenderList();
-  };
-  window.recClearAll=function(){
-    if(recSavedList.length&&!confirm('Delete all recordings from this session?'))return;
-    recSavedList.forEach(r=>{if(r.url)URL.revokeObjectURL(r.url);});
-    recSavedList=[];
-    localStorage.removeItem('dkma_recordings');
-    recRenderList();
-  };
-
-  document.addEventListener('DOMContentLoaded',function(){
-    recRenderList();
-    recShowControls('idle');
-    recPopulateClients();
-    recPopulateMatters();
-    recResetTranscript();
-  });
-})();
-</script>
-
-</body>
-</html>
+    const mime=recChunks[0]?.type||(isVideo?'video/web
