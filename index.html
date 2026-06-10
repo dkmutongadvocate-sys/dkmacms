@@ -5227,7 +5227,10 @@ async function loadAll(){
 }
 async function loadClients(){const{data,error}=await sb.from('clients').select('*').order('created_at',{ascending:false});if(!error){clients=data||[];window._recClients=clients;}}
 async function loadMatters(){const{data,error}=await sb.from('matters').select('*').order('created_at',{ascending:false});if(!error){matters=data||[];window._recMatters=matters;}}
-async function loadEvents(){const{data,error}=await sb.from('events').select('*').order('event_date',{ascending:true});if(!error)events=data||[];}
+async function loadEvents(){
+  const{data,error}=await sb.from('events').select('*').order('event_date',{ascending:true});
+  if(!error)events=(data||[]).map(normalizeCalendarEventRow);
+}
 async function loadInvoices(){const{data,error}=await sb.from('invoices').select('*').order('created_at',{ascending:false});if(!error)invoices=data||[];}
 async function loadTimeEntries(){const{data,error}=await sb.from('time_entries').select('*').order('entry_date',{ascending:false});if(!error)timeEntries=data||[];}
 async function loadAlerts(){const{data,error}=await sb.from('alerts').select('*').order('created_at',{ascending:false});if(!error)alerts=data||[];}
@@ -11602,10 +11605,29 @@ function goToday(){
   calMonth=calSelectedDate.getMonth();
   renderCalendar();
 }
+function dateOnly(value){
+  if(!value)return '';
+  if(value instanceof Date&&!isNaN(value)){
+    const y=value.getFullYear(),m=String(value.getMonth()+1).padStart(2,'0'),d=String(value.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  const str=String(value).trim();
+  const match=str.match(/\d{4}-\d{2}-\d{2}/);
+  return match?match[0]:str;
+}
+function normalizeCalendarEventRow(event){
+  if(!event)return event;
+  return {
+    ...event,
+    event_date:dateOnly(event.event_date),
+    event_end_date:event.event_end_date?dateOnly(event.event_end_date):event.event_end_date
+  };
+}
 // Parse a YYYY-MM-DD date string as LOCAL date (avoids UTC-midnight timezone shift)
 function parseDateLocal(dateStr){
-  if(!dateStr)return new Date(NaN);
-  const[y,m,d]=(dateStr+'').split('-').map(Number);
+  const clean=dateOnly(dateStr);
+  if(!clean)return new Date(NaN);
+  const[y,m,d]=(clean+'').split('-').map(Number);
   return new Date(y,m-1,d);
 }
 function addCalendarDays(date,n){const d=new Date(date);d.setDate(d.getDate()+n);return d;}
@@ -11651,7 +11673,10 @@ function calendarEventsForRange(start,end){
 }
 function calendarEventsForDay(date){
   const ymd=formatDateLocal(date);
-  return events.filter(e=>e.event_date<=ymd&&(e.event_end_date||e.event_date)>=ymd)
+  return events.filter(e=>{
+    const start=dateOnly(e.event_date),end=dateOnly(e.event_end_date)||start;
+    return start<=ymd&&end>=ymd;
+  })
     .sort((a,b)=>(a.event_time||'').localeCompare(b.event_time||''));
 }
 function renderCalendarViewButtons(){
@@ -12852,13 +12877,34 @@ function calcInvTotals(){
   window._invTotal=total;
 }
 function popEventModal(){
+  const title=document.querySelector('#modal-event .modal-title');
+  if(title)title.textContent='Add Calendar Event';
+  const btn=document.getElementById('save-event-btn');
+  if(btn){btn.textContent='Save Event';btn.onclick=saveEventWithGCal;}
+  const today=formatDateLocal(new Date());
+  const simpleDefaults={
+    'ev-title':'',
+    'ev-date':today,
+    'ev-end-date':'',
+    'ev-time':'',
+    'ev-type':'court',
+    'ev-location':'',
+    'ev-notes':'',
+    'ev-meeting-link':''
+  };
+  Object.entries(simpleDefaults).forEach(([id,value])=>{
+    const el=document.getElementById(id);
+    if(el)el.value=value;
+  });
+  const meta=document.getElementById('ev-added-by-row');
+  if(meta)meta.remove();
   document.getElementById('ev-matter').innerHTML='<option value="">None<\/option>'+matters.map(m=>`<option value="${m.id}">${esc(m.title)}<\/option>`).join('');
   const repeat=document.getElementById('ev-repeat');
   if(repeat)repeat.value='none';
   const count=document.getElementById('ev-repeat-count');
   if(count)count.value='4';
   const until=document.getElementById('ev-repeat-until');
-  if(until&&!until.value&&document.getElementById('ev-date')?.value)until.value=document.getElementById('ev-date').value;
+  if(until)until.value='';
   toggleEventRecurrence();
 }
 function toggleEventRecurrence(){
@@ -12874,7 +12920,7 @@ function openEventModalForDate(dateStr){
     const until=document.getElementById('ev-repeat-until');
     if(d){d.value=dateStr;checkDateAvailability(dateStr);}
     if(ed)ed.value=dateStr;
-    if(until)until.value=dateStr;
+    if(until)until.value='';
   },50);
 }
 function addMonthsClamped(date,n){
@@ -12910,6 +12956,21 @@ function recurrenceLabel(repeat,count,untilStr){
   if(!repeat||repeat==='none')return '';
   const names={daily:'Daily',weekly:'Weekly',monthly:'Monthly',yearly:'Yearly'};
   return `[Recurring event: ${names[repeat]||repeat}${untilStr?' until '+untilStr:''}${count?' · max '+count+' occurrences':''}]`;
+}
+function recurrenceMetaMarker(repeat,count,untilStr){
+  if(!repeat||repeat==='none')return '';
+  return `[[DKMA_RECURRENCE:${JSON.stringify({repeat,count:String(count||''),until:untilStr||''})}]]`;
+}
+function parseRecurrenceMeta(notes){
+  const match=String(notes||'').match(/\[\[DKMA_RECURRENCE:(.*?)\]\]/);
+  if(!match)return null;
+  try{return JSON.parse(match[1]);}catch(_e){return null;}
+}
+function cleanEventNotes(notes){
+  return String(notes||'')
+    .replace(/\s*\[\[DKMA_RECURRENCE:.*?\]\]\s*/g,'\n')
+    .replace(/^\[Recurring event:.*?\]\s*$/gm,'')
+    .trim();
 }
 function setLoading(btnId,loading,label='Save'){
   const btn=document.getElementById(btnId);if(!btn)return;
@@ -13264,15 +13325,16 @@ async function saveEvent(){
   const multiDayOffset=endDate&&endDate>date
     ?Math.round((parseDateLocal(endDate)-parseDateLocal(date))/86400000)
     :0;
-  const baseNotes=document.getElementById('ev-notes').value.trim();
+  const baseNotes=cleanEventNotes(document.getElementById('ev-notes').value);
   const recNote=recurrenceLabel(repeat,repeatCount,repeatUntil);
+  const recMeta=recurrenceMetaMarker(repeat,repeatCount,repeatUntil);
   const shared={
     event_time:document.getElementById('ev-time').value||null,
     type:document.getElementById('ev-type').value,
     matter_id:document.getElementById('ev-matter').value||null,
     location:document.getElementById('ev-location').value.trim()||null,
     meeting_link:document.getElementById('ev-meeting-link').value.trim()||null,
-    notes:[baseNotes,recNote].filter(Boolean).join('\n'),
+    notes:[baseNotes,recNote,recMeta].filter(Boolean).join('\n'),
     created_by:currentUser?.id||null,
     created_by_name:currentProfile?.full_name||currentUser?.email||null,
   };
@@ -13285,7 +13347,7 @@ async function saveEvent(){
   const{data,error}=await sb.from('events').insert(payloads).select();
   setLoading('save-event-btn',false,'Save Event');
   if(error){toast('Error: '+error.message,true);return null;}
-  events=[...events,...(data||[])].sort((a,b)=>new Date(a.event_date)-new Date(b.event_date));
+  events=[...events,...(data||[]).map(normalizeCalendarEventRow)].sort((a,b)=>new Date(a.event_date)-new Date(b.event_date));
   closeModal();toast((data?.length||1)>1?`${data.length} recurring events saved.`:'Event saved.');updateBadges();renderCalendar();renderDashboard();
   return data[0];
 }
@@ -18521,7 +18583,7 @@ async function syncFromGCal() {
       };
       const { data: newEv, error } = await sb.from('events').insert([payload]).select();
       if (!error && newEv && newEv[0]) {
-        events.push(newEv[0]);
+        events.push(normalizeCalendarEventRow(newEv[0]));
         events.sort((a,b) => new Date(a.event_date) - new Date(b.event_date));
         existingKeys.add(key);
         added++;
@@ -19252,7 +19314,15 @@ function openEventDetail(eventId){
     if(ty)ty.value=ev.type||'court';
     if(m)m.value=ev.matter_id||'';
     if(l)l.value=ev.location||'';
-    if(n)n.value=ev.notes||'';
+    const rec=parseRecurrenceMeta(ev.notes||'');
+    if(n)n.value=cleanEventNotes(ev.notes||'');
+    const repeat=document.getElementById('ev-repeat');
+    const repeatCount=document.getElementById('ev-repeat-count');
+    const repeatUntil=document.getElementById('ev-repeat-until');
+    if(repeat)repeat.value=rec?.repeat||'none';
+    if(repeatCount)repeatCount.value=rec?.count||'4';
+    if(repeatUntil)repeatUntil.value=rec?.until||'';
+    toggleEventRecurrence();
     if(ml){ml.value=ev.meeting_link||'';if(typeof updateMeetingLinkIcon==='function')updateMeetingLinkIcon(ml.value);}
     // Show who added this event
     let evMeta=document.getElementById('ev-added-by-row');
@@ -19274,6 +19344,10 @@ function openEventDetail(eventId){
       btn.textContent='Update Event';
       btn.onclick=async()=>{
         const _updEnd=document.getElementById('ev-end-date')?.value||null;
+        const updRepeat=document.getElementById('ev-repeat')?.value||'none';
+        const updRepeatCount=document.getElementById('ev-repeat-count')?.value||'';
+        const updRepeatUntil=document.getElementById('ev-repeat-until')?.value||'';
+        const updNotesBase=cleanEventNotes(document.getElementById('ev-notes').value);
         const payload={
           title:document.getElementById('ev-title').value.trim(),
           event_date:document.getElementById('ev-date').value,
@@ -19282,7 +19356,7 @@ function openEventDetail(eventId){
           type:document.getElementById('ev-type').value,
           matter_id:document.getElementById('ev-matter').value||null,
           location:document.getElementById('ev-location').value.trim()||null,
-          notes:document.getElementById('ev-notes').value.trim()||null,
+          notes:[updNotesBase,recurrenceLabel(updRepeat,updRepeatCount,updRepeatUntil),recurrenceMetaMarker(updRepeat,updRepeatCount,updRepeatUntil)].filter(Boolean).join('\n')||null,
           meeting_link:document.getElementById('ev-meeting-link')?.value.trim()||null,
         };
         if(!payload.title||!payload.event_date){toast('Title and date are required.',true);return;}
@@ -21982,7 +22056,7 @@ async function importSelectedIcsEvents(){
 
   if(error){ toast('Import failed: ' + error.message, true); return; }
 
-  events = [...events, ...(data||[])].sort(function(a,b){ return new Date(a.event_date)-new Date(b.event_date); });
+  events = [...events, ...(data||[]).map(normalizeCalendarEventRow)].sort(function(a,b){ return new Date(a.event_date)-new Date(b.event_date); });
   closeIcsModal();
   renderCalendar(); renderDashboard(); updateBadges();
   toast('\u2713 ' + (data||[]).length + ' event' + ((data||[]).length!==1?'s':'') + ' imported successfully!');
@@ -22075,7 +22149,7 @@ function checkDateAvailability(dateStr,endDateStr){
     const eventType=document.getElementById('ev-type')?.value||'';
     (events||[]).forEach(function(e){
       if(seenEvents.has(e.id))return;
-      const eStart=e.event_date,eEnd=e.event_end_date||e.event_date;
+      const eStart=dateOnly(e.event_date),eEnd=dateOnly(e.event_end_date)||eStart;
       if(ds>=eStart&&ds<=eEnd){
         seenEvents.add(e.id);
         const timeStr=e.event_time?' at '+e.event_time:'';
