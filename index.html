@@ -12376,7 +12376,7 @@ async function sendClientNewPassword(clientId){
   if(!client?.email){toast('No email address on file for this client.',true);return;}
   if(!confirm(`Set a new temporary password for ${client.name}?\n\nEmail: ${client.email}\n\nA secure password will be generated. Note it — it will be shown once.`))return;
 
-  // Try the admin Edge Function first; if it fails, fall back to resetPasswordForEmail
+  // Send through the admin Edge Function so the email is logged in Resend.
   try{
     const result=await callAdminFunction('admin-send-client-password',{email:client.email,client_id:clientId,must_change_password:true});
     if(result?.new_password){
@@ -12389,26 +12389,8 @@ async function sendClientNewPassword(clientId){
       return;
     }
   }catch(edgeErr){
-    console.warn('[DKMA] admin-send-client-password failed:',edgeErr.message,'. Falling back to reset email.');
-  }
-
-  // Fallback: send a standard Supabase password reset email to the portal alias
-  try{
-    const portalEmail=toPortalEmail(client.email);
-    const{error}=await sb.auth.resetPasswordForEmail(portalEmail,{
-      redirectTo:'https://www.client.dkma.co.ke/'
-    });
-    if(error){
-      // Last resort: show a locally-generated password the admin can set manually
-      const localPw=generateSecurePassword();
-      showNewClientPasswordOverlay(client.name,client.email,localPw,true);
-      toast('Reset email could not be sent. A temporary password has been generated — set it manually via Supabase.',true);
-      return;
-    }
-    await enforcePortalPasswordChange(clientId,client.user_id);
-    toast(`Password reset email sent to ${client.email} ✓`);
-  }catch(err){
-    toast('Failed to reset password: '+err.message,true);
+    console.warn('[DKMA] admin-send-client-password failed:',edgeErr);
+    toast('Client password email was not sent: '+(edgeErr.message||edgeErr),true);
   }
 }
 
