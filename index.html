@@ -479,6 +479,20 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .cal-dot{width:5px;height:5px;border-radius:50%;margin:2px auto 0}
 .dot-gold{background:var(--gold)}.dot-navy{background:var(--navy)}.dot-red{background:#E2443A}
 .cal-event-mini{font-size:9px;color:var(--navy);background:rgba(13,27,42,0.07);border-radius:2px;padding:1px 4px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}
+.cal-view-toggle{display:flex;gap:4px;padding:3px;border:1px solid var(--brd);border-radius:8px;background:var(--cream)}
+.cal-view-btn{border:none;background:transparent;color:var(--txt3);font-size:11px;font-family:'DM Sans',sans-serif;padding:5px 10px;border-radius:6px;cursor:pointer}
+.cal-view-btn.active{background:var(--navy);color:#fff}
+.cal-agenda{display:flex;flex-direction:column;gap:8px;padding:0 16px 16px}
+.cal-agenda-day{border:1px solid var(--brd);border-radius:8px;background:#fff;overflow:hidden}
+.cal-agenda-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--cream);padding:10px 12px;border-bottom:1px solid var(--brd)}
+.cal-agenda-title{font-family:'Playfair Display',serif;font-size:14px;color:var(--txt)}
+.cal-agenda-sub{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px}
+.cal-agenda-body{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.cal-agenda-event{border:1px solid var(--brd);border-left:3px solid var(--gold);border-radius:7px;padding:9px 10px;cursor:pointer;background:#fff}
+.cal-agenda-event:hover{background:var(--cream)}
+.cal-agenda-event-title{font-size:13px;font-weight:500;color:var(--txt)}
+.cal-agenda-event-meta{font-size:11px;color:var(--txt3);margin-top:3px;line-height:1.4}
+.cal-agenda-empty{font-size:12px;color:var(--txt3);padding:12px;text-align:center}
 
 /* FINANCE */
 .fin-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:22px}
@@ -1678,7 +1692,13 @@ setTimeout(function() {
         <div class="card">
           <div class="card-header">
             <span class="card-title" id="cal-month-title">—</span>
-            <div style="display:flex;gap:6px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+              <div class="cal-view-toggle">
+                <button class="cal-view-btn active" id="cal-view-month" onclick="setCalendarView('month')">Month</button>
+                <button class="cal-view-btn" id="cal-view-week" onclick="setCalendarView('week')">Week</button>
+                <button class="cal-view-btn" id="cal-view-day" onclick="setCalendarView('day')">Day</button>
+              </div>
+              <button class="filter-btn" style="padding:4px 10px;font-size:11px" onclick="goToday()">Today</button>
               <button class="filter-btn" style="padding:4px 10px;font-size:11px" onclick="changeMonth(-1)">⬹ Prev</button>
               <button class="filter-btn" style="padding:4px 10px;font-size:11px" onclick="changeMonth(1)">Next ⬺</button>
             </div>
@@ -1689,7 +1709,7 @@ setTimeout(function() {
           <div class="cal-grid" id="cal-grid"></div>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Events This Month</span><div style="display:flex;gap:6px;align-items:center"><button id="gcal-sync-btn" class="topbar-btn sec" style="font-size:11px;padding:5px 12px;display:flex;align-items:center;gap:5px" onclick="handleGCalAuth()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg><span id="gcal-btn-label">Connect Google Cal</span></button><button class="topbar-btn sec" style="font-size:11px;padding:5px 12px;white-space:nowrap" onclick="document.getElementById('ics-file-input').click()">📅 Import .ics</button>
+          <div class="card-header"><span class="card-title" id="cal-events-title">Events This Month</span><div style="display:flex;gap:6px;align-items:center"><button id="gcal-sync-btn" class="topbar-btn sec" style="font-size:11px;padding:5px 12px;display:flex;align-items:center;gap:5px" onclick="handleGCalAuth()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg><span id="gcal-btn-label">Connect Google Cal</span></button><button class="topbar-btn sec" style="font-size:11px;padding:5px 12px;white-space:nowrap" onclick="document.getElementById('ics-file-input').click()">📅 Import .ics</button>
 <input type="file" id="ics-file-input" accept=".ics,text/calendar" multiple style="display:none" onchange="handleIcsFileSelect(event)"/>
 <button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('event')">+ Add Event</button></div></div>
           <div id="cal-events-list"><div class="empty-state"><p>No events this month.</p></div></div>
@@ -3830,6 +3850,23 @@ setTimeout(function() {
       </div>
       <div class="form-row"><label>Location / Court</label><input id="ev-location" placeholder="e.g. ELC Nairobi, Room 4"/></div>
       <div class="form-row">
+        <label>Repeat</label>
+        <select id="ev-repeat" onchange="toggleEventRecurrence()">
+          <option value="none">Does not repeat</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+      </div>
+      <div id="ev-repeat-options" style="display:none">
+        <div class="form-two">
+          <div class="form-row"><label>Repeat Until</label><input type="date" id="ev-repeat-until"/></div>
+          <div class="form-row"><label>Occurrences</label><input type="number" id="ev-repeat-count" min="2" max="52" value="4"/></div>
+        </div>
+        <div style="font-size:10px;color:var(--txt3);line-height:1.5;margin:-2px 0 12px">The CMS will create separate event entries for each occurrence. If both fields are set, it stops at whichever comes first.</div>
+      </div>
+      <div class="form-row">
         <label>Video Meeting Link <span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:3px;font-weight:500;margin-left:4px">Visible to Client</span></label>
         <div style="display:flex;gap:8px;align-items:center">
           <span id="ev-link-icon" style="font-size:18px;flex-shrink:0;width:28px;text-align:center">🔗</span>
@@ -4510,7 +4547,7 @@ let clientGroups=[];
 let activeGroupId=null,activeGroupHubTab='members',groupHubReturnView='clients',groupUpdates={},groupHubDocs={};
 let gazettedHolidays=[];   // custom holidays from Supabase — gazetted/ad-hoc
 let currentFilter='all',clientFilter='all';
-let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calView='month',calSelectedDate=new Date();
 let activeClientId=null,activeProfileTab='overview';
 let activeContactId=null;
 let currentUser=null,currentProfile=null;
@@ -11540,12 +11577,163 @@ async function deleteParty(partyId,clientId){
 }
 
 // ─── CALENDAR ─────────────────────────────────────────────────────
-function changeMonth(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function changeMonth(dir){
+  if(calView==='month'){
+    calMonth+=dir;
+    if(calMonth>11){calMonth=0;calYear++;}
+    if(calMonth<0){calMonth=11;calYear--;}
+    calSelectedDate=new Date(calYear,calMonth,Math.min(calSelectedDate.getDate(),new Date(calYear,calMonth+1,0).getDate()));
+  }else{
+    calSelectedDate=addCalendarDays(calSelectedDate,dir*(calView==='week'?7:1));
+    calYear=calSelectedDate.getFullYear();
+    calMonth=calSelectedDate.getMonth();
+  }
+  renderCalendar();
+}
+function setCalendarView(view){
+  calView=view||'month';
+  calYear=calSelectedDate.getFullYear();
+  calMonth=calSelectedDate.getMonth();
+  renderCalendar();
+}
+function goToday(){
+  calSelectedDate=new Date();
+  calYear=calSelectedDate.getFullYear();
+  calMonth=calSelectedDate.getMonth();
+  renderCalendar();
+}
 // Parse a YYYY-MM-DD date string as LOCAL date (avoids UTC-midnight timezone shift)
 function parseDateLocal(dateStr){
   if(!dateStr)return new Date(NaN);
   const[y,m,d]=(dateStr+'').split('-').map(Number);
   return new Date(y,m-1,d);
+}
+function addCalendarDays(date,n){const d=new Date(date);d.setDate(d.getDate()+n);return d;}
+function formatDateLocal(date){
+  const d=new Date(date);
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function monthNameShort(date){return date.toLocaleString('en',{month:'short'});}
+function getWeekStart(date){
+  const d=new Date(date);
+  d.setDate(d.getDate()-d.getDay());
+  d.setHours(0,0,0,0);
+  return d;
+}
+function calendarDateRangeLabel(start,end){
+  if(formatDateLocal(start)===formatDateLocal(end))return start.toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const sameYear=start.getFullYear()===end.getFullYear();
+  return `${start.toLocaleDateString('en-KE',{day:'numeric',month:'short',year:sameYear?undefined:'numeric'})} – ${end.toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}`;
+}
+function calendarHolidaysForRange(start,end){
+  const years=new Set([start.getFullYear(),end.getFullYear()]);
+  const all=[];
+  years.forEach(y=>all.push(...getKenyanHolidays(y)));
+  gazettedHolidays.forEach(h=>{
+    if(!all.find(x=>x.date===h.date&&x.name===h.name))all.push({date:h.date,name:h.name,gazetted:true,ghType:h.type});
+  });
+  return all.filter(h=>{
+    const d=parseDateLocal(h.date);
+    return d>=start&&d<=end;
+  }).sort((a,b)=>a.date.localeCompare(b.date));
+}
+function calendarEventsForRange(start,end){
+  return events.filter(e=>{
+    const s=parseDateLocal(e.event_date);
+    const en=e.event_end_date?parseDateLocal(e.event_end_date):s;
+    return s<=end&&en>=start;
+  }).sort((a,b)=>{
+    const da=parseDateLocal(a.event_date)-parseDateLocal(b.event_date);
+    if(da!==0)return da;
+    return(a.event_time||'').localeCompare(b.event_time||'');
+  });
+}
+function calendarEventsForDay(date){
+  const ymd=formatDateLocal(date);
+  return events.filter(e=>e.event_date<=ymd&&(e.event_end_date||e.event_date)>=ymd)
+    .sort((a,b)=>(a.event_time||'').localeCompare(b.event_time||''));
+}
+function renderCalendarViewButtons(){
+  ['month','week','day'].forEach(v=>{
+    const btn=document.getElementById('cal-view-'+v);
+    if(btn)btn.classList.toggle('active',calView===v);
+  });
+}
+function renderCalendarAgendaView(){
+  renderCalendarViewButtons();
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const titleEl=document.getElementById('cal-month-title');
+  const sideTitle=document.getElementById('cal-events-title');
+  if(sideTitle)sideTitle.textContent=calView==='week'?'Events This Week':'Events This Day';
+  const g=document.getElementById('cal-grid');
+  const names=document.querySelector('#view-calendar .cal-day-names');
+  if(names)names.style.display='none';
+  g.className='cal-agenda';
+  g.innerHTML='';
+  const start=calView==='week'?getWeekStart(calSelectedDate):new Date(calSelectedDate);
+  start.setHours(0,0,0,0);
+  const end=calView==='week'?addCalendarDays(start,6):new Date(start);
+  end.setHours(0,0,0,0);
+  titleEl.textContent=calView==='week'?calendarDateRangeLabel(start,end):calendarDateRangeLabel(start,start);
+  const days=[];
+  for(let d=new Date(start);d<=end;d=addCalendarDays(d,1))days.push(new Date(d));
+  const holidays=calendarHolidaysForRange(start,end);
+  g.innerHTML=days.map(day=>{
+    const ymd=formatDateLocal(day);
+    const evs=calendarEventsForDay(day);
+    const hols=holidays.filter(h=>h.date===ymd);
+    const isToday=ymd===formatDateLocal(new Date());
+    const body=[
+      ...hols.map(h=>`<div class="cal-agenda-event" style="border-left-color:${h.gazetted?'#854F0B':h.islamic?'#185FA5':'#2D6A4F'};cursor:default">
+        <div class="cal-agenda-event-title">${h.gazetted?'📋':h.islamic?'☪️':'🇰🇪'} ${esc(h.name)}<\/div>
+        <div class="cal-agenda-event-meta">${h.gazetted?'Gazetted / ad-hoc':'Public holiday'}${h.estimated?' · Date subject to moon sighting':''}<\/div>
+      <\/div>`),
+      ...evs.map(e=>`<div class="cal-agenda-event" onclick="openEventDetail('${e.id}')">
+        <div class="cal-agenda-event-title">${esc(e.title)}<\/div>
+        <div class="cal-agenda-event-meta">${e.event_time?esc(e.event_time)+' · ':''}${esc(e.location||'')}${e.event_end_date&&e.event_end_date>e.event_date?' · Multi-day':''}<\/div>
+      <\/div>`)
+    ].join('');
+    return`<div class="cal-agenda-day">
+      <div class="cal-agenda-head">
+        <div>
+          <div class="cal-agenda-title">${day.toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long'})}${isToday?' · Today':''}<\/div>
+          <div class="cal-agenda-sub">${day.getFullYear()}<\/div>
+        <\/div>
+        <button class="filter-btn" style="padding:4px 9px;font-size:11px" onclick="openEventModalForDate('${ymd}')">+ Event<\/button>
+      <\/div>
+      <div class="cal-agenda-body">${body||'<div class="cal-agenda-empty">No events scheduled.<\/div>'}<\/div>
+    <\/div>`;
+  }).join('');
+  renderCalendarRangeList(start,end);
+}
+function renderCalendarRangeList(start,end){
+  const listEl=document.getElementById('cal-events-list');
+  const evs=calendarEventsForRange(start,end);
+  const hols=calendarHolidaysForRange(start,end);
+  const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal','adr':'tag-client'};
+  let html='';
+  if(hols.length){
+    html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd)">Holidays<\/div>`;
+    html+=hols.map(h=>{
+      const d=parseDateLocal(h.date);
+      return`<div class="upcoming-item">
+        <div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${monthNameShort(d)}<\/div><\/div>
+        <div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(h.name)}<\/div><div class="upcoming-sub">${h.gazetted?'Gazetted / ad-hoc':'Public Holiday'}<\/div><\/div>
+      <\/div>`;
+    }).join('');
+  }
+  if(evs.length){
+    if(hols.length)html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd);border-top:1px solid var(--brd)">Events<\/div>`;
+    html+=evs.map(e=>{
+      const d=parseDateLocal(e.event_date);
+      return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventDetail('${e.id}')">
+        <div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${monthNameShort(d)}<\/div><\/div>
+        <div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}<\/div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div>
+      <\/div>`;
+    }).join('');
+  }
+  listEl.innerHTML=html||emptyState('No events in this view.');
 }
 
 // ─── KENYAN PUBLIC HOLIDAYS ───────────────────────────────────────
@@ -11627,9 +11815,15 @@ function getKenyanHolidays(year){
 }
 
 function renderCalendar(){
+  if(calView!=='month'){renderCalendarAgendaView();return;}
+  renderCalendarViewButtons();
   const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('cal-month-title').textContent=months[calMonth]+' '+calYear;
-  const g=document.getElementById('cal-grid');g.innerHTML='';
+  const sideTitle=document.getElementById('cal-events-title');
+  if(sideTitle)sideTitle.textContent='Events This Month';
+  const names=document.querySelector('#view-calendar .cal-day-names');
+  if(names)names.style.display='grid';
+  const g=document.getElementById('cal-grid');g.className='cal-grid';g.innerHTML='';
   const firstDay=new Date(calYear,calMonth,1).getDay();
   for(let i=0;i<firstDay;i++){const b=document.createElement('div');g.appendChild(b);}
   const dim=new Date(calYear,calMonth+1,0).getDate();
@@ -12677,6 +12871,63 @@ function calcInvTotals(){
 }
 function popEventModal(){
   document.getElementById('ev-matter').innerHTML='<option value="">None<\/option>'+matters.map(m=>`<option value="${m.id}">${esc(m.title)}<\/option>`).join('');
+  const repeat=document.getElementById('ev-repeat');
+  if(repeat)repeat.value='none';
+  const count=document.getElementById('ev-repeat-count');
+  if(count)count.value='4';
+  const until=document.getElementById('ev-repeat-until');
+  if(until&&!until.value&&document.getElementById('ev-date')?.value)until.value=document.getElementById('ev-date').value;
+  toggleEventRecurrence();
+}
+function toggleEventRecurrence(){
+  const repeat=document.getElementById('ev-repeat')?.value||'none';
+  const wrap=document.getElementById('ev-repeat-options');
+  if(wrap)wrap.style.display=repeat==='none'?'none':'block';
+}
+function openEventModalForDate(dateStr){
+  openModal('event');
+  setTimeout(()=>{
+    const d=document.getElementById('ev-date');
+    const ed=document.getElementById('ev-end-date');
+    const until=document.getElementById('ev-repeat-until');
+    if(d){d.value=dateStr;checkDateAvailability(dateStr);}
+    if(ed)ed.value=dateStr;
+    if(until)until.value=dateStr;
+  },50);
+}
+function addMonthsClamped(date,n){
+  const d=new Date(date);
+  const day=d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth()+n);
+  d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));
+  return d;
+}
+function nextRecurringDate(date,repeat){
+  if(repeat==='daily')return addCalendarDays(date,1);
+  if(repeat==='weekly')return addCalendarDays(date,7);
+  if(repeat==='monthly')return addMonthsClamped(date,1);
+  if(repeat==='yearly'){const d=new Date(date);d.setFullYear(d.getFullYear()+1);return d;}
+  return null;
+}
+function buildEventOccurrenceDates(startDateStr,repeat,count,untilStr){
+  const dates=[startDateStr];
+  if(!repeat||repeat==='none')return dates;
+  const maxCount=Math.max(2,Math.min(Number(count)||4,52));
+  const until=untilStr?parseDateLocal(untilStr):null;
+  let cur=parseDateLocal(startDateStr);
+  while(dates.length<maxCount){
+    cur=nextRecurringDate(cur,repeat);
+    if(!cur||isNaN(cur))break;
+    if(until&&cur>until)break;
+    dates.push(formatDateLocal(cur));
+  }
+  return dates;
+}
+function recurrenceLabel(repeat,count,untilStr){
+  if(!repeat||repeat==='none')return '';
+  const names={daily:'Daily',weekly:'Weekly',monthly:'Monthly',yearly:'Yearly'};
+  return `[Recurring event: ${names[repeat]||repeat}${untilStr?' until '+untilStr:''}${count?' · max '+count+' occurrences':''}]`;
 }
 function setLoading(btnId,loading,label='Save'){
   const btn=document.getElementById(btnId);if(!btn)return;
@@ -13024,22 +13275,36 @@ async function saveEvent(){
   if(!title||!date){toast('Please enter event title and date.',true);return null;}
   setLoading('save-event-btn',true,'Save Event');
   const endDate=document.getElementById('ev-end-date')?.value||null;
-  const payload={
-    title,event_date:date,event_end_date:endDate&&endDate>date?endDate:null,
+  const repeat=document.getElementById('ev-repeat')?.value||'none';
+  const repeatCount=document.getElementById('ev-repeat-count')?.value||'';
+  const repeatUntil=document.getElementById('ev-repeat-until')?.value||'';
+  const occurrenceDates=buildEventOccurrenceDates(date,repeat,repeatCount,repeatUntil);
+  const multiDayOffset=endDate&&endDate>date
+    ?Math.round((parseDateLocal(endDate)-parseDateLocal(date))/86400000)
+    :0;
+  const baseNotes=document.getElementById('ev-notes').value.trim();
+  const recNote=recurrenceLabel(repeat,repeatCount,repeatUntil);
+  const shared={
     event_time:document.getElementById('ev-time').value||null,
     type:document.getElementById('ev-type').value,
     matter_id:document.getElementById('ev-matter').value||null,
     location:document.getElementById('ev-location').value.trim()||null,
     meeting_link:document.getElementById('ev-meeting-link').value.trim()||null,
-    notes:document.getElementById('ev-notes').value.trim()||null,
+    notes:[baseNotes,recNote].filter(Boolean).join('\n'),
     created_by:currentUser?.id||null,
     created_by_name:currentProfile?.full_name||currentUser?.email||null,
   };
-  const{data,error}=await sb.from('events').insert([payload]).select();
+  const payloads=occurrenceDates.map((eventDate,idx)=>({
+    ...shared,
+    title:repeat==='none'?title:`${title}${idx>0?'':''}`,
+    event_date:eventDate,
+    event_end_date:multiDayOffset>0?formatDateLocal(addCalendarDays(parseDateLocal(eventDate),multiDayOffset)):null
+  }));
+  const{data,error}=await sb.from('events').insert(payloads).select();
   setLoading('save-event-btn',false,'Save Event');
   if(error){toast('Error: '+error.message,true);return null;}
-  events=[...events,data[0]].sort((a,b)=>new Date(a.event_date)-new Date(b.event_date));
-  closeModal();toast('Event saved.');updateBadges();renderCalendar();renderDashboard();
+  events=[...events,...(data||[])].sort((a,b)=>new Date(a.event_date)-new Date(b.event_date));
+  closeModal();toast((data?.length||1)>1?`${data.length} recurring events saved.`:'Event saved.');updateBadges();renderCalendar();renderDashboard();
   return data[0];
 }
 
@@ -30251,4 +30516,187 @@ window.downloadInvoiceDocx = downloadInvoiceDocx;
 
   function recOnStop(){
     const isVideo=recMode==='video';
-    const mime=recChunks[0]?.type||(isVideo?'video/web
+    const mime=recChunks[0]?.type||(isVideo?'video/webm':'audio/webm');
+    const ext=mime.startsWith('video')?'webm':(mime.includes('ogg')?'ogg':(mime.includes('mp4')?'mp4':'webm'));
+    const blob=new Blob(recChunks,{type:mime});
+    const labelInput=document.getElementById('rec-label-input');
+    const label=(labelInput?.value||'').trim()||('Recording '+(recSavedList.length+1));
+    const finalDuration=Math.max(0,Math.floor(Number(recCompletedDuration)||0));
+    recLastBlob={blob,mime,ext,isVideo,label,duration:finalDuration};
+    const url=URL.createObjectURL(blob);
+    const entry={id:Date.now(),label,mime,ext,isVideo,duration:finalDuration,date:new Date().toLocaleString('en-KE'),url,size:blob.size};
+    recSavedList.unshift(entry);
+    try{localStorage.setItem('dkma_recordings',JSON.stringify(recSavedList.map(r=>({...r,url:null}))));}catch(e){}
+    if(labelInput)labelInput.value='';
+    recSetStatus('Done \u2014 download started');
+    recSeconds=0;
+    recShowControls('idle');
+    recRenderList();
+    recPopulateClients();
+    recPopulateMatters();
+    recUpdateTranscriptUi();
+    if(recTranscriptText())recSetTranscriptStatus('Transcript captured for this recording. Use Transcript PDF or Transcript TXT below.','good');
+    const saveStatus=document.getElementById('rec-save-status');
+    if(saveStatus){saveStatus.style.display='none';saveStatus.textContent='';}
+    const saveBtn=document.getElementById('rec-save-btn');
+    if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='\ud83d\udcc1 Save to Documents';}
+    recDownloadEntry(entry);
+    recCompletedDuration=0;
+  }
+
+  function recDownloadEntry(entry){
+    if(!entry.url)return;
+    const a=document.createElement('a');
+    a.href=entry.url;
+    a.download=entry.label.replace(/[\/\\:*?"<>|]/g,'_')+'.'+entry.ext;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+  }
+
+  window.recSaveToDocuments=async function(){
+    if(!recLastBlob){if(typeof toast==='function')toast('No recording to save.',true);return;}
+    const saveBtn=document.getElementById('rec-save-btn');
+    const saveStatus=document.getElementById('rec-save-status');
+    const matterId=document.getElementById('rec-matter-select')?.value||'';
+    const clientId=document.getElementById('rec-client-select')?.value||window.activeClientId||null;
+    const category=document.getElementById('rec-doc-category')?.value||'recording';
+    const saveTranscript=document.getElementById('rec-save-transcript')?.checked!==false;
+    const transcriptText=recTranscriptText();
+    const label=(recLastBlob?.label)||recTranscriptDownloadBaseName()||'Recording';
+    const {blob,ext}=recLastBlob;
+    if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Uploading\u2026';}
+    if(saveStatus)saveStatus.style.display='none';
+    if(typeof sb==='undefined'||typeof STORAGE_BUCKET==='undefined'){
+      if(saveStatus){saveStatus.style.display='block';saveStatus.style.color='var(--red)';saveStatus.textContent='\u26a0\ufe0f Not connected to Supabase.';}
+      if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='\ud83d\udcc1 Save to Documents';}
+      return;
+    }
+    const safeName=label.replace(/[^a-zA-Z0-9.\-_]/g,'_');
+    const timestamp=Date.now();
+    const fileName=category+'__'+safeName+'__'+timestamp+'.'+ext;
+    const transcriptFileName=category+'__'+safeName+'__'+timestamp+'__transcript.txt';
+    let storagePath;
+    let transcriptPath;
+    if(matterId){
+      storagePath=matterId+'/'+fileName;
+      transcriptPath=matterId+'/'+transcriptFileName;
+    } else {
+      storagePath=clientId?'client-general/'+clientId+'/'+fileName:'firm-recordings/'+fileName;
+      transcriptPath=clientId?'client-general/'+clientId+'/'+transcriptFileName:'firm-recordings/'+transcriptFileName;
+    }
+    try{
+      const{error}=await sb.storage.from(STORAGE_BUCKET).upload(storagePath,blob,{upsert:false,contentType:blob.type||'application/octet-stream'});
+      if(error)throw error;
+      let transcriptWarning='';
+      let transcriptSaved=false;
+      if(saveTranscript && transcriptText){
+        const transcriptBlob=new Blob([recTranscriptPackageText()],{type:'text/plain;charset=utf-8'});
+        const up=await sb.storage.from(STORAGE_BUCKET).upload(transcriptPath,transcriptBlob,{upsert:false,contentType:'text/plain;charset=utf-8'});
+        if(up.error)transcriptWarning=up.error.message||'Transcript upload failed';
+        else transcriptSaved=true;
+      }
+      if(saveStatus){
+        saveStatus.style.display='block';
+        saveStatus.style.color=transcriptWarning?'var(--gold)':'var(--green)';
+        saveStatus.textContent='\u2713 Saved to Documents'+(matterId?' (matter)':' (general)')+'.'
+          +(transcriptSaved?' Transcript saved too.':'')
+          +(saveTranscript&&!transcriptText?' No transcript text was available.':'')
+          +(transcriptWarning?' Transcript warning: '+transcriptWarning:'');
+      }
+      if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='\u2713 Saved';}
+      if(typeof toast==='function')toast('Recording saved to Documents.');
+      if(matterId&&typeof activeMatterId!=='undefined'&&activeMatterId===matterId&&typeof loadMatterDocuments==='function')loadMatterDocuments(true);
+    }catch(err){
+      console.error('Rec save error:',err);
+      if(saveStatus){saveStatus.style.display='block';saveStatus.style.color='var(--red)';saveStatus.textContent='\u26a0\ufe0f Upload failed: '+(err.message||'Unknown error');}
+      if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='\ud83d\udcc1 Save to Documents';}
+    }
+  };
+
+  function recRenderList(){
+    const el=document.getElementById('rec-list');
+    if(!el)return;
+    if(!recSavedList.length){el.innerHTML='<div class="empty-state"><p>No recordings yet<\/p><\/div>';return;}
+    el.innerHTML=recSavedList.map((r,i)=>{
+      const durStr=r.duration?String(Math.floor(r.duration/60)).padStart(2,'0')+':'+String(r.duration%60).padStart(2,'0'):'\u2014';
+      const sizeStr=r.size?(r.size>1024*1024?(r.size/1024/1024).toFixed(1)+' MB':(r.size/1024).toFixed(0)+' KB'):'';
+      const icon=r.isVideo?'\ud83d\udcf9':'\ud83c\udfa4';
+      const hasUrl=!!r.url;
+      const tag=r.isVideo?'video':'audio';
+      const playerStyle=r.isVideo
+        ?'width:100%;border-radius:7px;outline:none;max-height:220px;background:#000;display:block'
+        :'width:100%;border-radius:7px;outline:none;display:block';
+      return`<div class="rec-entry" id="rec-entry-${r.id}">
+        <div class="rec-entry-icon">${icon}<\/div>
+        <div class="rec-entry-info">
+          <div class="rec-entry-name" title="${r.label}">${r.label}<\/div>
+          <div class="rec-entry-meta">${durStr}${sizeStr?' \u00b7 '+sizeStr:''} \u00b7 ${r.date}<\/div>
+        <\/div>
+        <div class="rec-entry-actions">
+          ${hasUrl?`<button class="rec-entry-btn" onclick="recRedownload(${i})" title="Download">\u2b07<\/button>`:''}
+          ${hasUrl?`<button class="rec-entry-btn play-toggle" id="rec-play-btn-${r.id}" onclick="recTogglePlayer(${i})" title="Play inline">\u25b6<\/button>`:''}
+          <button class="rec-entry-btn del" onclick="recDelete(${i})" title="Delete">\u2715<\/button>
+        <\/div>
+      <\/div>
+      ${hasUrl?`<div id="rec-player-${r.id}" style="display:none;padding:10px 14px 14px;background:var(--cream);border-top:1px solid var(--brd)">
+        <${tag} id="rec-media-${r.id}" src="${r.url}" controls style="${playerStyle}"><\/${tag}>
+      <\/div>`:''}`;
+    }).join('');
+  }
+
+  window.recRedownload=function(i){recDownloadEntry(recSavedList[i]);};
+
+  window.recTogglePlayer=function(i){
+    const entry=recSavedList[i];
+    if(!entry?.url)return;
+    const wrap=document.getElementById('rec-player-'+entry.id);
+    const btn=document.getElementById('rec-play-btn-'+entry.id);
+    const media=document.getElementById('rec-media-'+entry.id);
+    if(!wrap)return;
+    const isVisible=wrap.style.display!=='none';
+    // Close all other open players
+    recSavedList.forEach(r=>{
+      if(r.id===entry.id)return;
+      const w=document.getElementById('rec-player-'+r.id);
+      const b=document.getElementById('rec-play-btn-'+r.id);
+      const m=document.getElementById('rec-media-'+r.id);
+      if(w)w.style.display='none';
+      if(b)b.textContent='\u25b6';
+      if(m){try{m.pause();}catch(e){}}
+    });
+    if(isVisible){
+      wrap.style.display='none';
+      if(btn)btn.textContent='\u25b6';
+      if(media){try{media.pause();}catch(e){}}
+    } else {
+      wrap.style.display='block';
+      if(btn)btn.textContent='\u23f8';
+      if(media){media.currentTime=0;media.play().catch(()=>{});}
+    }
+  };
+  window.recDelete=function(i){
+    const entry=recSavedList[i];
+    if(entry?.url)URL.revokeObjectURL(entry.url);
+    recSavedList.splice(i,1);
+    try{localStorage.setItem('dkma_recordings',JSON.stringify(recSavedList.map(r=>({...r,url:null}))));}catch(e){}
+    recRenderList();
+  };
+  window.recClearAll=function(){
+    if(recSavedList.length&&!confirm('Delete all recordings from this session?'))return;
+    recSavedList.forEach(r=>{if(r.url)URL.revokeObjectURL(r.url);});
+    recSavedList=[];
+    localStorage.removeItem('dkma_recordings');
+    recRenderList();
+  };
+
+  document.addEventListener('DOMContentLoaded',function(){
+    recRenderList();
+    recShowControls('idle');
+    recPopulateClients();
+    recPopulateMatters();
+    recResetTranscript();
+  });
+})();
+</script>
+
+</body>
+</html>
