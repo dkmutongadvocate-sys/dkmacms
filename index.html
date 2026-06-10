@@ -3842,7 +3842,8 @@ setTimeout(function() {
           <label>End Date <span style="font-size:10px;color:var(--txt3);font-weight:400">(optional)</span></label>
           <input type="date" id="ev-end-date" onchange="onEvEndDateChange()"/>
         </div>
-        <div class="form-row"><label>Time</label><input type="time" id="ev-time"/></div>
+        <div class="form-row"><label>Start Time</label><input type="time" id="ev-time"/></div>
+        <div class="form-row"><label>End Time <span style="font-size:10px;color:var(--txt3);font-weight:400">(optional)</span></label><input type="time" id="ev-end-time"/></div>
       </div>
       <div class="form-two">
         <div class="form-row"><label>Event Type</label><select id="ev-type"><option value="court">Court</option><option value="client">Client Meeting</option><option value="deadline">Deadline</option><option value="internal">Internal</option><option value="adr">Arbitration / ADR</option></select></div>
@@ -7466,7 +7467,7 @@ function renderDashboard(){
   else evEl.innerHTML=upcoming.map(e=>{
     const d=parseDateLocal(e.event_date);
     const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';
-    return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}<\/div><\/div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}<\/div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div><\/div>`;
+    return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}<\/div><\/div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div><\/div>`;
   }).join('');
   // Clients
   const cEl=document.getElementById('dash-clients-list');
@@ -11772,9 +11773,9 @@ function renderCalendarAgendaView(){
         <div class="cal-agenda-event-title">${h.gazetted?'📋':h.islamic?'☪️':'🇰🇪'} ${esc(h.name)}<\/div>
         <div class="cal-agenda-event-meta">${h.gazetted?'Gazetted / ad-hoc':'Public holiday'}${h.estimated?' · Date subject to moon sighting':''}<\/div>
       <\/div>`),
-      ...evs.map(e=>`<div class="cal-agenda-event" onclick="openEventDetail('${e.id}')">
+      ...evs.map(e=>`<div class="cal-agenda-event" onclick="openEventReadOnly('${e.id}','${e.event_date}')">
         <div class="cal-agenda-event-title">${esc(e.title)}<\/div>
-        <div class="cal-agenda-event-meta">${e.event_time?esc(e.event_time)+' · ':''}${esc(e.location||'')}${e.event_end_date&&e.event_end_date>e.event_date?' · Multi-day':''}${e._virtual_occurrence?' · Recurring':''}<\/div>
+        <div class="cal-agenda-event-meta">${formatEventTimeRange(e)?esc(formatEventTimeRange(e))+' · ':''}${esc(e.location||'')}${e.event_end_date&&e.event_end_date>e.event_date?' · Multi-day':''}${e._virtual_occurrence?' · Recurring':''}<\/div>
       <\/div>`)
     ].join('');
     return`<div class="cal-agenda-day">
@@ -11811,9 +11812,9 @@ function renderCalendarRangeList(start,end){
     html+=evs.map(e=>{
       const d=parseDateLocal(e.event_date);
       const recurBadge=e._virtual_occurrence?`<span style="font-size:9px;background:#F7F4ED;color:#854F0B;padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px">Recurring<\/span>`:'';
-      return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventDetail('${e.id}')">
+      return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventReadOnly('${e.id}','${e.event_date}')">
         <div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${monthNameShort(d)}<\/div><\/div>
-        <div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}${recurBadge}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}<\/div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div>
+        <div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}${recurBadge}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div>
       <\/div>`;
     }).join('');
   }
@@ -11982,7 +11983,7 @@ function renderCalendar(){
     el.innerHTML=inner;
     el.addEventListener('click',()=>{
       if(hols.length||evs.length){
-        if(evs.length===1&&!hols.length) openEventDetail(evs[0].id);
+        if(evs.length===1&&!hols.length) openEventReadOnly(evs[0].id,evs[0].event_date);
         else if(evs.length>1||hols.length) openDayEvents(new Date(calYear,calMonth,d),evs,hols);
       }
     });
@@ -12062,7 +12063,7 @@ function renderCalendar(){
   const monthLabel=isMultiDay?'':d.toLocaleString('en',{month:'short'});
   const spanBadge=isMultiDay?`<span style="font-size:9px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px">Multi-day<\/span>`:'';
   const recurBadge=e._virtual_occurrence?`<span style="font-size:9px;background:#F7F4ED;color:#854F0B;padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px">Recurring<\/span>`:'';
-  return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventDetail('${e.id}')">
+  return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventReadOnly('${e.id}','${e.event_date}')">
     <div class="upcoming-date" style="${isMultiDay?'width:auto;min-width:40px;padding-right:4px':''}">
       ${isMultiDay
         ?`<div style="font-size:11px;font-weight:500;color:var(--navy);white-space:nowrap">${dateLabel}<\/div>`
@@ -12070,7 +12071,7 @@ function renderCalendar(){
     <\/div>
     <div class="upcoming-body" style="flex:1">
       <div class="upcoming-title">${esc(e.title)}${spanBadge}${recurBadge}<\/div>
-      <div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}<\/div>
+      <div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div>
       ${addedBy}
       <span class="upcoming-tag ${tc['court']==='tag-court'?tc[e.type]||'tag-internal':tc[e.type]||'tag-internal'}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}
     <\/div>
@@ -12948,6 +12949,7 @@ function popEventModal(){
     'ev-date':today,
     'ev-end-date':'',
     'ev-time':'',
+    'ev-end-time':'',
     'ev-type':'court',
     'ev-location':'',
     'ev-notes':'',
@@ -13030,8 +13032,25 @@ function parseRecurrenceMeta(notes){
 function cleanEventNotes(notes){
   return String(notes||'')
     .replace(/\s*\[\[DKMA_RECURRENCE:.*?\]\]\s*/g,'\n')
+    .replace(/\s*\[\[DKMA_END_TIME:.*?\]\]\s*/g,'\n')
     .replace(/^\[Recurring event:.*?\]\s*$/gm,'')
     .trim();
+}
+function eventEndTimeMetaMarker(endTime){
+  const clean=String(endTime||'').trim();
+  return clean?`[[DKMA_END_TIME:${clean}]]`:'';
+}
+function getEventEndTime(event){
+  if(event?.event_end_time)return String(event.event_end_time||'').trim();
+  const match=String(event?.notes||'').match(/\[\[DKMA_END_TIME:([0-2]\d:[0-5]\d)\]\]/);
+  return match?match[1]:'';
+}
+function formatEventTimeRange(event){
+  const start=String(event?.event_time||'').trim();
+  const end=getEventEndTime(event);
+  if(start&&end)return `${start}–${end}`;
+  if(start)return start;
+  return '';
 }
 function setLoading(btnId,loading,label='Save'){
   const btn=document.getElementById(btnId);if(!btn)return;
@@ -13389,13 +13408,15 @@ async function saveEvent(){
   const baseNotes=cleanEventNotes(document.getElementById('ev-notes').value);
   const recNote=recurrenceLabel(repeat,repeatCount,repeatUntil);
   const recMeta=recurrenceMetaMarker(repeat,repeatCount,repeatUntil);
+  const endTime=document.getElementById('ev-end-time')?.value||'';
+  const endTimeMeta=eventEndTimeMetaMarker(endTime);
   const shared={
     event_time:document.getElementById('ev-time').value||null,
     type:document.getElementById('ev-type').value,
     matter_id:document.getElementById('ev-matter').value||null,
     location:document.getElementById('ev-location').value.trim()||null,
     meeting_link:document.getElementById('ev-meeting-link').value.trim()||null,
-    notes:[baseNotes,recNote,recMeta].filter(Boolean).join('\n'),
+    notes:[baseNotes,recNote,recMeta,endTimeMeta].filter(Boolean).join('\n'),
     created_by:currentUser?.id||null,
     created_by_name:currentProfile?.full_name||currentUser?.email||null,
   };
@@ -13821,7 +13842,7 @@ function renderMatterDetailTab(){
     el.innerHTML=`<div class="card">
       <div class="card-header"><span class="card-title">Events (${me.length})<\/span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openEventModalForMatter('${m.id}')">+ Add Event<\/button><\/div>
       ${!me.length?emptyStateSm('No events linked to this matter.')
-        :me.map(e=>{const d=parseDateLocal(e.event_date);const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}<\/div><\/div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}<\/div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div><button class="op-del" title="Delete" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×<\/button><\/div>`;}).join('')}
+        :me.map(e=>{const d=parseDateLocal(e.event_date);const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}<\/div><\/div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div><button class="op-del" title="Delete" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×<\/button><\/div>`;}).join('')}
     <\/div>`;
   } else if(activeMatterTab==='time'){
     const mt=timeEntries.filter(t=>t.matter_id===m.id);
@@ -18551,6 +18572,18 @@ function toGCalDate(dateStr, timeStr) {
   }
   return { date: dateStr };
 }
+function gcalEventEnd(ev){
+  const endTime=getEventEndTime(ev);
+  if(ev.event_time){
+    if(endTime){
+      return { dateTime: ev.event_date + 'T' + endTime + ':00', timeZone: 'Africa/Nairobi' };
+    }
+    const [h, m] = ev.event_time.split(':').map(Number);
+    const endH = String(h + 1).padStart(2, '0');
+    return { dateTime: ev.event_date + 'T' + endH + ':' + String(m).padStart(2, '0') + ':00', timeZone: 'Africa/Nairobi' };
+  }
+  return { date: ev.event_date };
+}
 
 // Push a DKMA event to Google Calendar
 async function addEventToGCal(btn, ev) {
@@ -18561,15 +18594,7 @@ async function addEventToGCal(btn, ev) {
   btn.disabled = true;
   btn.textContent = '⏳ Adding⬦';
   const start = toGCalDate(ev.event_date, ev.event_time);
-  let end;
-  if (ev.event_time) {
-    // default 1 hour duration
-    const [h, m] = ev.event_time.split(':').map(Number);
-    const endH = String(h + 1).padStart(2, '0');
-    end = { dateTime: ev.event_date + 'T' + endH + ':' + String(m).padStart(2, '0') + ':00', timeZone: 'Africa/Nairobi' };
-  } else {
-    end = { date: ev.event_date };
-  }
+  const end = gcalEventEnd(ev);
   const body = {
     summary: ev.title,
     location: ev.location || '',
@@ -18627,9 +18652,14 @@ async function syncFromGCal() {
       if (existingKeys.has(key)) continue;
       // Determine time
       let timeStr = null;
+      let endTimeStr = null;
       if (item.start.dateTime) {
         const t = new Date(item.start.dateTime);
         timeStr = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+      }
+      if (item.end?.dateTime) {
+        const t = new Date(item.end.dateTime);
+        endTimeStr = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
       }
       // Insert into Supabase
       const payload = {
@@ -18638,7 +18668,7 @@ async function syncFromGCal() {
         event_time: timeStr,
         type: 'internal',
         location: item.location || null,
-        notes: item.description ? item.description.slice(0, 500) : null,
+        notes: [item.description ? item.description.slice(0, 500) : '', eventEndTimeMetaMarker(endTimeStr)].filter(Boolean).join('\n') || null,
         created_by: currentUser?.id||null,
         created_by_name: currentProfile?.full_name||currentUser?.email||null,
       };
@@ -18677,14 +18707,7 @@ async function saveEventWithGCal() {
 async function addEventToGCalSilent(ev) {
   if (!gcalAccessToken) return;
   const start = toGCalDate(ev.event_date, ev.event_time);
-  let end;
-  if (ev.event_time) {
-    const [h, m] = ev.event_time.split(':').map(Number);
-    const endH = String(h + 1).padStart(2, '0');
-    end = { dateTime: ev.event_date + 'T' + endH + ':' + String(m).padStart(2, '0') + ':00', timeZone: 'Africa/Nairobi' };
-  } else {
-    end = { date: ev.event_date };
-  }
+  const end = gcalEventEnd(ev);
   const body = {
     summary: ev.title,
     location: ev.location || '',
@@ -19353,6 +19376,73 @@ function viewClient(clientId){
   openClientProfile(clientId);
 }
 
+function eventDisplayDateLabel(ev, occurrenceDate){
+  const start=dateOnly(occurrenceDate||ev.event_date);
+  const end=dateOnly(ev.event_end_date);
+  if(end&&end>dateOnly(ev.event_date)){
+    const offset=Math.round((parseDateLocal(end)-parseDateLocal(ev.event_date))/86400000);
+    const occEnd=formatDateLocal(addCalendarDays(parseDateLocal(start),offset));
+    return `${fmtDate(start)} – ${fmtDate(occEnd)}`;
+  }
+  return fmtDate(start);
+}
+function normalizeMeetingLink(url){
+  const v=String(url||'').trim();
+  if(!v)return '';
+  return /^https?:\/\//i.test(v)?v:'https://'+v;
+}
+function openEventReadOnly(eventId, occurrenceDate=''){
+  const base=events.find(e=>e.id===eventId);
+  if(!base)return;
+  const ev=normalizeCalendarEventRow(base);
+  const existing=document.getElementById('_event-view-popup');
+  if(existing)existing.remove();
+  const matter=matters.find(m=>m.id===ev.matter_id);
+  const notes=cleanEventNotes(ev.notes||'');
+  const rec=getEventRecurrenceMeta(ev);
+  const link=normalizeMeetingLink(ev.meeting_link);
+  const typeLabel=statusLabel(ev.type||'internal');
+  const addedBy=ev.created_by_name||'';
+  const popup=document.createElement('div');
+  popup.id='_event-view-popup';
+  popup.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.55);z-index:3200;display:flex;align-items:center;justify-content:center;padding:20px';
+  popup.onclick=e=>{if(e.target===popup)popup.remove();};
+  popup.innerHTML=`
+    <div style="background:#fff;border-radius:12px;width:min(520px,94vw);max-height:88vh;overflow:auto;box-shadow:0 18px 60px rgba(0,0,0,0.22);border:1px solid var(--brd)">
+      <div style="padding:18px 22px;border-bottom:1px solid var(--brd);display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600;margin-bottom:6px">${esc(typeLabel)} Event<\/div>
+          <div style="font-family:'Playfair Display',serif;font-size:22px;line-height:1.25;color:var(--txt)">${esc(ev.title||'Untitled Event')}<\/div>
+        <\/div>
+        <button onclick="document.getElementById('_event-view-popup')?.remove()" style="border:none;background:none;font-size:24px;line-height:1;color:var(--txt3);cursor:pointer">×<\/button>
+      <\/div>
+      <div style="padding:20px 22px;display:grid;gap:14px">
+        <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:start">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600">Date<\/div>
+          <div style="font-size:13px;color:var(--txt);font-weight:500">${esc(eventDisplayDateLabel(ev,occurrenceDate))}${occurrenceDate&&occurrenceDate!==ev.event_date?' <span style="font-size:10px;background:#F7F4ED;color:#854F0B;padding:2px 7px;border-radius:8px;margin-left:6px">Recurring occurrence<\/span>':''}<\/div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600">Time<\/div>
+          <div style="font-size:13px;color:var(--txt)">${esc(formatEventTimeRange(ev)||'All day')}<\/div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600">Matter<\/div>
+          <div style="font-size:13px;color:var(--txt)">${matter?esc(matter.title):'—'}<\/div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600">Location<\/div>
+          <div style="font-size:13px;color:var(--txt)">${esc(ev.location||'—')}<\/div>
+          ${rec?`<div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600">Repeats<\/div><div style="font-size:13px;color:var(--txt)">${esc((rec.repeat||'').charAt(0).toUpperCase()+(rec.repeat||'').slice(1))}${rec.until?' until '+esc(rec.until):''}${rec.count?' · '+esc(rec.count)+' occurrences':''}<\/div>`:''}
+          ${addedBy?`<div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600">Added By<\/div><div style="font-size:13px;color:var(--txt)">${esc(addedBy)}<\/div>`:''}
+        <\/div>
+        ${notes?`<div style="background:var(--cream);border:1px solid var(--brd);border-radius:9px;padding:13px 14px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600;margin-bottom:6px">Notes<\/div>
+          <div style="font-size:13px;color:var(--txt2);line-height:1.6;white-space:pre-wrap">${esc(notes)}<\/div>
+        <\/div>`:''}
+        ${link?`<a href="${esc(link)}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#185FA5;color:#fff;text-decoration:none;border-radius:8px;padding:12px 14px;font-size:13px;font-weight:700">🔗 Open Video Conference<\/a>`:''}
+      <\/div>
+      <div style="padding:16px 22px;border-top:1px solid var(--brd);display:flex;gap:10px;justify-content:flex-end;background:#fff">
+        <button class="btn-secondary" onclick="document.getElementById('_event-view-popup')?.remove()">Close<\/button>
+        <button class="btn-primary" onclick="document.getElementById('_event-view-popup')?.remove();openEventDetail('${eventId}')">Edit Event<\/button>
+      <\/div>
+    <\/div>`;
+  document.body.appendChild(popup);
+}
+
 // ─── openEventDetail — open event edit modal pre-filled ──────────
 function openEventDetail(eventId){
   const ev=events.find(e=>e.id===eventId);
@@ -19362,6 +19452,7 @@ function openEventDetail(eventId){
     const t=document.getElementById('ev-title');
     const d=document.getElementById('ev-date');
     const tm=document.getElementById('ev-time');
+    const etm=document.getElementById('ev-end-time');
     const ty=document.getElementById('ev-type');
     const m=document.getElementById('ev-matter');
     const l=document.getElementById('ev-location');
@@ -19372,6 +19463,7 @@ function openEventDetail(eventId){
     const ed=document.getElementById('ev-end-date');
     if(ed)ed.value=ev.event_end_date||'';
     if(tm)tm.value=ev.event_time||'';
+    if(etm)etm.value=getEventEndTime(ev)||'';
     if(ty)ty.value=ev.type||'court';
     if(m)m.value=ev.matter_id||'';
     if(l)l.value=ev.location||'';
@@ -19409,6 +19501,7 @@ function openEventDetail(eventId){
         const updRepeatCount=document.getElementById('ev-repeat-count')?.value||'';
         const updRepeatUntil=document.getElementById('ev-repeat-until')?.value||'';
         const updNotesBase=cleanEventNotes(document.getElementById('ev-notes').value);
+        const updEndTime=document.getElementById('ev-end-time')?.value||'';
         const payload={
           title:document.getElementById('ev-title').value.trim(),
           event_date:document.getElementById('ev-date').value,
@@ -19417,7 +19510,7 @@ function openEventDetail(eventId){
           type:document.getElementById('ev-type').value,
           matter_id:document.getElementById('ev-matter').value||null,
           location:document.getElementById('ev-location').value.trim()||null,
-          notes:[updNotesBase,recurrenceLabel(updRepeat,updRepeatCount,updRepeatUntil),recurrenceMetaMarker(updRepeat,updRepeatCount,updRepeatUntil)].filter(Boolean).join('\n')||null,
+          notes:[updNotesBase,recurrenceLabel(updRepeat,updRepeatCount,updRepeatUntil),recurrenceMetaMarker(updRepeat,updRepeatCount,updRepeatUntil),eventEndTimeMetaMarker(updEndTime)].filter(Boolean).join('\n')||null,
           meeting_link:document.getElementById('ev-meeting-link')?.value.trim()||null,
         };
         if(!payload.title||!payload.event_date){toast('Title and date are required.',true);return;}
@@ -19464,11 +19557,11 @@ function openDayEvents(dateObj, evs, hols){
     const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal','adr':'tag-client'};
     evs.forEach(ev=>{
       const m=matters.find(x=>x.id===ev.matter_id);
-      inner+=`<div style="padding:12px 20px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''" onclick="document.getElementById('_day-events-popup').remove();openEventDetail('${ev.id}')">
+      inner+=`<div style="padding:12px 20px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background 0.12s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''" onclick="document.getElementById('_day-events-popup').remove();openEventReadOnly('${ev.id}','${ev.event_date}')">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
           <div style="flex:1">
             <div style="font-size:13px;font-weight:500;color:var(--txt)">${esc(ev.title)}<\/div>
-            <div style="font-size:11px;color:var(--txt3);margin-top:2px">${ev.event_time?ev.event_time+' · ':''}${esc(ev.location||m?.title||'')}<\/div>
+            <div style="font-size:11px;color:var(--txt3);margin-top:2px">${formatEventTimeRange(ev)?esc(formatEventTimeRange(ev))+' · ':''}${esc(ev.location||m?.title||'')}<\/div>
           <\/div>
           <span class="upcoming-tag ${tc[ev.type]||'tag-internal'}" style="margin-top:2px;flex-shrink:0">${statusLabel(ev.type)}<\/span>
         <\/div>
@@ -22213,7 +22306,7 @@ function checkDateAvailability(dateStr,endDateStr){
       const eStart=dateOnly(e.event_date),eEnd=dateOnly(e.event_end_date)||eStart;
       if(ds>=eStart&&ds<=eEnd){
         seenEvents.add(e.id);
-        const timeStr=e.event_time?' at '+e.event_time:'';
+        const timeStr=formatEventTimeRange(e)?' at '+formatEventTimeRange(e):'';
         const matterObj=(matters||[]).find(m=>m.id===e.matter_id);
         const matterStr=matterObj?' ('+matterObj.title+')':'';
         const msg='"'+e.title+'"'+timeStr+matterStr;
