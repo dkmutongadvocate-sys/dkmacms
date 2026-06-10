@@ -11660,8 +11660,67 @@ function calendarHolidaysForRange(start,end){
     return d>=start&&d<=end;
   }).sort((a,b)=>a.date.localeCompare(b.date));
 }
-function calendarEventsForRange(start,end){
-  return events.filter(e=>{
+function eventNaturalKey(e){
+  return [
+    String(e.title||'').trim().toLowerCase(),
+    dateOnly(e.event_date),
+    String(e.event_time||''),
+    String(e.matter_id||''),
+    String(e.location||'').trim().toLowerCase()
+  ].join('|');
+}
+function recurrenceGroupKey(e,rec){
+  return [
+    String(e.title||'').trim().toLowerCase(),
+    String(e.event_time||''),
+    String(e.matter_id||''),
+    String(e.location||'').trim().toLowerCase(),
+    String(rec?.repeat||''),
+    String(rec?.count||''),
+    String(rec?.until||''),
+    cleanEventNotes(e.notes||'').toLowerCase()
+  ].join('|');
+}
+function getEventRecurrenceMeta(e){
+  const direct=parseRecurrenceMeta(e?.notes||'');
+  if(direct?.repeat&&direct.repeat!=='none')return direct;
+  const txt=String(e?.notes||'');
+  const m=txt.match(/\[Recurring event:\s*(Daily|Weekly|Monthly|Yearly)(?:\s+until\s+(\d{4}-\d{2}-\d{2}))?(?:\s+·\s+max\s+(\d+)\s+occurrences)?\]/i);
+  if(!m)return null;
+  return {repeat:m[1].toLowerCase(),until:m[2]||'',count:m[3]||'4'};
+}
+function expandedCalendarEventsForRange(start,end){
+  const actual=(events||[]).map(normalizeCalendarEventRow);
+  const byKey=new Map();
+  actual.forEach(e=>byKey.set(eventNaturalKey(e),e));
+  const sourceByGroup=new Map();
+  actual.forEach(e=>{
+    const rec=getEventRecurrenceMeta(e);
+    if(!rec?.repeat||rec.repeat==='none')return;
+    const key=recurrenceGroupKey(e,rec);
+    const existing=sourceByGroup.get(key);
+    if(!existing||dateOnly(e.event_date)<dateOnly(existing.event_date))sourceByGroup.set(key,e);
+  });
+  sourceByGroup.forEach(source=>{
+    const rec=getEventRecurrenceMeta(source);
+    if(!rec?.repeat||rec.repeat==='none')return;
+    const multiDayOffset=source.event_end_date&&source.event_end_date>source.event_date
+      ?Math.round((parseDateLocal(source.event_end_date)-parseDateLocal(source.event_date))/86400000)
+      :0;
+    buildEventOccurrenceDates(source.event_date,rec.repeat,rec.count||4,rec.until||'').forEach(occDate=>{
+      const occurrence={
+        ...source,
+        id:source.id,
+        _source_event_id:source.id,
+        _virtual_occurrence:occDate!==source.event_date,
+        event_date:occDate,
+        event_end_date:multiDayOffset>0?formatDateLocal(addCalendarDays(parseDateLocal(occDate),multiDayOffset)):null
+      };
+      const key=eventNaturalKey(occurrence);
+      if(!byKey.has(key))byKey.set(key,occurrence);
+    });
+  });
+  return [...byKey.values()].filter(e=>{
     const s=parseDateLocal(e.event_date);
     const en=e.event_end_date?parseDateLocal(e.event_end_date):s;
     return s<=end&&en>=start;
@@ -11671,13 +11730,12 @@ function calendarEventsForRange(start,end){
     return(a.event_time||'').localeCompare(b.event_time||'');
   });
 }
+function calendarEventsForRange(start,end){
+  return expandedCalendarEventsForRange(start,end);
+}
 function calendarEventsForDay(date){
   const ymd=formatDateLocal(date);
-  return events.filter(e=>{
-    const start=dateOnly(e.event_date),end=dateOnly(e.event_end_date)||start;
-    return start<=ymd&&end>=ymd;
-  })
-    .sort((a,b)=>(a.event_time||'').localeCompare(b.event_time||''));
+  return expandedCalendarEventsForRange(parseDateLocal(ymd),parseDateLocal(ymd));
 }
 function renderCalendarViewButtons(){
   ['month','week','day'].forEach(v=>{
@@ -11716,7 +11774,7 @@ function renderCalendarAgendaView(){
       <\/div>`),
       ...evs.map(e=>`<div class="cal-agenda-event" onclick="openEventDetail('${e.id}')">
         <div class="cal-agenda-event-title">${esc(e.title)}<\/div>
-        <div class="cal-agenda-event-meta">${e.event_time?esc(e.event_time)+' · ':''}${esc(e.location||'')}${e.event_end_date&&e.event_end_date>e.event_date?' · Multi-day':''}<\/div>
+        <div class="cal-agenda-event-meta">${e.event_time?esc(e.event_time)+' · ':''}${esc(e.location||'')}${e.event_end_date&&e.event_end_date>e.event_date?' · Multi-day':''}${e._virtual_occurrence?' · Recurring':''}<\/div>
       <\/div>`)
     ].join('');
     return`<div class="cal-agenda-day">
@@ -11752,9 +11810,10 @@ function renderCalendarRangeList(start,end){
     if(hols.length)html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd);border-top:1px solid var(--brd)">Events<\/div>`;
     html+=evs.map(e=>{
       const d=parseDateLocal(e.event_date);
+      const recurBadge=e._virtual_occurrence?`<span style="font-size:9px;background:#F7F4ED;color:#854F0B;padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px">Recurring<\/span>`:'';
       return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventDetail('${e.id}')">
         <div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${monthNameShort(d)}<\/div><\/div>
-        <div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}<\/div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div>
+        <div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}${recurBadge}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}<\/div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div>
       <\/div>`;
     }).join('');
   }
@@ -11859,7 +11918,8 @@ function renderCalendar(){
   const me={};
   const monthStart=new Date(calYear,calMonth,1);
   const monthEnd=new Date(calYear,calMonth+1,0);
-  events.forEach(e=>{
+  const monthEvents=expandedCalendarEventsForRange(monthStart,monthEnd);
+  monthEvents.forEach(e=>{
     const start=parseDateLocal(e.event_date);
     const end=e.event_end_date?parseDateLocal(e.event_end_date):start;
     // Clamp to this month for iteration
@@ -11933,7 +11993,7 @@ function renderCalendar(){
   // Include events that start this month OR span into this month
   const _mS=new Date(calYear,calMonth,1);
   const _mE=new Date(calYear,calMonth+1,0);
-  const meList=events.filter(e=>{
+  const meList=expandedCalendarEventsForRange(_mS,_mE).filter(e=>{
     const s=parseDateLocal(e.event_date);
     const en=e.event_end_date?parseDateLocal(e.event_end_date):s;
     return s<=_mE&&en>=_mS;
@@ -12001,6 +12061,7 @@ function renderCalendar(){
     :`${d.getDate()}`;
   const monthLabel=isMultiDay?'':d.toLocaleString('en',{month:'short'});
   const spanBadge=isMultiDay?`<span style="font-size:9px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px">Multi-day<\/span>`:'';
+  const recurBadge=e._virtual_occurrence?`<span style="font-size:9px;background:#F7F4ED;color:#854F0B;padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px">Recurring<\/span>`:'';
   return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventDetail('${e.id}')">
     <div class="upcoming-date" style="${isMultiDay?'width:auto;min-width:40px;padding-right:4px':''}">
       ${isMultiDay
@@ -12008,7 +12069,7 @@ function renderCalendar(){
         :`<div class="upcoming-day">${dateLabel}<\/div><div class="upcoming-month">${monthLabel}<\/div>`}
     <\/div>
     <div class="upcoming-body" style="flex:1">
-      <div class="upcoming-title">${esc(e.title)}${spanBadge}<\/div>
+      <div class="upcoming-title">${esc(e.title)}${spanBadge}${recurBadge}<\/div>
       <div class="upcoming-sub">${esc(e.location||'')} ${e.event_time?'· '+e.event_time:''}<\/div>
       ${addedBy}
       <span class="upcoming-tag ${tc['court']==='tag-court'?tc[e.type]||'tag-internal':tc[e.type]||'tag-internal'}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}
