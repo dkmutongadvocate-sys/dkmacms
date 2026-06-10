@@ -8059,11 +8059,12 @@ function buildClientLogEntries(client){
     entries.push({type,ts:dt.toISOString(),title,meta,tone});
   };
 
+  const lastPortalAccess=client.portal_last_login_at||client.portal_device_last_seen_at;
   pushEntry(
     'portal',
-    client.portal_last_login_at,
-    'Client portal login',
-    client.portal_login_count?`${Number(client.portal_login_count).toLocaleString('en-KE')} total login${Number(client.portal_login_count)===1?'':'s'}`:'Logged in successfully',
+    lastPortalAccess,
+    client.portal_last_login_at?'Client portal login':'Client portal access seen',
+    client.portal_login_count?`${Number(client.portal_login_count).toLocaleString('en-KE')} total login${Number(client.portal_login_count)===1?'':'s'}`:'Portal opened successfully',
     'good'
   );
 
@@ -8134,12 +8135,12 @@ function buildClientLogEntries(client){
 function renderClientLogsTab(client){
   const entries=buildClientLogEntries(client);
   const loginCount=Number(client?.portal_login_count)||0;
-  const lastLogin=client?.portal_last_login_at;
+  const lastLogin=client?.portal_last_login_at||client?.portal_device_last_seen_at;
   const portalSummary=`<div class="card" style="margin-bottom:14px">
     <div class="card-header"><span class="card-title">Portal Access</span></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;padding:18px 20px">
       <div style="border:1px solid var(--brd);border-radius:12px;padding:14px;background:#fff">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin-bottom:7px">Last Login</div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin-bottom:7px">${client?.portal_last_login_at?'Last Login':'Last Portal Access'}</div>
         <div style="font-size:16px;font-weight:600;color:var(--txt)">${lastLogin?fmtDateTime(lastLogin):'Never logged in'}</div>
       </div>
       <div style="border:1px solid var(--brd);border-radius:12px;padding:14px;background:#fff">
