@@ -8059,6 +8059,14 @@ function buildClientLogEntries(client){
     entries.push({type,ts:dt.toISOString(),title,meta,tone});
   };
 
+  pushEntry(
+    'portal',
+    client.portal_last_login_at,
+    'Client portal login',
+    client.portal_login_count?`${Number(client.portal_login_count).toLocaleString('en-KE')} total login${Number(client.portal_login_count)===1?'':'s'}`:'Logged in successfully',
+    'good'
+  );
+
   clientMatters.forEach(m=>{
     pushEntry(
       'matter',
@@ -8125,17 +8133,32 @@ function buildClientLogEntries(client){
 
 function renderClientLogsTab(client){
   const entries=buildClientLogEntries(client);
+  const loginCount=Number(client?.portal_login_count)||0;
+  const lastLogin=client?.portal_last_login_at;
+  const portalSummary=`<div class="card" style="margin-bottom:14px">
+    <div class="card-header"><span class="card-title">Portal Access</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;padding:18px 20px">
+      <div style="border:1px solid var(--brd);border-radius:12px;padding:14px;background:#fff">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin-bottom:7px">Last Login</div>
+        <div style="font-size:16px;font-weight:600;color:var(--txt)">${lastLogin?fmtDateTime(lastLogin):'Never logged in'}</div>
+      </div>
+      <div style="border:1px solid var(--brd);border-radius:12px;padding:14px;background:#fff">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin-bottom:7px">Successful Logins</div>
+        <div style="font-size:16px;font-weight:600;color:var(--txt)">${loginCount.toLocaleString('en-KE')}</div>
+      </div>
+    </div>
+  </div>`;
   if(!entries.length){
-    return `<div class="card"><div style="padding:38px 24px;text-align:center;color:var(--txt3);font-size:13px">
+    return `${portalSummary}<div class="card"><div style="padding:38px 24px;text-align:center;color:var(--txt3);font-size:13px">
       <div style="font-size:30px;margin-bottom:10px">📝</div>
       <div style="font-weight:500;color:var(--txt);margin-bottom:6px">No client activity yet</div>
       <div>This log will fill up as work, billing, communication, and panic activity happen for this client.</div>
     </div></div>`;
   }
-  const iconMap={matter:'⚖️',invoice:'🧾',time:'⏱️',party:'👥',message:'💬',panic:'🆘'};
+  const iconMap={portal:'🔐',matter:'⚖️',invoice:'🧾',time:'⏱️',party:'👥',message:'💬',panic:'🆘'};
   const accentMap={good:'#EAF3DE',warn:'#FFF3D6',bad:'#FDE8E8',default:'#F5F3EC'};
   const colorMap={good:'#2D6A4F',warn:'#854F0B',bad:'#A30000',default:'var(--navy)'};
-  return `<div class="card">
+  return `${portalSummary}<div class="card">
     <div class="card-header"><span class="card-title">Client Activity Log (${entries.length})</span></div>
     <div>
       ${entries.map(entry=>`
