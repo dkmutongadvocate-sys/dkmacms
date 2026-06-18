@@ -11513,7 +11513,7 @@ function openEditPartyModal(partyId){
         <\/div>
         <div class="form-two">
           <div class="form-row"><label>Physical Address<\/label><input id="ep-address" value="${esc(p.address||'')}"/><\/div>
-          <div class="form-row"><label>Postal Address<\/label><input id="ep-postal" value="${esc(p.postal||'')}"/><\/div>
+          <div class="form-row"><label>Postal Address<\/label><input id="ep-postal" value="${esc(p.postal_address||'')}"/><\/div>
         <\/div>
         <div class="form-row"><label>Law Firm / Organisation<\/label><input id="ep-org" value="${esc(p.organisation||'')}"/><\/div>
         <div class="form-row"><label>Notes<\/label><textarea id="ep-notes" style="min-height:70px">${esc(p.notes||'')}<\/textarea><\/div>
@@ -30154,4 +30154,799 @@ window.downloadInvoiceDocx = downloadInvoiceDocx;
 })();
 </script>
 
-<!-- ══════════════════ RECORDER SCRIPT ═════
+<!-- ══════════════════ RECORDER SCRIPT ══════════════════ -->
+<script>
+(function(){
+  let recMode='audio';
+  let recMediaRecorder=null,recChunks=[],recStream=null;
+  let recTimerInterval=null,recSeconds=0,recPaused=false;
+  let recCompletedDuration=0;
+  let recAudioCtx=null,recAnalyser=null,recWaveRAF=null;
+  let recSavedList=JSON.parse(localStorage.getItem('dkma_recordings')||'[]');
+  let recLastBlob=null;
+  const RecSpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition||null;
+  let recSpeechRec=null,recSpeechShouldRun=false,recSpeechRunning=false;
+  let recTranscriptSegments=[],recTranscriptInterim='';
+
+  function recFmtTranscriptStamp(totalSeconds){
+    const secs=Math.max(0,Math.floor(Number(totalSeconds)||0));
+    return '['+String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0')+']';
+  }
+  function recTranscriptLang(){
+    const val=document.getElementById('rec-transcript-language')?.value||'auto';
+    if(val==='mix-ke')return 'en-KE';
+    return val==='auto'?(navigator.language||'en-US'):val;
+  }
+
+  function recTranscriptText(){
+    const finalText=recTranscriptSegments.map(seg=>seg.stamp+' '+seg.text).join('\n').trim();
+    const interimText=recTranscriptInterim.trim()?recFmtTranscriptStamp(recSeconds)+' '+recTranscriptInterim.trim():''; 
+    return [finalText,interimText].filter(Boolean).join(finalText&&interimText?'\n':'');
+  }
+  function recTranscriptDownloadBaseName(){
+    const currentLabel=(document.getElementById('rec-label-input')?.value||'').trim();
+    const label=currentLabel||(recLastBlob?.label)||(recSavedList[0]?.label)||'Recording';
+    return String(label).replace(/[\/\\:*?"<>|]+/g,'_').replace(/\s+/g,' ').trim()||'Recording';
+  }
+  function recTranscriptLanguageLabel(){
+    const val=document.getElementById('rec-transcript-language')?.value||'auto';
+    if(val==='mix-ke')return 'English + Kiswahili / Sheng';
+    if(val==='sw-KE')return 'Kiswahili';
+    if(val==='en-US')return 'English';
+    return 'Auto / browser default';
+  }
+  function recDefaultRecordedBy(){
+    return (currentProfile?.full_name||currentUser?.email||'DKMA Recorder').trim();
+  }
+  function recCurrentRecordedBy(){
+    const input=document.getElementById('rec-recorded-by');
+    const value=(input?.value||'').trim();
+    return value||recDefaultRecordedBy();
+  }
+  function recSpeakersList(){
+    const raw=(document.getElementById('rec-speakers-list')?.value||'').trim();
+    if(!raw)return [];
+    return raw
+      .split(/\r?\n|,/)
+      .map(s=>s.trim())
+      .filter(Boolean);
+  }
+  function recSpeakerRows(){
+    return recSpeakersList().map((line,idx)=>{
+      const match=line.match(/^(.+?)\s*(?:—|-|:)\s*(.+)$/);
+      return match
+        ? {index:idx+1,name:match[1].trim(),role:match[2].trim()}
+        : {index:idx+1,name:line.trim(),role:''};
+    }).filter(row=>row.name);
+  }
+  function recTranscriptPackageText(){
+    const transcript=recTranscriptText().trim();
+    const clientId=document.getElementById('rec-client-select')?.value||window.activeClientId||'';
+    const matterId=document.getElementById('rec-matter-select')?.value||'';
+    const cList=Array.isArray(window._recClients)
+      ? window._recClients
+      : (typeof clients!=='undefined'&&Array.isArray(clients)?clients:[]);
+    const mList=Array.isArray(window._recMatters)
+      ? window._recMatters
+      : (typeof matters!=='undefined'&&Array.isArray(matters)?matters:[]);
+    const client=cList.find(c=>String(c.id)===String(clientId));
+    const matter=mList.find(m=>String(m.id)===String(matterId));
+    const label=recTranscriptDownloadBaseName();
+    const dateText=new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const category=document.getElementById('rec-doc-category')?.selectedOptions?.[0]?.textContent||'Recording / Audio-Visual';
+    const durationSeconds=Math.max(0,Math.floor(Number(recLastBlob?.duration ?? recSeconds) || 0));
+    const durationLabel=String(Math.floor(durationSeconds/60)).padStart(2,'0')+':'+String(durationSeconds%60).padStart(2,'0');
+    const speakers=recSpeakerRows();
+    return [
+      'DKMA TRANSCRIPT',
+      '==============================',
+      'Title: '+label,
+      'Generated: '+dateText,
+      'Recorded by: '+recCurrentRecordedBy(),
+      'Category: '+category,
+      'Duration: '+durationLabel,
+      'Transcript Language: '+recTranscriptLanguageLabel(),
+      'Client: '+(client?.name||'General / not selected'),
+      'Matter: '+(matter?.title||'General / no specific matter'),
+      matter?.file_number?('File Number: '+matter.file_number):null,
+      'Speakers:',
+      ...(speakers.length
+        ? speakers.map((sp,i)=>'  '+(i+1)+'. '+sp.name+(sp.role?' — '+sp.role:''))
+        : ['  Not listed']),
+      '',
+      'TRANSCRIPT',
+      '------------------------------',
+      transcript||'No transcript text was captured.'
+    ].filter(Boolean).join('\n');
+  }
+  function recRefreshTranscriptDownloadState(){
+    const hasTranscript=!!recTranscriptText().trim();
+    const pdfBtn=document.getElementById('rec-download-transcript-pdf-btn');
+    const txtBtn=document.getElementById('rec-download-transcript-txt-btn');
+    if(pdfBtn){
+      pdfBtn.style.display=hasTranscript?'inline-block':'none';
+      pdfBtn.disabled=!hasTranscript;
+      pdfBtn.style.opacity=hasTranscript?'1':'0.5';
+      pdfBtn.style.cursor=hasTranscript?'pointer':'not-allowed';
+    }
+    if(txtBtn){
+      txtBtn.style.display=hasTranscript?'inline-block':'none';
+      txtBtn.disabled=!hasTranscript;
+      txtBtn.style.opacity=hasTranscript?'1':'0.5';
+      txtBtn.style.cursor=hasTranscript?'pointer':'not-allowed';
+    }
+  }
+  function recBuildTranscriptLetterheadHtml(){
+    const transcript=recTranscriptText().trim();
+    const clientId=document.getElementById('rec-client-select')?.value||window.activeClientId||'';
+    const matterId=document.getElementById('rec-matter-select')?.value||'';
+    const cList=Array.isArray(window._recClients)
+      ? window._recClients
+      : (typeof clients!=='undefined'&&Array.isArray(clients)?clients:[]);
+    const mList=Array.isArray(window._recMatters)
+      ? window._recMatters
+      : (typeof matters!=='undefined'&&Array.isArray(matters)?matters:[]);
+    const client=cList.find(c=>String(c.id)===String(clientId));
+    const matter=mList.find(m=>String(m.id)===String(matterId));
+    const label=recTranscriptDownloadBaseName();
+    const dateText=new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const category=document.getElementById('rec-doc-category')?.selectedOptions?.[0]?.textContent||'Recording / Audio-Visual';
+    const durationSeconds=Math.max(0,Math.floor(Number(recLastBlob?.duration ?? recSeconds) || 0));
+    const durationLabel=String(Math.floor(durationSeconds/60)).padStart(2,'0')+':'+String(durationSeconds%60).padStart(2,'0');
+    const recordedBy=recCurrentRecordedBy();
+    const speakers=recSpeakerRows();
+    const _fc=(typeof firmContact!=='undefined'&&firmContact)||{};
+    const firmName=_fc.contact_firm_name||'D.K. MUTONGA & CO. ADVOCATES';
+    const firmPhone=_fc.contact_phone||'';
+    const firmEmail=_fc.contact_email||'';
+    const firmPhysical=_fc.contact_physical||'';
+    const firmWebsite=_fc.contact_website||'';
+    const firmReg=_fc.contact_reg||'';
+    const firmPostal=_fc.contact_postal||'';
+    const contactLine=[firmPhone,firmEmail,firmWebsite].filter(Boolean).join(' | ');
+    const transcriptHtml=esc(transcript).replace(/\n/g,'<br>');
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+    <title>${esc(label)} - Transcript</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:Georgia,serif;background:#fff;color:#1a1a1a}
+      .sheet{width:794px;min-height:1123px;background:#fff}
+      .dyn-hdr{width:794px;display:flex;flex-direction:column;flex-shrink:0}
+      .dyn-hdr-top{background:#0D1B2A;display:flex;align-items:center;justify-content:space-between;padding:18px 28px}
+      .dyn-hdr-firm-name{font-family:'Playfair Display',Georgia,serif;font-size:20px;color:#fff;font-weight:600;letter-spacing:0.5px;line-height:1.25}
+      .dyn-hdr-firm-sub{font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:1.8px;text-transform:uppercase;margin-top:4px;font-family:sans-serif}
+      .dyn-hdr-contact{text-align:right;font-size:10.5px;color:rgba(255,255,255,0.75);line-height:1.9;font-family:sans-serif;max-width:260px}
+      .dyn-hdr-gold-bar{height:5px;background:linear-gradient(90deg,#B8953A 0%,#D4AF5A 50%,#B8953A 100%)}
+      .dyn-hdr-addr-bar{background:#F8F5F0;border-bottom:1px solid #D9D4CB;padding:7px 28px;font-size:10.5px;color:#5a5a5a;display:flex;justify-content:space-between;align-items:center;font-family:sans-serif}
+      .body{padding:24px 36px 18px;background:#fff}
+      .title-band{background:#0D1B2A;color:#fff;padding:12px 16px;border-radius:10px;margin-bottom:18px}
+      .title-band .kicker{font-size:10px;letter-spacing:1.2px;color:#D4AF5A;text-transform:uppercase;font-family:sans-serif;font-weight:700}
+      .title-band h1{font-family:'Playfair Display',Georgia,serif;font-size:28px;font-weight:600;margin-top:4px}
+      .title-band .sub{font-size:12px;color:rgba(255,255,255,0.72);margin-top:4px;font-family:sans-serif}
+      .meta-grid{display:grid;grid-template-columns:160px 1fr;gap:0;border:1px solid #D9D4CB;border-radius:10px;overflow:hidden;margin-bottom:18px}
+      .meta-grid .label{padding:10px 14px;background:#F8F5F0;color:#666;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;font-family:sans-serif;font-weight:600;border-bottom:1px solid #E5DED3}
+      .meta-grid .value{padding:10px 14px;font-size:12px;border-bottom:1px solid #E5DED3;overflow-wrap:anywhere}
+      .meta-grid .label.last,.meta-grid .value.last{border-bottom:none}
+      .transcript-block{border:1px solid #D9D4CB;border-radius:10px;overflow:hidden}
+      .transcript-head{padding:10px 14px;background:#F8F5F0;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:#666;font-family:sans-serif;font-weight:600}
+      .transcript-body{padding:18px 18px 24px;font-size:13px;line-height:1.8;white-space:normal}
+      .transcript-body .note{font-family:'Courier New',monospace;font-size:12.5px;line-height:1.9}
+      .speakers-block{border:1px solid #D9D4CB;border-radius:10px;overflow:hidden;margin-bottom:18px}
+      .speakers-list{padding:10px 14px 14px;background:#fff}
+      .speaker-row{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid #EEE6D9}
+      .speaker-row:last-child{border-bottom:none}
+      .speaker-name{font-size:12px;font-weight:600}
+      .speaker-role{font-size:12px;color:#666;text-align:right}
+      .doc-footer{margin-top:26px;padding-top:10px;border-top:2px solid #0D1B2A;display:flex;justify-content:space-between;gap:14px;font-size:9px;color:#8a8a8a;font-family:sans-serif}
+    </style></head><body>
+    <div class="sheet">
+      <div class="dyn-hdr">
+        <div class="dyn-hdr-top">
+          <div>
+            <div class="dyn-hdr-firm-name">${esc(firmName)}</div>
+            <div class="dyn-hdr-firm-sub">Invoice / Office Letterhead</div>
+          </div>
+          <div class="dyn-hdr-contact">
+            ${firmPostal?esc(firmPostal)+'<br>':''}
+            ${firmPhysical?esc(firmPhysical)+'<br>':''}
+            ${contactLine?esc(contactLine):''}
+          </div>
+        </div>
+        <div class="dyn-hdr-gold-bar"></div>
+        <div class="dyn-hdr-addr-bar">
+          <span>${firmReg?esc(firmReg):'Dennis Kimani Mutonga Advocate'}</span>
+          <span>${firmWebsite?esc(firmWebsite):'DKMA'}</span>
+        </div>
+      </div>
+      <div class="body">
+        <div class="title-band">
+          <div class="kicker">Recorder Transcript</div>
+          <h1>${esc(label)}</h1>
+          <div class="sub">Generated from the CMS recorder transcript</div>
+        </div>
+        <div class="meta-grid">
+          <div class="label">Generated</div><div class="value">${esc(dateText)}</div>
+          <div class="label">Recorded By</div><div class="value">${esc(recordedBy)}</div>
+          <div class="label">Category</div><div class="value">${esc(category)}</div>
+          <div class="label">Duration</div><div class="value">${esc(durationLabel)}</div>
+          <div class="label">Transcript Language</div><div class="value">${esc(recTranscriptLanguageLabel())}</div>
+          <div class="label">Client</div><div class="value">${esc(client?.name||'General / not selected')}</div>
+          <div class="label ${matter?'':'last'}">Matter</div><div class="value ${matter?'':'last'}">${esc(matter?.title||'General / no specific matter')}</div>
+          ${matter?`<div class="label last">File Number</div><div class="value last">${esc(matter.file_number||'—')}</div>`:''}
+        </div>
+        <div class="speakers-block">
+          <div class="transcript-head">Speakers</div>
+          <div class="speakers-list">
+            ${speakers.length
+              ? speakers.map(sp=>`<div class="speaker-row"><div class="speaker-name">${esc(sp.name)}</div><div class="speaker-role">${esc(sp.role||'Participant')}</div></div>`).join('')
+              : '<div style="font-size:12px;color:#666">No speakers listed.</div>'}
+          </div>
+        </div>
+        <div class="transcript-block">
+          <div class="transcript-head">Transcript</div>
+          <div class="transcript-body"><div class="note">${transcriptHtml||'No transcript text was captured.'}</div></div>
+        </div>
+        <div class="doc-footer">
+          <span>Prepared from DKMA CMS Recorder</span>
+          <span>${esc(firmName)}</span>
+        </div>
+      </div>
+    </div>
+    </body></html>`;
+  }
+  async function recEnsurePdfLibs(){
+    const load=(src)=>new Promise((res,rej)=>{
+      const existing=document.querySelector('script[src="'+src+'"]');
+      if(existing){
+        if(existing.dataset.loaded==='1'||(src.includes('html2canvas')&&window.html2canvas)||(src.includes('jspdf')&&window.jspdf)){res();return;}
+        existing.addEventListener('load',res,{once:true});
+        existing.addEventListener('error',rej,{once:true});
+        return;
+      }
+      const s=document.createElement('script');
+      s.src=src;
+      s.onload=()=>{s.dataset.loaded='1';res();};
+      s.onerror=rej;
+      document.head.appendChild(s);
+    });
+    await load('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await load('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  }
+  window.recDownloadTranscriptTxt=function(){
+    const transcript=recTranscriptText().trim();
+    if(!transcript){
+      if(typeof toast==='function')toast('No transcript text is available yet.',true);
+      return;
+    }
+    const blob=new Blob([recTranscriptPackageText()],{type:'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=recTranscriptDownloadBaseName()+' - transcript.txt';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  };
+  window.recDownloadTranscriptPdf=async function(){
+    const transcript=recTranscriptText().trim();
+    if(!transcript){
+      if(typeof toast==='function')toast('No transcript text is available yet.',true);
+      return;
+    }
+    try{
+      await recEnsurePdfLibs();
+    }catch(err){
+      console.error('Transcript PDF libraries failed to load',err);
+      if(typeof toast==='function')toast('Transcript PDF tools could not load. Please try again.',true);
+      return;
+    }
+    const frame=document.createElement('iframe');
+    frame.style.position='fixed';
+    frame.style.left='-99999px';
+    frame.style.top='0';
+    frame.style.width='794px';
+    frame.style.height='1123px';
+    frame.style.opacity='0';
+    frame.setAttribute('aria-hidden','true');
+    document.body.appendChild(frame);
+    try{
+      const html=recBuildTranscriptLetterheadHtml();
+      frame.srcdoc=html;
+      await new Promise(resolve=>{frame.onload=()=>setTimeout(resolve,250);});
+      const root=frame.contentDocument.body.firstElementChild||frame.contentDocument.body;
+      const canvas=await window.html2canvas(root,{scale:2,useCORS:true,backgroundColor:'#ffffff',width:root.scrollWidth,height:root.scrollHeight,windowWidth:root.scrollWidth,windowHeight:root.scrollHeight});
+      const {jsPDF}=window.jspdf;
+      const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const pdfW=pdf.internal.pageSize.getWidth();
+      const pdfH=pdf.internal.pageSize.getHeight();
+      const imgH=(canvas.height*pdfW)/canvas.width;
+      let heightLeft=imgH, position=0;
+      const imgData=canvas.toDataURL('image/jpeg',0.97);
+      pdf.addImage(imgData,'JPEG',0,position,pdfW,imgH);
+      heightLeft-=pdfH;
+      while(heightLeft>2){
+        position=heightLeft-imgH;
+        pdf.addPage();
+        pdf.addImage(imgData,'JPEG',0,position,pdfW,imgH);
+        heightLeft-=pdfH;
+      }
+      pdf.save(recTranscriptDownloadBaseName()+' - transcript.pdf');
+      if(typeof toast==='function')toast('Transcript PDF downloaded.');
+    }catch(err){
+      console.error('Transcript PDF error:',err);
+      if(typeof toast==='function')toast('Could not generate transcript PDF: '+(err.message||'Unknown error'),true);
+    }finally{
+      frame.remove();
+    }
+  };
+  function recUpdateTranscriptUi(){
+    const area=document.getElementById('rec-transcript-text');
+    if(area)area.value=recTranscriptText();
+    recRefreshTranscriptDownloadState();
+  }
+  function recSetTranscriptStatus(msg,tone){
+    const el=document.getElementById('rec-transcript-status');
+    const badge=document.getElementById('rec-transcript-badge');
+    if(el){
+      el.textContent=msg;
+      el.style.color=tone==='error'?'var(--red)':tone==='good'?'var(--green)':'var(--txt3)';
+    }
+    if(badge){
+      badge.textContent=recSpeechRunning?'Listening':(RecSpeechRecognition?'Browser speech':'Unsupported');
+      badge.style.background=recSpeechRunning?'rgba(45,106,79,0.12)':'var(--cream2)';
+      badge.style.color=recSpeechRunning?'var(--green)':'var(--txt3)';
+    }
+  }
+  function recResetTranscript(){
+    recTranscriptSegments=[];
+    recTranscriptInterim='';
+    recUpdateTranscriptUi();
+    if(RecSpeechRecognition)recSetTranscriptStatus('Transcription is ready when you start recording.','neutral');
+    else recSetTranscriptStatus('This browser does not support live transcription. Recording still works normally.','error');
+  }
+  function recStopTranscription(){
+    recSpeechShouldRun=false;
+    if(recSpeechRec){
+      try{recSpeechRec.onend=null;recSpeechRec.stop();}catch(e){}
+      recSpeechRec=null;
+    }
+    recSpeechRunning=false;
+    if(RecSpeechRecognition)recSetTranscriptStatus('Transcription paused.','neutral');
+  }
+  function recStartTranscription(){
+    if(!RecSpeechRecognition){
+      recSetTranscriptStatus('This browser does not support live transcription. Recording still works normally.','error');
+      return;
+    }
+    if(recSpeechRunning)return;
+    recSpeechShouldRun=true;
+    try{
+      const rec=new RecSpeechRecognition();
+      rec.lang=recTranscriptLang();
+      rec.continuous=true;
+      rec.interimResults=true;
+      rec.maxAlternatives=1;
+      rec.onstart=()=>{
+        recSpeechRunning=true;
+        recSetTranscriptStatus('Listening and building transcript...','good');
+      };
+      rec.onresult=(event)=>{
+        let interim='';
+        for(let i=event.resultIndex;i<event.results.length;i++){
+          const text=(event.results[i][0]?.transcript||'').trim();
+          if(!text)continue;
+          if(event.results[i].isFinal){
+            recTranscriptSegments.push({stamp:recFmtTranscriptStamp(recSeconds),text});
+          }else{
+            interim+=(interim?' ':'')+text;
+          }
+        }
+        recTranscriptInterim=interim.trim();
+        recUpdateTranscriptUi();
+      };
+      rec.onerror=(event)=>{
+        recSpeechRunning=false;
+        const msg=event?.error==='not-allowed'
+          ?'Speech recognition permission was denied.'
+          :event?.error==='network'
+          ?'Speech recognition needs an internet connection in this browser.'
+          :'Transcription paused: '+(event?.error||'unknown issue')+'.';
+        recSetTranscriptStatus(msg,'error');
+      };
+      rec.onend=()=>{
+        recSpeechRunning=false;
+        if(recSpeechShouldRun && !recPaused && recMediaRecorder && recMediaRecorder.state!=='inactive'){
+          recSetTranscriptStatus('Reconnecting transcription...','neutral');
+          setTimeout(()=>{ if(recSpeechShouldRun && !recSpeechRunning)recStartTranscription(); },300);
+        }else if(recTranscriptText()){
+          recSetTranscriptStatus('Transcript captured for this recording.','good');
+        }
+      };
+      recSpeechRec=rec;
+      rec.start();
+    }catch(err){
+      recSpeechRunning=false;
+      recSetTranscriptStatus('Could not start transcription in this browser.','error');
+    }
+  }
+
+  function recDrawWave(){
+    const canvas=document.getElementById('rec-waveform');
+    if(!canvas||!recAnalyser)return;
+    const ctx=canvas.getContext('2d');
+    const W=canvas.width,H=canvas.height;
+    const buf=new Uint8Array(recAnalyser.frequencyBinCount);
+    function draw(){
+      recWaveRAF=requestAnimationFrame(draw);
+      recAnalyser.getByteTimeDomainData(buf);
+      ctx.clearRect(0,0,W,H);
+      ctx.beginPath();
+      ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--navy')||'#0D1B2A';
+      ctx.lineWidth=1.5;
+      const step=W/buf.length;let x=0;
+      for(let i=0;i<buf.length;i++){const y=(buf[i]/128)*H/2;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);x+=step;}
+      ctx.stroke();
+    }
+    draw();
+  }
+  function recStopWave(){
+    if(recWaveRAF){cancelAnimationFrame(recWaveRAF);recWaveRAF=null;}
+    const canvas=document.getElementById('rec-waveform');
+    if(canvas){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);}
+  }
+
+  window.recSetMode=function(mode){
+    recMode=mode;
+    const aBtn=document.getElementById('rec-mode-audio');
+    const vBtn=document.getElementById('rec-mode-video');
+    const vWrap=document.getElementById('rec-video-wrap');
+    const lbl=document.getElementById('rec-mode-label');
+    if(mode==='video'){
+      if(aBtn){aBtn.style.background='transparent';aBtn.style.color='var(--txt2)';}
+      if(vBtn){vBtn.style.background='var(--navy)';vBtn.style.color='#fff';}
+      if(vWrap)vWrap.style.display='block';
+      if(lbl)lbl.textContent='Video';
+    } else {
+      if(vBtn){vBtn.style.background='transparent';vBtn.style.color='var(--txt2)';}
+      if(aBtn){aBtn.style.background='var(--navy)';aBtn.style.color='#fff';}
+      if(vWrap)vWrap.style.display='none';
+      if(lbl)lbl.textContent='Audio';
+    }
+  };
+  window.__recOpenTabImpl=function(tab){
+    const studioBtn=document.getElementById('rec-tab-studio-btn');
+    const libraryBtn=document.getElementById('rec-tab-library-btn');
+    const studioPanel=document.getElementById('rec-panel-studio');
+    const libraryPanel=document.getElementById('rec-panel-library');
+    const isLibrary=tab==='library';
+    if(studioBtn)studioBtn.classList.toggle('active',!isLibrary);
+    if(libraryBtn)libraryBtn.classList.toggle('active',isLibrary);
+    if(studioPanel)studioPanel.classList.toggle('active',!isLibrary);
+    if(libraryPanel)libraryPanel.classList.toggle('active',isLibrary);
+  };
+  window.recOpenTab=window.__recOpenTabImpl;
+
+  function recStartTimer(){
+    recTimerInterval=setInterval(()=>{
+      if(!recPaused)recSeconds++;
+      const el=document.getElementById('rec-timer');
+      if(el)el.textContent=String(Math.floor(recSeconds/60)).padStart(2,'0')+':'+String(recSeconds%60).padStart(2,'0');
+    },1000);
+  }
+  function recResetTimer(){
+    clearInterval(recTimerInterval);recSeconds=0;
+    const el=document.getElementById('rec-timer');
+    if(el)el.textContent='00:00';
+  }
+  function recSetStatus(txt){const el=document.getElementById('rec-status-txt');if(el)el.textContent=txt;}
+
+  function recShowControls(state){
+    const s=document.getElementById('rec-btn-start');
+    const p=document.getElementById('rec-btn-pause');
+    const rv=document.getElementById('rec-btn-resume');
+    const st=document.getElementById('rec-btn-stop');
+    const liveBadge=document.getElementById('rec-live-badge');
+    const savePanel=document.getElementById('rec-save-panel');
+    if(s)s.style.display=state==='idle'?'flex':'none';
+    if(p)p.style.display=state==='recording'?'flex':'none';
+    if(rv)rv.style.display=state==='paused'?'flex':'none';
+    if(st)st.style.display=state==='idle'?'none':'inline-block';
+    if(liveBadge)liveBadge.style.display=state==='recording'?'block':'none';
+    if(savePanel){
+      const showing=(state==='idle'&&recLastBlob);
+      savePanel.style.display=showing?'block':'none';
+      if(showing){
+        const recordedByInput=document.getElementById('rec-recorded-by');
+        if(recordedByInput && !recordedByInput.value.trim())recordedByInput.value=recDefaultRecordedBy();
+        const prevClient=document.getElementById('rec-client-select')?.value||'';
+        recPopulateClients();
+        if(prevClient){const cs=document.getElementById('rec-client-select');if(cs)cs.value=prevClient;}
+        recPopulateMatters(prevClient);
+        recRefreshTranscriptDownloadState();
+      }
+    }
+  }
+
+  function recPopulateClients(){
+    const sel=document.getElementById('rec-client-select');
+    if(!sel)return;
+    const cList=window._recClients||[];
+    sel.innerHTML='<option value="">\u2014 No specific client \u2014<\/option>';
+    cList.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(c=>{
+      const opt=document.createElement('option');
+      opt.value=c.id;
+      opt.textContent=c.name||(c.first_name+' '+c.last_name)||'Client';
+      sel.appendChild(opt);
+    });
+  }
+
+  window.recOnClientChange=function(){
+    const clientId=document.getElementById('rec-client-select')?.value||'';
+    recPopulateMatters(clientId);
+  };
+
+  function recPopulateMatters(filterClientId){
+    const sel=document.getElementById('rec-matter-select');
+    if(!sel)return;
+    const mList=window._recMatters||[];
+    let active=mList.filter(m=>m.status!=='closed'&&m.status!=='resolved');
+    if(filterClientId){
+      active=active.filter(m=>m.client_id===filterClientId||String(m.client_id)===String(filterClientId));
+    }
+    sel.innerHTML='<option value="">\u2014 General / no specific matter \u2014<\/option>';
+    active.sort((a,b)=>(a.title||'').localeCompare(b.title||'')).forEach(m=>{
+      const opt=document.createElement('option');
+      opt.value=m.id;
+      opt.textContent=(m.file_no?'['+m.file_no+'] ':'')+m.title;
+      sel.appendChild(opt);
+    });
+  }
+
+  window.recStart=async function(){
+    recLastBlob=null;
+    recCompletedDuration=0;
+    recResetTranscript();
+    const savePanel=document.getElementById('rec-save-panel');
+    if(savePanel)savePanel.style.display='none';
+    const saveStatus=document.getElementById('rec-save-status');
+    if(saveStatus){saveStatus.style.display='none';saveStatus.textContent='';}
+    try{
+      const constraints=recMode==='video'?{audio:true,video:{facingMode:'user'}}:{audio:true};
+      recStream=await navigator.mediaDevices.getUserMedia(constraints);
+      const preview=document.getElementById('rec-preview');
+      if(recMode==='video'&&preview)preview.srcObject=recStream;
+      recAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+      recAnalyser=recAudioCtx.createAnalyser();recAnalyser.fftSize=512;
+      const src=recAudioCtx.createMediaStreamSource(recStream);src.connect(recAnalyser);
+      recDrawWave();
+      const mimeTypes=recMode==='video'
+        ?['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4']
+        :['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'];
+      const mime=mimeTypes.find(m=>MediaRecorder.isTypeSupported(m))||'';
+      recChunks=[];
+      recMediaRecorder=new MediaRecorder(recStream,mime?{mimeType:mime}:{});
+      recMediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size>0)recChunks.push(e.data);};
+      recMediaRecorder.onstop=recOnStop;
+      recMediaRecorder.start(200);
+      recPaused=false;recResetTimer();recStartTimer();
+      recStartTranscription();
+      recShowControls('recording');recSetStatus('Recording\u2026');
+    }catch(err){
+      console.error('Recorder error:',err);
+      let msg='Could not start recorder.';
+      if(err.name==='NotAllowedError')msg='Microphone/camera permission denied. Please allow access.';
+      else if(err.name==='NotFoundError')msg='No microphone/camera found on this device.';
+      if(typeof toast==='function')toast(msg,true);else alert(msg);
+    }
+  };
+
+  window.recPause=function(){
+    if(!recMediaRecorder||recMediaRecorder.state!=='recording')return;
+    recMediaRecorder.pause();recPaused=true;
+    recStopTranscription();
+    recShowControls('paused');recSetStatus('Paused');
+  };
+  window.recResume=function(){
+    if(!recMediaRecorder||recMediaRecorder.state!=='paused')return;
+    recMediaRecorder.resume();recPaused=false;
+    recStartTranscription();
+    recShowControls('recording');recSetStatus('Recording\u2026');
+  };
+  window.recStop=function(){
+    if(!recMediaRecorder)return;
+    recCompletedDuration=recSeconds;
+    recStopTranscription();
+    recMediaRecorder.stop();
+    recStream.getTracks().forEach(t=>t.stop());
+    recResetTimer();recStopWave();
+    if(recAudioCtx){recAudioCtx.close();recAudioCtx=null;}
+    recSetStatus('Saving\u2026');
+    const preview=document.getElementById('rec-preview');
+    if(preview)preview.srcObject=null;
+  };
+
+  function recOnStop(){
+    const isVideo=recMode==='video';
+    const mime=recChunks[0]?.type||(isVideo?'video/webm':'audio/webm');
+    const ext=mime.startsWith('video')?'webm':(mime.includes('ogg')?'ogg':(mime.includes('mp4')?'mp4':'webm'));
+    const blob=new Blob(recChunks,{type:mime});
+    const labelInput=document.getElementById('rec-label-input');
+    const label=(labelInput?.value||'').trim()||('Recording '+(recSavedList.length+1));
+    const finalDuration=Math.max(0,Math.floor(Number(recCompletedDuration)||0));
+    recLastBlob={blob,mime,ext,isVideo,label,duration:finalDuration};
+    const url=URL.createObjectURL(blob);
+    const entry={id:Date.now(),label,mime,ext,isVideo,duration:finalDuration,date:new Date().toLocaleString('en-KE'),url,size:blob.size};
+    recSavedList.unshift(entry);
+    try{localStorage.setItem('dkma_recordings',JSON.stringify(recSavedList.map(r=>({...r,url:null}))));}catch(e){}
+    if(labelInput)labelInput.value='';
+    recSetStatus('Done \u2014 download started');
+    recSeconds=0;
+    recShowControls('idle');
+    recRenderList();
+    recPopulateClients();
+    recPopulateMatters();
+    recUpdateTranscriptUi();
+    if(recTranscriptText())recSetTranscriptStatus('Transcript captured for this recording. Use Transcript PDF or Transcript TXT below.','good');
+    const saveStatus=document.getElementById('rec-save-status');
+    if(saveStatus){saveStatus.style.display='none';saveStatus.textContent='';}
+    const saveBtn=document.getElementById('rec-save-btn');
+    if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='\ud83d\udcc1 Save to Documents';}
+    recDownloadEntry(entry);
+    recCompletedDuration=0;
+  }
+
+  function recDownloadEntry(entry){
+    if(!entry.url)return;
+    const a=document.createElement('a');
+    a.href=entry.url;
+    a.download=entry.label.replace(/[\/\\:*?"<>|]/g,'_')+'.'+entry.ext;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+  }
+
+  window.recSaveToDocuments=async function(){
+    if(!recLastBlob){if(typeof toast==='function')toast('No recording to save.',true);return;}
+    const saveBtn=document.getElementById('rec-save-btn');
+    const saveStatus=document.getElementById('rec-save-status');
+    const matterId=document.getElementById('rec-matter-select')?.value||'';
+    const clientId=document.getElementById('rec-client-select')?.value||window.activeClientId||null;
+    const category=document.getElementById('rec-doc-category')?.value||'recording';
+    const saveTranscript=document.getElementById('rec-save-transcript')?.checked!==false;
+    const transcriptText=recTranscriptText();
+    const label=(recLastBlob?.label)||recTranscriptDownloadBaseName()||'Recording';
+    const {blob,ext}=recLastBlob;
+    if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Uploading\u2026';}
+    if(saveStatus)saveStatus.style.display='none';
+    if(typeof sb==='undefined'||typeof STORAGE_BUCKET==='undefined'){
+      if(saveStatus){saveStatus.style.display='block';saveStatus.style.color='var(--red)';saveStatus.textContent='\u26a0\ufe0f Not connected to Supabase.';}
+      if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='\ud83d\udcc1 Save to Documents';}
+      return;
+    }
+    const safeName=label.replace(/[^a-zA-Z0-9.\-_]/g,'_');
+    const timestamp=Date.now();
+    const fileName=category+'__'+safeName+'__'+timestamp+'.'+ext;
+    const transcriptFileName=category+'__'+safeName+'__'+timestamp+'__transcript.txt';
+    let storagePath;
+    let transcriptPath;
+    if(matterId){
+      storagePath=matterId+'/'+fileName;
+      transcriptPath=matterId+'/'+transcriptFileName;
+    } else {
+      storagePath=clientId?'client-general/'+clientId+'/'+fileName:'firm-recordings/'+fileName;
+      transcriptPath=clientId?'client-general/'+clientId+'/'+transcriptFileName:'firm-recordings/'+transcriptFileName;
+    }
+    try{
+      const{error}=await sb.storage.from(STORAGE_BUCKET).upload(storagePath,blob,{upsert:false,contentType:blob.type||'application/octet-stream'});
+      if(error)throw error;
+      let transcriptWarning='';
+      let transcriptSaved=false;
+      if(saveTranscript && transcriptText){
+        const transcriptBlob=new Blob([recTranscriptPackageText()],{type:'text/plain;charset=utf-8'});
+        const up=await sb.storage.from(STORAGE_BUCKET).upload(transcriptPath,transcriptBlob,{upsert:false,contentType:'text/plain;charset=utf-8'});
+        if(up.error)transcriptWarning=up.error.message||'Transcript upload failed';
+        else transcriptSaved=true;
+      }
+      if(saveStatus){
+        saveStatus.style.display='block';
+        saveStatus.style.color=transcriptWarning?'var(--gold)':'var(--green)';
+        saveStatus.textContent='\u2713 Saved to Documents'+(matterId?' (matter)':' (general)')+'.'
+          +(transcriptSaved?' Transcript saved too.':'')
+          +(saveTranscript&&!transcriptText?' No transcript text was available.':'')
+          +(transcriptWarning?' Transcript warning: '+transcriptWarning:'');
+      }
+      if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='\u2713 Saved';}
+      if(typeof toast==='function')toast('Recording saved to Documents.');
+      if(matterId&&typeof activeMatterId!=='undefined'&&activeMatterId===matterId&&typeof loadMatterDocuments==='function')loadMatterDocuments(true);
+    }catch(err){
+      console.error('Rec save error:',err);
+      if(saveStatus){saveStatus.style.display='block';saveStatus.style.color='var(--red)';saveStatus.textContent='\u26a0\ufe0f Upload failed: '+(err.message||'Unknown error');}
+      if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='\ud83d\udcc1 Save to Documents';}
+    }
+  };
+
+  function recRenderList(){
+    const el=document.getElementById('rec-list');
+    if(!el)return;
+    if(!recSavedList.length){el.innerHTML='<div class="empty-state"><p>No recordings yet<\/p><\/div>';return;}
+    el.innerHTML=recSavedList.map((r,i)=>{
+      const durStr=r.duration?String(Math.floor(r.duration/60)).padStart(2,'0')+':'+String(r.duration%60).padStart(2,'0'):'\u2014';
+      const sizeStr=r.size?(r.size>1024*1024?(r.size/1024/1024).toFixed(1)+' MB':(r.size/1024).toFixed(0)+' KB'):'';
+      const icon=r.isVideo?'\ud83d\udcf9':'\ud83c\udfa4';
+      const hasUrl=!!r.url;
+      const tag=r.isVideo?'video':'audio';
+      const playerStyle=r.isVideo
+        ?'width:100%;border-radius:7px;outline:none;max-height:220px;background:#000;display:block'
+        :'width:100%;border-radius:7px;outline:none;display:block';
+      return`<div class="rec-entry" id="rec-entry-${r.id}">
+        <div class="rec-entry-icon">${icon}<\/div>
+        <div class="rec-entry-info">
+          <div class="rec-entry-name" title="${r.label}">${r.label}<\/div>
+          <div class="rec-entry-meta">${durStr}${sizeStr?' \u00b7 '+sizeStr:''} \u00b7 ${r.date}<\/div>
+        <\/div>
+        <div class="rec-entry-actions">
+          ${hasUrl?`<button class="rec-entry-btn" onclick="recRedownload(${i})" title="Download">\u2b07<\/button>`:''}
+          ${hasUrl?`<button class="rec-entry-btn play-toggle" id="rec-play-btn-${r.id}" onclick="recTogglePlayer(${i})" title="Play inline">\u25b6<\/button>`:''}
+          <button class="rec-entry-btn del" onclick="recDelete(${i})" title="Delete">\u2715<\/button>
+        <\/div>
+      <\/div>
+      ${hasUrl?`<div id="rec-player-${r.id}" style="display:none;padding:10px 14px 14px;background:var(--cream);border-top:1px solid var(--brd)">
+        <${tag} id="rec-media-${r.id}" src="${r.url}" controls style="${playerStyle}"><\/${tag}>
+      <\/div>`:''}`;
+    }).join('');
+  }
+
+  window.recRedownload=function(i){recDownloadEntry(recSavedList[i]);};
+
+  window.recTogglePlayer=function(i){
+    const entry=recSavedList[i];
+    if(!entry?.url)return;
+    const wrap=document.getElementById('rec-player-'+entry.id);
+    const btn=document.getElementById('rec-play-btn-'+entry.id);
+    const media=document.getElementById('rec-media-'+entry.id);
+    if(!wrap)return;
+    const isVisible=wrap.style.display!=='none';
+    // Close all other open players
+    recSavedList.forEach(r=>{
+      if(r.id===entry.id)return;
+      const w=document.getElementById('rec-player-'+r.id);
+      const b=document.getElementById('rec-play-btn-'+r.id);
+      const m=document.getElementById('rec-media-'+r.id);
+      if(w)w.style.display='none';
+      if(b)b.textContent='\u25b6';
+      if(m){try{m.pause();}catch(e){}}
+    });
+    if(isVisible){
+      wrap.style.display='none';
+      if(btn)btn.textContent='\u25b6';
+      if(media){try{media.pause();}catch(e){}}
+    } else {
+      wrap.style.display='block';
+      if(btn)btn.textContent='\u23f8';
+      if(media){media.currentTime=0;media.play().catch(()=>{});}
+    }
+  };
+  window.recDelete=function(i){
+    const entry=recSavedList[i];
+    if(entry?.url)URL.revokeObjectURL(entry.url);
+    recSavedList.splice(i,1);
+    try{localStorage.setItem('dkma_recordings',JSON.stringify(recSavedList.map(r=>({...r,url:null}))));}catch(e){}
+    recRenderList();
+  };
+  window.recClearAll=function(){
+    if(recSavedList.length&&!confirm('Delete all recordings from this session?'))return;
+    recSavedList.forEach(r=>{if(r.url)URL.revokeObjectURL(r.url);});
+    recSavedList=[];
+    localStorage.removeItem('dkma_recordings');
+    recRenderList();
+  };
+
+  document.addEventListener('DOMContentLoaded',function(){
+    recRenderList();
+    recShowControls('idle');
+    recPopulateClients();
+    recPopulateMatters();
+    recResetTranscript();
+  });
+})();
+</script>
+
+</body>
+</html>
