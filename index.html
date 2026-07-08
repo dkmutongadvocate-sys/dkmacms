@@ -1476,6 +1476,7 @@ setTimeout(function() {
         <div class="stat"><div class="stat-label">Total Clients</div><div class="stat-val" id="dash-clients">0</div><div class="stat-change" style="color:var(--txt3)" id="dash-clients-sub">Loading...</div></div>
         <div class="stat"><div class="stat-label">Outstanding Bills</div><div class="stat-val" id="dash-outstanding">KES 0</div><div class="stat-change down" id="dash-bills-sub">Loading...</div></div>
         <div class="stat"><div class="stat-label">Events This Month</div><div class="stat-val" id="dash-events">—</div><div class="stat-change" style="color:var(--txt3)">This month</div></div>
+        <div class="stat"><div class="stat-label">Open Tasks</div><div class="stat-val" id="dash-open-tasks">—</div><div class="stat-change" style="color:var(--txt3)" id="dash-tasks-sub">Loading...</div></div>
       </div>
       <div class="three-col">
         <div class="card" id="rec-left-card">
@@ -1486,6 +1487,10 @@ setTimeout(function() {
           <div class="card">
             <div class="card-header"><span class="card-title">Upcoming Events</span><button class="card-action" onclick="showView('calendar',document.querySelector('[onclick*=calendar]'))">Calendar →</button></div>
             <div id="dash-events-list"><div class="empty-state"><p>Loading...</p></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Due Tasks</span><button class="card-action" onclick="openModal('task')">+ Task</button></div>
+            <div id="dash-tasks-list"><div class="empty-state"><p>Loading...</p></div></div>
           </div>
           <div class="card">
             <div class="card-header"><span class="card-title">Recent Clients</span><button class="card-action" onclick="showView('clients',document.querySelector('[onclick*=clients]'))">View all →</button></div>
@@ -1541,6 +1546,9 @@ setTimeout(function() {
           Signatures <span id="matter-signatures-count" class="doc-count-badge" style="margin-left:4px;display:none">0</span>
         </div>
         <div class="matter-detail-tab" onclick="switchMatterTab('events',this)">Events</div>
+        <div class="matter-detail-tab" onclick="switchMatterTab('tasks',this)">
+          Tasks <span id="matter-tasks-count" style="display:none;background:#E6F1FB;color:#185FA5;font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:4px;vertical-align:middle">0</span>
+        </div>
         <div class="matter-detail-tab" onclick="switchMatterTab('time',this)">Time</div>
         <div class="matter-detail-tab" onclick="switchMatterTab('invoices',this)">Invoices</div>
         <div class="matter-detail-tab" onclick="switchMatterTab('parties',this)">
@@ -1594,6 +1602,7 @@ setTimeout(function() {
       <div class="profile-tabs">
         <div class="profile-tab active" onclick="switchProfileTab('overview',this)">Overview</div>
         <div class="profile-tab" onclick="switchProfileTab('matters',this)">Matters</div>
+        <div class="profile-tab" onclick="switchProfileTab('tasks',this)">Tasks <span id="client-tasks-badge" style="display:none;background:#E6F1FB;color:#185FA5;font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:3px;vertical-align:middle">0</span></div>
         <div class="profile-tab" onclick="switchProfileTab('parties',this)">Other Parties</div>
         <div class="profile-tab" onclick="switchProfileTab('invoices',this)">Invoices</div>
         <div class="profile-tab" onclick="switchProfileTab('time',this)">Time</div>
@@ -7178,6 +7187,8 @@ async function pollAll(){
     if(taskT!==_snap.tasks){
       _snap.tasks=taskT;await loadTasks();
       if(view==='calendar')renderCalendar();
+      renderDashboard();
+      if(activeClientId)renderProfileTab();
       if(activeMatterId)renderMatterDetailTab();
     }
     if(iT!==_snap.invoices){_snap.invoices=iT;await loadInvoices();if(view==='finance')renderFinance();renderDashboard();if(activeClientId)renderProfileTab();if(activeMatterId)renderMatterDetailTab();}
@@ -7500,10 +7511,26 @@ function renderDashboard(){
   const now=new Date();
   const me=events.filter(e=>{const d=parseDateLocal(e.event_date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
   document.getElementById('dash-events').textContent=me.length;
+  const todayStart=parseDateLocal(formatDateLocal(now));
+  const weekEnd=new Date(todayStart);weekEnd.setDate(weekEnd.getDate()+7);
+  const openTasks=sortTasksForWorklist(tasks.filter(taskIsOpen));
+  const overdueTasks=openTasks.filter(t=>t.due_date&&parseDateLocal(t.due_date)<todayStart);
+  const dueTasks=openTasks.filter(t=>{
+    if(!t.due_date)return false;
+    const d=parseDateLocal(t.due_date);
+    return d<=weekEnd;
+  });
+  const dashOpenTasks=document.getElementById('dash-open-tasks');
+  const dashTasksSub=document.getElementById('dash-tasks-sub');
+  if(dashOpenTasks)dashOpenTasks.textContent=openTasks.length;
+  if(dashTasksSub){
+    dashTasksSub.textContent=overdueTasks.length?`${overdueTasks.length} overdue`:`${dueTasks.length} due this week`;
+    dashTasksSub.style.color=overdueTasks.length?'var(--red)':'var(--txt3)';
+  }
   // Matters
   const mEl=document.getElementById('dash-matters-list');
-  if(!matters.length){mEl.innerHTML=emptyState('No matters yet.');return;}
-  mEl.innerHTML=matters.slice(0,6).map(m=>{
+  if(!matters.length){mEl.innerHTML=emptyState('No matters yet.');}
+  else mEl.innerHTML=matters.slice(0,6).map(m=>{
     const c=clients.find(x=>x.id===m.client_id);
     return`<div class="matter-row" onclick="openMatterFromDash('${m.id}')"><div class="matter-icon civil">&#9878;&#65039;<\/div><div class="matter-info"><div class="matter-title">${esc(m.title)}<\/div><div class="matter-client">${c?esc(c.name):'—'} ${m.file_number?'· '+esc(m.file_number):''}<\/div><\/div><div class="matter-right"><span class="status-pill ${statusClass(m.status)}">${statusLabel(m.status)}<\/span>${(()=>{if(!m.assigned_to)return'';const ap=window._allProfiles?.find(p=>p.id===m.assigned_to);if(!ap)return'';return`<div title="Assigned: ${esc(ap.full_name||'')}" style="width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;font-size:8px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:4px">${initials(ap.full_name||'?')}<\/div>`;})()}<div class="matter-date">${m.next_date?fmtDate(m.next_date):''}<\/div><\/div><\/div>`; 
   }).join('');
@@ -7517,6 +7544,12 @@ function renderDashboard(){
     const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';
     return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}<\/div><\/div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div><\/div>`;
   }).join('');
+  // Tasks
+  const taskEl=document.getElementById('dash-tasks-list');
+  if(taskEl){
+    const visible=(dueTasks.length?dueTasks:openTasks).slice(0,5);
+    taskEl.innerHTML=visible.length?visible.map(t=>taskCalendarRow(t,true)).join(''):emptyState('No open tasks.');
+  }
   // Clients
   const cEl=document.getElementById('dash-clients-list');
   if(!clients.length){cEl.innerHTML=emptyState('No clients yet.');}
@@ -8258,10 +8291,16 @@ function renderProfile(){
     <\/div>`;
 
   // Reset tabs
-  const profileTabOrder=['overview','matters','parties','invoices','time','notes','logs','documents','signatures','panic','groups'];
+  const profileTabOrder=['overview','matters','tasks','parties','invoices','time','notes','logs','documents','signatures','panic','groups'];
   document.querySelectorAll('.profile-tab').forEach((t,i)=>{
     t.classList.toggle('active',profileTabOrder[i]===activeProfileTab);
   });
+  const _tb=document.getElementById('client-tasks-badge');
+  if(_tb){
+    const _tc=tasks.filter(t=>taskMatchesClient(t,c.id)&&taskIsOpen(t)).length;
+    _tb.textContent=_tc;
+    _tb.style.display=_tc>0?'inline':'none';
+  }
   // Update groups badge
   const _gb=document.getElementById('client-groups-badge');
   if(_gb){const _gc=clientGroups.filter(g=>Array.isArray(g.member_ids)&&g.member_ids.includes(c.id)).length;_gb.textContent=_gc;_gb.style.display=_gc>0?'inline':'none';}
@@ -8286,6 +8325,7 @@ function renderProfileTab(){
   const c=clients.find(x=>x.id===activeClientId);
   if(!c)return;
   const el=document.getElementById('profile-tab-content');
+  refreshVisibleTaskBadges();
 
   if(activeProfileTab==='overview'){
     const mc=matters.filter(m=>m.client_id===c.id);
@@ -8304,6 +8344,7 @@ function renderProfileTab(){
         <div class="detail-item"><div class="detail-label">Practice Area<\/div><div class="detail-val">${esc(c.practice_area||'—')}<\/div><\/div>
         <div class="detail-item"><div class="detail-label">Department<\/div><div class="detail-val">${esc(c.department||'—')}<\/div><\/div>
         <div class="detail-item"><div class="detail-label">Active Matters<\/div><div class="detail-val">${mc.filter(m=>m.status!=='closed').length} <span style="color:var(--txt3);font-size:11px;font-weight:400">of ${mc.length} total<\/span><\/div><\/div>
+        <div class="detail-item"><div class="detail-label">Open Tasks<\/div><div class="detail-val">${tasks.filter(t=>taskMatchesClient(t,c.id)&&taskIsOpen(t)).length}<\/div><\/div>
         <div class="detail-item"><div class="detail-label">Urgent Matters<\/div><div class="detail-val" style="${urgentM>0?'color:var(--red)':''}">${urgentM}<\/div><\/div>
       <\/div>
       ${c.conflict_notes?`<div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Conflict Check Notes<\/span><\/div><div style="padding:14px 20px;font-size:13px;color:var(--txt2);line-height:1.6">${esc(c.conflict_notes)}<\/div><\/div>`:''}
@@ -8349,6 +8390,18 @@ function renderProfileTab(){
             <div class="matter-date" style="margin-top:2px">${m.fee?fmtMoney(m.fee):''}<\/div>
           <\/div>
         <\/div>`).join('')}
+    <\/div>`;
+  }
+
+  else if(activeProfileTab==='tasks'){
+    const clientTasks=sortTasksForWorklist(tasks.filter(t=>taskMatchesClient(t,c.id)));
+    const openCount=clientTasks.filter(taskIsOpen).length;
+    el.innerHTML=`<div class="card">
+      <div class="card-header">
+        <span class="card-title">Tasks (${openCount} open / ${clientTasks.length} total)<\/span>
+        <button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openTaskModalForClient('${c.id}')">+ New Task<\/button>
+      <\/div>
+      ${!clientTasks.length?emptyStateSm('No tasks for this client yet.'):clientTasks.map(t=>taskCalendarRow(t)).join('')}
     <\/div>`;
   }
 
@@ -13104,6 +13157,58 @@ function taskTone(task){
 function taskIsOpen(task){
   return !['done','cancelled'].includes(String(task?.status||'todo'));
 }
+function taskMatchesMatter(task,matterId){
+  return String(task?.matter_id||'')===String(matterId||'');
+}
+function taskMatchesClient(task,clientId){
+  if(String(task?.client_id||'')===String(clientId||''))return true;
+  const m=matters.find(x=>String(x.id)===String(task?.matter_id||''));
+  return String(m?.client_id||'')===String(clientId||'');
+}
+function sortTasksForWorklist(list){
+  return [...(list||[])].map(normalizeTaskRow).sort((a,b)=>{
+    const aOpen=taskIsOpen(a)?0:1;
+    const bOpen=taskIsOpen(b)?0:1;
+    if(aOpen!==bOpen)return aOpen-bOpen;
+    const da=String(a.due_date||'9999-12-31').localeCompare(String(b.due_date||'9999-12-31'));
+    if(da!==0)return da;
+    const pr={urgent:0,high:1,normal:2,low:3};
+    return (pr[a.priority]??2)-(pr[b.priority]??2);
+  });
+}
+function openTaskModalForMatter(matterId){
+  openModal('task');
+  setTimeout(()=>{
+    const matterSel=document.getElementById('task-matter');
+    if(matterSel)matterSel.value=matterId||'';
+    syncTaskClientFromMatter();
+  },50);
+}
+function openTaskModalForClient(clientId){
+  openModal('task');
+  setTimeout(()=>{
+    const clientSel=document.getElementById('task-client');
+    if(clientSel)clientSel.value=clientId||'';
+  },50);
+}
+function refreshVisibleTaskBadges(){
+  if(activeClientId){
+    const badge=document.getElementById('client-tasks-badge');
+    if(badge){
+      const count=tasks.filter(t=>taskMatchesClient(t,activeClientId)&&taskIsOpen(t)).length;
+      badge.textContent=count;
+      badge.style.display=count?'inline':'none';
+    }
+  }
+  if(activeMatterId){
+    const badge=document.getElementById('matter-tasks-count');
+    if(badge){
+      const count=tasks.filter(t=>taskMatchesMatter(t,activeMatterId)&&taskIsOpen(t)).length;
+      badge.textContent=count;
+      badge.style.display=count?'inline':'none';
+    }
+  }
+}
 function calendarTasksForRange(start,end,{includeClosed=false}={}){
   return (tasks||[]).map(normalizeTaskRow).filter(t=>{
     if(!t.due_date)return false;
@@ -13128,12 +13233,13 @@ function taskStatusSelectHtml(task){
 }
 function taskCalendarRow(task,compact=false){
   const t=normalizeTaskRow(task);
-  const d=parseDateLocal(t.due_date);
+  const hasDue=!!t.due_date;
+  const d=hasDue?parseDateLocal(t.due_date):null;
   const tone=taskTone(t);
   const m=matters.find(x=>x.id===t.matter_id);
   const c=clients.find(x=>x.id===t.client_id)||clients.find(x=>x.id===m?.client_id);
   return`<div class="upcoming-item" style="${compact?'padding:9px 14px;':''}background:${tone.bg};border-left:3px solid ${tone.fg}">
-    <div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${monthNameShort(d)}<\/div><\/div>
+    <div class="upcoming-date"><div class="upcoming-day">${hasDue?d.getDate():'—'}<\/div><div class="upcoming-month">${hasDue?monthNameShort(d):'No due'}<\/div><\/div>
     <div class="upcoming-body" style="flex:1;min-width:0">
       <div class="upcoming-title">☑️ ${esc(t.title)} <span style="font-size:9px;background:#fff;color:${tone.fg};padding:1px 6px;border-radius:6px;font-weight:700;margin-left:4px">${taskStatusLabel(t.status)}<\/span><\/div>
       <div class="upcoming-sub">${t.due_time?esc(t.due_time)+' · ':''}${m?esc(m.title):c?esc(c.name):'General task'}${t.assigned_to_name?' · '+esc(t.assigned_to_name):''}<\/div>
@@ -13199,6 +13305,8 @@ async function saveTask(){
   tasks=[normalizeTaskRow(data[0]),...tasks].sort((a,b)=>String(a.due_date||'9999').localeCompare(String(b.due_date||'9999')));
   closeModal();toast('Task saved.');
   renderCalendar();
+  renderDashboard();
+  if(activeClientId)renderProfileTab();
   if(activeMatterId)renderMatterDetailTab();
 }
 async function updateTaskStatus(taskId,status){
@@ -13206,11 +13314,17 @@ async function updateTaskStatus(taskId,status){
   const prev=task?.status;
   tasks=tasks.map(t=>t.id===taskId?{...t,status,completed_at:status==='done'?(t.completed_at||new Date().toISOString()):null,updated_at:new Date().toISOString()}:t);
   renderCalendar();
+  renderDashboard();
+  if(activeClientId)renderProfileTab();
+  if(activeMatterId)renderMatterDetailTab();
   const payload={status,updated_at:new Date().toISOString(),completed_at:status==='done'?new Date().toISOString():null};
   const{error}=await sb.from('tasks').update(payload).eq('id',taskId);
   if(error){
     tasks=tasks.map(t=>t.id===taskId?{...t,status:prev||'todo'}:t);
     renderCalendar();
+    renderDashboard();
+    if(activeClientId)renderProfileTab();
+    if(activeMatterId)renderMatterDetailTab();
     toast('Could not update task status: '+error.message,true);
     return;
   }
@@ -13224,6 +13338,8 @@ async function deleteTask(id,title,e){
   tasks=tasks.filter(t=>t.id!==id);
   toast('Task deleted.');
   renderCalendar();
+  renderDashboard();
+  if(activeClientId)renderProfileTab();
   if(activeMatterId)renderMatterDetailTab();
 }
 function toggleEventRecurrence(){
@@ -14032,7 +14148,7 @@ function renderMatterDetail(){
       ${m.notes?`<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--brd);font-size:13px;color:var(--txt2);line-height:1.6">${esc(m.notes)}<\/div>`:''}
     <\/div>`;
   document.querySelectorAll('.matter-detail-tab').forEach((t,i)=>{
-    t.classList.toggle('active',['overview','documents','signatures','events','time','invoices','parties','updates','communications'][i]===activeMatterTab);
+    t.classList.toggle('active',['overview','documents','signatures','events','tasks','time','invoices','parties','updates','communications'][i]===activeMatterTab);
   });
   // Update parties badge
   const mp = parties.filter(p=>p.matter_id===activeMatterId);
@@ -14041,6 +14157,12 @@ function renderMatterDetail(){
   const sigBadge=document.getElementById('matter-signatures-count');
   const sigCount=(window._matterSignatureRequests||[]).length;
   if(sigBadge){sigBadge.textContent=sigCount;sigBadge.style.display=sigCount?'inline-flex':'none';}
+  const taskBadge=document.getElementById('matter-tasks-count');
+  if(taskBadge){
+    const taskCount=tasks.filter(t=>taskMatchesMatter(t,m.id)&&taskIsOpen(t)).length;
+    taskBadge.textContent=taskCount;
+    taskBadge.style.display=taskCount?'inline':'none';
+  }
   renderMatterDetailTab();
 }
 
@@ -14048,6 +14170,7 @@ function renderMatterDetailTab(){
   const m=matters.find(x=>x.id===activeMatterId);
   if(!m)return;
   const el=document.getElementById('matter-detail-content');
+  refreshVisibleTaskBadges();
   if(activeMatterTab==='signatures'){
     el.innerHTML=`<div class="card" id="docs-card"><div style="padding:40px;text-align:center;color:var(--txt3)">Loading signing requests⬦<\/div><\/div>`;
     loadMatterDocuments();
@@ -14066,6 +14189,7 @@ function renderMatterDetailTab(){
         <div class="detail-item"><div class="detail-label">Next Date<\/div><div class="detail-val" style="${m.next_date?'color:var(--red);font-weight:600':''}">${fmtDate(m.next_date)}<\/div><\/div>
         <div class="detail-item"><div class="detail-label">Fee Amount<\/div><div class="detail-val">${m.fee?fmtMoney(m.fee):'—'}<\/div><\/div>
         <div class="detail-item"><div class="detail-label">Fee Type<\/div><div class="detail-val">${esc(m.fee_type||'—')}<\/div><\/div>
+        <div class="detail-item"><div class="detail-label">Open Tasks<\/div><div class="detail-val">${tasks.filter(t=>taskMatchesMatter(t,m.id)&&taskIsOpen(t)).length}<\/div><\/div>
         <div class="detail-item"><div class="detail-label">Assigned To<\/div><div class="detail-val">${(()=>{if(!m.assigned_to)return'<span style="color:var(--txt3)">Unassigned<\/span>';const ap=window._allProfiles?.find(p=>p.id===m.assigned_to);return ap?`<div style="display:flex;align-items:center;gap:7px"><div style="width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${initials(ap.full_name||'?')}<\/div>${esc(ap.full_name||ap.email||'Unknown')}<\/div>`:'<span style="color:var(--txt3)">Unknown<\/span>';})()}<\/div><\/div>
       <\/div>
       ${m.notes?`<div class="card"><div class="card-header"><span class="card-title">Notes<\/span><\/div><div style="padding:16px 20px;font-size:13px;color:var(--txt2);line-height:1.7">${esc(m.notes)}<\/div><\/div>`:''}
@@ -14100,6 +14224,16 @@ function renderMatterDetailTab(){
       <div class="card-header"><span class="card-title">Events (${me.length})<\/span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openEventModalForMatter('${m.id}')">+ Add Event<\/button><\/div>
       ${!me.length?emptyStateSm('No events linked to this matter.')
         :me.map(e=>{const d=parseDateLocal(e.event_date);const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}<\/div><\/div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div><button class="op-del" title="Delete" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×<\/button><\/div>`;}).join('')}
+    <\/div>`;
+  } else if(activeMatterTab==='tasks'){
+    const mt=sortTasksForWorklist(tasks.filter(t=>taskMatchesMatter(t,m.id)));
+    const openCount=mt.filter(taskIsOpen).length;
+    el.innerHTML=`<div class="card">
+      <div class="card-header">
+        <span class="card-title">Tasks (${openCount} open / ${mt.length} total)<\/span>
+        <button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openTaskModalForMatter('${m.id}')">+ New Task<\/button>
+      <\/div>
+      ${!mt.length?emptyStateSm('No tasks linked to this matter.'):mt.map(t=>taskCalendarRow(t)).join('')}
     <\/div>`;
   } else if(activeMatterTab==='time'){
     const mt=timeEntries.filter(t=>t.matter_id===m.id);
