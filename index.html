@@ -4580,6 +4580,15 @@ let contactsTableWarningShown=false;
 // Inbox state
 let inboxMessages=[],inboxFiles=[],activeInboxClientId=null,activeInboxTab='messages';
 
+function clientPostalAddress(client){
+  return String(client?.postal_address??client?.postal??client?.postalAddress??'').trim();
+}
+function normalizeClientRecord(client){
+  if(!client)return client;
+  const postal=clientPostalAddress(client);
+  return {...client,postal_address:postal||null};
+}
+
 // ─── TOAST ────────────────────────────────────────────────────────
 function toast(msg,isError=false){
   const t=document.getElementById('toast');
@@ -5230,7 +5239,7 @@ async function loadAll(){
   registerPeriodicSync();
   setupVisibilityResume();
 }
-async function loadClients(){const{data,error}=await sb.from('clients').select('*').order('created_at',{ascending:false});if(!error){clients=data||[];window._recClients=clients;}}
+async function loadClients(){const{data,error}=await sb.from('clients').select('*').order('created_at',{ascending:false});if(!error){clients=(data||[]).map(normalizeClientRecord);window._recClients=clients;}}
 async function loadMatters(){const{data,error}=await sb.from('matters').select('*').order('created_at',{ascending:false});if(!error){matters=data||[];window._recMatters=matters;}}
 async function loadEvents(){
   const{data,error}=await sb.from('events').select('*').order('event_date',{ascending:true});
@@ -8256,7 +8265,7 @@ function renderProfileTab(){
         <div class="detail-item"><div class="detail-label">KRA PIN<\/div><div class="detail-val">${esc(c.kra_pin||'—')}<\/div><\/div>
         <div class="detail-item"><div class="detail-label">ID / Reg. No.<\/div><div class="detail-val">${esc(c.id_number||'—')}<\/div><\/div>
         <div class="detail-item"><div class="detail-label">Physical Address<\/div><div class="detail-val">${esc(c.address||'—')}<\/div><\/div>
-        <div class="detail-item"><div class="detail-label">Postal Address<\/div><div class="detail-val">${esc(c.postal_address||'—')}<\/div><\/div>
+        <div class="detail-item"><div class="detail-label">Postal Address<\/div><div class="detail-val">${esc(clientPostalAddress(c)||'—')}<\/div><\/div>
         <div class="detail-item"><div class="detail-label">Practice Area<\/div><div class="detail-val">${esc(c.practice_area||'—')}<\/div><\/div>
         <div class="detail-item"><div class="detail-label">Department<\/div><div class="detail-val">${esc(c.department||'—')}<\/div><\/div>
         <div class="detail-item"><div class="detail-label">Active Matters<\/div><div class="detail-val">${mc.filter(m=>m.status!=='closed').length} <span style="color:var(--txt3);font-size:11px;font-weight:400">of ${mc.length} total<\/span><\/div><\/div>
@@ -11513,7 +11522,7 @@ function openEditPartyModal(partyId){
         <\/div>
         <div class="form-two">
           <div class="form-row"><label>Physical Address<\/label><input id="ep-address" value="${esc(p.address||'')}"/><\/div>
-          <div class="form-row"><label>Postal Address<\/label><input id="ep-postal" value="${esc(p.postal_address||'')}"/><\/div>
+          <div class="form-row"><label>Postal Address<\/label><input id="ep-postal" value="${esc(p.postal||'')}"/><\/div>
         <\/div>
         <div class="form-row"><label>Law Firm / Organisation<\/label><input id="ep-org" value="${esc(p.organisation||'')}"/><\/div>
         <div class="form-row"><label>Notes<\/label><textarea id="ep-notes" style="min-height:70px">${esc(p.notes||'')}<\/textarea><\/div>
@@ -13299,7 +13308,7 @@ async function saveClient(){
     const{data,error}=await Promise.race([query,timeout]);
     setLoading('save-client-btn',false,'Save Client');
     if(error){toast('Error: '+error.message,true);return;}
-    const savedClient=data[0];
+    const savedClient=normalizeClientRecord(data[0]);
 
     // Create portal auth account if password provided
     if(portalPassword&&email){
@@ -13587,7 +13596,7 @@ function openEditClient(clientId){
   document.getElementById('c-phone').value=c.phone||'';
   document.getElementById('c-email').value=c.email||'';
   document.getElementById('c-address').value=c.address||'';
-  document.getElementById('c-postal').value=c.postal_address||'';
+  document.getElementById('c-postal').value=clientPostalAddress(c);
   document.getElementById('c-area').value=c.practice_area||'Civil Litigation';
   document.getElementById('c-conflict').value=c.conflict_notes||'';
   document.getElementById('c-notes').value=c.notes||'';
@@ -13619,7 +13628,7 @@ async function updateClient(clientId){
     const{data,error}=await sb.from('clients').update(payload).eq('id',clientId).select();
     setLoading('save-client-btn',false,'Save Changes');
     if(error){toast('Error: '+error.message,true);return;}
-    const updatedClient=data[0];
+    const updatedClient=normalizeClientRecord(data[0]);
 
     // If a new portal password was provided, update it via Edge Function
     if(portalPassword&&email){
@@ -18417,7 +18426,7 @@ function openTemplateComposer(templateId){
   const prefill={
     case_number:m?.file_number||'',court:m?.court||'',
     suit_title:m?.title||'',addressee:c?.name||'',
-    addressee_address:c?.address||c?.postal_address||''
+    addressee_address:c?.address||clientPostalAddress(c)||''
   };
 
   const overlay=document.createElement('div');
@@ -21751,7 +21760,7 @@ function legacyNormalizeImportedClient(row){
     phone:String(row.phone||'').trim()||null,
     email:String(row.email||'').trim()||null,
     address:String(row.address||'').trim()||null,
-    postal_address:String(row.postal_address||'').trim()||null,
+    postal_address:String(row.postal_address||row.postal||row.postalAddress||'').trim()||null,
     practice_area:String(row.practice_area||'Civil Litigation').trim()||'Civil Litigation',
     conflict_notes:String(row.conflict_notes||'').trim()||null,
     notes:String(row.notes||'').trim()||null,
@@ -27819,7 +27828,7 @@ function dgAutofillClientDetails(clientId) {
   const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
   set('dg-cp-name', c.name);
   set('dg-cp-id', c.id_number || c.id_no || '');
-  set('dg-cp-address', c.postal_address || c.address || '');
+  set('dg-cp-address', clientPostalAddress(c) || c.address || '');
   set('dg-cp-contact', c.phone || c.email || '');
   // Refresh matters filtered by this client
   const matterSel = document.getElementById('dg-cp-matter');
