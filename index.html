@@ -3912,6 +3912,29 @@ setTimeout(function() {
         <div class="form-row"><label>Related Client</label><select id="task-client"><option value="">None</option></select></div>
       </div>
       <div class="form-row"><label>Notes</label><textarea id="task-notes" placeholder="What needs to be done?" style="min-height:70px"></textarea></div>
+      <label class="invoice-vat-toggle" for="task-publish-update" style="justify-content:flex-start;margin:2px 0 10px">
+        <input type="checkbox" id="task-publish-update" onchange="toggleTaskUpdateFields()">
+        <span>Publish this as a client update</span>
+      </label>
+      <div id="task-update-fields" style="display:none;background:var(--cream);border:1px solid var(--brd);border-radius:9px;padding:12px 14px;margin-bottom:12px">
+        <div class="form-row">
+          <label>Client Update Type</label>
+          <select id="task-update-type">
+            <option value="general">General Update</option>
+            <option value="filing">Court Filing</option>
+            <option value="hearing">Hearing</option>
+            <option value="correspondence">Correspondence</option>
+            <option value="instruction">Client Instruction</option>
+            <option value="order">Court Order</option>
+            <option value="research">Legal Research</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin-bottom:0">
+          <label>Client-Facing Update</label>
+          <textarea id="task-update-details" placeholder="Write the update the client should see in their portal." style="min-height:70px"></textarea>
+        </div>
+        <div style="font-size:10px;color:var(--txt3);line-height:1.5;margin-top:7px">This appears in the client portal matter updates. Leave unchecked to keep the task internal to the CMS.</div>
+      </div>
       <div style="font-size:11px;color:var(--txt3);line-height:1.5">Tasks appear on the calendar by due date, but remain separate from calendar events. Changing a task status updates the calendar immediately.</div>
     </div>
     <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" id="save-task-btn" onclick="saveTask()">Save Task</button></div>
@@ -13142,7 +13165,10 @@ function normalizeTaskRow(task){
     ...task,
     due_date:dateOnly(task.due_date),
     status:task.status||'todo',
-    priority:task.priority||'normal'
+    priority:task.priority||'normal',
+    publish_update:task.publish_update===true,
+    client_update_type:task.client_update_type||'general',
+    client_update_details:task.client_update_details||''
   };
 }
 function taskStatusLabel(status){
@@ -13161,6 +13187,9 @@ function taskTone(task){
 }
 function taskIsOpen(task){
   return !['done','cancelled'].includes(String(task?.status||'todo'));
+}
+function taskIsPublished(task){
+  return task?.publish_update===true;
 }
 function taskMatchesMatter(task,matterId){
   return String(task?.matter_id||'')===String(matterId||'');
@@ -13214,6 +13243,17 @@ function refreshVisibleTaskBadges(){
     }
   }
 }
+function toggleTaskUpdateFields(){
+  const checked=!!document.getElementById('task-publish-update')?.checked;
+  const wrap=document.getElementById('task-update-fields');
+  if(wrap)wrap.style.display=checked?'block':'none';
+  if(checked){
+    const detail=document.getElementById('task-update-details');
+    const notes=document.getElementById('task-notes')?.value?.trim()||'';
+    const title=document.getElementById('task-title')?.value?.trim()||'';
+    if(detail&&!detail.value.trim())detail.value=notes||title;
+  }
+}
 function calendarTasksForRange(start,end,{includeClosed=false}={}){
   return (tasks||[]).map(normalizeTaskRow).filter(t=>{
     if(!t.due_date)return false;
@@ -13243,10 +13283,11 @@ function taskCalendarRow(task,compact=false){
   const tone=taskTone(t);
   const m=matters.find(x=>x.id===t.matter_id);
   const c=clients.find(x=>x.id===t.client_id)||clients.find(x=>x.id===m?.client_id);
+  const shareBadge=taskIsPublished(t)?`<span style="font-size:9px;background:#EAF3DE;color:#2D6A4F;padding:1px 6px;border-radius:6px;font-weight:700;margin-left:4px">Client update<\/span>`:'';
   return`<div class="upcoming-item" style="${compact?'padding:9px 14px;':''}background:${tone.bg};border-left:3px solid ${tone.fg};cursor:pointer" onclick="openTaskReadOnly('${t.id}')">
     <div class="upcoming-date"><div class="upcoming-day">${hasDue?d.getDate():'—'}<\/div><div class="upcoming-month">${hasDue?monthNameShort(d):'No due'}<\/div><\/div>
     <div class="upcoming-body" style="flex:1;min-width:0">
-      <div class="upcoming-title">☑️ ${esc(t.title)} <span style="font-size:9px;background:#fff;color:${tone.fg};padding:1px 6px;border-radius:6px;font-weight:700;margin-left:4px">${taskStatusLabel(t.status)}<\/span><\/div>
+      <div class="upcoming-title">☑️ ${esc(t.title)} <span style="font-size:9px;background:#fff;color:${tone.fg};padding:1px 6px;border-radius:6px;font-weight:700;margin-left:4px">${taskStatusLabel(t.status)}<\/span>${shareBadge}<\/div>
       <div class="upcoming-sub">${t.due_time?esc(t.due_time)+' · ':''}${m?esc(m.title):c?esc(c.name):'General task'}${t.assigned_to_name?' · '+esc(t.assigned_to_name):''}<\/div>
       <span class="upcoming-tag" style="background:#fff;color:${tone.fg}">${taskPriorityLabel(t.priority)} Task<\/span>
     <\/div>
@@ -13261,8 +13302,11 @@ function popTaskModal(){
   const btn=document.getElementById('save-task-btn');
   if(btn){btn.textContent='Save Task';btn.onclick=saveTask;}
   const today=formatDateLocal(new Date());
-  const defaults={'task-title':'','task-due-date':today,'task-due-time':'','task-status':'todo','task-priority':'normal','task-notes':''};
+  const defaults={'task-title':'','task-due-date':today,'task-due-time':'','task-status':'todo','task-priority':'normal','task-notes':'','task-update-type':'general','task-update-details':''};
   Object.entries(defaults).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.value=value;});
+  const publishEl=document.getElementById('task-publish-update');
+  if(publishEl)publishEl.checked=false;
+  toggleTaskUpdateFields();
   const matterSel=document.getElementById('task-matter');
   if(matterSel)matterSel.innerHTML='<option value="">None<\/option>'+matters.map(m=>`<option value="${m.id}">${m.file_number?'['+esc(m.file_number)+'] ':''}${esc(m.title)}<\/option>`).join('');
   const clientSel=document.getElementById('task-client');
@@ -13295,6 +13339,7 @@ function openTaskReadOnly(taskId){
   const client=clients.find(c=>c.id===task.client_id)||clients.find(c=>c.id===matter?.client_id);
   const assignee=task.assigned_to_name||(window._allProfiles||[]).find(p=>p.id===task.assigned_to)?.full_name||'Unassigned';
   const tone=taskTone(task);
+  const sharedBadge=taskIsPublished(task)?`<span style="display:inline-flex;align-items:center;gap:4px;background:#EAF3DE;color:#2D6A4F;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">Client update visible<\/span>`:`<span style="display:inline-flex;align-items:center;gap:4px;background:#F5F3EC;color:var(--txt3);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">CMS only<\/span>`;
   const popup=document.createElement('div');
   popup.id='_task-view-popup';
   popup.style.cssText='position:fixed;inset:0;background:rgba(13,27,42,0.55);z-index:3200;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -13308,6 +13353,7 @@ function openTaskReadOnly(taskId){
           <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
             <span style="display:inline-flex;align-items:center;gap:4px;background:${tone.bg};color:${tone.fg};border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">${taskStatusLabel(task.status)}<\/span>
             <span style="display:inline-flex;align-items:center;gap:4px;background:#F5F3EC;color:var(--txt2);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">${taskPriorityLabel(task.priority)} Priority<\/span>
+            ${sharedBadge}
           <\/div>
         <\/div>
         <button onclick="document.getElementById('_task-view-popup')?.remove()" style="border:none;background:none;font-size:24px;line-height:1;color:var(--txt3);cursor:pointer">×<\/button>
@@ -13327,6 +13373,10 @@ function openTaskReadOnly(taskId){
         ${task.notes?`<div style="background:var(--cream);border:1px solid var(--brd);border-radius:9px;padding:13px 14px">
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600;margin-bottom:6px">Notes<\/div>
           <div style="font-size:13px;color:var(--txt2);line-height:1.6;white-space:pre-wrap">${esc(task.notes)}<\/div>
+        <\/div>`:''}
+        ${taskIsPublished(task)&&task.client_update_details?`<div style="background:#EAF3DE;border:1px solid #C9E3D4;border-radius:9px;padding:13px 14px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#2D6A4F;font-weight:600;margin-bottom:6px">Client Update<\/div>
+          <div style="font-size:13px;color:var(--txt2);line-height:1.6;white-space:pre-wrap">${esc(task.client_update_details)}<\/div>
         <\/div>`:''}
       <\/div>
       <div style="padding:16px 22px;border-top:1px solid var(--brd);display:flex;gap:10px;justify-content:flex-end;background:#fff">
@@ -13355,11 +13405,58 @@ function openTaskDetail(taskId){
       'task-assigned-to':task.assigned_to||'',
       'task-matter':task.matter_id||'',
       'task-client':task.client_id||'',
-      'task-notes':task.notes||''
+      'task-notes':task.notes||'',
+      'task-update-type':task.client_update_type||'general',
+      'task-update-details':task.client_update_details||''
     };
     Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.value=value;});
+    const publishEl=document.getElementById('task-publish-update');
+    if(publishEl)publishEl.checked=taskIsPublished(task);
+    toggleTaskUpdateFields();
     if(!values['task-client'])syncTaskClientFromMatter();
   },50);
+}
+async function writeTaskMatterUpdate(task,taskPayload){
+  const publish=!!taskPayload.publish_update;
+  const existingUpdateId=task?.linked_update_id||null;
+  if(!publish){
+    if(existingUpdateId){
+      await sb.from('matter_updates').update({portal_visible:false}).eq('id',existingUpdateId);
+    }
+    return {...task,publish_update:false};
+  }
+  if(!taskPayload.matter_id)throw new Error('Select a related matter before publishing this task as a client update.');
+  const updateDetails=(taskPayload.client_update_details||taskPayload.notes||taskPayload.title||'').trim();
+  if(!updateDetails)throw new Error('Enter the client-facing update text before publishing.');
+  const updatePayload={
+    matter_id:taskPayload.matter_id,
+    update_date:taskPayload.due_date||formatDateLocal(new Date()),
+    update_type:taskPayload.client_update_type||'general',
+    details:updateDetails,
+    updated_by:currentProfile?.full_name||currentUser?.email||'—',
+    portal_visible:true,
+    task_id:task.id
+  };
+  let result;
+  if(existingUpdateId){
+    result=await sb.from('matter_updates').update(updatePayload).eq('id',existingUpdateId).select('id').maybeSingle();
+  } else {
+    result=await sb.from('matter_updates').insert([updatePayload]).select('id').maybeSingle();
+  }
+  if(result.error&&String(result.error.message||'').includes('task_id')){
+    const fallback={...updatePayload};
+    delete fallback.task_id;
+    result=existingUpdateId
+      ?await sb.from('matter_updates').update(fallback).eq('id',existingUpdateId).select('id').maybeSingle()
+      :await sb.from('matter_updates').insert([fallback]).select('id').maybeSingle();
+  }
+  if(result.error)throw result.error;
+  const linkedId=result.data?.id||existingUpdateId||null;
+  if(linkedId&&linkedId!==existingUpdateId){
+    const{error}=await sb.from('tasks').update({linked_update_id:linkedId,updated_at:new Date().toISOString()}).eq('id',task.id);
+    if(error)throw error;
+  }
+  return {...task,linked_update_id:linkedId,publish_update:true,client_update_details:updateDetails,client_update_type:updatePayload.update_type};
 }
 async function saveTask(){
   const title=document.getElementById('task-title').value.trim();
