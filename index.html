@@ -13024,6 +13024,13 @@ function closeModal(){
   if(taskTitle)taskTitle.textContent='Add Task';
   const taskBtn=document.getElementById('save-task-btn');
   if(taskBtn){taskBtn.textContent='Save Task';taskBtn.onclick=saveTask;}
+  const docBtn=document.getElementById('save-doc-btn');
+  if(docBtn){docBtn.textContent='Upload';docBtn.disabled=false;docBtn.onclick=uploadDocument;}
+  const docCancelBtn=document.getElementById('doc-cancel-btn');
+  if(docCancelBtn)docCancelBtn.disabled=false;
+  const docInput=document.getElementById('doc-file');
+  if(docInput)docInput.value='';
+  window._bulkFiles=[];
 }
 function bgClose(e){if(e.target.id==='modal-overlay')closeModal();}
 
@@ -13466,6 +13473,9 @@ async function saveTask(){
   setLoading('save-task-btn',true,editingId?'Update Task':'Save Task');
   const assignedTo=document.getElementById('task-assigned-to')?.value||null;
   const assignedProfile=(window._allProfiles||[]).find(p=>p.id===assignedTo);
+  const publishUpdate=!!document.getElementById('task-publish-update')?.checked;
+  const publishDetails=(document.getElementById('task-update-details')?.value||'').trim();
+  const publishType=document.getElementById('task-update-type')?.value||'general';
   const payload={
     title,
     due_date:dueDate||null,
@@ -13479,14 +13489,27 @@ async function saveTask(){
     notes:document.getElementById('task-notes').value.trim()||null,
     updated_at:new Date().toISOString()
   };
+  if(publishUpdate&&!payload.matter_id){
+    setLoading('save-task-btn',false,editingId?'Update Task':'Save Task');
+    toast('Select a related matter before publishing this task as a client update.',true);
+    return;
+  }
+  if(publishUpdate&&!publishDetails){
+    setLoading('save-task-btn',false,editingId?'Update Task':'Save Task');
+    toast('Enter the client-facing update text before publishing.',true);
+    return;
+  }
+  const publishPayload={
+    publish_update:publishUpdate,
+    client_update_type:publishType,
+    client_update_details:publishUpdate?publishDetails:null
+  };
+  let savedTask=null;
   if(editingId){
     const{data,error}=await sb.from('tasks').update(payload).eq('id',editingId).select();
-    setLoading('save-task-btn',false,'Update Task');
-    if(error){toast('Error: '+error.message,true);return;}
-    const updated=normalizeTaskRow(data?.[0]||{...(tasks.find(t=>t.id===editingId)||{}),...payload,id:editingId});
-    tasks=tasks.map(t=>t.id===editingId?updated:t).sort((a,b)=>String(a.due_date||'9999').localeCompare(String(b.due_date||'9999')));
+    if(error){setLoading('save-task-btn',false,'Update Task');toast('Error: '+error.message,true);return;}
+    savedTask=normalizeTaskRow(data?.[0]||{...(tasks.find(t=>t.id===editingId)||{}),...payload,id:editingId});
     activeTaskEditId=null;
-    closeModal();toast('Task updated.');
   } else {
     const insertPayload={
       ...payload,
@@ -13494,11 +13517,29 @@ async function saveTask(){
       created_by_name:currentProfile?.full_name||currentUser?.email||null
     };
     const{data,error}=await sb.from('tasks').insert([insertPayload]).select();
-    setLoading('save-task-btn',false,'Save Task');
-    if(error){toast('Error: '+error.message,true);return;}
-    tasks=[normalizeTaskRow(data[0]),...tasks].sort((a,b)=>String(a.due_date||'9999').localeCompare(String(b.due_date||'9999')));
-    closeModal();toast('Task saved.');
+    if(error){setLoading('save-task-btn',false,'Save Task');toast('Error: '+error.message,true);return;}
+    savedTask=normalizeTaskRow(data[0]);
   }
+  let finalTask=normalizeTaskRow({...savedTask,...publishPayload});
+  try{
+    const{data:metaData,error:metaErr}=await sb.from('tasks').update(publishPayload).eq('id',savedTask.id).select();
+    if(metaErr)throw metaErr;
+    finalTask=normalizeTaskRow(metaData?.[0]||finalTask);
+    finalTask=normalizeTaskRow(await writeTaskMatterUpdate(finalTask,{...payload,...publishPayload}));
+  }catch(e){
+    console.warn('[DKMA] task client update sync failed:',e?.message||e);
+    if(publishUpdate){
+      setLoading('save-task-btn',false,editingId?'Update Task':'Save Task');
+      toast('Task saved, but the client update could not be published: '+(e?.message||e),true);
+      return;
+    }
+  }
+  setLoading('save-task-btn',false,editingId?'Update Task':'Save Task');
+  tasks=editingId
+    ?tasks.map(t=>t.id===finalTask.id?finalTask:t)
+    :[finalTask,...tasks];
+  tasks=sortTasksForWorklist(tasks);
+  closeModal();toast(editingId?'Task updated.':'Task saved.');
   renderCalendar();
   renderDashboard();
   if(activeClientId)renderProfileTab();
@@ -17809,7 +17850,10 @@ function renderDocumentsCard(){
   if(zone){
     const inp=document.getElementById('quick-upload');
     zone.addEventListener('click',()=>inp.click());
-    inp.addEventListener('change',()=>quickUploadFiles(inp.files));
+    inp.addEventListener('change',()=>{
+      quickUploadFiles(inp.files);
+      inp.value='';
+    });
     zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag');});
     zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
     zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');quickUploadFiles(e.dataTransfer.files);});
@@ -18037,9 +18081,16 @@ function openDocumentUploadModal(){
   document.getElementById('bulk-file-list').style.display='none';
   document.getElementById('bulk-file-items').innerHTML='';
   document.getElementById('bulk-file-count').textContent='0';
-  document.getElementById('save-doc-btn').textContent='Upload';
-  document.getElementById('save-doc-btn').disabled=false;
-  document.getElementById('doc-cancel-btn').disabled=false;
+  const saveBtn=document.getElementById('save-doc-btn');
+  if(saveBtn){
+    saveBtn.textContent='Upload';
+    saveBtn.disabled=false;
+    saveBtn.onclick=uploadDocument;
+  }
+  const cancelBtn=document.getElementById('doc-cancel-btn');
+  if(cancelBtn)cancelBtn.disabled=false;
+  const fileInput=document.getElementById('doc-file');
+  if(fileInput)fileInput.value='';
   window._bulkFiles=[];
   // Wire up the drop zone and file input (fresh each time modal opens)
   _initBulkDropZone();
@@ -18229,8 +18280,8 @@ async function uploadDocument(){
 async function uploadSingleFile(file,category,description){
   const safeName=file.name.replace(/[^a-zA-Z0-9.\-_]/g,'_');
   const safeDesc=(description||'').replace(/[^a-zA-Z0-9.\-_]/g,'_').slice(0,40);
-  const timestamp=Date.now();
-  const storagePath=`${activeMatterId}/${category}__${safeDesc}__${timestamp}_${safeName}`;
+  const unique=`${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  const storagePath=`${activeMatterId}/${category}__${safeDesc}__${unique}_${safeName}`;
   return await sb.storage.from(STORAGE_BUCKET).upload(storagePath,file,{upsert:false,contentType:file.type||'application/octet-stream'});
 }
 
@@ -21230,6 +21281,7 @@ function buildPanicAppReleaseHistory(){
 
 async function handlePanicAppReleaseFile(input){
   firmPanicAppReleaseFile=input?.files?.[0]||null;
+  if(input)input.value='';
   firmPanicAppReleaseParsedMeta=null;
   renderPanicAppReleaseManager();
   if(!firmPanicAppReleaseFile)return;
@@ -21752,6 +21804,7 @@ function buildClientAppReleaseHistory(){
 
 async function handleClientAppReleaseFile(input){
   firmClientAppReleaseFile=input?.files?.[0]||null;
+  if(input)input.value='';
   firmClientAppReleaseParsedMeta=null;
   renderClientAppReleaseManager();
   if(!firmClientAppReleaseFile)return;
@@ -29976,7 +30029,8 @@ async function uploadGroupDoc(groupId, input){
   const uploaderName=currentProfile?.full_name||currentUser?.email||'Advocate';
   let uploaded=0;
   for(const file of files){
-    const storagePath=`group-docs/${groupId}/${Date.now()}_${file.name}`;
+    const safeName=String(file.name||'file').replace(/[^a-zA-Z0-9.\-_]/g,'_');
+    const storagePath=`group-docs/${groupId}/${Date.now()}_${Math.random().toString(36).slice(2,8)}_${safeName}`;
     try{
       const{error:upErr}=await sb.storage.from('matter-documents').upload(storagePath,file,{cacheControl:'3600',upsert:false});
       if(upErr) throw upErr;
