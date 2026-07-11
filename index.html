@@ -2023,6 +2023,11 @@ setTimeout(function() {
               <div class="form-row"><label>Website</label><input id="fs-website" placeholder="e.g. https://dkma.co.ke"/></div>
             </div>
             <div class="form-row"><label>LSK / Registration No.</label><input id="fs-reg" placeholder="e.g. LSK/FIRM/2010/001"/></div>
+            <div class="form-row">
+              <label>Invoice Payment Method / Instructions</label>
+              <textarea id="fs-invoice-payment-method" placeholder="e.g. Pay by bank transfer or M-Pesa. Include the invoice number as the payment reference." style="min-height:88px;width:100%;border:1px solid var(--brd);border-radius:7px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;resize:vertical"></textarea>
+              <div style="font-size:11px;color:var(--txt3);margin-top:6px;line-height:1.5">This wording is shown on generated invoices as the payment instruction.</div>
+            </div>
           </div>
           <div style="padding:14px 24px;border-top:1px solid var(--brd);display:flex;justify-content:flex-end">
             <button class="btn-primary" id="fs-contact-btn" onclick="saveFirmContact()">Save Changes</button>
@@ -21124,6 +21129,8 @@ async function loadFirmSettings(){
       const el=document.getElementById('fs-'+f.replace('_','-'));
       if(el) el.value=map['contact_'+f]||'';
     });
+    const invoicePaymentEl=document.getElementById('fs-invoice-payment-method');
+    if(invoicePaymentEl) invoicePaymentEl.value=map.invoice_payment_method||'';
     if(map['panic_app_release']){
       try{firmPanicAppRelease=JSON.parse(map['panic_app_release']);}catch(e){firmPanicAppRelease=null;}
     }else{
@@ -21174,8 +21181,9 @@ async function saveFirmContact(){
   const btn=document.getElementById('fs-contact-btn');
   btn.disabled=true;btn.textContent='Saving...';
   try{
-    const fields={contact_firm_name:document.getElementById('fs-firm-name').value.trim(),contact_physical:document.getElementById('fs-physical').value.trim(),contact_postal:document.getElementById('fs-postal').value.trim(),contact_phone:document.getElementById('fs-phone').value.trim(),contact_email:document.getElementById('fs-email').value.trim(),contact_website:document.getElementById('fs-website').value.trim(),contact_reg:document.getElementById('fs-reg').value.trim()};
+    const fields={contact_firm_name:document.getElementById('fs-firm-name').value.trim(),contact_physical:document.getElementById('fs-physical').value.trim(),contact_postal:document.getElementById('fs-postal').value.trim(),contact_phone:document.getElementById('fs-phone').value.trim(),contact_email:document.getElementById('fs-email').value.trim(),contact_website:document.getElementById('fs-website').value.trim(),contact_reg:document.getElementById('fs-reg').value.trim(),invoice_payment_method:(document.getElementById('fs-invoice-payment-method')?.value||'').trim()};
     for(const[k,v] of Object.entries(fields)) await upsertFirmSetting(k,v);
+    Object.assign(firmContact,fields);
     toast('Firm contact saved.');
   }catch(e){toast('Save failed: '+e.message,true);}
   btn.disabled=false;btn.textContent='Save Changes';
@@ -30384,6 +30392,14 @@ function b64toUint8(b64){
   for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);return arr;
 }
 
+function getInvoicePaymentMethodText(firmName){
+  const fc=(typeof firmContact!=='undefined'&&firmContact)||{};
+  const saved=String(fc.invoice_payment_method||'').trim();
+  if(saved) return saved;
+  const payee=firmName||fc.contact_firm_name||'the firm';
+  return 'Please make payment to '+payee+'. Reference your invoice number when making payment.';
+}
+
 async function downloadInvoiceDocx(invId,e){
   if(e)e.stopPropagation();
   const inv=invoices.find(x=>x.id===invId);if(!inv){toast('Invoice not found.',true);return;}
@@ -30723,7 +30739,10 @@ async function downloadInvoiceDocx(invId,e){
   const _docxFc=(typeof firmContact!=='undefined'&&firmContact)||{};
   const _docxFirmName=_docxFc.contact_firm_name||'Dennis Kimani Mutonga, Advocate';
   const _docxContactParts=[_docxFc.contact_phone,_docxFc.contact_email].filter(Boolean);
-  invoiceChildren.push(new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'Please make payment to '+_docxFirmName+'. Reference your invoice number when making payment.',font:'Arial',size:20,color:'5a5a5a'})]}));
+  const _docxPaymentInstructions=getInvoicePaymentMethodText(_docxFirmName).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  (_docxPaymentInstructions.length?_docxPaymentInstructions:[getInvoicePaymentMethodText(_docxFirmName)]).forEach(line=>{
+    invoiceChildren.push(new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:line,font:'Arial',size:20,color:'5a5a5a'})]}));
+  });
   if(_docxContactParts.length)invoiceChildren.push(new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'Contact: '+_docxContactParts.join(' | '),font:'Arial',size:20,color:'5a5a5a'})]}));
 
   const doc=new Document({
