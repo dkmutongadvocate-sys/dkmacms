@@ -30170,6 +30170,13 @@ CREATE POLICY "auth_all" ON group_documents FOR ALL USING (auth.role()='authenti
 }
 
 // ─── RECEIPT PDF GENERATOR ───────────────────────────────────────
+function getDkmaLetterheadTemplateUrl(){
+  if(window.__dkmaLetterheadTemplateUrl)return window.__dkmaLetterheadTemplateUrl;
+  const scripts=Array.from(document.scripts||[]).map(s=>s.textContent||'').join('\n');
+  const m=scripts.match(/const\s+_letterheadUrl\s*=\s*'((?:data:image\/png;base64,)[^']+)'/);
+  window.__dkmaLetterheadTemplateUrl=m?m[1]:'';
+  return window.__dkmaLetterheadTemplateUrl;
+}
 async function downloadReceiptPdf(invId,paymentId=null,e){
   if(e)e.stopPropagation();
   const _loadReceiptLib=(src)=>new Promise((res,rej)=>{
@@ -30251,12 +30258,14 @@ async function downloadReceiptPdf(invId,paymentId=null,e){
   const receiptTaxRows=showVat?`
     <tr class="total-row"><td>Subtotal<\/td><td class="right">${fmtMny(subtotal)}<\/td><\/tr>
     <tr class="total-row"><td>VAT (${Math.round(vatRate*100)}%)<\/td><td class="right">${fmtMny(vat)}<\/td><\/tr>`:'';
+  const _receiptLetterheadUrl=getDkmaLetterheadTemplateUrl();
 
   const receiptHtml=`<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  html{width:993px;background:#fff;font-family:'Sitka Text',serif;font-size:13px;color:#1a1a1a;display:flex;flex-direction:column;min-height:1404px}
-  body{width:993px;flex:1;display:flex;flex-direction:column;min-height:1404px}
+  html{width:993px;background:#fff;font-family:'Sitka Text',serif;font-size:13px;color:#1a1a1a;min-height:1404px}
+  body{width:993px;min-height:1404px;background:#fff url("${esc(_receiptLetterheadUrl)}") center top / 993px 1404px no-repeat;display:block}
+  .dyn-hdr,.dyn-ftr{display:none!important}
   .dyn-hdr{width:993px;display:flex;flex-direction:column;flex-shrink:0;background:#fff}
   .dyn-hdr-top{background:#0D1B2A;display:flex;align-items:center;justify-content:space-between;padding:22px 32px 22px 28px}
   .dyn-hdr-logo{width:88px;height:88px;object-fit:contain;background:transparent;flex-shrink:0;margin-right:18px}
@@ -30271,7 +30280,7 @@ async function downloadReceiptPdf(invId,paymentId=null,e){
   .dyn-ftr-bottom{background:#0D1B2A;display:flex;align-items:center;justify-content:space-between;padding:14px 32px;font-size:10.5px;color:rgba(255,255,255,.65)}
   .dyn-ftr-name{font-family:'Playfair Display',Georgia,serif;font-size:12px;color:#B8953A;font-weight:600}
   .dyn-ftr-logo{width:44px;height:44px;object-fit:contain;background:transparent;opacity:.85}
-  .body{padding:22px 44px 20px;background:#fff;flex:1}
+  .body{padding:342px 76px 238px 78px;background:transparent;min-height:1404px;flex:none}
   .date-line{font-size:13px;color:#0D1B2A;font-weight:bold;margin-bottom:14px}
   .dear{font-size:13px;margin-bottom:6px}
   .cname{color:#0D1B2A;font-weight:bold}
