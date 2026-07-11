@@ -11638,7 +11638,7 @@ function openEditPartyModal(partyId){
         <\/div>
         <div class="form-two">
           <div class="form-row"><label>Physical Address<\/label><input id="ep-address" value="${esc(p.address||'')}"/><\/div>
-          <div class="form-row"><label>Postal Address<\/label><input id="ep-postal" value="${esc(p.postal||'')}"/><\/div>
+          <div class="form-row"><label>Postal Address<\/label><input id="ep-postal" value="${esc(p.postal_address||p.postal||'')}"/><\/div>
         <\/div>
         <div class="form-row"><label>Law Firm / Organisation<\/label><input id="ep-org" value="${esc(p.organisation||'')}"/><\/div>
         <div class="form-row"><label>Notes<\/label><textarea id="ep-notes" style="min-height:70px">${esc(p.notes||'')}<\/textarea><\/div>
@@ -11665,7 +11665,7 @@ async function savePartyEdit_cms(partyId){
     phone: document.getElementById('ep-phone').value.trim()||null,
     email: document.getElementById('ep-email').value.trim()||null,
     address: document.getElementById('ep-address').value.trim()||null,
-    postal: document.getElementById('ep-postal').value.trim()||null,
+    postal_address: document.getElementById('ep-postal').value.trim()||null,
     organisation: document.getElementById('ep-org').value.trim()||null,
     notes: document.getElementById('ep-notes').value.trim()||null,
   };
