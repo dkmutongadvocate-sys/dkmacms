@@ -30473,6 +30473,21 @@ async function downloadInvoiceDocx(invId,e){
   ].filter(Boolean).join(' &nbsp;|&nbsp; ');
   const _hdrAddress = [_invFirmPhysical, _invFirmPostal].filter(Boolean).join(' | ');
   const _invPaymentInstructions = getInvoicePaymentMethodText(_invFirmName);
+  const _feeNoteRowsHtml=lineItems.map((l,i)=>`
+    <tr>
+      <td class="num">${i+1}<\/td>
+      <td>${esc(l.description||'Professional Services')}<\/td>
+      <td class="money">${fmtMny(l.subtotal||l.unit_price||0)}<\/td>
+    <\/tr>`).join('');
+  const _feeNoteTotalsHtml=[
+    ...(showVat?[`<tr class="total-row"><td colspan="2">SUBTOTAL<\/td><td class="money">${fmtMny(sub)}<\/td><\/tr>`,`<tr class="total-row"><td colspan="2">VAT (${Math.round(vatRate*100)}%)<\/td><td class="money">${fmtMny(vat)}<\/td><\/tr>`]:[]),
+    `<tr class="total-row"><td colspan="2">TOTAL<\/td><td class="money">${fmtMny(total)}<\/td><\/tr>`,
+    `<tr class="words-row"><td colspan="3">${amountInWords(total)}<\/td><\/tr>`
+  ].join('');
+  const _feeNotePaymentHtml=esc(_invPaymentInstructions).split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map((line,i)=>`<div class="payment-line">${String.fromCharCode(97+i)}. ${line}<\/div>`).join('') || `<div class="payment-line">a. ${esc(getInvoicePaymentMethodText(_invFirmName))}<\/div>`;
+  const _feeNoteContact=esc(_invContactLine||[_invFirmPhone,_invFirmEmail,_invFirmWebsite].filter(Boolean).join(' | '));
+  const _feeNoteRecipient=esc(client?.name||'Client');
+  const _feeNoteDate=fmtDt(inv.invoice_date);
 
   // Use an iframe approach for clean full-width rendering
   const _iframeDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -30545,21 +30560,79 @@ async function downloadInvoiceDocx(invId,e){
       _iframe.srcdoc = _iframeDoc;
     });
 
-    const _paymentDoc = _iframe.contentDocument;
-    const _paymentBody = _paymentDoc.body;
-    const _paymentSection = _paymentDoc.createElement('div');
-    _paymentSection.className = 'invoice-payment-instructions';
-    _paymentSection.style.cssText = 'margin:18px 44px 22px;padding:14px 16px;border:1px solid #D9D4CB;border-radius:8px;background:#F8F5F0;color:#1a1a1a;font-family:Arial, sans-serif;font-size:12px;line-height:1.65;';
-    const _paymentTitle = _paymentDoc.createElement('div');
-    _paymentTitle.textContent = 'Payment Instructions';
-    _paymentTitle.style.cssText = 'font-weight:700;color:#0D1B2A;text-transform:uppercase;letter-spacing:.6px;font-size:11px;margin-bottom:6px;';
-    const _paymentText = _paymentDoc.createElement('div');
-    _paymentText.innerHTML = esc(_invPaymentInstructions).replace(/\r?\n/g,'<br>');
-    _paymentSection.appendChild(_paymentTitle);
-    _paymentSection.appendChild(_paymentText);
-    const _footer = _paymentDoc.querySelector('.dyn-ftr');
-    if(_footer && _footer.parentNode) _footer.parentNode.insertBefore(_paymentSection,_footer);
-    else _paymentBody.appendChild(_paymentSection);
+    const _feeDoc = _iframe.contentDocument;
+    const _logoSrc = _feeDoc.querySelector('.dyn-hdr-logo')?.src || '';
+    const _feeNoteAddress = esc([_invFirmPhysical, _invFirmPostal].filter(Boolean).join(' | '));
+    _feeDoc.head.innerHTML = `<meta charset="UTF-8">
+<style>
+  *{box-sizing:border-box;}
+  html,body{width:993px;min-height:1404px;margin:0;background:#fff;color:#171717;font-family:Georgia,'Times New Roman',serif;font-size:14px;line-height:1.45;}
+  body{position:relative;}
+  .fee-page{width:993px;min-height:1404px;background:#fff;display:flex;flex-direction:column;}
+  .fee-head{min-height:178px;padding:30px 46px 18px;display:flex;align-items:flex-start;border-bottom:1px solid #d7d0c4;}
+  .fee-logo-wrap{width:128px;min-height:112px;display:flex;align-items:flex-start;justify-content:center;}
+  .fee-logo{max-width:105px;max-height:105px;object-fit:contain;}
+  .fee-head-text{flex:1;text-align:right;padding-top:8px;color:#0d1b2a;}
+  .fee-firm{font-size:27px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;}
+  .fee-address{font-family:Arial,sans-serif;font-size:11px;color:#555;margin-top:9px;}
+  .fee-contact{font-family:Arial,sans-serif;font-size:11px;color:#555;margin-top:4px;}
+  .fee-body{padding:34px 58px 42px;flex:1;}
+  .date-line{font-family:Arial,sans-serif;font-size:13px;margin-bottom:26px;color:#222;}
+  p{margin:0 0 13px;}
+  .re{font-weight:700;text-decoration:underline;text-transform:uppercase;margin:16px 0 18px;}
+  .payment-methods{margin:7px 0 18px 22px;font-size:13.5px;}
+  .payment-line{margin:0 0 6px;}
+  .fee-table{width:100%;border-collapse:collapse;margin:18px 0 18px;font-family:Arial,sans-serif;font-size:12.5px;}
+  .fee-table th{background:#0d1b2a;color:#fff;border:1px solid #0d1b2a;padding:9px 11px;text-align:left;font-weight:700;}
+  .fee-table th.num,.fee-table td.num{width:70px;text-align:center;}
+  .fee-table th.money,.fee-table td.money{text-align:right;width:190px;}
+  .fee-table td{border:1px solid #888;padding:9px 11px;vertical-align:top;}
+  .total-row td{font-weight:700;background:#f0ede8;}
+  .words-row td{font-weight:700;text-align:center;text-transform:uppercase;background:#fff;}
+  .signature{font-weight:700;text-decoration:underline;margin-top:30px;color:#0d1b2a;}
+  .advocate{font-weight:700;margin-top:4px;}
+  .contact-line{font-family:Arial,sans-serif;font-size:11px;color:#555;margin-top:8px;text-align:right;}
+  .fee-footer{margin-top:auto;padding:0 46px 30px;}
+  .fee-footer-line{height:3px;background:#b8953a;margin-bottom:10px;}
+  .fee-footer-text{font-family:Arial,sans-serif;font-size:10.5px;color:#555;text-align:right;}
+<\/style>`;
+    _feeDoc.body.innerHTML = `
+<div class="fee-page">
+  <header class="fee-head">
+    <div class="fee-logo-wrap">${_logoSrc?`<img class="fee-logo" src="${esc(_logoSrc)}" alt="Firm Logo">`:''}<\/div>
+    <div class="fee-head-text">
+      <div class="fee-firm">${esc(_invFirmName)}<\/div>
+      ${_feeNoteAddress?`<div class="fee-address">${_feeNoteAddress}<\/div>`:''}
+      ${_feeNoteContact?`<div class="fee-contact">${_feeNoteContact}<\/div>`:''}
+    <\/div>
+  <\/header>
+  <main class="fee-body">
+    <div class="date-line">${_feeNoteDate}<\/div>
+    <p>Dear Messrs. <strong>${_feeNoteRecipient}<\/strong>,<\/p>
+    <p class="re">RE: FEE NOTE FOR SERVICES RENDERED<\/p>
+    <p>The above refers.<\/p>
+    <p>Kindly receive this fee note for the services rendered by us as itemised below. Please effect any and all payments through either of the following methods:<\/p>
+    <div class="payment-methods">${_feeNotePaymentHtml}<\/div>
+    <table class="fee-table">
+      <thead>
+        <tr><th class="num">NO.<\/th><th>ITEM<\/th><th class="money">COST<\/th><\/tr>
+      <\/thead>
+      <tbody>
+        ${_feeNoteRowsHtml || `<tr><td class="num">1<\/td><td>Professional Services<\/td><td class="money">${fmtMny(total)}<\/td><\/tr>`}
+        ${_feeNoteTotalsHtml}
+      <\/tbody>
+    <\/table>
+    <p>Thank you for your continued cooperation.<\/p>
+    <p>Yours Faithfully,<\/p>
+    <div class="signature">${esc(_invFirmName)}<\/div>
+    <div class="advocate">ADVOCATE<\/div>
+    ${_feeNoteContact?`<div class="contact-line">${_feeNoteContact}<\/div>`:''}
+  <\/main>
+  <footer class="fee-footer">
+    <div class="fee-footer-line"><\/div>
+    <div class="fee-footer-text">${esc(_invFirmName)}${_feeNoteContact?' | '+_feeNoteContact:''}${_invFirmReg?' | Reg. No: '+esc(_invFirmReg):''}<\/div>
+  <\/footer>
+<\/div>`;
 
     // Wait a tick for images to render inside iframe
     await new Promise(res=>setTimeout(res, 800));
