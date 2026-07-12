@@ -13173,6 +13173,7 @@ function calcInvTotals(){
     const qEl=r.querySelector('.inv-lq'), pEl=r.querySelector('.inv-lp');
     sub+=(parseFloat(qEl&&qEl.value)||0)*(parseFloat(pEl&&pEl.value)||0);
   });
+  sub=Math.max(0,sub);
   const hasVAT = document.getElementById('inv-has-vat')?.checked ?? true;
   const vat = hasVAT ? sub * 0.16 : 0;
   const total = sub + vat;
@@ -14017,7 +14018,7 @@ async function saveInvoice(){
     if(desc||price)lineItems.push({description:desc,qty,unit_price:price,subtotal:qty*price});
   });
   if(!lineItems.length){toast('Please add at least one line item.',true);return;}
-  const sub=lineItems.reduce((s,l)=>s+l.subtotal,0);
+  const sub=Math.max(0,lineItems.reduce((s,l)=>s+l.subtotal,0));
   const hasVAT = document.getElementById('inv-has-vat')?.checked ?? true;
   const vat = hasVAT ? sub * 0.16 : 0;
   const total=sub+vat;
@@ -30231,8 +30232,8 @@ async function downloadReceiptPdf(invId,paymentId=null,e){
   const payment=paymentId?payments.find(p=>p.id===paymentId):payments[payments.length-1];
   if(!payment){toast('Payment record not found.',true);return;}
   const totalPaid=payments.reduce((s,p)=>s+(Number(p.amount)||0),0);
-  const subtotal=Number(inv.subtotal??((Number(inv.amount)||0)-(Number(inv.vat_amount)||0)))||0;
-  const vat=Number(inv.vat_amount||0)||0;
+  const vat=Math.max(0,Number(inv.vat_amount)||0);
+  const subtotal=Number(inv.subtotal??Math.max(0,(Number(inv.amount)||0)-vat))||0;
   const showVat=Boolean(inv.has_vat)||vat>0;
   const vatRate=Number(inv.vat_rate)>0?Number(inv.vat_rate):0.16;
   const invoiceTotal=Number(inv.amount||(subtotal+vat))||(subtotal+vat);
@@ -30421,8 +30422,9 @@ async function downloadInvoiceDocx(invId,e){
   const sub=Number(inv.subtotal??derivedSubtotal)||0;
   const storedVatRate=Number(inv.vat_rate)||0;
   const vatRate=storedVatRate>0?storedVatRate:0.16;
-  const vat=Number(inv.vat_amount??(((Boolean(inv.has_vat)||Number(inv.vat_amount)>0)&&Number(inv.amount)>sub)?Number(inv.amount)-sub:0))||0;
-  const showVat=Boolean(inv.has_vat)||vat>0;
+  const hasVat=Boolean(inv.has_vat)||Number(inv.vat_amount)>0;
+  const vat=Math.max(0, Number(inv.vat_amount)>0?Number(inv.vat_amount):(hasVat?sub*vatRate:0));
+  const showVat=hasVat;
   const total=Number(inv.amount||inv.total_amount||(sub+vat))||(sub+vat);
   const fmtMny=n=>'KES '+Number(n).toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});
   const fmtDt=d=>d?new Date(d).toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'}):'—';
