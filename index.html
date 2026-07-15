@@ -3872,6 +3872,7 @@ setTimeout(function() {
           <option value="weekly">Weekly</option>
           <option value="monthly">Monthly</option>
           <option value="yearly">Yearly</option>
+          <option value="monthly_nth_weekday">Monthly (by weekday)</option>
         </select>
       </div>
       <div id="ev-repeat-options" style="display:none">
@@ -3879,6 +3880,7 @@ setTimeout(function() {
           <div class="form-row"><label>Repeat Until</label><input type="date" id="ev-repeat-until"/></div>
           <div class="form-row"><label>Occurrences</label><input type="number" id="ev-repeat-count" min="2" max="52" value="4"/></div>
         </div>
+        <div id="ev-nth-weekday-hint" style="display:none;font-size:11px;color:var(--navy);background:#F7F4EC;border-radius:4px;padding:6px 8px;margin:-2px 0 10px;font-weight:500"></div>
         <div style="font-size:10px;color:var(--txt3);line-height:1.5;margin:-2px 0 12px">The CMS will create separate event entries for each occurrence. If both fields are set, it stops at whichever comes first.</div>
       </div>
       <div class="form-row">
@@ -13173,7 +13175,6 @@ function calcInvTotals(){
     const qEl=r.querySelector('.inv-lq'), pEl=r.querySelector('.inv-lp');
     sub+=(parseFloat(qEl&&qEl.value)||0)*(parseFloat(pEl&&pEl.value)||0);
   });
-  sub=Math.max(0,sub);
   const hasVAT = document.getElementById('inv-has-vat')?.checked ?? true;
   const vat = hasVAT ? sub * 0.16 : 0;
   const total = sub + vat;
@@ -13631,6 +13632,45 @@ function toggleEventRecurrence(){
   const repeat=document.getElementById('ev-repeat')?.value||'none';
   const wrap=document.getElementById('ev-repeat-options');
   if(wrap)wrap.style.display=repeat==='none'?'none':'block';
+  updateNthWeekdayHint();
+}
+const WEEKDAY_NAMES_FULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const ORDINAL_NAMES_MAP={1:'1st',2:'2nd',3:'3rd',4:'4th','-1':'last'};
+function ordinalWeekdayOfDate(dateStr){
+  const d=parseDateLocal(dateStr);
+  const day=d.getDate();
+  const weekday=d.getDay();
+  const daysInMonth=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  const ordinal=(day+7>daysInMonth)?-1:Math.ceil(day/7);
+  return{ordinal,weekday};
+}
+function ordinalWeekdayLabel(dateStr){
+  if(!dateStr)return'';
+  const{ordinal,weekday}=ordinalWeekdayOfDate(dateStr);
+  return`${ORDINAL_NAMES_MAP[ordinal]||ordinal+'th'} ${WEEKDAY_NAMES_FULL[weekday]}`;
+}
+function nthWeekdayOfMonth(year,month,ordinal,weekday){
+  if(ordinal===-1){
+    const last=new Date(year,month+1,0);
+    const diff=(last.getDay()-weekday+7)%7;
+    last.setDate(last.getDate()-diff);
+    return last;
+  }
+  const first=new Date(year,month,1);
+  const diff=(weekday-first.getDay()+7)%7;
+  const day=1+diff+(ordinal-1)*7;
+  const d=new Date(year,month,day);
+  return d.getMonth()===month?d:null;
+}
+function updateNthWeekdayHint(){
+  const repeat=document.getElementById('ev-repeat')?.value||'none';
+  const hint=document.getElementById('ev-nth-weekday-hint');
+  if(!hint)return;
+  if(repeat!=='monthly_nth_weekday'){hint.style.display='none';return;}
+  const dateVal=document.getElementById('ev-date')?.value;
+  if(!dateVal){hint.style.display='none';return;}
+  hint.style.display='block';
+  hint.textContent=`Will repeat on the ${ordinalWeekdayLabel(dateVal)} of every month, based on the start date above.`;
 }
 function openEventModalForDate(dateStr){
   openModal('event');
@@ -13663,6 +13703,20 @@ function buildEventOccurrenceDates(startDateStr,repeat,count,untilStr){
   if(!repeat||repeat==='none')return dates;
   const maxCount=Math.max(2,Math.min(Number(count)||4,52));
   const until=untilStr?parseDateLocal(untilStr):null;
+  if(repeat==='monthly_nth_weekday'){
+    const start=parseDateLocal(startDateStr);
+    const{ordinal,weekday}=ordinalWeekdayOfDate(startDateStr);
+    let y=start.getFullYear(),m=start.getMonth(),guard=0;
+    while(dates.length<maxCount&&guard<240){
+      guard++;
+      m+=1;if(m>11){m=0;y+=1;}
+      const occ=nthWeekdayOfMonth(y,m,ordinal,weekday);
+      if(!occ)continue;
+      if(until&&occ>until)break;
+      dates.push(formatDateLocal(occ));
+    }
+    return dates;
+  }
   let cur=parseDateLocal(startDateStr);
   while(dates.length<maxCount){
     cur=nextRecurringDate(cur,repeat);
@@ -13672,10 +13726,13 @@ function buildEventOccurrenceDates(startDateStr,repeat,count,untilStr){
   }
   return dates;
 }
-function recurrenceLabel(repeat,count,untilStr){
+function friendlyRepeatName(repeat,startDateStr){
+  const names={daily:'Daily',weekly:'Weekly',monthly:'Monthly',yearly:'Yearly',monthly_nth_weekday:startDateStr?`Monthly (${ordinalWeekdayLabel(startDateStr)})`:'Monthly (by weekday)'};
+  return names[repeat]||repeat;
+}
+function recurrenceLabel(repeat,count,untilStr,startDateStr){
   if(!repeat||repeat==='none')return '';
-  const names={daily:'Daily',weekly:'Weekly',monthly:'Monthly',yearly:'Yearly'};
-  return `[Recurring event: ${names[repeat]||repeat}${untilStr?' until '+untilStr:''}${count?' · max '+count+' occurrences':''}]`;
+  return `[Recurring event: ${friendlyRepeatName(repeat,startDateStr)}${untilStr?' until '+untilStr:''}${count?' · max '+count+' occurrences':''}]`;
 }
 function recurrenceMetaMarker(repeat,count,untilStr){
   if(!repeat||repeat==='none')return '';
@@ -14018,7 +14075,7 @@ async function saveInvoice(){
     if(desc||price)lineItems.push({description:desc,qty,unit_price:price,subtotal:qty*price});
   });
   if(!lineItems.length){toast('Please add at least one line item.',true);return;}
-  const sub=Math.max(0,lineItems.reduce((s,l)=>s+l.subtotal,0));
+  const sub=lineItems.reduce((s,l)=>s+l.subtotal,0);
   const hasVAT = document.getElementById('inv-has-vat')?.checked ?? true;
   const vat = hasVAT ? sub * 0.16 : 0;
   const total=sub+vat;
@@ -14063,7 +14120,7 @@ async function saveEvent(){
     ?Math.round((parseDateLocal(endDate)-parseDateLocal(date))/86400000)
     :0;
   const baseNotes=cleanEventNotes(document.getElementById('ev-notes').value);
-  const recNote=recurrenceLabel(repeat,repeatCount,repeatUntil);
+  const recNote=recurrenceLabel(repeat,repeatCount,repeatUntil,date);
   const recMeta=recurrenceMetaMarker(repeat,repeatCount,repeatUntil);
   const endTime=document.getElementById('ev-end-time')?.value||'';
   const endTimeMeta=eventEndTimeMetaMarker(endTime);
@@ -20114,7 +20171,7 @@ function openEventReadOnly(eventId, occurrenceDate=''){
           <div style="font-size:13px;color:var(--txt)">${matter?esc(matter.title):'—'}<\/div>
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600">Location<\/div>
           <div style="font-size:13px;color:var(--txt)">${esc(ev.location||'—')}<\/div>
-          ${rec?`<div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600">Repeats<\/div><div style="font-size:13px;color:var(--txt)">${esc((rec.repeat||'').charAt(0).toUpperCase()+(rec.repeat||'').slice(1))}${rec.until?' until '+esc(rec.until):''}${rec.count?' · '+esc(rec.count)+' occurrences':''}<\/div>`:''}
+          ${rec?`<div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600">Repeats<\/div><div style="font-size:13px;color:var(--txt)">${esc(friendlyRepeatName(rec.repeat,ev.event_date))}${rec.until?' until '+esc(rec.until):''}${rec.count?' · '+esc(rec.count)+' occurrences':''}<\/div>`:''}
           ${addedBy?`<div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);font-weight:600">Added By<\/div><div style="font-size:13px;color:var(--txt)">${esc(addedBy)}<\/div>`:''}
         <\/div>
         ${notes?`<div style="background:var(--cream);border:1px solid var(--brd);border-radius:9px;padding:13px 14px">
@@ -22944,6 +23001,7 @@ function onEvDateChange(){
   // Ensure end date >= start date
   if(endEl&&startVal){if(endEl.value&&endEl.value<startVal)endEl.value=startVal;endEl.min=startVal;}
   checkDateAvailability(startVal);
+  updateNthWeekdayHint();
 }
 
 function onEvEndDateChange(){
@@ -30232,8 +30290,8 @@ async function downloadReceiptPdf(invId,paymentId=null,e){
   const payment=paymentId?payments.find(p=>p.id===paymentId):payments[payments.length-1];
   if(!payment){toast('Payment record not found.',true);return;}
   const totalPaid=payments.reduce((s,p)=>s+(Number(p.amount)||0),0);
-  const vat=Math.max(0,Number(inv.vat_amount)||0);
-  const subtotal=Number(inv.subtotal??Math.max(0,(Number(inv.amount)||0)-vat))||0;
+  const subtotal=Number(inv.subtotal??((Number(inv.amount)||0)-(Number(inv.vat_amount)||0)))||0;
+  const vat=Number(inv.vat_amount||0)||0;
   const showVat=Boolean(inv.has_vat)||vat>0;
   const vatRate=Number(inv.vat_rate)>0?Number(inv.vat_rate):0.16;
   const invoiceTotal=Number(inv.amount||(subtotal+vat))||(subtotal+vat);
@@ -30422,9 +30480,8 @@ async function downloadInvoiceDocx(invId,e){
   const sub=Number(inv.subtotal??derivedSubtotal)||0;
   const storedVatRate=Number(inv.vat_rate)||0;
   const vatRate=storedVatRate>0?storedVatRate:0.16;
-  const hasVat=Boolean(inv.has_vat)||Number(inv.vat_amount)>0;
-  const vat=Math.max(0, Number(inv.vat_amount)>0?Number(inv.vat_amount):(hasVat?sub*vatRate:0));
-  const showVat=hasVat;
+  const vat=Number(inv.vat_amount??(((Boolean(inv.has_vat)||Number(inv.vat_amount)>0)&&Number(inv.amount)>sub)?Number(inv.amount)-sub:0))||0;
+  const showVat=Boolean(inv.has_vat)||vat>0;
   const total=Number(inv.amount||inv.total_amount||(sub+vat))||(sub+vat);
   const fmtMny=n=>'KES '+Number(n).toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});
   const fmtDt=d=>d?new Date(d).toLocaleDateString('en-KE',{day:'2-digit',month:'long',year:'numeric'}):'—';
