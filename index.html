@@ -3921,8 +3921,45 @@ setTimeout(function() {
     <div class="modal-body">
       <div class="form-row"><label>Task Title</label><input id="task-title" placeholder="e.g. Draft submissions, call client, file response"/></div>
       <div class="form-two">
-        <div class="form-row"><label>Due Date</label><input type="date" id="task-due-date"/></div>
+        <div class="form-row"><label>Start Date <span style="font-size:10px;color:var(--txt3);font-weight:400">(optional)</span></label><input type="date" id="task-start-date" onchange="onTaskStartDateChange()"/></div>
+        <div class="form-row"><label>Due Date</label><input type="date" id="task-due-date" onchange="onTaskDueDateChange()"/></div>
+      </div>
+      <div class="form-two">
         <div class="form-row"><label>Due Time <span style="font-size:10px;color:var(--txt3);font-weight:400">(optional)</span></label><input type="time" id="task-due-time"/></div>
+        <div class="form-row">
+          <label>Repeat</label>
+          <select id="task-repeat" onchange="toggleTaskRecurrence()">
+            <option value="none">Does not repeat</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+            <option value="monthly_nth_weekday">Monthly (by weekday)</option>
+          </select>
+        </div>
+      </div>
+      <div id="task-repeat-options" style="display:none">
+        <div class="form-row">
+          <label>Ends</label>
+          <div style="display:flex;gap:16px;align-items:center;margin-top:5px">
+            <label style="display:flex;align-items:center;gap:5px;font-weight:400;font-size:12px;cursor:pointer">
+              <input type="radio" name="task-repeat-end-mode" value="count" id="task-repeat-end-count" checked onchange="onTaskRepeatEndModeChange()"/> After a number of occurrences
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-weight:400;font-size:12px;cursor:pointer">
+              <input type="radio" name="task-repeat-end-mode" value="until" id="task-repeat-end-until" onchange="onTaskRepeatEndModeChange()"/> On a specific date
+            </label>
+          </div>
+        </div>
+        <div class="form-row" id="task-repeat-count-row">
+          <label>Number of occurrences</label>
+          <input type="number" id="task-repeat-count" min="2" max="52" value="4"/>
+        </div>
+        <div class="form-row" id="task-repeat-until-row" style="display:none">
+          <label>Repeat until this date</label>
+          <input type="date" id="task-repeat-until"/>
+        </div>
+        <div id="task-nth-weekday-hint" style="display:none;font-size:11px;color:var(--navy);background:#F7F4EC;border-radius:4px;padding:6px 8px;margin:-2px 0 10px;font-weight:500"></div>
+        <div style="font-size:10px;color:var(--txt3);line-height:1.5;margin:-2px 0 12px">The CMS creates a separate task entry for each occurrence, up to 52. If a start date is set, each occurrence keeps the same number of days between start and due date.</div>
       </div>
       <div class="form-three">
         <div class="form-row"><label>Status</label><select id="task-status"><option value="todo">To Do</option><option value="in_progress">In Progress</option><option value="waiting">Waiting</option><option value="done">Done</option><option value="cancelled">Cancelled</option></select></div>
@@ -13239,6 +13276,7 @@ function normalizeTaskRow(task){
   return {
     ...task,
     due_date:dateOnly(task.due_date),
+    start_date:task.start_date?dateOnly(task.start_date):'',
     status:task.status||'todo',
     priority:task.priority||'normal',
     publish_update:task.publish_update===true,
@@ -13329,17 +13367,84 @@ function toggleTaskUpdateFields(){
     if(detail&&!detail.value.trim())detail.value=notes||title;
   }
 }
-function calendarTasksForRange(start,end,{includeClosed=false}={}){
-  return (tasks||[]).map(normalizeTaskRow).filter(t=>{
-    if(!t.due_date)return false;
-    if(!includeClosed&&!taskIsOpen(t))return false;
-    const d=parseDateLocal(t.due_date);
-    return d>=start&&d<=end;
-  }).sort((a,b)=>{
+function taskNaturalKey(t){
+  return [
+    String(t.title||'').trim().toLowerCase(),
+    String(t.due_time||''),
+    String(t.matter_id||''),
+    String(t.client_id||'')
+  ].join('|');
+}
+function taskRecurrenceGroupKey(t,rec){
+  return[taskNaturalKey(t),String(rec?.repeat||'')].join('|');
+}
+function taskSpanDates(t){
+  const due=dateOnly(t.due_date);
+  const startD=dateOnly(t.start_date)||due;
+  if(!due&&!startD)return null;
+  const s=startD||due,e=due||startD;
+  return e<s?[e,s]:[s,e];
+}
+function expandedCalendarTasksForRange(start,end,{includeClosed=false}={}){
+  const actual=(tasks||[]).map(normalizeTaskRow).filter(t=>includeClosed||taskIsOpen(t));
+  const byKey=new Map();
+  const addDayEntries=(source,spanStartStr,spanEndStr)=>{
+    let cursor=parseDateLocal(spanStartStr);
+    const last=parseDateLocal(spanEndStr);
+    let guard=0;
+    while(cursor<=last&&guard<366){
+      guard++;
+      const dayStr=formatDateLocal(cursor);
+      if(cursor>=start&&cursor<=end){
+        const key=taskNaturalKey(source)+'|'+dayStr;
+        if(!byKey.has(key)){
+          byKey.set(key,{
+            ...source,
+            due_date:dayStr,
+            _task_span_start:spanStartStr,
+            _task_span_end:spanEndStr,
+            _task_is_multiday:spanStartStr!==spanEndStr,
+            _task_virtual_occurrence:spanStartStr!==dateOnly(source.start_date||source.due_date)
+          });
+        }
+      }
+      cursor=addCalendarDays(cursor,1);
+    }
+  };
+  actual.forEach(t=>{
+    const span=taskSpanDates(t);
+    if(!span)return;
+    addDayEntries(t,span[0],span[1]);
+  });
+  const sourceByGroup=new Map();
+  actual.forEach(t=>{
+    const rec=getEventRecurrenceMeta(t);
+    if(!rec?.repeat||rec.repeat==='none')return;
+    const span=taskSpanDates(t);
+    if(!span)return;
+    const key=taskRecurrenceGroupKey(t,rec);
+    const existing=sourceByGroup.get(key);
+    if(!existing||dateOnly(t.due_date)<dateOnly(existing.due_date))sourceByGroup.set(key,t);
+  });
+  sourceByGroup.forEach(source=>{
+    const rec=getEventRecurrenceMeta(source);
+    const span=taskSpanDates(source);
+    if(!rec?.repeat||!span)return;
+    const spanLenDays=Math.round((parseDateLocal(span[1])-parseDateLocal(span[0]))/86400000);
+    buildEventOccurrenceDates(span[0],rec.repeat,rec.count||4,rec.until||'').forEach(occStartStr=>{
+      const occStart=parseDateLocal(occStartStr);
+      const occEnd=addCalendarDays(occStart,spanLenDays);
+      addDayEntries(source,occStartStr,formatDateLocal(occEnd));
+    });
+  });
+  return[...byKey.values()].sort((a,b)=>{
     const da=parseDateLocal(a.due_date)-parseDateLocal(b.due_date);
     if(da!==0)return da;
     return String(a.due_time||'').localeCompare(String(b.due_time||''));
   });
+}
+function calendarTasksForRange(start,end,{includeClosed=false}={}){
+  return expandedCalendarTasksForRange(start,end,{includeClosed});
 }
 function calendarTasksForDay(date,{includeClosed=false}={}){
   const ymd=formatDateLocal(date);
@@ -13359,12 +13464,14 @@ function taskCalendarRow(task,compact=false){
   const m=matters.find(x=>x.id===t.matter_id);
   const c=clients.find(x=>x.id===t.client_id)||clients.find(x=>x.id===m?.client_id);
   const shareBadge=taskIsPublished(t)?`<span style="font-size:9px;background:#EAF3DE;color:#2D6A4F;padding:1px 6px;border-radius:6px;font-weight:700;margin-left:4px">Client update<\/span>`:'';
+  const recurBadge=(t._task_virtual_occurrence||getEventRecurrenceMeta(t))?`<span style="font-size:9px;background:#F7F4ED;color:#854F0B;padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px">Recurring<\/span>`:'';
+  const spanBadge=t._task_is_multiday?`<span style="font-size:9px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px">${fmtDate(t._task_span_start)} – ${fmtDate(t._task_span_end)}<\/span>`:'';
   return`<div class="upcoming-item" style="${compact?'padding:9px 14px;':''}background:${tone.bg};border-left:3px solid ${tone.fg};cursor:pointer" onclick="openTaskReadOnly('${t.id}')">
     <div class="upcoming-date"><div class="upcoming-day">${hasDue?d.getDate():'—'}<\/div><div class="upcoming-month">${hasDue?monthNameShort(d):'No due'}<\/div><\/div>
     <div class="upcoming-body" style="flex:1;min-width:0">
-      <div class="upcoming-title">☑️ ${esc(t.title)} <span style="font-size:9px;background:#fff;color:${tone.fg};padding:1px 6px;border-radius:6px;font-weight:700;margin-left:4px">${taskStatusLabel(t.status)}<\/span>${shareBadge}<\/div>
+      <div class="upcoming-title">☑️ ${esc(t.title)} <span style="font-size:9px;background:#fff;color:${tone.fg};padding:1px 6px;border-radius:6px;font-weight:700;margin-left:4px">${taskStatusLabel(t.status)}<\/span>${shareBadge}${recurBadge}<\/div>
       <div class="upcoming-sub">${t.due_time?esc(t.due_time)+' · ':''}${m?esc(m.title):c?esc(c.name):'General task'}${t.assigned_to_name?' · '+esc(t.assigned_to_name):''}<\/div>
-      <span class="upcoming-tag" style="background:#fff;color:${tone.fg}">${taskPriorityLabel(t.priority)} Task<\/span>
+      <span class="upcoming-tag" style="background:#fff;color:${tone.fg}">${taskPriorityLabel(t.priority)} Task<\/span>${spanBadge}
     <\/div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">${taskStatusSelectHtml(t)}<button class="op-del" title="Delete task" onclick="deleteTask('${t.id}','${esc(t.title)}',event)">×<\/button><\/div>
   <\/div>`;
@@ -13377,8 +13484,14 @@ function popTaskModal(){
   const btn=document.getElementById('save-task-btn');
   if(btn){btn.textContent='Save Task';btn.onclick=saveTask;}
   const today=formatDateLocal(new Date());
-  const defaults={'task-title':'','task-due-date':today,'task-due-time':'','task-status':'todo','task-priority':'normal','task-notes':'','task-update-type':'general','task-update-details':''};
+  const defaults={'task-title':'','task-start-date':'','task-due-date':today,'task-due-time':'','task-status':'todo','task-priority':'normal','task-notes':'','task-update-type':'general','task-update-details':'','task-repeat-count':'4','task-repeat-until':''};
   Object.entries(defaults).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.value=value;});
+  const taskRepeatSel=document.getElementById('task-repeat');
+  if(taskRepeatSel)taskRepeatSel.value='none';
+  const taskEndCountRadio=document.getElementById('task-repeat-end-count');
+  if(taskEndCountRadio)taskEndCountRadio.checked=true;
+  toggleTaskRecurrence();
+  onTaskRepeatEndModeChange();
   const publishEl=document.getElementById('task-publish-update');
   if(publishEl)publishEl.checked=false;
   toggleTaskUpdateFields();
@@ -13392,6 +13505,51 @@ function popTaskModal(){
     const merged=profiles.length?profiles:(currentProfile?[currentProfile]:[]);
     assigneeSel.innerHTML='<option value="">Unassigned<\/option>'+merged.map(p=>`<option value="${p.id}">${esc(p.full_name||p.email||'Staff')}<\/option>`).join('');
   }
+}
+function toggleTaskRecurrence(){
+  const repeat=document.getElementById('task-repeat')?.value||'none';
+  const wrap=document.getElementById('task-repeat-options');
+  if(wrap)wrap.style.display=repeat==='none'?'none':'block';
+  updateTaskNthWeekdayHint();
+}
+function onTaskRepeatEndModeChange(){
+  const mode=document.querySelector('input[name="task-repeat-end-mode"]:checked')?.value||'count';
+  const countRow=document.getElementById('task-repeat-count-row');
+  const untilRow=document.getElementById('task-repeat-until-row');
+  const countInput=document.getElementById('task-repeat-count');
+  const untilInput=document.getElementById('task-repeat-until');
+  if(mode==='until'){
+    if(countRow)countRow.style.display='none';
+    if(untilRow)untilRow.style.display='block';
+    if(countInput)countInput.value='52';
+  }else{
+    if(countRow)countRow.style.display='block';
+    if(untilRow)untilRow.style.display='none';
+    if(untilInput)untilInput.value='';
+    if(countInput&&(!countInput.value||Number(countInput.value)<2))countInput.value='4';
+  }
+}
+function taskRecurrenceAnchorDate(){
+  return document.getElementById('task-start-date')?.value||document.getElementById('task-due-date')?.value||'';
+}
+function updateTaskNthWeekdayHint(){
+  const repeat=document.getElementById('task-repeat')?.value||'none';
+  const hint=document.getElementById('task-nth-weekday-hint');
+  if(!hint)return;
+  if(repeat!=='monthly_nth_weekday'){hint.style.display='none';return;}
+  const dateVal=taskRecurrenceAnchorDate();
+  if(!dateVal){hint.style.display='none';return;}
+  hint.style.display='block';
+  hint.textContent=`Will repeat on the ${ordinalWeekdayLabel(dateVal)} of every month, based on the start/due date above.`;
+}
+function onTaskStartDateChange(){
+  const startVal=document.getElementById('task-start-date')?.value;
+  const dueEl=document.getElementById('task-due-date');
+  if(dueEl&&startVal){if(dueEl.value&&dueEl.value<startVal)dueEl.value=startVal;dueEl.min=startVal;}
+  updateTaskNthWeekdayHint();
+}
+function onTaskDueDateChange(){
+  updateTaskNthWeekdayHint();
 }
 function syncTaskClientFromMatter(){
   const mid=document.getElementById('task-matter')?.value||'';
@@ -13473,6 +13631,7 @@ function openTaskDetail(taskId){
     if(btn){btn.textContent='Update Task';btn.onclick=saveTask;}
     const values={
       'task-title':task.title||'',
+      'task-start-date':task.start_date||'',
       'task-due-date':task.due_date||'',
       'task-due-time':task.due_time||'',
       'task-status':task.status||'todo',
@@ -13480,7 +13639,7 @@ function openTaskDetail(taskId){
       'task-assigned-to':task.assigned_to||'',
       'task-matter':task.matter_id||'',
       'task-client':task.client_id||'',
-      'task-notes':task.notes||'',
+      'task-notes':cleanEventNotes(task.notes||''),
       'task-update-type':task.client_update_type||'general',
       'task-update-details':task.client_update_details||''
     };
@@ -13489,6 +13648,21 @@ function openTaskDetail(taskId){
     if(publishEl)publishEl.checked=taskIsPublished(task);
     toggleTaskUpdateFields();
     if(!values['task-client'])syncTaskClientFromMatter();
+    const taskRec=getEventRecurrenceMeta(task);
+    const taskRepeatSel=document.getElementById('task-repeat');
+    const taskRepeatCount=document.getElementById('task-repeat-count');
+    const taskRepeatUntil=document.getElementById('task-repeat-until');
+    if(taskRepeatSel)taskRepeatSel.value=taskRec?.repeat||'none';
+    if(taskRepeatCount)taskRepeatCount.value=taskRec?.count||'4';
+    if(taskRepeatUntil)taskRepeatUntil.value=taskRec?.until||'';
+    const taskEndUntilRadio=document.getElementById('task-repeat-end-until');
+    const taskEndCountRadio=document.getElementById('task-repeat-end-count');
+    if(taskRec?.until){if(taskEndUntilRadio)taskEndUntilRadio.checked=true;}
+    else{if(taskEndCountRadio)taskEndCountRadio.checked=true;}
+    toggleTaskRecurrence();
+    onTaskRepeatEndModeChange();
+    if(taskRepeatUntil)taskRepeatUntil.value=taskRec?.until||'';
+    if(taskRepeatCount&&!taskRec?.until)taskRepeatCount.value=taskRec?.count||'4';
   },50);
 }
 async function writeTaskMatterUpdate(task,taskPayload){
@@ -13535,8 +13709,10 @@ async function writeTaskMatterUpdate(task,taskPayload){
 }
 async function saveTask(){
   const title=document.getElementById('task-title').value.trim();
+  const startDate=document.getElementById('task-start-date')?.value||'';
   const dueDate=document.getElementById('task-due-date').value;
   if(!title){toast('Please enter a task title.',true);return;}
+  if(startDate&&dueDate&&startDate>dueDate){toast('Start date cannot be after due date.',true);return;}
   const editingId=activeTaskEditId;
   setLoading('save-task-btn',true,editingId?'Update Task':'Save Task');
   const assignedTo=document.getElementById('task-assigned-to')?.value||null;
@@ -13544,9 +13720,19 @@ async function saveTask(){
   const publishUpdate=!!document.getElementById('task-publish-update')?.checked;
   const publishDetails=(document.getElementById('task-update-details')?.value||'').trim();
   const publishType=document.getElementById('task-update-type')?.value||'general';
-  const payload={
+  const repeat=editingId?'none':(document.getElementById('task-repeat')?.value||'none');
+  const repeatCount=document.getElementById('task-repeat-count')?.value||'';
+  const repeatUntil=document.getElementById('task-repeat-until')?.value||'';
+  const anchorDate=startDate||dueDate;
+  const spanDays=(startDate&&dueDate&&dueDate>startDate)
+    ?Math.round((parseDateLocal(dueDate)-parseDateLocal(startDate))/86400000)
+    :0;
+  const occurrenceAnchors=(repeat!=='none'&&anchorDate)?buildEventOccurrenceDates(anchorDate,repeat,repeatCount,repeatUntil):[anchorDate];
+  const baseNotes=cleanEventNotes(document.getElementById('task-notes').value);
+  const recNote=recurrenceLabel(repeat,repeatCount,repeatUntil,anchorDate);
+  const recMeta=recurrenceMetaMarker(repeat,repeatCount,repeatUntil);
+  const shared={
     title,
-    due_date:dueDate||null,
     due_time:document.getElementById('task-due-time').value||null,
     status:document.getElementById('task-status').value||'todo',
     priority:document.getElementById('task-priority').value||'normal',
@@ -13554,8 +13740,13 @@ async function saveTask(){
     client_id:document.getElementById('task-client').value||null,
     assigned_to:assignedTo,
     assigned_to_name:assignedProfile?.full_name||assignedProfile?.email||null,
-    notes:document.getElementById('task-notes').value.trim()||null,
+    notes:[baseNotes,recNote,recMeta].filter(Boolean).join('\n')||null,
     updated_at:new Date().toISOString()
+  };
+  const payload={
+    ...shared,
+    start_date:startDate||null,
+    due_date:dueDate||null
   };
   if(publishUpdate&&!payload.matter_id){
     setLoading('save-task-btn',false,editingId?'Update Task':'Save Task');
@@ -13579,14 +13770,17 @@ async function saveTask(){
     savedTask=normalizeTaskRow(data?.[0]||{...(tasks.find(t=>t.id===editingId)||{}),...payload,id:editingId});
     activeTaskEditId=null;
   } else {
-    const insertPayload={
-      ...payload,
+    const insertPayloads=occurrenceAnchors.map(occAnchor=>({
+      ...shared,
+      start_date:startDate?occAnchor:null,
+      due_date:spanDays>0?formatDateLocal(addCalendarDays(parseDateLocal(occAnchor),spanDays)):occAnchor,
       created_by:currentUser?.id||null,
       created_by_name:currentProfile?.full_name||currentUser?.email||null
-    };
-    const{data,error}=await sb.from('tasks').insert([insertPayload]).select();
+    }));
+    const{data,error}=await sb.from('tasks').insert(insertPayloads).select();
     if(error){setLoading('save-task-btn',false,'Save Task');toast('Error: '+error.message,true);return;}
     savedTask=normalizeTaskRow(data[0]);
+    if(data.length>1)tasks=[...tasks,...data.slice(1).map(normalizeTaskRow)];
   }
   let finalTask=normalizeTaskRow({...savedTask,...publishPayload});
   try{
@@ -13607,7 +13801,8 @@ async function saveTask(){
     ?tasks.map(t=>t.id===finalTask.id?finalTask:t)
     :[finalTask,...tasks];
   tasks=sortTasksForWorklist(tasks);
-  closeModal();toast(editingId?'Task updated.':'Task saved.');
+  const savedCount=occurrenceAnchors.length;
+  closeModal();toast(editingId?'Task updated.':(savedCount>1?`${savedCount} recurring tasks saved.`:'Task saved.'));
   renderCalendar();
   renderDashboard();
   if(activeClientId)renderProfileTab();
