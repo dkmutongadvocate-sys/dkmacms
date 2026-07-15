@@ -3876,12 +3876,27 @@ setTimeout(function() {
         </select>
       </div>
       <div id="ev-repeat-options" style="display:none">
-        <div class="form-two">
-          <div class="form-row"><label>Repeat Until</label><input type="date" id="ev-repeat-until"/></div>
-          <div class="form-row"><label>Occurrences</label><input type="number" id="ev-repeat-count" min="2" max="52" value="4"/></div>
+        <div class="form-row">
+          <label>Ends</label>
+          <div style="display:flex;gap:16px;align-items:center;margin-top:5px">
+            <label style="display:flex;align-items:center;gap:5px;font-weight:400;font-size:12px;cursor:pointer">
+              <input type="radio" name="ev-repeat-end-mode" value="count" id="ev-repeat-end-count" checked onchange="onRepeatEndModeChange()"/> After a number of occurrences
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-weight:400;font-size:12px;cursor:pointer">
+              <input type="radio" name="ev-repeat-end-mode" value="until" id="ev-repeat-end-until" onchange="onRepeatEndModeChange()"/> On a specific date
+            </label>
+          </div>
+        </div>
+        <div class="form-row" id="ev-repeat-count-row">
+          <label>Number of occurrences</label>
+          <input type="number" id="ev-repeat-count" min="2" max="52" value="4"/>
+        </div>
+        <div class="form-row" id="ev-repeat-until-row" style="display:none">
+          <label>Repeat until this date</label>
+          <input type="date" id="ev-repeat-until"/>
         </div>
         <div id="ev-nth-weekday-hint" style="display:none;font-size:11px;color:var(--navy);background:#F7F4EC;border-radius:4px;padding:6px 8px;margin:-2px 0 10px;font-weight:500"></div>
-        <div style="font-size:10px;color:var(--txt3);line-height:1.5;margin:-2px 0 12px">The CMS will create separate event entries for each occurrence. If both fields are set, it stops at whichever comes first.</div>
+        <div style="font-size:10px;color:var(--txt3);line-height:1.5;margin:-2px 0 12px">The CMS creates a separate event entry for each occurrence, up to 52.</div>
       </div>
       <div class="form-row">
         <label>Video Meeting Link <span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:3px;font-weight:500;margin-left:4px">Visible to Client</span></label>
@@ -13214,7 +13229,10 @@ function popEventModal(){
   if(count)count.value='4';
   const until=document.getElementById('ev-repeat-until');
   if(until)until.value='';
+  const endCountRadio=document.getElementById('ev-repeat-end-count');
+  if(endCountRadio)endCountRadio.checked=true;
   toggleEventRecurrence();
+  onRepeatEndModeChange();
 }
 function normalizeTaskRow(task){
   if(!task)return task;
@@ -13633,6 +13651,23 @@ function toggleEventRecurrence(){
   const wrap=document.getElementById('ev-repeat-options');
   if(wrap)wrap.style.display=repeat==='none'?'none':'block';
   updateNthWeekdayHint();
+}
+function onRepeatEndModeChange(){
+  const mode=document.querySelector('input[name="ev-repeat-end-mode"]:checked')?.value||'count';
+  const countRow=document.getElementById('ev-repeat-count-row');
+  const untilRow=document.getElementById('ev-repeat-until-row');
+  const countInput=document.getElementById('ev-repeat-count');
+  const untilInput=document.getElementById('ev-repeat-until');
+  if(mode==='until'){
+    if(countRow)countRow.style.display='none';
+    if(untilRow)untilRow.style.display='block';
+    if(countInput)countInput.value='52';
+  }else{
+    if(countRow)countRow.style.display='block';
+    if(untilRow)untilRow.style.display='none';
+    if(untilInput)untilInput.value='';
+    if(countInput&&(!countInput.value||Number(countInput.value)<2))countInput.value='4';
+  }
 }
 const WEEKDAY_NAMES_FULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const ORDINAL_NAMES_MAP={1:'1st',2:'2nd',3:'3rd',4:'4th','-1':'last'};
@@ -20220,7 +20255,14 @@ function openEventDetail(eventId){
     if(repeat)repeat.value=rec?.repeat||'none';
     if(repeatCount)repeatCount.value=rec?.count||'4';
     if(repeatUntil)repeatUntil.value=rec?.until||'';
+    const endUntilRadio=document.getElementById('ev-repeat-end-until');
+    const endCountRadio2=document.getElementById('ev-repeat-end-count');
+    if(rec?.until){if(endUntilRadio)endUntilRadio.checked=true;}
+    else{if(endCountRadio2)endCountRadio2.checked=true;}
     toggleEventRecurrence();
+    onRepeatEndModeChange();
+    if(repeatUntil)repeatUntil.value=rec?.until||'';
+    if(repeatCount&&!rec?.until)repeatCount.value=rec?.count||'4';
     if(ml){ml.value=ev.meeting_link||'';if(typeof updateMeetingLinkIcon==='function')updateMeetingLinkIcon(ml.value);}
     const shareEl=document.getElementById('ev-share-client');
     if(shareEl)shareEl.checked=ev.share_with_client===true;
