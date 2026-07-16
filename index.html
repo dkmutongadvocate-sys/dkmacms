@@ -19765,10 +19765,13 @@ function buildTaskIcs(task){
   const dueDate=t.due_date;
   if(!dueDate){toast('This task has no due date, so it cannot be added to a calendar.',true);return null;}
   const dueTime=String(t.due_time||'').trim();
+  const startDate=(t.start_date&&t.start_date<=dueDate)?t.start_date:'';
+  const isMultiDay=!!(startDate&&startDate!==dueDate);
   const matter=matters.find(m=>m.id===t.matter_id);
   const client=clients.find(c=>c.id===t.client_id)||clients.find(c=>c.id===matter?.client_id);
   const assignee=t.assigned_to_name||(window._allProfiles||[]).find(p=>p.id===t.assigned_to)?.full_name||'';
   const descParts=[
+    isMultiDay?('Starts: '+fmtDate(startDate)+'  ·  Due: '+fmtDate(dueDate)+(dueTime?' at '+dueTime:'')):'',
     cleanEventNotes(t.notes||''),
     matter?('Matter: '+matter.title):'',
     client?('Client: '+client.name):'',
@@ -19776,13 +19779,17 @@ function buildTaskIcs(task){
     'Priority: '+taskPriorityLabel(t.priority||'normal')
   ].filter(Boolean);
   let dtLines;
-  if(dueTime){
+  if(isMultiDay){
+    // Multi-day task: span as an all-day range from start_date through due_date (inclusive)
+    dtLines=`DTSTART;VALUE=DATE:${icsAllDayStamp(startDate,0)}\r\nDTEND;VALUE=DATE:${icsAllDayStamp(dueDate,1)}`;
+  } else if(dueTime){
     const dtStart=icsUtcStamp(dueDate,dueTime);
     const dtEnd=icsUtcStamp(dueDate,addHalfHour(dueTime));
     dtLines=`DTSTART:${dtStart}\r\nDTEND:${dtEnd}`;
   } else {
     dtLines=`DTSTART;VALUE=DATE:${icsAllDayStamp(dueDate,0)}\r\nDTEND;VALUE=DATE:${icsAllDayStamp(dueDate,1)}`;
   }
+  const alarmTrigger=isMultiDay?'TRIGGER;RELATED=END:-PT30M':'TRIGGER:-PT30M';
   const lines=[
     'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//DKMA Suite//Tasks//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH',
     'BEGIN:VEVENT',
@@ -19791,7 +19798,7 @@ function buildTaskIcs(task){
     dtLines,
     `SUMMARY:${icsEscapeText('Task: '+(t.title||'Untitled Task'))}`,
     descParts.length?`DESCRIPTION:${icsEscapeText(descParts.join('\n\n'))}`:'',
-    'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Reminder','TRIGGER:-PT30M','END:VALARM',
+    'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Reminder',alarmTrigger,'END:VALARM',
     'END:VEVENT','END:VCALENDAR'
   ].filter(Boolean);
   return lines.map(icsFold).join('\r\n');
