@@ -19700,7 +19700,12 @@ function buildEventIcs(ev){
   const startTime=String(ev.event_time||'').trim();
   const endTime=getEventEndTime(ev);
   const matter=matters.find(m=>m.id===ev.matter_id);
-  const descParts=[cleanEventNotes(ev.notes||''),matter?('Matter: '+matter.title):''].filter(Boolean);
+  const meetingLink=normalizeMeetingLink(ev.meeting_link);
+  const descParts=[
+    meetingLink?('Join video meeting: '+meetingLink):'',
+    cleanEventNotes(ev.notes||''),
+    matter?('Matter: '+matter.title):''
+  ].filter(Boolean);
   let dtLines;
   if(startTime){
     const dtStart=icsUtcStamp(startDate,startTime);
@@ -19717,7 +19722,8 @@ function buildEventIcs(ev){
     `DTSTAMP:${stampNow}`,
     dtLines,
     `SUMMARY:${icsEscapeText(ev.title||'Event')}`,
-    ev.location?`LOCATION:${icsEscapeText(ev.location)}`:'',
+    ev.location?`LOCATION:${icsEscapeText(ev.location)}`:(meetingLink?`LOCATION:${icsEscapeText(meetingLink)}`:''),
+    meetingLink?`URL:${meetingLink}`:'',
     descParts.length?`DESCRIPTION:${icsEscapeText(descParts.join('\n\n'))}`:'',
     'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Reminder','TRIGGER:-PT30M','END:VALARM',
     'END:VEVENT','END:VCALENDAR'
