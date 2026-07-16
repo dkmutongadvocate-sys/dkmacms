@@ -4060,7 +4060,7 @@ setTimeout(function() {
       </div>
       <div style="font-size:11px;color:var(--txt3);line-height:1.5">Tasks appear on the calendar by due date, but remain separate from calendar events. Changing a task status updates the calendar immediately.</div>
     </div>
-    <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" id="save-task-btn" onclick="saveTask()">Save Task</button></div>
+    <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-secondary" id="task-add-outlook-btn" style="display:none" onclick="downloadTaskIcs(window._editingTaskId,this)">📅 Add to Outlook</button><button class="btn-primary" id="save-task-btn" onclick="saveTask()">Save Task</button></div>
   </div>
 
   <!-- ALERT MODAL -->
@@ -13670,12 +13670,15 @@ function taskCalendarRow(task,compact=false){
       <div class="upcoming-sub">${t.due_time?esc(t.due_time)+' · ':''}${m?esc(m.title):c?esc(c.name):'General task'}${t.assigned_to_name?' · '+esc(t.assigned_to_name):''}<\/div>
       <span class="upcoming-tag" style="background:#fff;color:${tone.fg}">${taskPriorityLabel(t.priority)} Task<\/span>${spanBadge}
     <\/div>
-    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">${taskStatusSelectHtml(t)}<button class="op-del" title="Delete task" onclick="deleteTask('${t.id}','${esc(t.title)}',event)">×<\/button><\/div>
+    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">${taskStatusSelectHtml(t)}<button class="gcal-add-btn" onclick="event.stopPropagation();downloadTaskIcs('${t.id}',this)" style="display:inline-flex;align-items:center;gap:4px;font-size:9px;padding:2px 8px;border-radius:8px;border:1px solid #D9D4CB;background:#fff;cursor:pointer;color:#0F6CBD;font-family:'DM Sans',sans-serif" title="Add to Outlook Calendar">📅<\/button><button class="op-del" title="Delete task" onclick="deleteTask('${t.id}','${esc(t.title)}',event)">×<\/button><\/div>
   <\/div>`;
 }
 let activeTaskEditId=null;
 function popTaskModal(){
   activeTaskEditId=null;
+  window._editingTaskId=null;
+  const outlookBtn=document.getElementById('task-add-outlook-btn');
+  if(outlookBtn)outlookBtn.style.display='none';
   const title=document.querySelector('#modal-task .modal-title');
   if(title)title.textContent='Add Task';
   const btn=document.getElementById('save-task-btn');
@@ -13810,6 +13813,7 @@ function openTaskReadOnly(taskId){
         <\/div>`:''}
       <\/div>
       <div style="padding:16px 22px;border-top:1px solid var(--brd);display:flex;gap:10px;justify-content:flex-end;background:#fff">
+        <button class="btn-secondary" onclick="downloadTaskIcs('${task.id}',this)">📅 Add to Outlook</button>
         <button class="btn-secondary" onclick="document.getElementById('_task-view-popup')?.remove()">Close<\/button>
         <button class="btn-primary" onclick="document.getElementById('_task-view-popup')?.remove();openTaskDetail('${task.id}')">Edit Task<\/button>
       <\/div>
@@ -13822,6 +13826,9 @@ function openTaskDetail(taskId){
   openModal('task');
   setTimeout(()=>{
     activeTaskEditId=task.id;
+    window._editingTaskId=task.id;
+    const outlookBtn=document.getElementById('task-add-outlook-btn');
+    if(outlookBtn)outlookBtn.style.display='inline-block';
     const title=document.querySelector('#modal-task .modal-title');
     if(title)title.textContent='Edit Task';
     const btn=document.getElementById('save-task-btn');
@@ -19748,6 +19755,68 @@ function downloadEventIcs(eventId,btn){
   setTimeout(()=>URL.revokeObjectURL(url),2000);
   toast('Calendar file downloaded — open it to add this event to Outlook ✓');
 }
+
+// ─── TASKS → OUTLOOK (.ics download) ───────────────────────────────
+function buildTaskIcs(task){
+  const t=normalizeTaskRow(task);
+  const uid=(t.id||(''+Date.now()))+'-task@dkma-suite';
+  const now=new Date();
+  const stampNow=now.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+  const dueDate=t.due_date;
+  if(!dueDate){toast('This task has no due date, so it cannot be added to a calendar.',true);return null;}
+  const dueTime=String(t.due_time||'').trim();
+  const matter=matters.find(m=>m.id===t.matter_id);
+  const client=clients.find(c=>c.id===t.client_id)||clients.find(c=>c.id===matter?.client_id);
+  const assignee=t.assigned_to_name||(window._allProfiles||[]).find(p=>p.id===t.assigned_to)?.full_name||'';
+  const descParts=[
+    cleanEventNotes(t.notes||''),
+    matter?('Matter: '+matter.title):'',
+    client?('Client: '+client.name):'',
+    assignee?('Assigned to: '+assignee):'',
+    'Priority: '+taskPriorityLabel(t.priority||'normal')
+  ].filter(Boolean);
+  let dtLines;
+  if(dueTime){
+    const dtStart=icsUtcStamp(dueDate,dueTime);
+    const dtEnd=icsUtcStamp(dueDate,addHalfHour(dueTime));
+    dtLines=`DTSTART:${dtStart}\r\nDTEND:${dtEnd}`;
+  } else {
+    dtLines=`DTSTART;VALUE=DATE:${icsAllDayStamp(dueDate,0)}\r\nDTEND;VALUE=DATE:${icsAllDayStamp(dueDate,1)}`;
+  }
+  const lines=[
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//DKMA Suite//Tasks//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${stampNow}`,
+    dtLines,
+    `SUMMARY:${icsEscapeText('Task: '+(t.title||'Untitled Task'))}`,
+    descParts.length?`DESCRIPTION:${icsEscapeText(descParts.join('\n\n'))}`:'',
+    'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Reminder','TRIGGER:-PT30M','END:VALARM',
+    'END:VEVENT','END:VCALENDAR'
+  ].filter(Boolean);
+  return lines.map(icsFold).join('\r\n');
+}
+function addHalfHour(hhmm){
+  const[h,m]=hhmm.split(':').map(Number);
+  let total=h*60+m+30;
+  total=total%1440;
+  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+}
+function downloadTaskIcs(taskId,btn){
+  const task=tasks.find(t=>String(t.id)===String(taskId));
+  if(!task){toast('Task not found.',true);return;}
+  const ics=buildTaskIcs(task);
+  if(!ics)return;
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const safeTitle=(task.title||'task').replace(/[^a-zA-Z0-9 _-]/g,'').trim().replace(/\s+/g,'_')||'task';
+  a.href=url;a.download=`${safeTitle}.ics`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  toast('Calendar file downloaded — open it to add this task to Outlook ✓');
+}
+
 
 const GCAL_CLIENT_ID = '774958331957-1pijlefqf9a3mmjd2s1le0s26mq8vrlf.apps.googleusercontent.com';
 const GCAL_SCOPES = 'https://www.googleapis.com/auth/calendar';
