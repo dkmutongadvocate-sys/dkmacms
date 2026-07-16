@@ -1771,6 +1771,12 @@ setTimeout(function() {
         <div class="invoice-row header" style="grid-template-columns:1.6fr 1.8fr 1fr 1fr 1fr 110px"><span>Invoice</span><span>Client &amp; Matter</span><span>Amount</span><span>Status</span><span>Due Date</span><span>Actions</span></div>
         <div id="invoice-rows"><div class="empty-state"><p>No invoices yet.</p></div></div>
       </div>
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-header"><span class="card-title">Prospect Invoices</span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('prospect-invoice')">+ New Prospect Invoice</button></div>
+        <div style="font-size:11px;color:var(--txt3);margin:-4px 0 10px">Invoices for potential clients not yet in your Clients database.</div>
+        <div class="invoice-row header" style="grid-template-columns:1.6fr 1.8fr 1fr 1fr 1fr 110px"><span>Invoice</span><span>Prospect</span><span>Amount</span><span>Status</span><span>Due Date</span><span>Actions</span></div>
+        <div id="prospect-invoice-rows"><div class="empty-state"><p>No prospect invoices yet.</p></div></div>
+      </div>
     </div>
 
     <!-- TIMESHEET -->
@@ -3838,6 +3844,64 @@ setTimeout(function() {
         <span>Apply VAT (16%)</span>
       </label>
       <button class="btn-primary" id="save-invoice-btn" onclick="saveInvoice()">Save &amp; Download</button>
+    </div>
+  </div>
+
+  <!-- PROSPECT INVOICE MODAL -->
+  <div class="modal" id="modal-prospect-invoice" style="display:none;max-width:720px">
+    <div class="modal-head"><span class="modal-title">Create Prospect Invoice</span><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div style="background:var(--cream2);border:1px solid var(--brd);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--txt2)">
+        For a potential client not yet in your Clients database. This will be saved to Finance and marked <strong>Prospect</strong>.
+      </div>
+      <div class="form-two">
+        <div class="form-row"><label>Invoice No.</label><input id="pinv-no" placeholder="e.g. INV-P001"/></div>
+        <div class="form-row"><label>Invoice Date</label><input type="date" id="pinv-date"/></div>
+      </div>
+      <div class="form-two">
+        <div class="form-row"><label>Prospect Name / Company</label><input id="pinv-name" placeholder="e.g. Acme Holdings Ltd"/></div>
+        <div class="form-row"><label>Due Date</label><input type="date" id="pinv-due"/></div>
+      </div>
+      <div class="form-two">
+        <div class="form-row"><label>Email (optional)</label><input id="pinv-email" placeholder="prospect@email.com"/></div>
+        <div class="form-row"><label>Phone (optional)</label><input id="pinv-phone" placeholder="e.g. 0712 345 678"/></div>
+      </div>
+      <div class="form-row"><label>Address (optional)</label><input id="pinv-address" placeholder="e.g. P.O. Box 100, Nairobi"/></div>
+      <div class="form-row"><label>Status</label><select id="pinv-status"><option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">Paid</option><option value="overdue">Overdue</option></select></div>
+      <div class="form-row"><label>Introductory Note (optional)</label><textarea id="pinv-desc" placeholder="e.g. Proposed professional fees for the above-referenced engagement⬦" style="min-height:56px"></textarea></div>
+      <!-- LINE ITEMS -->
+      <div style="margin-top:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3)">Line Items</label>
+          <button class="topbar-btn" style="font-size:11px;padding:4px 10px" onclick="addPInvLine()">+ Add Line</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 80px 110px 28px;gap:6px;margin-bottom:6px">
+          <span style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px">Description</span>
+          <span style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px">Qty</span>
+          <span style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px">Unit Price (KES)</span>
+          <span></span>
+        </div>
+        <div id="pinv-lines"></div>
+        <div style="margin-top:12px;border-top:1px solid var(--brd);padding-top:12px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-bottom:4px">
+            <span>Subtotal</span><span id="pinv-subtotal">KES 0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-bottom:4px">
+            <span>VAT (16%)</span><span id="pinv-vat">KES 0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--txt);margin-top:6px;padding-top:6px;border-top:1px solid var(--brd)">
+            <span>Total</span><span id="pinv-total-display">KES 0.00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot invoice-modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <label class="invoice-vat-toggle" for="pinv-has-vat">
+        <input type="checkbox" id="pinv-has-vat" checked>
+        <span>Apply VAT (16%)</span>
+      </label>
+      <button class="btn-primary" id="save-prospect-invoice-btn" onclick="saveProspectInvoice()">Save &amp; Download</button>
     </div>
   </div>
 
@@ -12324,18 +12388,20 @@ function renderCalendar(){
 
 // ─── FINANCE ──────────────────────────────────────────────────────
 function renderFinance(){
-  const total=invoices.reduce((s,i)=>s+(Number(i.amount)||0),0);
-  const collected=invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+(Number(i.amount)||0),0);
-  const outstanding=invoices.filter(i=>i.status==='sent'||i.status==='overdue').reduce((s,i)=>s+(Number(i.amount)||0),0);
+  const clientInvoices=invoices.filter(i=>!i.is_prospect);
+  const prospectInvoices=invoices.filter(i=>i.is_prospect);
+  const total=clientInvoices.reduce((s,i)=>s+(Number(i.amount)||0),0);
+  const collected=clientInvoices.filter(i=>i.status==='paid').reduce((s,i)=>s+(Number(i.amount)||0),0);
+  const outstanding=clientInvoices.filter(i=>i.status==='sent'||i.status==='overdue').reduce((s,i)=>s+(Number(i.amount)||0),0);
   document.getElementById('fin-total-billed').textContent=fmtMoney(total);
-  document.getElementById('fin-billed-sub').textContent=invoices.length+' invoice(s)';
+  document.getElementById('fin-billed-sub').textContent=clientInvoices.length+' invoice(s)';
   document.getElementById('fin-collected').textContent=fmtMoney(collected);
   document.getElementById('fin-collected-sub').textContent=total>0?Math.round(collected/total*100)+'% collection rate':'—';
   document.getElementById('fin-outstanding').textContent=fmtMoney(outstanding);
-  document.getElementById('fin-outstanding-sub').textContent=invoices.filter(i=>i.status==='overdue').length+' overdue';
+  document.getElementById('fin-outstanding-sub').textContent=clientInvoices.filter(i=>i.status==='overdue').length+' overdue';
   const rows=document.getElementById('invoice-rows');
-  if(!invoices.length){rows.innerHTML=emptyState('No invoices yet.');return;}
-  rows.innerHTML=invoices.map(i=>{
+  if(!clientInvoices.length){rows.innerHTML=emptyState('No invoices yet.');}else{
+  rows.innerHTML=clientInvoices.map(i=>{
     const c=clients.find(x=>x.id===i.client_id);const m=matters.find(x=>x.id===i.matter_id);
     const paid=Number(i.paid_amount)||0;
     const invoiceAmt=Number(i.amount)||0;
@@ -12345,6 +12411,33 @@ function renderFinance(){
     return`<div class="invoice-row" style="grid-template-columns:1.4fr 1.6fr 1fr 1fr 1fr 150px">
       <span style="font-weight:500">${esc(i.invoice_no||'—')}<\/span>
       <span style="color:var(--txt2)">${c?esc(c.name):'—'}${m?' — '+esc(m.title):''}<\/span>
+      <div>
+        <div style="font-weight:500">${fmtMoney(invoiceAmt)}<\/div>
+        ${showBar?`<div style="margin-top:4px;background:#E8EEF5;border-radius:20px;height:4px;overflow:hidden"><div style="width:${paidPct}%;background:var(--gold);height:100%;border-radius:20px;transition:width .3s"><\/div><\/div><div style="font-size:10px;color:var(--txt3);margin-top:2px">${fmtMoney(paid)} paid · ${fmtMoney(balance)} bal<\/div>`:''}
+      <\/div>
+      <span><span class="status-pill ${statusClass(i.status)}">${statusLabel(i.status)}<\/span><\/span>
+      <span style="color:var(--txt3)">${fmtDate(i.due_date)}<\/span>
+      <span style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+        ${i.status!=='paid'?`<button class="topbar-btn gold" style="font-size:10px;padding:3px 8px" title="Record Payment" onclick="openPaymentModal('${i.id}',event)">💳 Pay<\/button>`:'<span style="font-size:11px;color:#2E7D32;font-weight:600">✔ Paid<\/span>'}
+        <button class="topbar-btn" style="font-size:10px;padding:3px 8px" title="Download Invoice" onclick="downloadInvoiceDocx('${i.id}',event)">⬇ PDF<\/button>
+        ${paid>0?`<button class="topbar-btn sec" style="font-size:10px;padding:3px 8px" title="Download Receipt" onclick="downloadReceiptPdf('${i.id}',null,event)">Receipt<\/button>`:''}
+        <button class="op-del" title="Delete" onclick="deleteInvoice('${i.id}','${esc(i.invoice_no||'—')}',event)">×<\/button>
+      <\/span>
+    <\/div>`;
+  }).join('');
+  }
+  const prows=document.getElementById('prospect-invoice-rows');
+  if(!prows)return;
+  if(!prospectInvoices.length){prows.innerHTML=emptyState('No prospect invoices yet.');return;}
+  prows.innerHTML=prospectInvoices.map(i=>{
+    const paid=Number(i.paid_amount)||0;
+    const invoiceAmt=Number(i.amount)||0;
+    const balance=Math.max(0,invoiceAmt-paid);
+    const paidPct=invoiceAmt>0?Math.min(100,Math.round(paid/invoiceAmt*100)):0;
+    const showBar=paid>0&&i.status!=='draft';
+    return`<div class="invoice-row" style="grid-template-columns:1.4fr 1.6fr 1fr 1fr 1fr 150px">
+      <span style="font-weight:500">${esc(i.invoice_no||'—')}<\/span>
+      <span style="color:var(--txt2)">${esc(i.prospect_name||'—')} <span style="font-size:9px;color:var(--gold);border:1px solid var(--gold);border-radius:20px;padding:1px 6px;margin-left:4px;text-transform:uppercase;letter-spacing:.3px">Prospect<\/span><\/span>
       <div>
         <div style="font-weight:500">${fmtMoney(invoiceAmt)}<\/div>
         ${showBar?`<div style="margin-top:4px;background:#E8EEF5;border-radius:20px;height:4px;overflow:hidden"><div style="width:${paidPct}%;background:var(--gold);height:100%;border-radius:20px;transition:width .3s"><\/div><\/div><div style="font-size:10px;color:var(--txt3);margin-top:2px">${fmtMoney(paid)} paid · ${fmtMoney(balance)} bal<\/div>`:''}
@@ -13044,15 +13137,16 @@ function openModal(type){
     return;
   }
   document.getElementById('modal-overlay').classList.remove('hidden');
-  ['matter','client','party','contact','time','invoice','event','task','alert','document','email-doc','group','payment'].forEach(t=>{
+  ['matter','client','party','contact','time','invoice','prospect-invoice','event','task','alert','document','email-doc','group','payment'].forEach(t=>{
     document.getElementById('modal-'+t).style.display=t===type?'block':'none';
   });
   const today=new Date().toISOString().split('T')[0];
-  ['m-date','c-since','t-date','inv-date','ev-date','task-due-date','al-date'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value)el.value=today;});
+  ['m-date','c-since','t-date','inv-date','pinv-date','ev-date','task-due-date','al-date'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value)el.value=today;});
   if(type==='matter')popMatterModal();
   if(type==='contact')prepareContactModal();
   if(type==='time')popTimeModal();
   if(type==='invoice')popInvoiceModal();
+  if(type==='prospect-invoice')popProspectInvoiceModal();
   if(type==='event')popEventModal();
   if(type==='task')popTaskModal();
   if(type==='alert'){populateAlertStaffTarget();populateAlertClientSelect();toggleAlertTargeting();}
@@ -13233,6 +13327,104 @@ function calcInvTotals(){
   const fmt=n=>'KES '+n.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});
   ['inv-subtotal','inv-vat','inv-total-display'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.textContent=fmt([sub,vat,total][i]);});
   window._invTotal=total;
+}
+
+// ─── PROSPECT INVOICES (Finance) ───────────────────────────────────
+function popProspectInvoiceModal(){
+  const prospectCount=invoices.filter(i=>i.is_prospect).length;
+  const next='INV-P'+String(prospectCount+1).padStart(3,'0');
+  document.getElementById('pinv-no').value=next;
+  ['pinv-name','pinv-email','pinv-phone','pinv-address','pinv-desc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const status=document.getElementById('pinv-status');if(status)status.value='draft';
+  const vatBox=document.getElementById('pinv-has-vat');if(vatBox)vatBox.checked=true;
+  document.getElementById('pinv-lines').innerHTML='';
+  window._pinvTotal=0; calcPInvTotals();
+  setTimeout(()=>{addPInvLine();},0);
+}
+function addPInvLine(){
+  const container=document.getElementById('pinv-lines');if(!container)return;
+  const row=document.createElement('div');
+  row.className='inv-line-row';
+  row.style.cssText='display:grid;grid-template-columns:1fr 70px 110px 28px;gap:6px;margin-bottom:6px;align-items:center';
+  const desc=document.createElement('input');
+  desc.className='inv-ld';desc.placeholder='Description of service⬦';
+  desc.oninput=calcPInvTotals;
+  desc.style.cssText='padding:6px 9px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:inherit;width:100%';
+  const qty=document.createElement('input');
+  qty.className='inv-lq';qty.type='number';qty.placeholder='1';qty.value='1';qty.min='0';
+  qty.oninput=calcPInvTotals;
+  qty.style.cssText='padding:6px 9px;border:1px solid var(--brd);border-radius:6px;font-size:12px;text-align:center;font-family:inherit;width:100%';
+  const price=document.createElement('input');
+  price.className='inv-lp';price.type='number';price.placeholder='0.00';price.min='0';price.step='0.01';
+  price.oninput=calcPInvTotals;
+  price.style.cssText='padding:6px 9px;border:1px solid var(--brd);border-radius:6px;font-size:12px;text-align:right;font-family:inherit;width:100%';
+  const del=document.createElement('button');
+  del.textContent='×';
+  del.type='button';
+  del.style.cssText='background:none;border:none;cursor:pointer;color:var(--txt3);font-size:16px;line-height:1;padding:2px';
+  del.onclick=function(){this.closest('.inv-line-row').remove();calcPInvTotals();};
+  row.append(desc,qty,price,del);
+  container.appendChild(row);
+}
+function calcPInvTotals(){
+  let sub=0;
+  document.querySelectorAll('#pinv-lines .inv-line-row').forEach(r=>{
+    const qEl=r.querySelector('.inv-lq'), pEl=r.querySelector('.inv-lp');
+    sub+=(parseFloat(qEl&&qEl.value)||0)*(parseFloat(pEl&&pEl.value)||0);
+  });
+  const hasVAT = document.getElementById('pinv-has-vat')?.checked ?? true;
+  const vat = hasVAT ? sub * 0.16 : 0;
+  const total = sub + vat;
+  const fmt=n=>'KES '+n.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});
+  ['pinv-subtotal','pinv-vat','pinv-total-display'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.textContent=fmt([sub,vat,total][i]);});
+  window._pinvTotal=total;
+}
+async function saveProspectInvoice(){
+  const invoiceNo=document.getElementById('pinv-no').value.trim();
+  if(!invoiceNo){toast('Please fill Invoice No.',true);return;}
+  const prospectName=document.getElementById('pinv-name').value.trim();
+  if(!prospectName){toast('Please enter the prospect name / company.',true);return;}
+  const lineItems=[];
+  document.querySelectorAll('#pinv-lines .inv-line-row').forEach(r=>{
+    const desc=(r.querySelector('.inv-ld')?.value||'').trim();
+    const qty=parseFloat(r.querySelector('.inv-lq')?.value)||0;
+    const price=parseFloat(r.querySelector('.inv-lp')?.value)||0;
+    if(desc||price)lineItems.push({description:desc,qty,unit_price:price,subtotal:qty*price});
+  });
+  if(!lineItems.length){toast('Please add at least one line item.',true);return;}
+  const sub=lineItems.reduce((s,l)=>s+l.subtotal,0);
+  const hasVAT = document.getElementById('pinv-has-vat')?.checked ?? true;
+  const vat = hasVAT ? sub * 0.16 : 0;
+  const total=sub+vat;
+  setLoading('save-prospect-invoice-btn',true,'Saving⬦');
+  const payload={
+    invoice_no:invoiceNo,
+    invoice_date:document.getElementById('pinv-date').value||null,
+    client_id:null,
+    matter_id:null,
+    is_prospect:true,
+    prospect_name:prospectName,
+    prospect_email:document.getElementById('pinv-email').value.trim()||null,
+    prospect_phone:document.getElementById('pinv-phone').value.trim()||null,
+    prospect_address:document.getElementById('pinv-address').value.trim()||null,
+    description:document.getElementById('pinv-desc').value.trim()||null,
+    line_items:JSON.stringify(lineItems),
+    subtotal: sub,
+    vat_amount: vat,
+    has_vat: hasVAT,
+    vat_rate: hasVAT ? 0.16 : 0,
+    amount: total,
+    due_date:document.getElementById('pinv-due').value||null,
+    status:document.getElementById('pinv-status').value,
+  };
+  const{data,error}=await sb.from('invoices').insert([payload]).select();
+  setLoading('save-prospect-invoice-btn',false,'Save & Download');
+  if(error){toast('Error: '+error.message,true);return;}
+  const saved=data[0];
+  invoices=[saved,...invoices];
+  closeModal();toast('Prospect invoice saved. Generating PDF⬦');
+  renderFinance();renderDashboard();
+  setTimeout(()=>downloadInvoiceDocx(saved.id),400);
 }
 function popEventModal(){
   const title=document.querySelector('#modal-event .modal-title');
