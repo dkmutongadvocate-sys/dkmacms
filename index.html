@@ -30730,6 +30730,7 @@ async function downloadReceiptPdf(invId,paymentId=null,e){
 
   const _fc=(typeof firmContact!=='undefined'&&firmContact)||{};
   const _invFirmName=_fc.contact_firm_name||'D.K. MUTONGA & CO. ADVOCATES';
+  const _invSignerName=currentProfile?.full_name||currentUser?.email||_invFirmName;
   const _invFirmPhone=_fc.contact_phone||'';
   const _invFirmEmail=_fc.contact_email||'';
   const _invFirmPhysical=_fc.contact_physical||'';
@@ -30821,7 +30822,7 @@ async function downloadReceiptPdf(invId,paymentId=null,e){
   <\/table>
   <div class="para">${balance>0?`A balance of <strong>${fmtMny(balance)}<\/strong> remains outstanding on this matter.`:'This payment clears the invoice in full.'}<\/div>
   <div class="closing">Yours faithfully,<\/div>
-  <div class="sign">${esc(_invFirmName)}<\/div>
+  <div class="sign">${esc(_invSignerName)}<\/div>
   ${_contactLine?`<div class="contact-line">${esc(_contactLine)}<\/div>`:''}
 <\/div>
 <div class="dyn-ftr">
@@ -30953,6 +30954,7 @@ async function downloadInvoiceDocx(invId,e){
   // Pull firm contact details from firmContact (Firm Settings)
   const _fc = (typeof firmContact !== 'undefined' && firmContact) || {};
   const _invFirmName = _fc.contact_firm_name || 'D.K. MUTONGA & CO. ADVOCATES';
+  const _invSignerName = currentProfile?.full_name || currentUser?.email || _invFirmName;
   const _invFirmPhone = _fc.contact_phone || '';
   const _invFirmEmail = _fc.contact_email || '';
   const _invFirmPhysical = _fc.contact_physical || '';
@@ -31103,7 +31105,7 @@ async function downloadInvoiceDocx(invId,e){
     <\/table>
 
     <p>Yours Faithfully,<\/p>
-    <div class="signature">${esc(_invFirmName)}<\/div>
+    <div class="signature">${esc(_invSignerName)}<\/div>
     <div class="advocate">ADVOCATE<\/div>
   <\/main>
 <\/div>`;
