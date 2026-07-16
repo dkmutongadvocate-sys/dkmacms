@@ -12871,6 +12871,7 @@ function openEditMyRoleModal(){
   const p=currentProfile;
   const isAdmin=p?.role==='admin';
   document.getElementById('myp-name').value=p.full_name||'';
+  document.getElementById('myp-preferred-name').value=p.preferred_name||'';
   document.getElementById('myp-phone').value=p.phone||'';
   document.getElementById('myp-bar').value=p.bar_number||'';
   document.getElementById('myp-bio').value=p.bio||'';
@@ -12910,6 +12911,7 @@ function closeEditProfileModal(){document.getElementById('editprofile-overlay').
 
 async function saveMyProfile(){
   const name=document.getElementById('myp-name').value.trim();
+  const preferredName=document.getElementById('myp-preferred-name').value.trim();
   const phone=document.getElementById('myp-phone').value.trim();
   const bar=document.getElementById('myp-bar').value.trim();
   const bio=document.getElementById('myp-bio').value.trim();
@@ -12934,7 +12936,7 @@ async function saveMyProfile(){
   // Update profile in DB
   const{data,error}=await sb.from('profiles').upsert([{
     id:currentUser.id,full_name:name||currentUser.email,role,department:dept,
-    phone:phone||null,bar_number:bar||null,bio:bio||null
+    phone:phone||null,bar_number:bar||null,bio:bio||null,preferred_name:preferredName||null
   }],{onConflict:'id'}).select().single();
 
   if(error){
@@ -12951,7 +12953,7 @@ async function saveMyProfile(){
     }
   }
 
-  currentProfile=data||{...currentProfile,full_name:name,role,department:dept,phone:phone||null,bar_number:bar||null,bio:bio||null};
+  currentProfile=data||{...currentProfile,full_name:name,role,department:dept,phone:phone||null,bar_number:bar||null,bio:bio||null,preferred_name:preferredName||null};
   updateUserUI();
   closeEditProfileModal();
   toast('Profile updated successfully.'+(newpw?' Password changed.':''));
@@ -21079,6 +21081,11 @@ async function ackPttRequest(id){
     <div class="modal-body">
       <div class="section-divider">Personal Information</div>
       <div class="form-row"><label>Full Name</label><input id="myp-name" placeholder="Your full name"/></div>
+      <div class="form-row">
+        <label>Preferred Signing Name <span style="font-weight:400;color:var(--txt3);text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input id="myp-preferred-name" placeholder="e.g. Dennis K. Mutonga"/>
+        <div style="font-size:11px;color:var(--txt3);margin-top:4px">Used to sign invoices, receipts &amp; fee notes instead of your full name above. Leave blank to use your full name.</div>
+      </div>
       <div class="form-two">
         <div class="form-row"><label>Phone</label><input id="myp-phone" type="tel" placeholder="+254⬦"/></div>
         <div class="form-row"><label>Bar Admission / ID No.</label><input id="myp-bar" placeholder="e.g. LSK/ADV/2020/123"/></div>
@@ -30730,7 +30737,7 @@ async function downloadReceiptPdf(invId,paymentId=null,e){
 
   const _fc=(typeof firmContact!=='undefined'&&firmContact)||{};
   const _invFirmName=_fc.contact_firm_name||'D.K. MUTONGA & CO. ADVOCATES';
-  const _invSignerName=currentProfile?.full_name||currentUser?.email||_invFirmName;
+  const _invSignerName=((currentProfile?.preferred_name||currentProfile?.full_name||currentUser?.email||_invFirmName)+'').toUpperCase();
   const _invFirmPhone=_fc.contact_phone||'';
   const _invFirmEmail=_fc.contact_email||'';
   const _invFirmPhysical=_fc.contact_physical||'';
@@ -30954,7 +30961,7 @@ async function downloadInvoiceDocx(invId,e){
   // Pull firm contact details from firmContact (Firm Settings)
   const _fc = (typeof firmContact !== 'undefined' && firmContact) || {};
   const _invFirmName = _fc.contact_firm_name || 'D.K. MUTONGA & CO. ADVOCATES';
-  const _invSignerName = currentProfile?.full_name || currentUser?.email || _invFirmName;
+  const _invSignerName = ((currentProfile?.preferred_name || currentProfile?.full_name || currentUser?.email || _invFirmName)+'').toUpperCase();
   const _invFirmPhone = _fc.contact_phone || '';
   const _invFirmEmail = _fc.contact_email || '';
   const _invFirmPhysical = _fc.contact_physical || '';
