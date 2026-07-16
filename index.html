@@ -3976,7 +3976,7 @@ setTimeout(function() {
       </label>
       <div class="form-row"><label>Notes</label><textarea id="ev-notes" placeholder="Any additional details⬦" style="min-height:60px"></textarea></div>
     </div>
-    <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" id="save-event-btn" onclick="saveEventWithGCal()">Save Event</button></div>
+    <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-secondary" id="ev-add-outlook-btn" style="display:none" onclick="downloadEventIcs(window._editingEventId,this)">📅 Add to Outlook</button><button class="btn-primary" id="save-event-btn" onclick="saveEventWithGCal()">Save Event</button></div>
   </div>
 
   <!-- TASK MODAL -->
@@ -7688,7 +7688,7 @@ function renderDashboard(){
   else evEl.innerHTML=upcoming.map(e=>{
     const d=parseDateLocal(e.event_date);
     const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';
-    return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}<\/div><\/div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div><\/div>`;
+    return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}<\/div><\/div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}${outlookAddBtnHtml(e.id)}<\/div><\/div>`;
   }).join('');
   // Tasks
   const taskEl=document.getElementById('dash-tasks-list');
@@ -12097,7 +12097,7 @@ function renderCalendarRangeList(start,end){
       const sharedBadge=e.share_with_client?`<span style="font-size:9px;background:#EAF3DE;color:#2D6A4F;padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px">Client<\/span>`:'';
       return`<div class="upcoming-item" style="cursor:pointer" onclick="openEventReadOnly('${e.id}','${e.event_date}')">
         <div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${monthNameShort(d)}<\/div><\/div>
-        <div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}${recurBadge}${sharedBadge}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div>
+        <div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}${recurBadge}${sharedBadge}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div><span class="upcoming-tag ${tc[e.type]||'tag-internal'}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}${outlookAddBtnHtml(e.id)}<\/div>
       <\/div>`;
     }).join('');
   }
@@ -12373,7 +12373,7 @@ function renderCalendar(){
       <div class="upcoming-title">${esc(e.title)}${spanBadge}${recurBadge}${sharedBadge}<\/div>
       <div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div>
       ${addedBy}
-      <span class="upcoming-tag ${tc['court']==='tag-court'?tc[e.type]||'tag-internal':tc[e.type]||'tag-internal'}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}
+      <span class="upcoming-tag ${tc['court']==='tag-court'?tc[e.type]||'tag-internal':tc[e.type]||'tag-internal'}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}${outlookAddBtnHtml(e.id)}
     <\/div>
     <button class="op-del" title="Delete event" onclick="event.stopPropagation();deleteEvent('${e.id}','${esc(e.title)}',event)">×<\/button>
   <\/div>`;}).join('');
@@ -13433,6 +13433,9 @@ function popEventModal(){
   if(title)title.textContent='Add Calendar Event';
   const btn=document.getElementById('save-event-btn');
   if(btn){btn.textContent='Save Event';btn.onclick=saveEventWithGCal;}
+  window._editingEventId=null;
+  const outlookBtn=document.getElementById('ev-add-outlook-btn');
+  if(outlookBtn)outlookBtn.style.display='none';
   const today=formatDateLocal(new Date());
   const simpleDefaults={
     'ev-title':'',
@@ -14989,7 +14992,7 @@ function renderMatterDetailTab(){
     el.innerHTML=`<div class="card">
       <div class="card-header"><span class="card-title">Events (${me.length})<\/span><button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openEventModalForMatter('${m.id}')">+ Add Event<\/button><\/div>
       ${!me.length?emptyStateSm('No events linked to this matter.')
-        :me.map(e=>{const d=parseDateLocal(e.event_date);const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}<\/div><\/div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}<\/div><button class="op-del" title="Delete" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×<\/button><\/div>`;}).join('')}
+        :me.map(e=>{const d=parseDateLocal(e.event_date);const tc={'court':'tag-court','client':'tag-client','deadline':'tag-deadline','internal':'tag-internal'}[e.type]||'tag-internal';return`<div class="upcoming-item"><div class="upcoming-date"><div class="upcoming-day">${d.getDate()}<\/div><div class="upcoming-month">${d.toLocaleString('en',{month:'short'})}<\/div><\/div><div class="upcoming-body" style="flex:1"><div class="upcoming-title">${esc(e.title)}<\/div><div class="upcoming-sub">${esc(e.location||'')} ${formatEventTimeRange(e)?'· '+esc(formatEventTimeRange(e)):''}<\/div><span class="upcoming-tag ${tc}">${statusLabel(e.type)}<\/span>${gcalAddBtnHtml(e.id)}${outlookAddBtnHtml(e.id)}<\/div><button class="op-del" title="Delete" onclick="deleteEvent('${e.id}','${esc(e.title)}',event)">×<\/button><\/div>`;}).join('')}
     <\/div>`;
   } else if(activeMatterTab==='tasks'){
     const mt=sortTasksForWorklist(tasks.filter(t=>taskMatchesMatter(t,m.id)));
@@ -19658,6 +19661,88 @@ function gcalAddBtnHtml(eventId) {
   return `<button class="gcal-add-btn" onclick="addEventToGCalById('${eventId}',this)" style="display:${vis};margin-top:5px;align-items:center;gap:4px;font-size:9px;padding:2px 8px;border-radius:8px;border:1px solid #D9D4CB;background:#fff;cursor:pointer;color:#185FA5;font-family:'DM Sans',sans-serif" title="Add to Google Calendar"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><\/svg>GCal<\/button>`;
 }
 
+// ─── OUTLOOK "ADD TO CALENDAR" (.ics download, per event) ─────────
+// Renders a small "Outlook" button next to the GCal one. Downloads a
+// .ics file the user opens once; it imports as a real Outlook event
+// with working reminders (unlike a subscribed read-only feed).
+function outlookAddBtnHtml(eventId) {
+  return `<button class="gcal-add-btn" onclick="downloadEventIcs('${eventId}',this)" style="display:inline-flex;margin-top:5px;margin-left:5px;align-items:center;gap:4px;font-size:9px;padding:2px 8px;border-radius:8px;border:1px solid #D9D4CB;background:#fff;cursor:pointer;color:#0F6CBD;font-family:'DM Sans',sans-serif" title="Add to Outlook Calendar"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><rect x="1" y="4" width="22" height="16" rx="2" fill="#0F6CBD"/><path d="M8.5 8.2C6.2 8.2 5 10.1 5 12s1.2 3.8 3.5 3.8S12 13.9 12 12s-1.2-3.8-3.5-3.8zm0 6.1c-1.2 0-1.9-1-1.9-2.3S7.3 9.7 8.5 9.7s1.9 1 1.9 2.3-.7 2.3-1.9 2.3z" fill="#fff"/><path d="M13.3 8.4h5.4v1.4h-2v6.1h-1.5V9.8h-1.9V8.4z" fill="#fff"/><\/svg>Outlook<\/button>`;
+}
+function icsEscapeText(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');}
+function icsFold(line){
+  // RFC5545 requires folding lines >75 octets; keep it simple/safe
+  if(line.length<=74)return line;
+  let out='',rest=line;
+  while(rest.length>74){out+=rest.slice(0,74)+'\r\n ';rest=rest.slice(74);}
+  return out+rest;
+}
+// Converts a local Nairobi date/time to a UTC ICS timestamp (Africa/Nairobi = UTC+3, no DST)
+function icsUtcStamp(dateStr,timeStr){
+  const[y,m,d]=dateStr.split('-').map(Number);
+  const[hh,mm]=(timeStr||'00:00').split(':').map(Number);
+  const dt=new Date(Date.UTC(y,m-1,d,hh-3,mm,0));
+  const p=n=>String(n).padStart(2,'0');
+  return `${dt.getUTCFullYear()}${p(dt.getUTCMonth()+1)}${p(dt.getUTCDate())}T${p(dt.getUTCHours())}${p(dt.getUTCMinutes())}00Z`;
+}
+function icsAllDayStamp(dateStr,addDays){
+  const[y,m,d]=dateStr.split('-').map(Number);
+  const dt=new Date(Date.UTC(y,m-1,d));
+  if(addDays)dt.setUTCDate(dt.getUTCDate()+addDays);
+  const p=n=>String(n).padStart(2,'0');
+  return `${dt.getUTCFullYear()}${p(dt.getUTCMonth()+1)}${p(dt.getUTCDate())}`;
+}
+function buildEventIcs(ev){
+  const uid=(ev.id||(''+Date.now()))+'@dkma-suite';
+  const now=new Date();
+  const stampNow=now.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+  const startDate=ev.event_date;
+  const endDate=ev.event_end_date||ev.event_date;
+  const startTime=String(ev.event_time||'').trim();
+  const endTime=getEventEndTime(ev);
+  const matter=matters.find(m=>m.id===ev.matter_id);
+  const descParts=[cleanEventNotes(ev.notes||''),matter?('Matter: '+matter.title):''].filter(Boolean);
+  let dtLines;
+  if(startTime){
+    const dtStart=icsUtcStamp(startDate,startTime);
+    const dtEnd=endTime?icsUtcStamp(endDate,endTime):icsUtcStamp(endDate||startDate,addOneHour(startTime));
+    dtLines=`DTSTART:${dtStart}\r\nDTEND:${dtEnd}`;
+  } else {
+    // All-day event; DTEND is exclusive, so add one day
+    dtLines=`DTSTART;VALUE=DATE:${icsAllDayStamp(startDate,0)}\r\nDTEND;VALUE=DATE:${icsAllDayStamp(endDate,1)}`;
+  }
+  const lines=[
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//DKMA Suite//Events//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${stampNow}`,
+    dtLines,
+    `SUMMARY:${icsEscapeText(ev.title||'Event')}`,
+    ev.location?`LOCATION:${icsEscapeText(ev.location)}`:'',
+    descParts.length?`DESCRIPTION:${icsEscapeText(descParts.join('\n\n'))}`:'',
+    'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Reminder','TRIGGER:-PT30M','END:VALARM',
+    'END:VEVENT','END:VCALENDAR'
+  ].filter(Boolean);
+  return lines.map(icsFold).join('\r\n');
+}
+function addOneHour(hhmm){
+  const[h,m]=hhmm.split(':').map(Number);
+  const nh=(h+1)%24;
+  return `${String(nh).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+function downloadEventIcs(eventId,btn){
+  const ev=events.find(e=>e.id===eventId);
+  if(!ev){toast('Event not found.',true);return;}
+  const ics=buildEventIcs(ev);
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const safeTitle=(ev.title||'event').replace(/[^a-zA-Z0-9 _-]/g,'').trim().replace(/\s+/g,'_')||'event';
+  a.href=url;a.download=`${safeTitle}.ics`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  toast('Calendar file downloaded — open it to add this event to Outlook ✓');
+}
+
 const GCAL_CLIENT_ID = '774958331957-1pijlefqf9a3mmjd2s1le0s26mq8vrlf.apps.googleusercontent.com';
 const GCAL_SCOPES = 'https://www.googleapis.com/auth/calendar';
 let gcalTokenClient = null;
@@ -20605,6 +20690,7 @@ function openEventReadOnly(eventId, occurrenceDate=''){
         ${link?`<a href="${esc(link)}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#185FA5;color:#fff;text-decoration:none;border-radius:8px;padding:12px 14px;font-size:13px;font-weight:700">🔗 Open Video Conference<\/a>`:''}
       <\/div>
       <div style="padding:16px 22px;border-top:1px solid var(--brd);display:flex;gap:10px;justify-content:flex-end;background:#fff">
+        <button class="btn-secondary" onclick="downloadEventIcs('${eventId}',this)">📅 Add to Outlook</button>
         <button class="btn-secondary" onclick="document.getElementById('_event-view-popup')?.remove()">Close<\/button>
         <button class="btn-primary" onclick="document.getElementById('_event-view-popup')?.remove();openEventDetail('${eventId}')">Edit Event<\/button>
       <\/div>
@@ -20617,6 +20703,9 @@ function openEventDetail(eventId){
   const ev=events.find(e=>e.id===eventId);
   if(!ev)return;
   openModal('event');
+  window._editingEventId=eventId;
+  const outlookBtn=document.getElementById('ev-add-outlook-btn');
+  if(outlookBtn)outlookBtn.style.display='inline-block';
   setTimeout(()=>{
     const t=document.getElementById('ev-title');
     const d=document.getElementById('ev-date');
