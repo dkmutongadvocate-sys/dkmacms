@@ -3859,7 +3859,7 @@ setTimeout(function() {
         <div class="form-row"><label>Invoice Date</label><input type="date" id="pinv-date"/></div>
       </div>
       <div class="form-two">
-        <div class="form-row"><label>Prospect Name / Company</label><input id="pinv-name" placeholder="e.g. Acme Holdings Ltd"/></div>
+        <div class="form-row"><label>Prospect Name / Company <span style="color:#A32D2D">*</span></label><input id="pinv-name" required placeholder="e.g. Acme Holdings Ltd"/></div>
         <div class="form-row"><label>Due Date</label><input type="date" id="pinv-due"/></div>
       </div>
       <div class="form-two">
@@ -30983,7 +30983,7 @@ async function downloadInvoiceDocx(invId,e){
   ].join('');
   const _feeNotePaymentHtml=esc(_invPaymentInstructions).split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map((line,i)=>`<div class="payment-line">${String.fromCharCode(97+i)}. ${line}<\/div>`).join('') || `<div class="payment-line">a. ${esc(getInvoicePaymentMethodText(_invFirmName))}<\/div>`;
   const _feeNoteContact=esc(_invContactLine||[_invFirmPhone,_invFirmEmail,_invFirmWebsite].filter(Boolean).join(' | '));
-  const _feeNoteRecipient=esc(client?.name||'Client');
+  const _feeNoteRecipient=esc(client?.name||inv.prospect_name||'Client');
   const _feeNoteDate=fmtDt(inv.invoice_date);
 
   // Use an iframe approach for clean full-width rendering
@@ -31088,9 +31088,9 @@ async function downloadInvoiceDocx(invId,e){
   <main class="fee-body">
     <div class="date-line">${_feeNoteDate}<\/div>
     <p>Dear Messrs. <strong>${_feeNoteRecipient}<\/strong>,<\/p>
-    <p class="re">RE: FEE NOTE FOR SERVICES RENDERED<\/p>
+    <p class="re">RE: INVOICE FOR SERVICES<\/p>
     <p>The above refers.<\/p>
-    <p>Kindly receive this fee note for the services rendered by us as itemised below. Please effect any and all payments through either of the following methods:<\/p>
+    <p>Kindly receive this invoice for services as itemised below. Please effect any and all payments through either of the following methods:<\/p>
     <div class="payment-methods">${_feeNotePaymentHtml}<\/div>
     <table class="fee-table">
       <thead>
@@ -31101,7 +31101,7 @@ async function downloadInvoiceDocx(invId,e){
         ${_feeNoteTotalsHtml}
       <\/tbody>
     <\/table>
-    <p>Thank you for your continued cooperation.<\/p>
+
     <p>Yours Faithfully,<\/p>
     <div class="signature">${esc(_invFirmName)}<\/div>
     <div class="advocate">ADVOCATE<\/div>
@@ -31255,12 +31255,15 @@ async function downloadInvoiceDocx(invId,e){
 
     new Paragraph({spacing:{before:240,after:0},border:{bottom:{style:BorderStyle.SINGLE,size:6,color:navy}},children:[new TextRun('')]}),
     new Paragraph({spacing:{before:240,after:160},children:[new TextRun({text:'BILL TO',font:'Arial',size:18,bold:true,color:'8a8a8a'})]}),
-    new Paragraph({spacing:{before:0,after:60},children:[new TextRun({text:client?client.name:'—',font:'Arial',size:24,bold:true,color:navy})]}),
+    new Paragraph({spacing:{before:0,after:60},children:[new TextRun({text:client?client.name:(inv.prospect_name||'—'),font:'Arial',size:24,bold:true,color:navy})]}),
   ];
 
   if(matter)invoiceChildren.push(new Paragraph({spacing:{before:0,after:60},children:[new TextRun({text:'Re: '+matter.title,font:'Arial',size:22,color:'5a5a5a'})]}));
   if(client?.email)invoiceChildren.push(new Paragraph({spacing:{before:0,after:60},children:[new TextRun({text:client.email,font:'Arial',size:22,color:'5a5a5a'})]}));
+  else if(inv.prospect_email)invoiceChildren.push(new Paragraph({spacing:{before:0,after:60},children:[new TextRun({text:inv.prospect_email,font:'Arial',size:22,color:'5a5a5a'})]}));
   if(client?.phone)invoiceChildren.push(new Paragraph({spacing:{before:0,after:60},children:[new TextRun({text:client.phone,font:'Arial',size:22,color:'5a5a5a'})]}));
+  else if(inv.prospect_phone)invoiceChildren.push(new Paragraph({spacing:{before:0,after:60},children:[new TextRun({text:inv.prospect_phone,font:'Arial',size:22,color:'5a5a5a'})]}));
+  if(!client&&inv.prospect_address)invoiceChildren.push(new Paragraph({spacing:{before:0,after:60},children:[new TextRun({text:inv.prospect_address,font:'Arial',size:22,color:'5a5a5a'})]}));
   if(inv.description)invoiceChildren.push(new Paragraph({spacing:{before:180,after:60},children:[new TextRun({text:inv.description,font:'Arial',size:22,color:'5a5a5a',italics:true})]}));
 
   // Line items table header
