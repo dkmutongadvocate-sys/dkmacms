@@ -5155,23 +5155,21 @@ function updateUserUI(){
   if(navFirmSettings)navFirmSettings.style.display=(hasPermission(p,'firm_settings_contact')||hasPermission(p,'firm_settings_mattertypes')||hasPermission(p,'firm_settings_departments')||hasPermission(p,'firm_settings_officedocs')||hasPermission(p,'publish_mobile_apps'))?'flex':'none';
   const navPermissions=document.getElementById('nav-permissions');
   if(navPermissions)navPermissions.style.display=isPermissionsAdmin(p)?'flex':'none';
-  // Team nav/list — visible to anyone who can see or manage at least one
-  // team member: admin/head/super_admin by role, or anyone granted
-  // manage_users (firm-wide or department scope).
+  // Team nav/list — visible to anyone who can do at least one of
+  // add/edit/delete for staff: admin/head/super_admin by role, or anyone
+  // granted any manage_users_* permission (firm-wide or department scope).
   const isRoleBasedStaffManager=p.role==='admin'||p.role==='head'||p.role==='super_admin';
-  const canSeeTeam=isRoleBasedStaffManager||!!permissionScope(p,'manage_users');
+  const canSeeTeam=isRoleBasedStaffManager||hasAnyActionAccess(p,'manage_users');
   const navTeam=document.getElementById('nav-team');
   if(navTeam)navTeam.style.display=canSeeTeam?'flex':'none';
   const diTeam=document.getElementById('di-team');
   if(diTeam)diTeam.style.display=canSeeTeam?'flex':'none';
-  // Add User button — same population as canSeeTeam today (no separate
-  // add_users grant exists yet), named distinctly so it's easy to split out
-  // later if a dedicated add-only permission is ever introduced.
-  const canAddUsers=canSeeTeam;
+  // Add User button — specifically requires the 'add' action (a user could
+  // have Edit/Delete only and still see the Team list, but not this button).
+  const canAddUsers=isRoleBasedStaffManager||!!actionScope(p,'manage_users','add');
   const btnAddUser=document.getElementById('btn-add-user');
   if(btnAddUser)btnAddUser.style.display=canAddUsers?'inline-block':'none';
-  // Add Client buttons — visible to anyone who can create a client (their own
-  // department is enough; firm-wide grants full access elsewhere too)
+  // Add Client buttons — specifically requires the 'add' action.
   const canAddClients=!!canManageClientRecord(p,null,'add');
   const btnNewClient1=document.getElementById('btn-new-client-1');
   if(btnNewClient1)btnNewClient1.style.display=canAddClients?'inline-block':'none';
@@ -5247,10 +5245,25 @@ const PERMISSION_DEFS_FALLBACK={
   firm_settings_officedocs:{label:'Firm Settings — Office Docs',category:'Firm Settings',defaultRoles:['admin','head','super_admin']},
   publish_mobile_apps:{label:'Publish Mobile App Releases (App Updates tab)',category:'Mobile Apps',defaultRoles:['admin','head','super_admin']},
   view_department_alerts:{label:'View Department-Wide Alerts (beyond your own)',category:'Alerts',defaultRoles:['admin','head','senior','super_admin']},
-  manage_users_firmwide:{label:'Add, Edit & Remove Staff — Firm-Wide',category:'User Management',defaultRoles:['admin','super_admin']},
-  manage_users_department:{label:'Add, Edit & Remove Staff — My Department Only',category:'User Management',defaultRoles:['head']},
-  manage_clients_firmwide:{label:'Add, Edit & Delete Clients — Firm-Wide',category:'Client Management',defaultRoles:['admin','super_admin']},
-  manage_clients_department:{label:'Add, Edit & Delete Clients — My Department Only',category:'Client Management',defaultRoles:['head']},
+  // User Management — split by action so a role/user can be granted, say,
+  // Add + Edit without Delete. Defaults match the old combined
+  // manage_users_firmwide/department keys exactly (admin/super_admin get
+  // every firm-wide action, head gets every department-scoped action).
+  manage_users_add_firmwide:{label:'Add Staff — Firm-Wide',category:'User Management',defaultRoles:['admin','super_admin']},
+  manage_users_edit_firmwide:{label:'Edit Staff — Firm-Wide',category:'User Management',defaultRoles:['admin','super_admin']},
+  manage_users_delete_firmwide:{label:'Remove Staff — Firm-Wide',category:'User Management',defaultRoles:['admin','super_admin']},
+  manage_users_add_department:{label:'Add Staff — My Department Only',category:'User Management',defaultRoles:['head']},
+  manage_users_edit_department:{label:'Edit Staff — My Department Only',category:'User Management',defaultRoles:['head']},
+  manage_users_delete_department:{label:'Remove Staff — My Department Only',category:'User Management',defaultRoles:['head']},
+  // Client Management — same split.
+  manage_clients_add_firmwide:{label:'Add Clients — Firm-Wide',category:'Client Management',defaultRoles:['admin','super_admin']},
+  manage_clients_edit_firmwide:{label:'Edit Clients — Firm-Wide',category:'Client Management',defaultRoles:['admin','super_admin']},
+  manage_clients_delete_firmwide:{label:'Delete Clients — Firm-Wide',category:'Client Management',defaultRoles:['admin','super_admin']},
+  manage_clients_add_department:{label:'Add Clients — My Department Only',category:'Client Management',defaultRoles:['head']},
+  manage_clients_edit_department:{label:'Edit Clients — My Department Only',category:'Client Management',defaultRoles:['head']},
+  manage_clients_delete_department:{label:'Delete Clients — My Department Only',category:'Client Management',defaultRoles:['head']},
+  // Case Assignment stays a single action (there's no add/edit/delete
+  // distinction to "assigning" a case), so it keeps its original two keys.
   assign_cases_firmwide:{label:'Assign Cases to Any Staff Member — Firm-Wide',category:'Case Assignment',defaultRoles:['admin','super_admin']},
   assign_cases_department:{label:'Assign Cases within My Department Only',category:'Case Assignment',defaultRoles:['head','senior']}
 };
@@ -5346,7 +5359,7 @@ function hasPermission(profile,key){
 }
 
 // Scope-aware permission helper for the paired *_firmwide / *_department
-// permission keys (User Management, Client Management, Case Assignment).
+// permission keys (Case Assignment — the only remaining single-action domain).
 // Returns 'firm', 'department', or null (no access).
 function permissionScope(profile,baseKey){
   if(!profile)return null;
@@ -5356,18 +5369,34 @@ function permissionScope(profile,baseKey){
   return null;
 }
 
+// Same idea, but for the User Management / Client Management domains, which
+// are split per action: manage_users_add_firmwide, manage_users_edit_department,
+// etc. `action` is 'add' | 'edit' | 'delete'. Returns 'firm', 'department', or null.
+function actionScope(profile,baseKey,action){
+  if(!profile)return null;
+  if(profile.role==='super_admin')return 'firm';
+  if(hasPermission(profile,`${baseKey}_${action}_firmwide`))return 'firm';
+  if(hasPermission(profile,`${baseKey}_${action}_department`))return 'department';
+  return null;
+}
+
+// True if the profile holds ANY of add/edit/delete for baseKey, in either
+// scope — used to decide whether to show a nav item/list at all, before
+// narrowing down to what they can actually do inside it.
+function hasAnyActionAccess(profile,baseKey){
+  return ['add','edit','delete'].some(a=>!!actionScope(profile,baseKey,a));
+}
+
 // Can actorProfile add/edit/remove targetProfile, independent of the
 // role-rank hierarchy? Combines the existing rank-based canManageTeamMember
-// check with the new grantable manage_users permission.
-// `action` ('add'|'edit'|'delete') is accepted for call-site clarity and
-// future per-action grants, but both the role-rank path and the current
-// manage_users_firmwide/department permissions grant full CRUD — same as
-// before — so it doesn't change the result today.
+// check with the grantable, per-action manage_users permissions.
+// `action` is 'add' | 'edit' | 'delete' (defaults to 'edit' for any old
+// call site that doesn't pass one).
 function canManageStaffMember(actorProfile,targetProfile,action){
   if(!actorProfile||!targetProfile)return false;
   if(targetProfile.role==='super_admin')return false;
   if(canManageTeamMember(actorProfile.role,targetProfile.role))return true;
-  const scope=permissionScope(actorProfile,'manage_users');
+  const scope=actionScope(actorProfile,'manage_users',action||'edit');
   if(!scope)return false;
   if(scope==='firm')return true;
   return !!actorProfile.department && actorProfile.department===targetProfile.department;
@@ -5376,12 +5405,10 @@ function canManageStaffMember(actorProfile,targetProfile,action){
 // Can actorProfile add/edit/delete this client record? New clients are
 // tagged with the creator's own department, so department-scope is
 // sufficient to create; firm-wide is required to touch clients outside it.
-// `action` ('add'|'edit'|'delete') is accepted for call-site clarity; a
-// granted scope currently covers all three actions equally, matching how
-// manage_clients_firmwide/department already worked.
+// `action` is 'add' | 'edit' | 'delete' (defaults to 'edit').
 function canManageClientRecord(actorProfile,clientRecord,action){
   if(!actorProfile)return false;
-  const scope=permissionScope(actorProfile,'manage_clients');
+  const scope=actionScope(actorProfile,'manage_clients',action||'edit');
   if(!scope)return false;
   if(scope==='firm')return true;
   if(!clientRecord)return true; // creating a brand-new client — always tagged with actor's own department
@@ -13088,7 +13115,7 @@ async function renderTeam(){
   const isAdmin=p.role==='admin';
   const isHead=p.role==='head';
   const isSuperAdmin=p.role==='super_admin';
-  const canManage=isAdmin||isHead||isSuperAdmin||!!permissionScope(p,'manage_users');
+  const canManage=isAdmin||isHead||isSuperAdmin||hasAnyActionAccess(p,'manage_users');
   myEl.innerHTML=`
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
       <div class="profile-av ${avColor(p.full_name||'?')}" style="width:52px;height:52px;font-size:18px">${initials(p.full_name||currentUser.email)}<\/div>
@@ -13121,7 +13148,7 @@ async function renderTeam(){
   teamEl.innerHTML=sorted.map(m=>{
     const isSelf=m.id===currentUser.id;
     const isSuspended=m.status==='suspended';
-    const canClick=canManage&&!isSelf&&canManageStaffMember(p,m,'edit');
+    const canClick=canManage&&!isSelf&&(canManageStaffMember(p,m,'edit')||canManageStaffMember(p,m,'delete'));
     return`
     <div class="client-item" style="${canClick?'cursor:pointer':'cursor:default'}" ${canClick?`onclick="openManageMemberModal('${m.id}')"`:''}">
       <div class="client-av ${isSuspended?'av-b':roleColors[m.role]||'av-b'}" style="${isSuspended?'opacity:0.5;filter:grayscale(1)':''}">${initials(m.full_name||'?')}<\/div>
@@ -13140,7 +13167,9 @@ async function renderTeam(){
 function closeAdduserModal(){document.getElementById('adduser-overlay').classList.add('hidden');}
 
 async function addUser(){
-  const canManageUsers=currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin'||!!permissionScope(currentProfile,'manage_users');
+  const isRoleBasedManager=currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin';
+  const addScope=actionScope(currentProfile,'manage_users','add');
+  const canManageUsers=isRoleBasedManager||!!addScope;
   if(!canManageUsers){toast('You do not have permission to add users.',true);return;}
   const name=document.getElementById('au-name').value.trim();
   const email=document.getElementById('au-email').value.trim();
@@ -13152,8 +13181,7 @@ async function addUser(){
   // Department-scoped managers (via permission grant, not role) can only add
   // staff into their own department — the role-based admin/head/super_admin
   // path is unaffected and keeps its existing free choice of department.
-  const isRoleBasedManager=currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin';
-  if(!isRoleBasedManager&&permissionScope(currentProfile,'manage_users')==='department'){
+  if(!isRoleBasedManager&&addScope==='department'){
     dept=currentProfile?.department||dept;
   }
   if(!name){errEl.textContent='Please enter the user\'s full name.';return;}
@@ -13506,7 +13534,7 @@ function openManageMemberModal(userId){
   sb.from('profiles').select('*').eq('id',userId).single().then(({data:m})=>{
     if(!m){toast('User not found.',true);return;}
     if(m.id===currentUser.id){toast('You cannot manage your own account from here.',true);return;}
-    if(!canManageStaffMember(currentProfile,m,'edit')){toast('You do not have permission to manage this user.',true);return;}
+    if(!canManageStaffMember(currentProfile,m,'edit')&&!canManageStaffMember(currentProfile,m,'delete')){toast('You do not have permission to manage this user.',true);return;}
     _manageMemberId=m.id;
     _manageMemberRole=m.role;
     _manageMemberDept=m.department||null;
@@ -13522,6 +13550,20 @@ function openManageMemberModal(userId){
     populateRoleSelect('mm-role',m.role||'associate');
     document.getElementById('mm-dept').value=m.department||'';
     document.getElementById('mm-error').textContent='';
+    // Edit vs delete are now separate grants — show only the controls the
+    // actor actually has access to (role-rank managers still see everything).
+    const canEditMember=canManageStaffMember(currentProfile,m,'edit');
+    const canDeleteMember=canManageStaffMember(currentProfile,m,'delete');
+    const roleDeptDivider=document.getElementById('mm-roledept-divider');
+    const roleDeptBlock=document.getElementById('mm-roledept-block');
+    if(roleDeptDivider)roleDeptDivider.style.display=canEditMember?'':'none';
+    if(roleDeptBlock)roleDeptBlock.style.display=canEditMember?'':'none';
+    const suspendBtn=document.getElementById('mm-suspend-btn');
+    if(suspendBtn)suspendBtn.style.display=canEditMember?'flex':'none';
+    const saveBtn=document.getElementById('mm-save-btn');
+    if(saveBtn)saveBtn.style.display=canEditMember?'':'none';
+    const deleteBtn=document.getElementById('mm-delete-btn');
+    if(deleteBtn)deleteBtn.style.display=canDeleteMember?'flex':'none';
     renderManageMemberPermissions(m);
     // Update suspend button
     _updateSuspendBtn();
@@ -21979,8 +22021,8 @@ async function ackPttRequest(id){
         </div>
         <div id="mm-status-badge"></div>
       </div>
-      <div class="section-divider">Role &amp; Department</div>
-      <div class="form-two">
+      <div class="section-divider" id="mm-roledept-divider">Role &amp; Department</div>
+      <div class="form-two" id="mm-roledept-block">
         <div class="form-row"><label>Role</label>
           <select id="mm-role">
             <option value="associate">Associate</option>
@@ -22011,7 +22053,7 @@ async function ackPttRequest(id){
             <div id="mm-suspend-desc" style="font-size:11px;color:var(--txt3);margin-top:1px">Prevents this user from logging in without deleting their data.</div>
           </div>
         </button>
-        <button onclick="deleteMember()" style="display:flex;align-items:center;gap:12px;background:#FCEBEB;border:1px solid #F5C6C6;border-radius:8px;padding:12px 16px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;width:100%;transition:all 0.12s" onmouseover="this.style.background='#f9d5d5'" onmouseout="this.style.background='#FCEBEB'">
+        <button id="mm-delete-btn" onclick="deleteMember()" style="display:flex;align-items:center;gap:12px;background:#FCEBEB;border:1px solid #F5C6C6;border-radius:8px;padding:12px 16px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;width:100%;transition:all 0.12s" onmouseover="this.style.background='#f9d5d5'" onmouseout="this.style.background='#FCEBEB'">
           <span style="font-size:18px">🗑</span>
           <div>
             <div style="font-size:13px;font-weight:500;color:#A32D2D">Delete Account</div>
