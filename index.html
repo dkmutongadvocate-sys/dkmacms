@@ -280,6 +280,8 @@ h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:500}
 .card-title{font-family:'Playfair Display',serif;font-size:14px;font-weight:500}
 .card-action{font-size:11px;color:var(--gold);cursor:pointer;font-weight:500;background:none;border:none;font-family:'DM Sans',sans-serif}
 .card-action:hover{text-decoration:underline}
+#permissions-tabs .card-action{border:1px solid var(--brd);border-radius:8px;color:var(--txt2)}
+#permissions-tabs .card-action.active{background:var(--gold);color:#fff;border-color:var(--gold)}
 
 /* MATTER ROWS */
 .matter-row{padding:13px 20px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:14px;cursor:pointer;transition:background 0.12s}
@@ -1984,27 +1986,34 @@ setTimeout(function() {
     <div class="view" id="view-permissions">
       <div class="card" style="margin-bottom:16px">
         <div style="padding:16px 20px;font-size:12px;color:var(--txt2);line-height:1.7">
-          Grant or revoke individual permissions per staff member, on top of their role. An override always wins over the role default. Super Administrators always have every permission and cannot be listed here.
+          Grant or revoke individual permissions per staff member, on top of their role. An override always wins over the role default. Super Administrators can also create new roles, define new permission types, and edit what each role gets by default under Roles &amp; Permissions. Super Administrators always have every permission and cannot be listed here.
         </div>
       </div>
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Staff Permissions</span>
-          <button class="card-action" onclick="renderPermissionsPage()">↺ Refresh</button>
-        </div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:12px" id="permissions-table">
-            <thead>
-              <tr style="border-bottom:1px solid var(--brd)">
-                <th style="text-align:left;padding:10px 16px;color:var(--txt3);font-weight:500">Staff Member</th>
-              </tr>
-            </thead>
-            <tbody id="permissions-table-body">
-              <tr><td style="padding:16px">Loading…</td></tr>
-            </tbody>
-          </table>
+      <div style="display:flex;gap:6px;margin-bottom:14px" id="permissions-tabs">
+        <button class="card-action active" id="perm-tab-overrides" onclick="switchPermissionsTab('overrides')" style="padding:6px 14px">Staff Overrides</button>
+        <button class="card-action" id="perm-tab-roles" onclick="switchPermissionsTab('roles')" style="padding:6px 14px;display:none">Roles &amp; Permissions</button>
+      </div>
+      <div id="perm-panel-overrides">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Staff Permissions</span>
+            <button class="card-action" onclick="renderPermissionsPage()">↺ Refresh</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:12px" id="permissions-table">
+              <thead>
+                <tr style="border-bottom:1px solid var(--brd)">
+                  <th style="text-align:left;padding:10px 16px;color:var(--txt3);font-weight:500">Staff Member</th>
+                </tr>
+              </thead>
+              <tbody id="permissions-table-body">
+                <tr><td style="padding:16px">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
+      <div id="perm-panel-roles" style="display:none"></div>
     </div>
 
     <!-- CLIENT INBOX -->
@@ -5143,55 +5152,143 @@ function updateUserUI(){
   });
   // Permission-gated nav items (can be granted/revoked per-user, independent of role)
   const navFirmSettings=document.getElementById('nav-firm-settings');
-  if(navFirmSettings)navFirmSettings.style.display=(hasPermission(p,'firm_settings_general')||hasPermission(p,'publish_mobile_apps'))?'flex':'none';
+  if(navFirmSettings)navFirmSettings.style.display=(hasPermission(p,'firm_settings_contact')||hasPermission(p,'firm_settings_mattertypes')||hasPermission(p,'firm_settings_departments')||hasPermission(p,'firm_settings_officedocs')||hasPermission(p,'publish_mobile_apps'))?'flex':'none';
   const navPermissions=document.getElementById('nav-permissions');
   if(navPermissions)navPermissions.style.display=isPermissionsAdmin(p)?'flex':'none';
   if(document.getElementById('view-firm-settings')?.classList.contains('active'))applyFirmSettingsTabVisibility();
 }
 
-function roleLabel(r){return{super_admin:'Super Administrator',admin:'Administrator',head:'Head of Department',senior:'Senior Associate',associate:'Associate'}[r]||r||'—';}
+// roleLabel/ROLE_RANK used to be a fixed enum; roles are now DB-driven via
+// window._rolesById (loaded by loadRolesAndPermissionDefs), with the 5
+// built-ins as a fallback so this keeps working before that load completes.
+function roleLabel(r){return window._rolesById?.[r]?.label||{super_admin:'Super Administrator',admin:'Administrator',head:'Head of Department',senior:'Senior Associate',associate:'Associate'}[r]||r||'—';}
 function isPortalAuthEmail(email){return String(email||'').toLowerCase().includes('+portal@');}
 function isStaffProfile(p){
   if(!p)return false;
   if(isPortalAuthEmail(p.email)||isPortalAuthEmail(p.full_name))return false;
   const role=String(p.role||'').toLowerCase();
+  if(window._rolesById && Object.keys(window._rolesById).length)return !!window._rolesById[role];
   return ['admin','head','senior','associate','super_admin'].includes(role);
 }
 // Role hierarchy: lower rank = more authority. Used to decide who can manage/delete whom.
-const ROLE_RANK={super_admin:0,admin:1,head:2,senior:3,associate:4};
+// Kept as ROLE_RANK for backward compatibility with any inline comparisons
+// elsewhere, but now proxies to the dynamic roleRank() so custom roles work too.
+const ROLE_RANK=new Proxy({super_admin:0,admin:1,head:2,senior:3,associate:4},{
+  get(fallback,prop){ return (window._rolesById&&window._rolesById[prop])?window._rolesById[prop].rank:fallback[prop]; }
+});
 function canManageTeamMember(actorRole,targetRole){
-  const a=ROLE_RANK[actorRole]??99, t=ROLE_RANK[targetRole]??99;
+  const t=roleRank(targetRole);
   if(actorRole==='super_admin')return targetRole!=='super_admin'; // super admin manages everyone but other super admins
-  if(actorRole==='admin')return t>ROLE_RANK.admin; // admins can manage head/senior/associate, never other admins or the super admin
-  if(actorRole==='head')return t>ROLE_RANK.head; // heads can manage senior/associate only
-  return false;
+  return t>roleRank(actorRole); // any role can manage roles strictly below it in rank
 }
 function staffProfiles(list){return (list||[]).filter(isStaffProfile);}
 
-// ─── GRANULAR PERMISSIONS ───────────────────────────────────────────
-// On top of the fixed role hierarchy above, admins/super admins can grant
-// or revoke specific individual permissions per staff member — e.g. give
-// an Associate the ability to publish mobile app releases, or take away a
-// Senior Associate's department-wide alert visibility — without changing
-// their role. Overrides live in the `staff_permission_overrides` table and
-// take precedence over the role default; super_admin always passes every
-// check and cannot be overridden (same immunity pattern as canManageTeamMember).
-const PERMISSION_DEFS={
-  firm_settings_general:{
-    label:'Firm Settings (Contact, Matter Types, Departments, Office Docs)',
-    defaultRoles:['admin','head','super_admin']
-  },
-  publish_mobile_apps:{
-    label:'Publish Mobile App Releases (App Updates tab)',
-    defaultRoles:['admin','head','super_admin']
-  },
-  view_department_alerts:{
-    label:'View Department-Wide Alerts (beyond your own)',
-    defaultRoles:['admin','head','senior','super_admin']
-  }
+// Fills a <select> with every current role (excluding super_admin, which is
+// never assignable through the UI), preserving/selecting currentValue.
+function populateRoleSelect(selectId,selectedValue){
+  const sel=document.getElementById(selectId);
+  if(!sel)return;
+  const roles=rolesList().filter(r=>r.id!=='super_admin');
+  sel.innerHTML=roles.map(r=>`<option value="${esc(r.id)}">${esc(r.label)}</option>`).join('');
+  if(selectedValue)sel.value=selectedValue;
+}
+
+// ─── DYNAMIC ROLES & GRANULAR PERMISSIONS ───────────────────────────
+// Two layers:
+//  1. Roles are no longer a fixed enum. `staff_roles` holds every role
+//     (the 5 built-ins are seeded as is_system=true and can't be deleted),
+//     each with a rank (lower = more authority) and a default permission
+//     set in `role_permissions`. Super Admins can create new roles, edit
+//     any role's default permissions, and define new permission keys in
+//     `permission_definitions`.
+//  2. Per-user overrides (`staff_permission_overrides`) always win over
+//     whatever the role grants by default — e.g. give one Associate the
+//     ability to publish mobile app releases without changing their role
+//     or touching the Associate role's defaults for everyone else.
+// super_admin always passes every check and can't be overridden or edited.
+
+// Fallback list so the UI still works for the brief moment before the DB
+// roles finish loading, and as the seed reference for the SQL migration.
+const SYSTEM_ROLE_FALLBACK=[
+  {id:'super_admin',label:'Super Administrator',rank:0,is_system:true},
+  {id:'admin',label:'Administrator',rank:1,is_system:true},
+  {id:'head',label:'Head of Department',rank:2,is_system:true},
+  {id:'senior',label:'Senior Associate',rank:3,is_system:true},
+  {id:'associate',label:'Associate',rank:4,is_system:true}
+];
+// Fallback permission catalogue, grouped by category, in case
+// `permission_definitions` hasn't loaded yet or the migration hasn't run.
+const PERMISSION_DEFS_FALLBACK={
+  firm_settings_contact:{label:'Firm Settings — Contact Details',category:'Firm Settings',defaultRoles:['admin','head','super_admin']},
+  firm_settings_mattertypes:{label:'Firm Settings — Matter Types',category:'Firm Settings',defaultRoles:['admin','head','super_admin']},
+  firm_settings_departments:{label:'Firm Settings — Departments',category:'Firm Settings',defaultRoles:['admin','head','super_admin']},
+  firm_settings_officedocs:{label:'Firm Settings — Office Docs',category:'Firm Settings',defaultRoles:['admin','head','super_admin']},
+  publish_mobile_apps:{label:'Publish Mobile App Releases (App Updates tab)',category:'Mobile Apps',defaultRoles:['admin','head','super_admin']},
+  view_department_alerts:{label:'View Department-Wide Alerts (beyond your own)',category:'Alerts',defaultRoles:['admin','head','senior','super_admin']}
 };
+
+window._rolesById={};
+SYSTEM_ROLE_FALLBACK.forEach(r=>window._rolesById[r.id]=r);
+window._permissionDefs={...PERMISSION_DEFS_FALLBACK};
+window._rolePermissions={}; // { [roleId]: Set(permissionKey) } — built from role_permissions, falls back to defaultRoles membership
+window._rolesLoaded=false;
 window._permOverrides={}; // { [userId]: { [permissionKey]: true|false } }
 window._permOverridesLoaded=false;
+
+function rolesList(){
+  return Object.values(window._rolesById).sort((a,b)=>(a.rank??99)-(b.rank??99));
+}
+function roleRank(roleId){
+  return window._rolesById[roleId]?.rank ?? 99;
+}
+function permCategories(){
+  const cats=[];
+  Object.values(window._permissionDefs).forEach(d=>{ if(!cats.includes(d.category))cats.push(d.category||'General'); });
+  return cats;
+}
+
+async function loadRolesAndPermissionDefs(){
+  try{
+    const[rolesRes,defsRes,rpRes]=await Promise.all([
+      sb.from('staff_roles').select('*').order('rank'),
+      sb.from('permission_definitions').select('*').order('category,label'),
+      sb.from('role_permissions').select('*')
+    ]);
+    if(!rolesRes.error && rolesRes.data?.length){
+      const map={};
+      rolesRes.data.forEach(r=>map[r.id]={id:r.id,label:r.label,rank:r.rank,is_system:!!r.is_system});
+      window._rolesById=map;
+    }
+    if(!defsRes.error && defsRes.data?.length){
+      const map={};
+      defsRes.data.forEach(d=>map[d.key]={label:d.label,category:d.category||'General',defaultRoles:[],is_system:!!d.is_system});
+      window._permissionDefs=map;
+    }
+    if(!rpRes.error && rpRes.data?.length){
+      const map={};
+      rpRes.data.forEach(row=>{
+        if(!map[row.role_id])map[row.role_id]=new Set();
+        if(row.granted!==false)map[row.role_id].add(row.permission_key);
+      });
+      window._rolePermissions=map;
+    } else {
+      // No role_permissions rows yet (fresh install before migration seed) —
+      // fall back to the defaultRoles membership baked into the fallback defs.
+      const map={};
+      Object.keys(window._permissionDefs).forEach(key=>{
+        const def=window._permissionDefs[key];
+        (def.defaultRoles||[]).forEach(roleId=>{
+          if(!map[roleId])map[roleId]=new Set();
+          map[roleId].add(key);
+        });
+      });
+      window._rolePermissions=map;
+    }
+    window._rolesLoaded=true;
+  }catch(e){
+    console.warn('[roles] load error:',e.message);
+  }
+}
 
 async function loadPermissionOverrides(){
   try{
@@ -5214,21 +5311,24 @@ function hasPermission(profile,key){
   if(profile.role==='super_admin')return true;
   const override=window._permOverrides?.[profile.id]?.[key];
   if(override!==undefined)return override;
-  const def=PERMISSION_DEFS[key];
-  return def?def.defaultRoles.includes(profile.role):false;
+  return !!(window._rolePermissions?.[profile.role]?.has(key));
 }
 
-// Only admins/super admins can grant or revoke overrides — chosen deliberately
-// simpler than the role-management hierarchy so permission delegation always
-// has a single, predictable source of truth.
+// Only admins/super admins can grant or revoke per-user overrides — chosen
+// deliberately simpler than the role-management hierarchy so permission
+// delegation always has a single, predictable source of truth. Editing role
+// defaults and creating roles/permission keys is Super Admin only.
 function isPermissionsAdmin(profile){
   return profile?.role==='admin'||profile?.role==='super_admin';
+}
+function isRolesAdmin(profile){
+  return profile?.role==='super_admin';
 }
 
 async function setPermissionOverride(userId,key,mode){
   // mode: 'default' (remove override) | 'granted' | 'revoked'
   if(!isPermissionsAdmin(currentProfile)){toast('You do not have permission to do that.',true);return false;}
-  if(!PERMISSION_DEFS[key]){return false;}
+  if(!window._permissionDefs[key]){return false;}
   if(mode==='default'){
     const{error}=await sb.from('staff_permission_overrides').delete().eq('user_id',userId).eq('permission_key',key);
     if(error){toast('Error: '+error.message,true);return false;}
@@ -5250,14 +5350,95 @@ async function setPermissionOverride(userId,key,mode){
   return true;
 }
 
+// ── Role & permission-definition management (Super Admin only) ──────
+async function createRole(id,label,rank){
+  if(!isRolesAdmin(currentProfile)){toast('You do not have permission to do that.',true);return false;}
+  id=String(id||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'_');
+  if(!id||!label){toast('Role id and label are required.',true);return false;}
+  if(window._rolesById[id]){toast('A role with that id already exists.',true);return false;}
+  const{error}=await sb.from('staff_roles').insert({id,label,rank:Number(rank)||50,is_system:false});
+  if(error){toast('Error: '+error.message,true);return false;}
+  window._rolesById[id]={id,label,rank:Number(rank)||50,is_system:false};
+  toast('Role created.');
+  return true;
+}
+async function updateRoleLabel(id,label){
+  if(!isRolesAdmin(currentProfile))return false;
+  const{error}=await sb.from('staff_roles').update({label}).eq('id',id);
+  if(error){toast('Error: '+error.message,true);return false;}
+  if(window._rolesById[id])window._rolesById[id].label=label;
+  return true;
+}
+async function deleteRole(id){
+  if(!isRolesAdmin(currentProfile)){toast('You do not have permission to do that.',true);return false;}
+  const role=window._rolesById[id];
+  if(!role||role.is_system){toast('Built-in roles cannot be deleted.',true);return false;}
+  const inUse=(window._allProfiles||[]).some(p=>p.role===id);
+  if(inUse){toast('Cannot delete a role that is still assigned to staff members.',true);return false;}
+  const{error}=await sb.from('staff_roles').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,true);return false;}
+  delete window._rolesById[id];
+  delete window._rolePermissions[id];
+  toast('Role deleted.');
+  return true;
+}
+async function setRolePermission(roleId,key,granted){
+  if(!isRolesAdmin(currentProfile)){toast('You do not have permission to do that.',true);return false;}
+  if(roleId==='super_admin')return false; // super_admin always has everything, not editable
+  const{error}=await sb.from('role_permissions').upsert({
+    role_id:roleId,permission_key:key,granted:!!granted
+  },{onConflict:'role_id,permission_key'});
+  if(error){toast('Error: '+error.message,true);return false;}
+  if(!window._rolePermissions[roleId])window._rolePermissions[roleId]=new Set();
+  if(granted)window._rolePermissions[roleId].add(key);
+  else window._rolePermissions[roleId].delete(key);
+  updateUserUI();
+  return true;
+}
+async function createPermissionDef(key,label,category){
+  if(!isRolesAdmin(currentProfile)){toast('You do not have permission to do that.',true);return false;}
+  key=String(key||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'_');
+  if(!key||!label){toast('Permission key and label are required.',true);return false;}
+  if(window._permissionDefs[key]){toast('A permission with that key already exists.',true);return false;}
+  const{error}=await sb.from('permission_definitions').insert({key,label,category:category||'General',is_system:false});
+  if(error){toast('Error: '+error.message,true);return false;}
+  window._permissionDefs[key]={label,category:category||'General',defaultRoles:[],is_system:false};
+  toast('Permission created.');
+  return true;
+}
+
+window._permissionsActiveTab='overrides'; // 'overrides' | 'roles'
+
+function switchPermissionsTab(tab){
+  window._permissionsActiveTab=tab;
+  const overridesBtn=document.getElementById('perm-tab-overrides');
+  const rolesBtn=document.getElementById('perm-tab-roles');
+  const overridesPanel=document.getElementById('perm-panel-overrides');
+  const rolesPanel=document.getElementById('perm-panel-roles');
+  if(overridesBtn)overridesBtn.classList.toggle('active',tab==='overrides');
+  if(rolesBtn)rolesBtn.classList.toggle('active',tab==='roles');
+  if(overridesPanel)overridesPanel.style.display=tab==='overrides'?'':'none';
+  if(rolesPanel)rolesPanel.style.display=tab==='roles'?'':'none';
+  renderPermissionsPage();
+}
+
 async function renderPermissionsPage(){
   if(!isPermissionsAdmin(currentProfile))return;
+  if(!window._rolesLoaded)await loadRolesAndPermissionDefs();
   await ensureAllProfilesLoaded();
   if(!window._permOverridesLoaded)await loadPermissionOverrides();
+  const rolesTabBtn=document.getElementById('perm-tab-roles');
+  if(rolesTabBtn)rolesTabBtn.style.display=isRolesAdmin(currentProfile)?'':'none';
+  if(window._permissionsActiveTab==='roles'&&isRolesAdmin(currentProfile)){
+    renderRolesPermissionsTab();
+    return;
+  }
+  window._permissionsActiveTab='overrides';
   const theadRow=document.querySelector('#permissions-table thead tr');
+  const keys=Object.keys(window._permissionDefs);
   if(theadRow){
     theadRow.innerHTML='<th style="text-align:left;padding:10px 16px;color:var(--txt3);font-weight:500">Staff Member</th>'+
-      Object.keys(PERMISSION_DEFS).map(k=>`<th style="text-align:left;padding:10px 16px;color:var(--txt3);font-weight:500;min-width:200px">${esc(PERMISSION_DEFS[k].label)}</th>`).join('');
+      keys.map(k=>`<th style="text-align:left;padding:10px 16px;color:var(--txt3);font-weight:500;min-width:200px">${esc(window._permissionDefs[k].category||'General')}<br><span style="font-weight:400">${esc(window._permissionDefs[k].label)}</span></th>`).join('');
   }
   const body=document.getElementById('permissions-table-body');
   if(!body)return;
@@ -5267,10 +5448,9 @@ async function renderPermissionsPage(){
 }
 
 function renderPermissionsRow(m){
-  const cells=Object.keys(PERMISSION_DEFS).map(key=>{
-    const def=PERMISSION_DEFS[key];
+  const cells=Object.keys(window._permissionDefs).map(key=>{
     const override=window._permOverrides?.[m.id]?.[key];
-    const roleDefault=def.defaultRoles.includes(m.role);
+    const roleDefault=!!(window._rolePermissions?.[m.role]?.has(key));
     const value=override===undefined?'default':(override?'granted':'revoked');
     return `<td style="padding:8px 16px">
       <select onchange="setPermissionOverride('${m.id}','${key}',this.value)" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--brd);background:${override===undefined?'#fff':(override?'#EAF3DE':'#FCEBEB')};font-family:'DM Sans',sans-serif">
@@ -5287,6 +5467,61 @@ function renderPermissionsRow(m){
     </td>
     ${cells}
   </tr>`;
+}
+
+// ── Roles & Permissions tab (Super Admin only): create/edit roles,
+// toggle each role's default permissions grouped by category, and define
+// brand-new permission keys that features elsewhere can gate on. ──
+function renderRolesPermissionsTab(){
+  const wrap=document.getElementById('perm-panel-roles');
+  if(!wrap)return;
+  const cats=permCategories();
+  const roles=rolesList().filter(r=>r.id!=='super_admin');
+  wrap.innerHTML=`
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+      <button class="card-action" onclick="openCreatePermissionModal()">+ New Permission</button>
+      <button class="card-action" onclick="openCreateRoleModal()">+ New Role</button>
+    </div>
+    ${roles.map(role=>`
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header">
+          <span class="card-title">${esc(role.label)}${role.is_system?' <span style="font-size:10px;color:var(--txt3);font-weight:400">(built-in)</span>':''}</span>
+          ${role.is_system?'':`<button class="card-action" style="color:#B23B3B" onclick="deleteRole('${role.id}').then(()=>renderRolesPermissionsTab())">Delete Role</button>`}
+        </div>
+        <div style="padding:14px 20px">
+          ${cats.map(cat=>`
+            <div style="margin-bottom:10px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt3);margin-bottom:6px">${esc(cat)}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:14px">
+                ${Object.keys(window._permissionDefs).filter(k=>(window._permissionDefs[k].category||'General')===cat).map(key=>{
+                  const checked=!!(window._rolePermissions?.[role.id]?.has(key));
+                  return `<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txt2)">
+                    <input type="checkbox" ${checked?'checked':''} onchange="setRolePermission('${role.id}','${key}',this.checked)"/>
+                    ${esc(window._permissionDefs[key].label)}
+                  </label>`;
+                }).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function openCreateRoleModal(){
+  const label=prompt('New role name (e.g. "Paralegal"):');
+  if(!label)return;
+  const rankStr=prompt('Rank relative to existing roles — a number where lower means more authority (Admin=1, Head=2, Senior=3, Associate=4). Enter a number, e.g. 3 for similar authority to a Senior Associate:','10');
+  if(rankStr===null)return;
+  createRole(label,label,rankStr).then(ok=>{ if(ok)renderRolesPermissionsTab(); });
+}
+function openCreatePermissionModal(){
+  const label=prompt('New permission name (what does it let someone do?):');
+  if(!label)return;
+  const category=prompt('Category for this permission (groups it in the UI), e.g. "Firm Settings":','General');
+  if(category===null)return;
+  createPermissionDef(label,label,category).then(ok=>{ if(ok)renderRolesPermissionsTab(); });
 }
 function shouldForceStaffPasswordChange(){
   if(!currentProfile?.force_password_change)return false;
@@ -5592,7 +5827,7 @@ async function loadAll(){
     loadTimeEntries(),loadParties(),loadContacts(),loadInboxMessages(),
     loadAllProfiles(),loadGazettedHolidays(),loadStaffMessages(),loadPanicAlerts(),
     loadClientGroups(),
-    loadPermissionOverrides().then(()=>{updateUserUI();if(document.getElementById('view-alerts')?.classList.contains('active'))renderAlerts();}),
+    loadRolesAndPermissionDefs().then(loadPermissionOverrides).then(()=>{updateUserUI();if(document.getElementById('view-alerts')?.classList.contains('active'))renderAlerts();}),
     loadFirmSettings().then(()=>refreshAppDropdowns())
   ]).then(()=>{ updateBadges(); });
   // Update parties badge
@@ -13087,7 +13322,7 @@ function openEditMyRoleModal(){
   document.getElementById('myp-phone').value=p.phone||'';
   document.getElementById('myp-bar').value=p.bar_number||'';
   document.getElementById('myp-bio').value=p.bio||'';
-  document.getElementById('myp-role').value=p.role||'associate';
+  populateRoleSelect('myp-role',p.role||'associate');
   document.getElementById('myp-dept').value=p.department||'';
   document.getElementById('myp-newpw').value='';
   document.getElementById('myp-newpw-confirm').value='';
@@ -13197,7 +13432,7 @@ function openManageMemberModal(userId){
     document.getElementById('mm-meta').textContent=roleLabel(m.role)+(m.department?' · '+m.department:'')+(m.phone?' · '+m.phone:'');
     const badge=document.getElementById('mm-status-badge');
     badge.innerHTML=_manageMemberSuspended?'<span class="status-pill status-urgent" style="font-size:9px">Suspended<\/span>':'<span class="status-pill status-active" style="font-size:9px">Active<\/span>';
-    document.getElementById('mm-role').value=m.role||'associate';
+    populateRoleSelect('mm-role',m.role||'associate');
     document.getElementById('mm-dept').value=m.department||'';
     document.getElementById('mm-error').textContent='';
     renderManageMemberPermissions(m);
@@ -13217,21 +13452,28 @@ async function renderManageMemberPermissions(m){
     wrap.innerHTML='';
     return;
   }
+  if(!window._rolesLoaded)await loadRolesAndPermissionDefs();
   if(!window._permOverridesLoaded)await loadPermissionOverrides();
   divider.style.display='';
   wrap.style.display='flex';
-  wrap.innerHTML=Object.keys(PERMISSION_DEFS).map(key=>{
-    const def=PERMISSION_DEFS[key];
-    const override=window._permOverrides?.[m.id]?.[key];
-    const roleDefault=def.defaultRoles.includes(m.role);
-    const value=override===undefined?'default':(override?'granted':'revoked');
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--txt2)">
-      <span style="flex:1">${esc(def.label)}</span>
-      <select onchange="setPermissionOverride('${m.id}','${key}',this.value).then(()=>renderManageMemberPermissions({id:'${m.id}',role:'${m.role}'}))" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--brd);background:${override===undefined?'#fff':(override?'#EAF3DE':'#FCEBEB')};font-family:'DM Sans',sans-serif">
-        <option value="default" ${value==='default'?'selected':''}>Default (${roleDefault?'allowed':'not allowed'})</option>
-        <option value="granted" ${value==='granted'?'selected':''}>Granted</option>
-        <option value="revoked" ${value==='revoked'?'selected':''}>Revoked</option>
-      </select>
+  wrap.innerHTML=permCategories().map(cat=>{
+    const rows=Object.keys(window._permissionDefs).filter(k=>(window._permissionDefs[k].category||'General')===cat).map(key=>{
+      const def=window._permissionDefs[key];
+      const override=window._permOverrides?.[m.id]?.[key];
+      const roleDefault=!!(window._rolePermissions?.[m.role]?.has(key));
+      const value=override===undefined?'default':(override?'granted':'revoked');
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--txt2)">
+        <span style="flex:1">${esc(def.label)}</span>
+        <select onchange="setPermissionOverride('${m.id}','${key}',this.value).then(()=>renderManageMemberPermissions({id:'${m.id}',role:'${m.role}'}))" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--brd);background:${override===undefined?'#fff':(override?'#EAF3DE':'#FCEBEB')};font-family:'DM Sans',sans-serif">
+          <option value="default" ${value==='default'?'selected':''}>Default (${roleDefault?'allowed':'not allowed'})</option>
+          <option value="granted" ${value==='granted'?'selected':''}>Granted</option>
+          <option value="revoked" ${value==='revoked'?'selected':''}>Revoked</option>
+        </select>
+      </div>`;
+    }).join('');
+    return `<div style="width:100%">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt3);margin-bottom:6px">${esc(cat)}</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">${rows}</div>
     </div>`;
   }).join('');
 }
@@ -13394,6 +13636,7 @@ async function resetTeamMemberPassword(userId,name,e){
 // ─── MODAL HELPERS ────────────────────────────────────────────────
 function openModal(type){
   if(type==='adduser'){
+    populateRoleSelect('au-role','associate');
     document.getElementById('adduser-overlay').classList.remove('hidden');
     return;
   }
@@ -21767,7 +22010,7 @@ let legacyAccessJobFilesFolderName='';
 let legacyAccessJobFileCount=0;
 let activeAppUpdatesTab='sos';
 
-const FS_TAB_PERMISSIONS={contact:'firm_settings_general',mattertypes:'firm_settings_general',departments:'firm_settings_general',officedocs:'firm_settings_general',panicapp:'publish_mobile_apps'};
+const FS_TAB_PERMISSIONS={contact:'firm_settings_contact',mattertypes:'firm_settings_mattertypes',departments:'firm_settings_departments',officedocs:'firm_settings_officedocs',panicapp:'publish_mobile_apps'};
 function applyFirmSettingsTabVisibility(){
   const p=currentProfile;
   let anyVisible=false,firstVisible=null,activeStillVisible=false;
