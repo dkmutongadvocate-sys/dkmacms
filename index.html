@@ -1408,9 +1408,13 @@ setTimeout(function() {
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.209 1.791-4 4-4s4 1.791 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 9c1.657 0 3 1.343 3 3v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></svg>
       <span>Team</span>
     </div>
-    <div class="nav-item admin-only" data-admin-display="flex" onclick="showView('firm-settings',this)">
+    <div class="nav-item" id="nav-firm-settings" style="display:none" onclick="showView('firm-settings',this)">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" fill="currentColor" opacity=".7"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       <span>Firm Settings</span>
+    </div>
+    <div class="nav-item" id="nav-permissions" style="display:none" onclick="showView('permissions',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="4" y="7" width="8" height="7" rx="1.4" stroke="currentColor" stroke-width="1.4"/><path d="M6 7V4.5a2 2 0 014 0V7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <span>Permissions</span>
     </div>
   </div>
 
@@ -1972,6 +1976,33 @@ setTimeout(function() {
             <button class="topbar-btn admin-only" data-admin-display="inline-block" style="font-size:11px;padding:5px 12px" onclick="openModal('adduser')">+ Add User</button>
           </div>
           <div id="team-list"><div class="empty-state"><p>Loading⬦</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERMISSIONS -->
+    <div class="view" id="view-permissions">
+      <div class="card" style="margin-bottom:16px">
+        <div style="padding:16px 20px;font-size:12px;color:var(--txt2);line-height:1.7">
+          Grant or revoke individual permissions per staff member, on top of their role. An override always wins over the role default. Super Administrators always have every permission and cannot be listed here.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Staff Permissions</span>
+          <button class="card-action" onclick="renderPermissionsPage()">↺ Refresh</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px" id="permissions-table">
+            <thead>
+              <tr style="border-bottom:1px solid var(--brd)">
+                <th style="text-align:left;padding:10px 16px;color:var(--txt3);font-weight:500">Staff Member</th>
+              </tr>
+            </thead>
+            <tbody id="permissions-table-body">
+              <tr><td style="padding:16px">Loading…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -4822,11 +4853,19 @@ function partyTypePill(role){
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────
-const viewTitles={dashboard:'Dashboard',sos:'SOS Alerts',matters:'Matters',clients:'Clients',contacts:'Contacts','client-profile':'Client Profile','group-hub':'Group Hub','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox','staff-inbox':'Staff Inbox','firm-settings':'Firm Settings','legacy-import':'Legacy Import'};
+const viewTitles={dashboard:'Dashboard',sos:'SOS Alerts',matters:'Matters',clients:'Clients',contacts:'Contacts','client-profile':'Client Profile','group-hub':'Group Hub','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox','staff-inbox':'Staff Inbox','firm-settings':'Firm Settings','legacy-import':'Legacy Import',permissions:'Permissions'};
 function showView(id,el,fromMobile){
   if(id==='view-reports' && !window.DG_STANDALONE_MODE){
     id='dashboard';
     notifyCmsDocGenRemoved();
+  }
+  if(id==='firm-settings' && !(hasPermission(currentProfile,'firm_settings_general')||hasPermission(currentProfile,'publish_mobile_apps'))){
+    toast('You do not have permission to view Firm Settings.',true);
+    id='dashboard';
+  }
+  if(id==='permissions' && !isPermissionsAdmin(currentProfile)){
+    toast('Only administrators can manage permissions.',true);
+    id='dashboard';
   }
   if(!document.getElementById('view-'+id)){
     id='dashboard';
@@ -4869,8 +4908,9 @@ function showView(id,el,fromMobile){
   }
   if(id==='dashboard')renderDashboard();
   if(id==='team')renderTeam();
-  if(id==='firm-settings')loadFirmSettings();
+  if(id==='firm-settings'){loadFirmSettings();applyFirmSettingsTabVisibility();}
   if(id==='legacy-import')renderLegacyImportTool();
+  if(id==='permissions')renderPermissionsPage();
   if(id==='inbox'){renderInboxThreadList();}
   if(id==='staff-inbox'){
     const listEl=document.getElementById('staff-inbox-thread-list');
@@ -5101,6 +5141,12 @@ function updateUserUI(){
       el.style.display=desiredDisplay;
     }
   });
+  // Permission-gated nav items (can be granted/revoked per-user, independent of role)
+  const navFirmSettings=document.getElementById('nav-firm-settings');
+  if(navFirmSettings)navFirmSettings.style.display=(hasPermission(p,'firm_settings_general')||hasPermission(p,'publish_mobile_apps'))?'flex':'none';
+  const navPermissions=document.getElementById('nav-permissions');
+  if(navPermissions)navPermissions.style.display=isPermissionsAdmin(p)?'flex':'none';
+  if(document.getElementById('view-firm-settings')?.classList.contains('active'))applyFirmSettingsTabVisibility();
 }
 
 function roleLabel(r){return{super_admin:'Super Administrator',admin:'Administrator',head:'Head of Department',senior:'Senior Associate',associate:'Associate'}[r]||r||'—';}
@@ -5121,6 +5167,127 @@ function canManageTeamMember(actorRole,targetRole){
   return false;
 }
 function staffProfiles(list){return (list||[]).filter(isStaffProfile);}
+
+// ─── GRANULAR PERMISSIONS ───────────────────────────────────────────
+// On top of the fixed role hierarchy above, admins/super admins can grant
+// or revoke specific individual permissions per staff member — e.g. give
+// an Associate the ability to publish mobile app releases, or take away a
+// Senior Associate's department-wide alert visibility — without changing
+// their role. Overrides live in the `staff_permission_overrides` table and
+// take precedence over the role default; super_admin always passes every
+// check and cannot be overridden (same immunity pattern as canManageTeamMember).
+const PERMISSION_DEFS={
+  firm_settings_general:{
+    label:'Firm Settings (Contact, Matter Types, Departments, Office Docs)',
+    defaultRoles:['admin','head','super_admin']
+  },
+  publish_mobile_apps:{
+    label:'Publish Mobile App Releases (App Updates tab)',
+    defaultRoles:['admin','head','super_admin']
+  },
+  view_department_alerts:{
+    label:'View Department-Wide Alerts (beyond your own)',
+    defaultRoles:['admin','head','senior','super_admin']
+  }
+};
+window._permOverrides={}; // { [userId]: { [permissionKey]: true|false } }
+window._permOverridesLoaded=false;
+
+async function loadPermissionOverrides(){
+  try{
+    const{data,error}=await sb.from('staff_permission_overrides').select('*');
+    if(error){console.warn('[permissions] load failed:',error.message);return;}
+    const map={};
+    (data||[]).forEach(row=>{
+      if(!map[row.user_id])map[row.user_id]={};
+      map[row.user_id][row.permission_key]=!!row.granted;
+    });
+    window._permOverrides=map;
+    window._permOverridesLoaded=true;
+  }catch(e){
+    console.warn('[permissions] load error:',e.message);
+  }
+}
+
+function hasPermission(profile,key){
+  if(!profile)return false;
+  if(profile.role==='super_admin')return true;
+  const override=window._permOverrides?.[profile.id]?.[key];
+  if(override!==undefined)return override;
+  const def=PERMISSION_DEFS[key];
+  return def?def.defaultRoles.includes(profile.role):false;
+}
+
+// Only admins/super admins can grant or revoke overrides — chosen deliberately
+// simpler than the role-management hierarchy so permission delegation always
+// has a single, predictable source of truth.
+function isPermissionsAdmin(profile){
+  return profile?.role==='admin'||profile?.role==='super_admin';
+}
+
+async function setPermissionOverride(userId,key,mode){
+  // mode: 'default' (remove override) | 'granted' | 'revoked'
+  if(!isPermissionsAdmin(currentProfile)){toast('You do not have permission to do that.',true);return false;}
+  if(!PERMISSION_DEFS[key]){return false;}
+  if(mode==='default'){
+    const{error}=await sb.from('staff_permission_overrides').delete().eq('user_id',userId).eq('permission_key',key);
+    if(error){toast('Error: '+error.message,true);return false;}
+    if(window._permOverrides[userId])delete window._permOverrides[userId][key];
+  } else {
+    const granted=mode==='granted';
+    const{error}=await sb.from('staff_permission_overrides').upsert({
+      user_id:userId,permission_key:key,granted,granted_by:currentUser?.id||null,granted_at:new Date().toISOString()
+    },{onConflict:'user_id,permission_key'});
+    if(error){toast('Error: '+error.message,true);return false;}
+    if(!window._permOverrides[userId])window._permOverrides[userId]={};
+    window._permOverrides[userId][key]=granted;
+  }
+  updateUserUI();
+  const row=document.getElementById('perm-row-'+userId);
+  const member=(window._allProfiles||[]).find(p=>p.id===userId);
+  if(row&&member)row.outerHTML=renderPermissionsRow(member);
+  toast('Permission updated.');
+  return true;
+}
+
+async function renderPermissionsPage(){
+  if(!isPermissionsAdmin(currentProfile))return;
+  await ensureAllProfilesLoaded();
+  if(!window._permOverridesLoaded)await loadPermissionOverrides();
+  const theadRow=document.querySelector('#permissions-table thead tr');
+  if(theadRow){
+    theadRow.innerHTML='<th style="text-align:left;padding:10px 16px;color:var(--txt3);font-weight:500">Staff Member</th>'+
+      Object.keys(PERMISSION_DEFS).map(k=>`<th style="text-align:left;padding:10px 16px;color:var(--txt3);font-weight:500;min-width:200px">${esc(PERMISSION_DEFS[k].label)}</th>`).join('');
+  }
+  const body=document.getElementById('permissions-table-body');
+  if(!body)return;
+  const list=(window._allProfiles||[]).filter(p=>p.role!=='super_admin').slice().sort((a,b)=>(a.full_name||'').localeCompare(b.full_name||''));
+  if(!list.length){body.innerHTML='<tr><td style="padding:16px;color:var(--txt3)">No staff found.</td></tr>';return;}
+  body.innerHTML=list.map(m=>renderPermissionsRow(m)).join('');
+}
+
+function renderPermissionsRow(m){
+  const cells=Object.keys(PERMISSION_DEFS).map(key=>{
+    const def=PERMISSION_DEFS[key];
+    const override=window._permOverrides?.[m.id]?.[key];
+    const roleDefault=def.defaultRoles.includes(m.role);
+    const value=override===undefined?'default':(override?'granted':'revoked');
+    return `<td style="padding:8px 16px">
+      <select onchange="setPermissionOverride('${m.id}','${key}',this.value)" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--brd);background:${override===undefined?'#fff':(override?'#EAF3DE':'#FCEBEB')};font-family:'DM Sans',sans-serif">
+        <option value="default" ${value==='default'?'selected':''}>Default (${roleDefault?'allowed':'not allowed'})</option>
+        <option value="granted" ${value==='granted'?'selected':''}>Granted</option>
+        <option value="revoked" ${value==='revoked'?'selected':''}>Revoked</option>
+      </select>
+    </td>`;
+  }).join('');
+  return `<tr id="perm-row-${m.id}" style="border-bottom:1px solid var(--brd)">
+    <td style="padding:8px 16px;white-space:nowrap">
+      <div style="font-weight:500;color:var(--txt)">${esc(m.full_name||m.email||'Unknown')}</div>
+      <div style="font-size:10px;color:var(--txt3)">${roleLabel(m.role)}${m.department?' · '+esc(m.department):''}</div>
+    </td>
+    ${cells}
+  </tr>`;
+}
 function shouldForceStaffPasswordChange(){
   if(!currentProfile?.force_password_change)return false;
   const meta=currentUser?.user_metadata||{};
@@ -5425,6 +5592,7 @@ async function loadAll(){
     loadTimeEntries(),loadParties(),loadContacts(),loadInboxMessages(),
     loadAllProfiles(),loadGazettedHolidays(),loadStaffMessages(),loadPanicAlerts(),
     loadClientGroups(),
+    loadPermissionOverrides().then(()=>{updateUserUI();if(document.getElementById('view-alerts')?.classList.contains('active'))renderAlerts();}),
     loadFirmSettings().then(()=>refreshAppDropdowns())
   ]).then(()=>{ updateBadges(); });
   // Update parties badge
@@ -12513,8 +12681,7 @@ function getVisibleAlerts(){
     if(target==='myself') return createdBy===uid;
     if(target==='dept'||target==='my_associates'){
       if(!dept||!alertDept) return createdBy===uid;
-      if(role==='head') return alertDept===dept;
-      if(role==='senior') return alertDept===dept; // see dept alerts from head and own
+      if(hasPermission(currentProfile,'view_department_alerts')) return alertDept===dept; // grantable/revocable per-user, defaults to head+senior+admin
       return createdBy===uid;
     }
     return false;
@@ -13033,10 +13200,40 @@ function openManageMemberModal(userId){
     document.getElementById('mm-role').value=m.role||'associate';
     document.getElementById('mm-dept').value=m.department||'';
     document.getElementById('mm-error').textContent='';
+    renderManageMemberPermissions(m);
     // Update suspend button
     _updateSuspendBtn();
     document.getElementById('managemember-overlay').classList.remove('hidden');
   });
+}
+
+async function renderManageMemberPermissions(m){
+  const divider=document.getElementById('mm-permissions-divider');
+  const wrap=document.getElementById('mm-permissions-wrap');
+  if(!divider||!wrap)return;
+  if(m.role==='super_admin'||!isPermissionsAdmin(currentProfile)){
+    divider.style.display='none';
+    wrap.style.display='none';
+    wrap.innerHTML='';
+    return;
+  }
+  if(!window._permOverridesLoaded)await loadPermissionOverrides();
+  divider.style.display='';
+  wrap.style.display='flex';
+  wrap.innerHTML=Object.keys(PERMISSION_DEFS).map(key=>{
+    const def=PERMISSION_DEFS[key];
+    const override=window._permOverrides?.[m.id]?.[key];
+    const roleDefault=def.defaultRoles.includes(m.role);
+    const value=override===undefined?'default':(override?'granted':'revoked');
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--txt2)">
+      <span style="flex:1">${esc(def.label)}</span>
+      <select onchange="setPermissionOverride('${m.id}','${key}',this.value).then(()=>renderManageMemberPermissions({id:'${m.id}',role:'${m.role}'}))" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--brd);background:${override===undefined?'#fff':(override?'#EAF3DE':'#FCEBEB')};font-family:'DM Sans',sans-serif">
+        <option value="default" ${value==='default'?'selected':''}>Default (${roleDefault?'allowed':'not allowed'})</option>
+        <option value="granted" ${value==='granted'?'selected':''}>Granted</option>
+        <option value="revoked" ${value==='revoked'?'selected':''}>Revoked</option>
+      </select>
+    </div>`;
+  }).join('');
 }
 
 function _updateSuspendBtn(){
@@ -21461,6 +21658,8 @@ async function ackPttRequest(id){
           </select>
         </div>
       </div>
+      <div class="section-divider" id="mm-permissions-divider" style="margin-top:20px;display:none">Individual Permissions</div>
+      <div id="mm-permissions-wrap" style="display:none;flex-direction:column;gap:8px;margin-top:8px"></div>
       <div class="section-divider" style="margin-top:20px">Account Actions</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <button id="mm-suspend-btn" onclick="toggleMemberSuspend()" style="display:flex;align-items:center;gap:12px;background:#FFF8E7;border:1px solid #E8D5A0;border-radius:8px;padding:12px 16px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;width:100%;transition:all 0.12s" onmouseover="this.style.background='#FAEEDA'" onmouseout="this.style.background='#FFF8E7'">
@@ -21568,6 +21767,27 @@ let legacyAccessJobFilesFolderName='';
 let legacyAccessJobFileCount=0;
 let activeAppUpdatesTab='sos';
 
+const FS_TAB_PERMISSIONS={contact:'firm_settings_general',mattertypes:'firm_settings_general',departments:'firm_settings_general',officedocs:'firm_settings_general',panicapp:'publish_mobile_apps'};
+function applyFirmSettingsTabVisibility(){
+  const p=currentProfile;
+  let anyVisible=false,firstVisible=null,activeStillVisible=false;
+  Object.keys(FS_TAB_PERMISSIONS).forEach(t=>{
+    const allowed=hasPermission(p,FS_TAB_PERMISSIONS[t]);
+    const tabEl=document.getElementById('fstab-'+t);
+    if(tabEl)tabEl.style.display=allowed?'':'none';
+    if(allowed){
+      anyVisible=true;
+      if(!firstVisible)firstVisible=t;
+      if(tabEl?.classList.contains('active'))activeStillVisible=true;
+    }
+  });
+  if(!activeStillVisible && firstVisible)switchFirmTab(firstVisible);
+  else if(!anyVisible){
+    // No sub-permission at all — shouldn't normally happen since the nav item
+    // itself is hidden in this case, but guard anyway.
+    showView('dashboard');
+  }
+}
 function switchFirmTab(tab){
   ['contact','mattertypes','departments','panicapp','officedocs'].forEach(t=>{
     const tabEl = document.getElementById('fstab-'+t);
