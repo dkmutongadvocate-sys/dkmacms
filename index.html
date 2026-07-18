@@ -1406,7 +1406,7 @@ setTimeout(function() {
       <span>SOS Alerts</span>
       <span id="panic-nav-badge" style="display:none;background:#A30000;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;animation:panic-nav-pulse 1s ease-in-out infinite">🚨</span>
     </div>
-    <div class="nav-item admin-only" data-admin-display="flex" onclick="showView('team',this)">
+    <div class="nav-item" id="nav-team" style="display:none" onclick="showView('team',this)">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.209 1.791-4 4-4s4 1.791 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 9c1.657 0 3 1.343 3 3v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></svg>
       <span>Team</span>
     </div>
@@ -1463,7 +1463,7 @@ setTimeout(function() {
     <div><div class="topbar-title" id="view-title">Dashboard</div></div>
     <div class="topbar-right">
       <button class="topbar-btn sec" onclick="openModal('matter')">+ New Matter</button>
-      <button class="topbar-btn" onclick="openModal('client')">+ New Client</button>
+      <button class="topbar-btn" id="btn-new-client-1" onclick="openModal('client')">+ New Client</button>
       <button class="topbar-btn" onclick="openGlobalContactOcr()" title="Scan a business card into Contacts" style="background:#8B6A1F;color:#fff;white-space:nowrap">📇 Scan Card</button>
       <button id="gcal-global-btn" onclick="handleGCalAuth()" title="Google Calendar" style="display:flex;align-items:center;gap:5px;font-size:11px;padding:5px 11px;border-radius:20px;border:1px solid var(--brd);background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--txt2);transition:all 0.15s"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg><span id="gcal-global-label">GCal</span></button>
       <div class="notify-wrap">
@@ -1585,7 +1585,7 @@ setTimeout(function() {
           <button class="view-toggle-btn active" id="vt-card" title="Card view" onclick="setClientView('card')">⊞</button>
           <button class="view-toggle-btn" id="vt-list" title="List view" onclick="setClientView('list')">☰</button>
         </div>
-        <button class="topbar-btn" onclick="openModal('client')">+ Add Client</button>
+        <button class="topbar-btn" id="btn-new-client-2" onclick="openModal('client')">+ Add Client</button>
       </div>
       <!-- Groups inline section (shown when Groups filter active) -->
       <div id="groups-inline-section" style="display:none;margin-bottom:18px">
@@ -1975,7 +1975,7 @@ setTimeout(function() {
         <div class="card">
           <div class="card-header">
             <span class="card-title">Team Members</span>
-            <button class="topbar-btn admin-only" data-admin-display="inline-block" style="font-size:11px;padding:5px 12px" onclick="openModal('adduser')">+ Add User</button>
+            <button class="topbar-btn" id="btn-add-user" style="font-size:11px;padding:5px 12px;display:none" onclick="openModal('adduser')">+ Add User</button>
           </div>
           <div id="team-list"><div class="empty-state"><p>Loading⬦</p></div></div>
         </div>
@@ -4467,7 +4467,7 @@ setTimeout(function() {
       🆘 SOS Alerts
       <span class="drawer-badge" id="di-sos-badge" style="display:none;background:#A30000;color:#fff">0</span>
     </div>
-    <div class="drawer-item admin-only" data-admin-display="flex" id="di-team" onclick="showView('team',null,true);closeDrawer()">
+    <div class="drawer-item" id="di-team" style="display:none" onclick="showView('team',null,true);closeDrawer()">
       <svg viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><circle cx="11" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 13c0-2.209 1.791-4 4-4s4 1.791 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 9c1.657 0 3 1.343 3 3v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".6"/></svg>
       Team
     </div>
@@ -5155,6 +5155,21 @@ function updateUserUI(){
   if(navFirmSettings)navFirmSettings.style.display=(hasPermission(p,'firm_settings_contact')||hasPermission(p,'firm_settings_mattertypes')||hasPermission(p,'firm_settings_departments')||hasPermission(p,'firm_settings_officedocs')||hasPermission(p,'publish_mobile_apps'))?'flex':'none';
   const navPermissions=document.getElementById('nav-permissions');
   if(navPermissions)navPermissions.style.display=isPermissionsAdmin(p)?'flex':'none';
+  // Team management is admin/head by role, OR anyone granted manage_users (firm-wide or department)
+  const canManageUsers=p.role==='admin'||p.role==='head'||p.role==='super_admin'||!!permissionScope(p,'manage_users');
+  const navTeam=document.getElementById('nav-team');
+  if(navTeam)navTeam.style.display=canManageUsers?'flex':'none';
+  const diTeam=document.getElementById('di-team');
+  if(diTeam)diTeam.style.display=canManageUsers?'flex':'none';
+  const btnAddUser=document.getElementById('btn-add-user');
+  if(btnAddUser)btnAddUser.style.display=canManageUsers?'inline-block':'none';
+  // Add Client buttons — visible to anyone who can create a client (their own
+  // department is enough; firm-wide grants full access elsewhere too)
+  const canAddClients=!!canManageClientRecord(p,null);
+  const btnNewClient1=document.getElementById('btn-new-client-1');
+  if(btnNewClient1)btnNewClient1.style.display=canAddClients?'inline-block':'none';
+  const btnNewClient2=document.getElementById('btn-new-client-2');
+  if(btnNewClient2)btnNewClient2.style.display=canAddClients?'inline-block':'none';
   if(document.getElementById('view-firm-settings')?.classList.contains('active'))applyFirmSettingsTabVisibility();
 }
 
@@ -5224,13 +5239,30 @@ const PERMISSION_DEFS_FALLBACK={
   firm_settings_departments:{label:'Firm Settings — Departments',category:'Firm Settings',defaultRoles:['admin','head','super_admin']},
   firm_settings_officedocs:{label:'Firm Settings — Office Docs',category:'Firm Settings',defaultRoles:['admin','head','super_admin']},
   publish_mobile_apps:{label:'Publish Mobile App Releases (App Updates tab)',category:'Mobile Apps',defaultRoles:['admin','head','super_admin']},
-  view_department_alerts:{label:'View Department-Wide Alerts (beyond your own)',category:'Alerts',defaultRoles:['admin','head','senior','super_admin']}
+  view_department_alerts:{label:'View Department-Wide Alerts (beyond your own)',category:'Alerts',defaultRoles:['admin','head','senior','super_admin']},
+  manage_users_firmwide:{label:'Add, Edit & Remove Staff — Firm-Wide',category:'User Management',defaultRoles:['admin','super_admin']},
+  manage_users_department:{label:'Add, Edit & Remove Staff — My Department Only',category:'User Management',defaultRoles:['head']},
+  manage_clients_firmwide:{label:'Add, Edit & Delete Clients — Firm-Wide',category:'Client Management',defaultRoles:['admin','super_admin']},
+  manage_clients_department:{label:'Add, Edit & Delete Clients — My Department Only',category:'Client Management',defaultRoles:['head']},
+  assign_cases_firmwide:{label:'Assign Cases to Any Staff Member — Firm-Wide',category:'Case Assignment',defaultRoles:['admin','super_admin']},
+  assign_cases_department:{label:'Assign Cases within My Department Only',category:'Case Assignment',defaultRoles:['head','senior']}
 };
 
 window._rolesById={};
 SYSTEM_ROLE_FALLBACK.forEach(r=>window._rolesById[r.id]=r);
 window._permissionDefs={...PERMISSION_DEFS_FALLBACK};
-window._rolePermissions={}; // { [roleId]: Set(permissionKey) } — built from role_permissions, falls back to defaultRoles membership
+function buildFallbackRolePermissions(){
+  const map={};
+  Object.keys(window._permissionDefs).forEach(key=>{
+    const def=window._permissionDefs[key];
+    (def.defaultRoles||[]).forEach(roleId=>{
+      if(!map[roleId])map[roleId]=new Set();
+      map[roleId].add(key);
+    });
+  });
+  return map;
+}
+window._rolePermissions=buildFallbackRolePermissions(); // { [roleId]: Set(permissionKey) } — replaced with real data once loadRolesAndPermissionDefs() resolves
 window._rolesLoaded=false;
 window._permOverrides={}; // { [userId]: { [permissionKey]: true|false } }
 window._permOverridesLoaded=false;
@@ -5274,15 +5306,7 @@ async function loadRolesAndPermissionDefs(){
     } else {
       // No role_permissions rows yet (fresh install before migration seed) —
       // fall back to the defaultRoles membership baked into the fallback defs.
-      const map={};
-      Object.keys(window._permissionDefs).forEach(key=>{
-        const def=window._permissionDefs[key];
-        (def.defaultRoles||[]).forEach(roleId=>{
-          if(!map[roleId])map[roleId]=new Set();
-          map[roleId].add(key);
-        });
-      });
-      window._rolePermissions=map;
+      window._rolePermissions=buildFallbackRolePermissions();
     }
     window._rolesLoaded=true;
   }catch(e){
@@ -5312,6 +5336,42 @@ function hasPermission(profile,key){
   const override=window._permOverrides?.[profile.id]?.[key];
   if(override!==undefined)return override;
   return !!(window._rolePermissions?.[profile.role]?.has(key));
+}
+
+// Scope-aware permission helper for the paired *_firmwide / *_department
+// permission keys (User Management, Client Management, Case Assignment).
+// Returns 'firm', 'department', or null (no access).
+function permissionScope(profile,baseKey){
+  if(!profile)return null;
+  if(profile.role==='super_admin')return 'firm';
+  if(hasPermission(profile,baseKey+'_firmwide'))return 'firm';
+  if(hasPermission(profile,baseKey+'_department'))return 'department';
+  return null;
+}
+
+// Can actorProfile add/edit/remove targetProfile, independent of the
+// role-rank hierarchy? Combines the existing rank-based canManageTeamMember
+// check with the new grantable manage_users permission.
+function canManageStaffMember(actorProfile,targetProfile){
+  if(!actorProfile||!targetProfile)return false;
+  if(targetProfile.role==='super_admin')return false;
+  if(canManageTeamMember(actorProfile.role,targetProfile.role))return true;
+  const scope=permissionScope(actorProfile,'manage_users');
+  if(!scope)return false;
+  if(scope==='firm')return true;
+  return !!actorProfile.department && actorProfile.department===targetProfile.department;
+}
+
+// Can actorProfile add/edit/delete this client record? New clients are
+// tagged with the creator's own department, so department-scope is
+// sufficient to create; firm-wide is required to touch clients outside it.
+function canManageClientRecord(actorProfile,clientRecord){
+  if(!actorProfile)return false;
+  const scope=permissionScope(actorProfile,'manage_clients');
+  if(!scope)return false;
+  if(scope==='firm')return true;
+  if(!clientRecord)return true; // creating a brand-new client — always tagged with actor's own department
+  return !!actorProfile.department && actorProfile.department===(clientRecord.department||'');
 }
 
 // Only admins/super admins can grant or revoke per-user overrides — chosen
@@ -7847,6 +7907,8 @@ async function deleteMatter(id,title,e){
 }
 async function deleteClient(id,name,e){
   e&&e.stopPropagation();
+  const target=clients.find(c=>c.id===id);
+  if(!canManageClientRecord(currentProfile,target)){toast('You do not have permission to delete this client.',true);return;}
   if(!confirm('Delete client "'+name+'"? This cannot be undone.'))return;
   const{error}=await sb.from('clients').delete().eq('id',id);
   if(error){toast('Error: '+error.message,true);return;}
@@ -13012,7 +13074,7 @@ async function renderTeam(){
   const isAdmin=p.role==='admin';
   const isHead=p.role==='head';
   const isSuperAdmin=p.role==='super_admin';
-  const canManage=isAdmin||isHead||isSuperAdmin;
+  const canManage=isAdmin||isHead||isSuperAdmin||!!permissionScope(p,'manage_users');
   myEl.innerHTML=`
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
       <div class="profile-av ${avColor(p.full_name||'?')}" style="width:52px;height:52px;font-size:18px">${initials(p.full_name||currentUser.email)}<\/div>
@@ -13045,7 +13107,7 @@ async function renderTeam(){
   teamEl.innerHTML=sorted.map(m=>{
     const isSelf=m.id===currentUser.id;
     const isSuspended=m.status==='suspended';
-    const canClick=canManage&&!isSelf&&canManageTeamMember(p.role,m.role);
+    const canClick=canManage&&!isSelf&&canManageStaffMember(p,m);
     return`
     <div class="client-item" style="${canClick?'cursor:pointer':'cursor:default'}" ${canClick?`onclick="openManageMemberModal('${m.id}')"`:''}">
       <div class="client-av ${isSuspended?'av-b':roleColors[m.role]||'av-b'}" style="${isSuspended?'opacity:0.5;filter:grayscale(1)':''}">${initials(m.full_name||'?')}<\/div>
@@ -13064,13 +13126,22 @@ async function renderTeam(){
 function closeAdduserModal(){document.getElementById('adduser-overlay').classList.add('hidden');}
 
 async function addUser(){
+  const canManageUsers=currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin'||!!permissionScope(currentProfile,'manage_users');
+  if(!canManageUsers){toast('You do not have permission to add users.',true);return;}
   const name=document.getElementById('au-name').value.trim();
   const email=document.getElementById('au-email').value.trim();
   const password=document.getElementById('au-password').value;
   const role=document.getElementById('au-role').value;
-  const dept=document.getElementById('au-dept').value;
+  let dept=document.getElementById('au-dept').value;
   const errEl=document.getElementById('au-error');
   errEl.textContent='';
+  // Department-scoped managers (via permission grant, not role) can only add
+  // staff into their own department — the role-based admin/head/super_admin
+  // path is unaffected and keeps its existing free choice of department.
+  const isRoleBasedManager=currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin';
+  if(!isRoleBasedManager&&permissionScope(currentProfile,'manage_users')==='department'){
+    dept=currentProfile?.department||dept;
+  }
   if(!name){errEl.textContent='Please enter the user\'s full name.';return;}
   if(!email){errEl.textContent='Please enter an email address.';return;}
   if(isPortalAuthEmail(email)){errEl.textContent='Do not use +portal emails for CMS staff accounts.';return;}
@@ -13410,6 +13481,7 @@ async function saveMyProfile(){
 // ─── MANAGE TEAM MEMBER (Admin/Head) ──────────────────────────────
 let _manageMemberId=null;
 let _manageMemberRole=null;
+let _manageMemberDept=null;
 let _manageMemberSuspended=false;
 
 function openManageMemberModal(userId){
@@ -13420,9 +13492,10 @@ function openManageMemberModal(userId){
   sb.from('profiles').select('*').eq('id',userId).single().then(({data:m})=>{
     if(!m){toast('User not found.',true);return;}
     if(m.id===currentUser.id){toast('You cannot manage your own account from here.',true);return;}
-    if(!canManageTeamMember(currentProfile?.role,m.role)){toast('You do not have permission to manage this user.',true);return;}
+    if(!canManageStaffMember(currentProfile,m)){toast('You do not have permission to manage this user.',true);return;}
     _manageMemberId=m.id;
     _manageMemberRole=m.role;
+    _manageMemberDept=m.department||null;
     _manageMemberSuspended=m.status==='suspended';
     const roleColors={super_admin:'av-d',admin:'av-d',head:'av-e',senior:'av-a',associate:'av-c'};
     document.getElementById('mm-av').className='client-av '+(roleColors[m.role]||'av-b');
@@ -13500,6 +13573,7 @@ function closeManageMemberModal(){
   document.getElementById('managemember-overlay').classList.add('hidden');
   _manageMemberId=null;
   _manageMemberRole=null;
+  _manageMemberDept=null;
 }
 
 function toggleMemberSuspend(){
@@ -13511,7 +13585,7 @@ function toggleMemberSuspend(){
 
 async function saveManageMember(){
   if(!_manageMemberId)return;
-  if(!canManageTeamMember(currentProfile?.role,_manageMemberRole)){
+  if(!canManageStaffMember(currentProfile,{role:_manageMemberRole,department:_manageMemberDept})){
     document.getElementById('mm-error').textContent='You do not have permission to modify this user.';
     return;
   }
@@ -13551,7 +13625,7 @@ async function saveManageMember(){
 
 async function deleteMember(){
   if(!_manageMemberId)return;
-  if(!canManageTeamMember(currentProfile?.role,_manageMemberRole)){
+  if(!canManageStaffMember(currentProfile,{role:_manageMemberRole,department:_manageMemberDept})){
     document.getElementById('mm-error').textContent='You do not have permission to delete this user.';
     return;
   }
@@ -14748,7 +14822,8 @@ function detectMeetingPlatform(url){
 // senior → can assign to associates in their department
 function canAssign(){
   const r=currentProfile?.role;
-  return r==='super_admin'||r==='admin'||r==='head'||r==='senior';
+  if(r==='super_admin'||r==='admin'||r==='head'||r==='senior')return true;
+  return !!permissionScope(currentProfile,'assign_cases');
 }
 
 function getAssignableProfiles(){
@@ -14768,6 +14843,10 @@ function getAssignableProfiles(){
     // Can assign to associates in their department
     return window._allProfiles.filter(p=>p.id!==currentUser.id&&p.department===me.department&&p.role==='associate');
   }
+  // Granted via the assign_cases permission rather than role
+  const scope=permissionScope(me,'assign_cases');
+  if(scope==='firm')return window._allProfiles.filter(p=>p.id!==currentUser.id);
+  if(scope==='department')return window._allProfiles.filter(p=>p.id!==currentUser.id&&p.department===me.department);
   return[];
 }
 
@@ -14790,7 +14869,9 @@ async function populateAssignSelect(currentAssignedId){
   sel.innerHTML='<option value="">— Unassigned —<\/option>'+profiles.map(p=>`<option value="${p.id}" ${p.id===currentAssignedId?'selected':''}>${esc(p.full_name||p.email||'Unknown')} — ${roleMap[p.role]||p.role||''}${p.department?' ('+esc(p.department)+')':''}<\/option>`).join('');
   if(badge){
     const r=currentProfile?.role;
-    badge.textContent=(r==='admin'||r==='super_admin')?'Firm-wide':r==='head'?'Your Dept':r==='senior'?'Associates only':'';
+    const legacyLabel=(r==='admin'||r==='super_admin')?'Firm-wide':r==='head'?'Your Dept':r==='senior'?'Associates only':'';
+    const permScope=permissionScope(currentProfile,'assign_cases');
+    badge.textContent=legacyLabel||(permScope==='firm'?'Firm-wide':permScope==='department'?'Your Dept':'');
   }
 }
 
@@ -14895,6 +14976,7 @@ async function saveMatter(){
 }
 
 async function saveClient(){
+  if(!canManageClientRecord(currentProfile,null)){toast('You do not have permission to add clients.',true);return;}
   const name=document.getElementById('c-name').value.trim();
   const email=document.getElementById('c-email').value.trim();
   const portalPassword=document.getElementById('c-portal-password').value.trim();
@@ -15250,6 +15332,7 @@ async function updateMatter(matterId){
 function openEditClient(clientId){
   const c=clients.find(x=>x.id===clientId);
   if(!c){toast('Client not found.',true);return;}
+  if(!canManageClientRecord(currentProfile,c)){toast('You do not have permission to edit this client.',true);return;}
   openModal('client');
   // Switch modal to edit mode
   document.getElementById('modal-client').querySelector('.modal-title').textContent='Edit Client';
@@ -15273,6 +15356,8 @@ function openEditClient(clientId){
 }
 
 async function updateClient(clientId){
+  const existing=clients.find(c=>c.id===clientId);
+  if(!canManageClientRecord(currentProfile,existing)){toast('You do not have permission to edit this client.',true);return;}
   const name=document.getElementById('c-name').value.trim();
   const email=document.getElementById('c-email').value.trim();
   const portalPassword=document.getElementById('c-portal-password').value.trim();
