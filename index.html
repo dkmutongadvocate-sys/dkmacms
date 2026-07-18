@@ -21538,6 +21538,23 @@ let firmClientAppReleaseFile=null;
 let firmClientAppReleaseParsedMeta=null;
 const MOBILE_RELEASE_REPO='dkmutongadvocate-sys/dkma-mobile-releases';
 const MOBILE_RELEASE_REPO_URL=`https://github.com/${MOBILE_RELEASE_REPO}`;
+const MOBILE_RELEASE_TEMP_PREFIX='mobile-release-temp';
+
+// Uploads the APK straight to Supabase Storage from the browser instead of streaming
+// it through the edge function's own request body. Edge Functions have a fixed
+// wall-clock budget (150s on the free plan) that has to cover the client's own
+// upload time AND the server's push to GitHub; on a slow connection the upload
+// alone can eat the whole budget and the function gets killed with a 503 before
+// it ever reaches GitHub. Storage uploads aren't bound by that limit, and the
+// edge function then pulls the bytes back server-to-server (fast, regardless of
+// the caller's connection).
+async function uploadApkToReleaseStorage(file,appId){
+  const safeName=(file.name||`${appId}.apk`).replace(/[^a-zA-Z0-9._-]+/g,'-');
+  const storagePath=`${MOBILE_RELEASE_TEMP_PREFIX}/${appId}/${Date.now()}-${safeName}`;
+  const {error}=await sb.storage.from(STORAGE_BUCKET).upload(storagePath,file,{upsert:true,contentType:'application/vnd.android.package-archive'});
+  if(error)throw new Error(`Could not upload the APK to storage: ${error.message}`);
+  return storagePath;
+}
 const MOBILE_RELEASE_PAGES_URL='https://dkmutongadvocate-sys.github.io/dkma-mobile-releases';
 const SOS_APP_DOWNLOADER_URL=`${MOBILE_RELEASE_PAGES_URL}/sos-app.html`;
 const CLIENT_APP_DOWNLOADER_URL=`${MOBILE_RELEASE_PAGES_URL}/client-app.html`;
@@ -22534,12 +22551,13 @@ async function publishPanicAppRelease(){
       fileName=mobileReleaseUrlFileName(releaseExternalUrl,'dkma-sos.apk');
       fileSize=0;
     }else if(firmPanicAppReleaseFile){
+      const storagePath=await uploadApkToReleaseStorage(firmPanicAppReleaseFile,'sos');
       const formData=new FormData();
       formData.append('appId','sos');
       formData.append('versionName',versionName);
       formData.append('versionCode',String(versionCode));
       formData.append('fileName',firmPanicAppReleaseFile.name||'dkma-sos.apk');
-      formData.append('file',firmPanicAppReleaseFile,firmPanicAppReleaseFile.name||'dkma-sos.apk');
+      formData.append('storagePath',storagePath);
       const uploadResult=await callAdminFormFunction('github-mobile-release-upload',formData);
       releaseExternalUrl=String(uploadResult?.publicUrl||'').trim();
       if(!releaseExternalUrl)throw new Error('GitHub upload did not return a public APK URL.');
@@ -22805,12 +22823,13 @@ async function publishClientAppRelease(){
       fileName=mobileReleaseUrlFileName(releaseExternalUrl,'dkma-client.apk');
       fileSize=0;
     }else if(firmClientAppReleaseFile){
+      const storagePath=await uploadApkToReleaseStorage(firmClientAppReleaseFile,'client');
       const formData=new FormData();
       formData.append('appId','client');
       formData.append('versionName',versionName);
       formData.append('versionCode',String(versionCode));
       formData.append('fileName',firmClientAppReleaseFile.name||'dkma-client.apk');
-      formData.append('file',firmClientAppReleaseFile,firmClientAppReleaseFile.name||'dkma-client.apk');
+      formData.append('storagePath',storagePath);
       const uploadResult=await callAdminFormFunction('github-mobile-release-upload',formData);
       releaseExternalUrl=String(uploadResult?.publicUrl||'').trim();
       if(!releaseExternalUrl)throw new Error('GitHub upload did not return a public APK URL.');
