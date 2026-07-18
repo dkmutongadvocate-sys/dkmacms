@@ -5155,17 +5155,24 @@ function updateUserUI(){
   if(navFirmSettings)navFirmSettings.style.display=(hasPermission(p,'firm_settings_contact')||hasPermission(p,'firm_settings_mattertypes')||hasPermission(p,'firm_settings_departments')||hasPermission(p,'firm_settings_officedocs')||hasPermission(p,'publish_mobile_apps'))?'flex':'none';
   const navPermissions=document.getElementById('nav-permissions');
   if(navPermissions)navPermissions.style.display=isPermissionsAdmin(p)?'flex':'none';
-  // Team management is admin/head by role, OR anyone granted manage_users (firm-wide or department)
-  const canManageUsers=p.role==='admin'||p.role==='head'||p.role==='super_admin'||!!permissionScope(p,'manage_users');
+  // Team nav/list — visible to anyone who can see or manage at least one
+  // team member: admin/head/super_admin by role, or anyone granted
+  // manage_users (firm-wide or department scope).
+  const isRoleBasedStaffManager=p.role==='admin'||p.role==='head'||p.role==='super_admin';
+  const canSeeTeam=isRoleBasedStaffManager||!!permissionScope(p,'manage_users');
   const navTeam=document.getElementById('nav-team');
-  if(navTeam)navTeam.style.display=canManageUsers?'flex':'none';
+  if(navTeam)navTeam.style.display=canSeeTeam?'flex':'none';
   const diTeam=document.getElementById('di-team');
-  if(diTeam)diTeam.style.display=canManageUsers?'flex':'none';
+  if(diTeam)diTeam.style.display=canSeeTeam?'flex':'none';
+  // Add User button — same population as canSeeTeam today (no separate
+  // add_users grant exists yet), named distinctly so it's easy to split out
+  // later if a dedicated add-only permission is ever introduced.
+  const canAddUsers=canSeeTeam;
   const btnAddUser=document.getElementById('btn-add-user');
-  if(btnAddUser)btnAddUser.style.display=canManageUsers?'inline-block':'none';
+  if(btnAddUser)btnAddUser.style.display=canAddUsers?'inline-block':'none';
   // Add Client buttons — visible to anyone who can create a client (their own
   // department is enough; firm-wide grants full access elsewhere too)
-  const canAddClients=!!canManageClientRecord(p,null);
+  const canAddClients=!!canManageClientRecord(p,null,'add');
   const btnNewClient1=document.getElementById('btn-new-client-1');
   if(btnNewClient1)btnNewClient1.style.display=canAddClients?'inline-block':'none';
   const btnNewClient2=document.getElementById('btn-new-client-2');
@@ -5352,7 +5359,11 @@ function permissionScope(profile,baseKey){
 // Can actorProfile add/edit/remove targetProfile, independent of the
 // role-rank hierarchy? Combines the existing rank-based canManageTeamMember
 // check with the new grantable manage_users permission.
-function canManageStaffMember(actorProfile,targetProfile){
+// `action` ('add'|'edit'|'delete') is accepted for call-site clarity and
+// future per-action grants, but both the role-rank path and the current
+// manage_users_firmwide/department permissions grant full CRUD — same as
+// before — so it doesn't change the result today.
+function canManageStaffMember(actorProfile,targetProfile,action){
   if(!actorProfile||!targetProfile)return false;
   if(targetProfile.role==='super_admin')return false;
   if(canManageTeamMember(actorProfile.role,targetProfile.role))return true;
@@ -5365,7 +5376,10 @@ function canManageStaffMember(actorProfile,targetProfile){
 // Can actorProfile add/edit/delete this client record? New clients are
 // tagged with the creator's own department, so department-scope is
 // sufficient to create; firm-wide is required to touch clients outside it.
-function canManageClientRecord(actorProfile,clientRecord){
+// `action` ('add'|'edit'|'delete') is accepted for call-site clarity; a
+// granted scope currently covers all three actions equally, matching how
+// manage_clients_firmwide/department already worked.
+function canManageClientRecord(actorProfile,clientRecord,action){
   if(!actorProfile)return false;
   const scope=permissionScope(actorProfile,'manage_clients');
   if(!scope)return false;
@@ -7908,7 +7922,7 @@ async function deleteMatter(id,title,e){
 async function deleteClient(id,name,e){
   e&&e.stopPropagation();
   const target=clients.find(c=>c.id===id);
-  if(!canManageClientRecord(currentProfile,target)){toast('You do not have permission to delete this client.',true);return;}
+  if(!canManageClientRecord(currentProfile,target,'delete')){toast('You do not have permission to delete this client.',true);return;}
   if(!confirm('Delete client "'+name+'"? This cannot be undone.'))return;
   const{error}=await sb.from('clients').delete().eq('id',id);
   if(error){toast('Error: '+error.message,true);return;}
@@ -13107,7 +13121,7 @@ async function renderTeam(){
   teamEl.innerHTML=sorted.map(m=>{
     const isSelf=m.id===currentUser.id;
     const isSuspended=m.status==='suspended';
-    const canClick=canManage&&!isSelf&&canManageStaffMember(p,m);
+    const canClick=canManage&&!isSelf&&canManageStaffMember(p,m,'edit');
     return`
     <div class="client-item" style="${canClick?'cursor:pointer':'cursor:default'}" ${canClick?`onclick="openManageMemberModal('${m.id}')"`:''}">
       <div class="client-av ${isSuspended?'av-b':roleColors[m.role]||'av-b'}" style="${isSuspended?'opacity:0.5;filter:grayscale(1)':''}">${initials(m.full_name||'?')}<\/div>
@@ -13492,7 +13506,7 @@ function openManageMemberModal(userId){
   sb.from('profiles').select('*').eq('id',userId).single().then(({data:m})=>{
     if(!m){toast('User not found.',true);return;}
     if(m.id===currentUser.id){toast('You cannot manage your own account from here.',true);return;}
-    if(!canManageStaffMember(currentProfile,m)){toast('You do not have permission to manage this user.',true);return;}
+    if(!canManageStaffMember(currentProfile,m,'edit')){toast('You do not have permission to manage this user.',true);return;}
     _manageMemberId=m.id;
     _manageMemberRole=m.role;
     _manageMemberDept=m.department||null;
@@ -13585,7 +13599,7 @@ function toggleMemberSuspend(){
 
 async function saveManageMember(){
   if(!_manageMemberId)return;
-  if(!canManageStaffMember(currentProfile,{role:_manageMemberRole,department:_manageMemberDept})){
+  if(!canManageStaffMember(currentProfile,{role:_manageMemberRole,department:_manageMemberDept},'edit')){
     document.getElementById('mm-error').textContent='You do not have permission to modify this user.';
     return;
   }
@@ -13625,7 +13639,7 @@ async function saveManageMember(){
 
 async function deleteMember(){
   if(!_manageMemberId)return;
-  if(!canManageStaffMember(currentProfile,{role:_manageMemberRole,department:_manageMemberDept})){
+  if(!canManageStaffMember(currentProfile,{role:_manageMemberRole,department:_manageMemberDept},'delete')){
     document.getElementById('mm-error').textContent='You do not have permission to delete this user.';
     return;
   }
@@ -14976,7 +14990,7 @@ async function saveMatter(){
 }
 
 async function saveClient(){
-  if(!canManageClientRecord(currentProfile,null)){toast('You do not have permission to add clients.',true);return;}
+  if(!canManageClientRecord(currentProfile,null,'add')){toast('You do not have permission to add clients.',true);return;}
   const name=document.getElementById('c-name').value.trim();
   const email=document.getElementById('c-email').value.trim();
   const portalPassword=document.getElementById('c-portal-password').value.trim();
@@ -15332,7 +15346,7 @@ async function updateMatter(matterId){
 function openEditClient(clientId){
   const c=clients.find(x=>x.id===clientId);
   if(!c){toast('Client not found.',true);return;}
-  if(!canManageClientRecord(currentProfile,c)){toast('You do not have permission to edit this client.',true);return;}
+  if(!canManageClientRecord(currentProfile,c,'edit')){toast('You do not have permission to edit this client.',true);return;}
   openModal('client');
   // Switch modal to edit mode
   document.getElementById('modal-client').querySelector('.modal-title').textContent='Edit Client';
@@ -15357,7 +15371,7 @@ function openEditClient(clientId){
 
 async function updateClient(clientId){
   const existing=clients.find(c=>c.id===clientId);
-  if(!canManageClientRecord(currentProfile,existing)){toast('You do not have permission to edit this client.',true);return;}
+  if(!canManageClientRecord(currentProfile,existing,'edit')){toast('You do not have permission to edit this client.',true);return;}
   const name=document.getElementById('c-name').value.trim();
   const email=document.getElementById('c-email').value.trim();
   const portalPassword=document.getElementById('c-portal-password').value.trim();
