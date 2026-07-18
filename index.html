@@ -12508,7 +12508,7 @@ function getVisibleAlerts(){
     const target=a.staff_target||'all';
     const alertDept=a.target_department||null;
     const createdBy=a.created_by||null;
-    if(role==='admin') return true; // admin sees everything
+    if(role==='admin'||role==='super_admin') return true; // admin/super admin sees everything
     if(target==='all') return true; // broadcast to all staff
     if(target==='myself') return createdBy===uid;
     if(target==='dept'||target==='my_associates'){
@@ -12526,7 +12526,7 @@ async function renderAlerts(){
   const role=currentProfile?.role||'associate';
   const scopeEl=document.getElementById('alerts-scope-label');
   if(scopeEl){
-    const labels={admin:'Showing all firm alerts',head:'Showing all alerts in your department',senior:'Showing your alerts and broadcasts',associate:'Showing alerts addressed to you'};
+    const labels={super_admin:'Showing all firm alerts',admin:'Showing all firm alerts',head:'Showing all alerts in your department',senior:'Showing your alerts and broadcasts',associate:'Showing alerts addressed to you'};
     scopeEl.textContent=labels[role]||'';
   }
   const visible=getVisibleAlerts();
@@ -12589,7 +12589,7 @@ function populateAlertStaffTarget(){
   if(!sel)return;
   const role=currentProfile?.role||'associate';
   sel.innerHTML='';
-  if(role==='admin'){
+  if(role==='admin'||role==='super_admin'){
     sel.innerHTML='<option value="all">All Staff (firm-wide)<\/option><option value="dept">Specific Department<\/option><option value="myself">Myself only<\/option>';
   } else if(role==='head'){
     sel.innerHTML='<option value="dept">My Department<\/option><option value="myself">Myself only<\/option>';
@@ -12914,7 +12914,7 @@ async function resetClientPortalPassword(clientId){
 // ─── EDIT MY PROFILE ─────────────────────────────────────────────
 function openEditMyRoleModal(){
   const p=currentProfile;
-  const isAdmin=p?.role==='admin';
+  const isAdmin=p?.role==='admin'||p?.role==='super_admin';
   document.getElementById('myp-name').value=p.full_name||'';
   document.getElementById('myp-preferred-name').value=p.preferred_name||'';
   document.getElementById('myp-phone').value=p.phone||'';
@@ -12925,7 +12925,7 @@ function openEditMyRoleModal(){
   document.getElementById('myp-newpw').value='';
   document.getElementById('myp-newpw-confirm').value='';
   document.getElementById('myp-pw-error').textContent='';
-  // Role editing: only admins can change their own role freely
+  // Role editing: only admins/super admins can change their own role freely
   const roleDeptRow=document.getElementById('myp-role-dept-row');
   const roleNotice=document.getElementById('myp-role-notice');
   const adminNotice=document.getElementById('myp-admin-notice');
@@ -14302,13 +14302,13 @@ function detectMeetingPlatform(url){
 }
 
 // ─── MATTER ASSIGNMENT ────────────────────────────────────────────
-// Roles that can assign: admin, head, senior
-// admin → can assign to anyone
+// Roles that can assign: super_admin, admin, head, senior
+// super_admin/admin → can assign to anyone
 // head  → can assign within their department
 // senior → can assign to associates in their department
 function canAssign(){
   const r=currentProfile?.role;
-  return r==='admin'||r==='head'||r==='senior';
+  return r==='super_admin'||r==='admin'||r==='head'||r==='senior';
 }
 
 function getAssignableProfiles(){
@@ -14316,7 +14316,7 @@ function getAssignableProfiles(){
   if(!window._allProfiles||!window._allProfiles.length)return[];
   const me=currentProfile;
   const r=me?.role;
-  if(r==='admin'){
+  if(r==='super_admin'||r==='admin'){
     // Can assign to anyone except themselves
     return window._allProfiles.filter(p=>p.id!==currentUser.id);
   }
@@ -14346,11 +14346,11 @@ async function populateAssignSelect(currentAssignedId){
   if(!canAssign()){row.style.display='none';return;}
   row.style.display='';
   const profiles=getAssignableProfiles();
-  const roleMap={admin:'Administrator',head:'Head of Dept',senior:'Senior Associate',associate:'Associate'};
+  const roleMap={super_admin:'Super Administrator',admin:'Administrator',head:'Head of Dept',senior:'Senior Associate',associate:'Associate'};
   sel.innerHTML='<option value="">— Unassigned —<\/option>'+profiles.map(p=>`<option value="${p.id}" ${p.id===currentAssignedId?'selected':''}>${esc(p.full_name||p.email||'Unknown')} — ${roleMap[p.role]||p.role||''}${p.department?' ('+esc(p.department)+')':''}<\/option>`).join('');
   if(badge){
     const r=currentProfile?.role;
-    badge.textContent=r==='admin'?'Firm-wide':r==='head'?'Your Dept':r==='senior'?'Associates only':'';
+    badge.textContent=(r==='admin'||r==='super_admin')?'Firm-wide':r==='head'?'Your Dept':r==='senior'?'Associates only':'';
   }
 }
 
