@@ -22182,30 +22182,61 @@ function panicReadU32(bytes,offset){
 
 async function panicReadZipEntryBytes(file,name){
   const bytes=new Uint8Array(await file.arrayBuffer());
-  for(let i=0;i<bytes.length-30;i++){
-    if(bytes[i]===0x50 && bytes[i+1]===0x4B && bytes[i+2]===0x03 && bytes[i+3]===0x04){
-      const fnLen=panicReadU16(bytes,i+26);
-      const exLen=panicReadU16(bytes,i+28);
-      const fnStart=i+30;
-      const fn=new TextDecoder().decode(bytes.slice(fnStart,fnStart+fnLen));
-      if(fn===name){
-        const compMethod=panicReadU16(bytes,i+8);
-        const compSize=panicReadU32(bytes,i+18) >>> 0;
-        const dataStart=fnStart+fnLen+exLen;
-        const compData=bytes.slice(dataStart,dataStart+compSize);
-        if(compMethod===0)return compData;
-        if(compMethod===8){
-          const ds=new DecompressionStream('deflate-raw');
-          const writer=ds.writable.getWriter();
-          writer.write(compData);
-          writer.close();
-          return new Uint8Array(await new Response(ds.readable).arrayBuffer());
-        }
-        throw new Error(`Unsupported ZIP compression method ${compMethod}.`);
-      }
+  const eocd=panicFindEndOfCentralDirectory(bytes);
+  if(!eocd)throw new Error('Could not locate the ZIP central directory in the APK.');
+  let offset=eocd.centralDirOffset;
+  for(let i=0;i<eocd.entryCount;i++){
+    if(panicReadU32(bytes,offset)!==0x02014b50){
+      throw new Error('Malformed ZIP central directory entry in APK.');
     }
+    const compMethod=panicReadU16(bytes,offset+10);
+    const compSize=panicReadU32(bytes,offset+20)>>>0;
+    const fnLen=panicReadU16(bytes,offset+28);
+    const exLen=panicReadU16(bytes,offset+30);
+    const cmLen=panicReadU16(bytes,offset+32);
+    const localHeaderOffset=panicReadU32(bytes,offset+42)>>>0;
+    const fnStart=offset+46;
+    const fn=new TextDecoder().decode(bytes.slice(fnStart,fnStart+fnLen));
+    if(fn===name){
+      return await panicExtractLocalZipEntry(bytes,localHeaderOffset,compMethod,compSize);
+    }
+    offset=fnStart+fnLen+exLen+cmLen;
   }
   throw new Error(`${name} was not found in the APK.`);
+}
+
+function panicFindEndOfCentralDirectory(bytes){
+  const maxCommentLength=65535;
+  const minPos=Math.max(0,bytes.length-22-maxCommentLength);
+  for(let i=bytes.length-22;i>=minPos;i--){
+    if(panicReadU32(bytes,i)===0x06054b50){
+      return {
+        entryCount:panicReadU16(bytes,i+10),
+        centralDirOffset:panicReadU32(bytes,i+16)>>>0,
+      };
+    }
+  }
+  return null;
+}
+
+async function panicExtractLocalZipEntry(bytes,localHeaderOffset,compMethodFromCentral,compSizeFromCentral){
+  if(panicReadU32(bytes,localHeaderOffset)!==0x04034b50){
+    throw new Error('Malformed ZIP local file header in APK.');
+  }
+  const fnLen=panicReadU16(bytes,localHeaderOffset+26);
+  const exLen=panicReadU16(bytes,localHeaderOffset+28);
+  const dataStart=localHeaderOffset+30+fnLen+exLen;
+  const compMethod=compMethodFromCentral;
+  const compData=bytes.slice(dataStart,dataStart+compSizeFromCentral);
+  if(compMethod===0)return compData;
+  if(compMethod===8){
+    const ds=new DecompressionStream('deflate-raw');
+    const writer=ds.writable.getWriter();
+    writer.write(compData);
+    writer.close();
+    return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+  }
+  throw new Error(`Unsupported ZIP compression method ${compMethod}.`);
 }
 
 function panicDecodeStringPool(bytes){
