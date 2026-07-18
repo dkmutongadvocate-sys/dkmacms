@@ -4068,6 +4068,16 @@ setTimeout(function() {
     <div class="modal-head"><span class="modal-title">Add Alert / Reminder</span><button class="modal-close" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <div class="form-row"><label>Alert Text</label><textarea id="al-text" placeholder="e.g. Stamp duty overdue ? Greenwood Plaza⬦" style="min-height:70px"></textarea></div>
+      <div class="form-row"><label>Link <span style="font-weight:400;color:var(--txt3);text-transform:none;letter-spacing:0">(optional)</span></label><input id="al-link" placeholder="https://⬦"/></div>
+      <div class="form-row">
+        <label>Attach Photo or Video <span style="font-weight:400;color:var(--txt3);text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input type="file" id="al-media-file" accept="image/*,video/*" onchange="handleAlertMediaSelect(this)"/>
+        <div id="al-media-preview" style="display:none;margin-top:8px">
+          <img id="al-media-preview-img" style="display:none;max-width:180px;max-height:120px;border-radius:6px;border:1px solid var(--brd)"/>
+          <video id="al-media-preview-vid" controls style="display:none;max-width:220px;max-height:140px;border-radius:6px;border:1px solid var(--brd)"></video>
+          <div style="margin-top:4px"><button type="button" class="topbar-btn sec" style="font-size:10px;padding:3px 8px" onclick="clearAlertMedia()">Remove</button></div>
+        </div>
+      </div>
       <div class="form-two">
         <div class="form-row"><label>Priority</label><select id="al-priority"><option value="critical">Critical (Red)</option><option value="reminder">Reminder (Gold)</option><option value="info">Info (Navy)</option></select></div>
         <div class="form-row"><label>Date</label><input type="date" id="al-date"/></div>
@@ -7630,8 +7640,12 @@ async function deleteTimeEntry(id,e){
 async function deleteAlert(id,e){
   e&&e.stopPropagation();
   if(!confirm('Delete this alert?'))return;
+  const target=alerts.find(a=>a.id===id);
   const{error}=await sb.from('alerts').delete().eq('id',id);
   if(error){toast('Error: '+error.message,true);return;}
+  if(target?.media_path){
+    sb.storage.from(STORAGE_BUCKET).remove([target.media_path]).catch(()=>{/* best-effort cleanup */});
+  }
   alerts=alerts.filter(a=>a.id!==id);
   toast('Alert deleted.');
   renderAlerts();renderDashboard();updateBadges();
@@ -12507,7 +12521,7 @@ function getVisibleAlerts(){
   });
 }
 
-function renderAlerts(){
+async function renderAlerts(){
   // Update scope label
   const role=currentProfile?.role||'associate';
   const scopeEl=document.getElementById('alerts-scope-label');
@@ -12523,11 +12537,32 @@ function renderAlerts(){
   // Urgent count badge
   const ucBadge=document.getElementById('urgent-count-badge');
   if(ucBadge){ucBadge.textContent=urgent.length;ucBadge.style.display=urgent.length?'inline':'none';}
+  // Pre-fetch signed URLs for any alerts carrying media, so images/video can render
+  const mediaAlerts=visible.filter(a=>a.media_path);
+  const signedUrlMap={};
+  if(mediaAlerts.length){
+    await Promise.all(mediaAlerts.map(async a=>{
+      try{
+        const{data}=await sb.storage.from(STORAGE_BUCKET).createSignedUrl(a.media_path,3600);
+        if(data?.signedUrl)signedUrlMap[a.id]=data.signedUrl;
+      }catch(e){/* ignore — thumbnail just won't render */}
+    }));
+  }
   const makeAlertItem=(a,dotClass)=>{
     const scopeTag=a.staff_target==='all'?'<span style="font-size:9px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:4px;font-weight:500;margin-left:6px">Firm-wide<\/span>':
       a.staff_target==='dept'?`<span style="font-size:9px;background:#EAF3DE;color:#2D6A4F;padding:1px 6px;border-radius:4px;font-weight:500;margin-left:6px">Dept<\/span>`:'';
     const creatorTag=a.created_by_name?`<span style="font-size:9px;color:var(--txt3);margin-left:4px">by ${esc(a.created_by_name)}<\/span>`:'';
-    return`<div class="alert-item"><div class="alert-dot ${dotClass}"><\/div><div style="flex:1"><div class="alert-text">${esc(a.text)}${scopeTag}<\/div><div class="alert-time">${statusLabel(a.priority)} · ${fmtDate(a.alert_date)}${creatorTag}<\/div><\/div><button class="op-del" title="Delete" onclick="deleteAlert('${a.id}',event)">×<\/button><\/div>`;
+    const linkHtml=a.link_url?`<div style="margin-top:6px"><a href="${esc(a.link_url)}" target="_blank" rel="noopener" style="font-size:11px;color:#185FA5;text-decoration:none;display:inline-flex;align-items:center;gap:4px" onclick="event.stopPropagation()">🔗 ${esc(a.link_url.replace(/^https?:\/\//,'').slice(0,60))}<\/a><\/div>`:'';
+    const mediaUrl=signedUrlMap[a.id];
+    let mediaHtml='';
+    if(mediaUrl&&a.media_type==='image'){
+      mediaHtml=`<div style="margin-top:8px"><img src="${esc(mediaUrl)}" style="max-width:220px;max-height:150px;border-radius:6px;border:1px solid var(--brd);cursor:pointer" onclick="event.stopPropagation();window.open('${esc(mediaUrl)}','_blank')"/><\/div>`;
+    } else if(mediaUrl&&a.media_type==='video'){
+      mediaHtml=`<div style="margin-top:8px"><video src="${esc(mediaUrl)}" controls style="max-width:260px;max-height:170px;border-radius:6px;border:1px solid var(--brd)" onclick="event.stopPropagation()"><\/video><\/div>`;
+    } else if(a.media_path&&!mediaUrl){
+      mediaHtml=`<div style="margin-top:6px;font-size:10px;color:var(--txt3)">📎 Attachment unavailable<\/div>`;
+    }
+    return`<div class="alert-item"><div class="alert-dot ${dotClass}"><\/div><div style="flex:1"><div class="alert-text">${esc(a.text)}${scopeTag}<\/div><div class="alert-time">${statusLabel(a.priority)} · ${fmtDate(a.alert_date)}${creatorTag}<\/div>${linkHtml}${mediaHtml}<\/div><button class="op-del" title="Delete" onclick="deleteAlert('${a.id}',event)">×<\/button><\/div>`;
   };
   uEl.innerHTML=urgent.length?urgent.map(a=>makeAlertItem(a,'red')).join(''):emptyState('No urgent alerts visible to you.');
   rEl.innerHTML=other.length?other.map(a=>{const dc={reminder:'gold',info:'navy'}[a.priority]||'navy';return makeAlertItem(a,dc);}).join(''):emptyState('No reminders or notices.');
@@ -13178,12 +13213,18 @@ function openModal(type){
   if(type==='prospect-invoice')popProspectInvoiceModal();
   if(type==='event')popEventModal();
   if(type==='task')popTaskModal();
-  if(type==='alert'){populateAlertStaffTarget();populateAlertClientSelect();toggleAlertTargeting();}
+  if(type==='alert'){
+    populateAlertStaffTarget();populateAlertClientSelect();toggleAlertTargeting();
+    const textEl=document.getElementById('al-text');if(textEl)textEl.value='';
+    const linkEl=document.getElementById('al-link');if(linkEl)linkEl.value='';
+    clearAlertMedia();
+  }
 }
 function closeModal(){
   // Reset meeting link field
   const ml=document.getElementById('ev-meeting-link');
   if(ml){ml.value='';updateMeetingLinkIcon('');}
+  clearAlertMedia();
 
   document.getElementById('modal-overlay').classList.add('hidden');
   // Reset matter modal to create mode
@@ -14610,6 +14651,44 @@ async function saveEvent(){
   return data[0];
 }
 
+// ─── ALERT MEDIA (photo/video attachment) ──────────────────────────
+window._alertMediaFile=null;
+function handleAlertMediaSelect(input){
+  const file=input.files&&input.files[0];
+  if(!file)return;
+  const isImage=file.type.startsWith('image/');
+  const isVideo=file.type.startsWith('video/');
+  if(!isImage&&!isVideo){toast('Please select an image or video file.',true);input.value='';return;}
+  if(file.size>50*1024*1024){toast('File is too large. Please keep attachments under 50MB.',true);input.value='';return;}
+  window._alertMediaFile=file;
+  const url=URL.createObjectURL(file);
+  const wrap=document.getElementById('al-media-preview');
+  const img=document.getElementById('al-media-preview-img');
+  const vid=document.getElementById('al-media-preview-vid');
+  wrap.style.display='block';
+  if(isImage){img.src=url;img.style.display='block';vid.style.display='none';vid.pause?.();}
+  else{vid.src=url;vid.style.display='block';img.style.display='none';}
+}
+function clearAlertMedia(){
+  window._alertMediaFile=null;
+  const fileInput=document.getElementById('al-media-file');
+  if(fileInput)fileInput.value='';
+  const wrap=document.getElementById('al-media-preview');
+  if(wrap)wrap.style.display='none';
+  const img=document.getElementById('al-media-preview-img');
+  const vid=document.getElementById('al-media-preview-vid');
+  if(img){img.src='';img.style.display='none';}
+  if(vid){vid.pause?.();vid.src='';vid.style.display='none';}
+}
+async function uploadAlertMedia(file){
+  const safeName=file.name.replace(/[^a-zA-Z0-9.\-_]/g,'_');
+  const unique=`${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  const storagePath=`alerts/${unique}_${safeName}`;
+  const{error}=await sb.storage.from(STORAGE_BUCKET).upload(storagePath,file,{upsert:false,contentType:file.type||'application/octet-stream'});
+  if(error)throw error;
+  return{path:storagePath,type:file.type.startsWith('image/')?'image':'video',mime:file.type};
+}
+
 async function saveAlert(){
   const text=document.getElementById('al-text').value.trim();
   if(!text){toast('Please enter alert text.',true);return;}
@@ -14617,8 +14696,23 @@ async function saveAlert(){
   const alertType=document.getElementById('al-type')?.value||'staff';
   const staffTarget=document.getElementById('al-staff-target')?.value||'all';
   const clientTarget=document.getElementById('al-client-target')?.value||null;
+  const linkUrl=normalizeMeetingLink(document.getElementById('al-link')?.value.trim())||null;
+  let mediaPath=null,mediaType=null,mediaMime=null;
+  if(window._alertMediaFile){
+    try{
+      const up=await uploadAlertMedia(window._alertMediaFile);
+      mediaPath=up.path;mediaType=up.type;mediaMime=up.mime;
+    }catch(e){
+      setLoading('save-alert-btn',false,'Save Alert');
+      toast('Media upload failed: '+e.message,true);return;
+    }
+  }
   const payload={
     text,
+    link_url:linkUrl,
+    media_path:mediaPath,
+    media_type:mediaType,
+    media_mime:mediaMime,
     priority:document.getElementById('al-priority').value,
     alert_date:document.getElementById('al-date').value||null,
     alert_type:alertType,
@@ -14631,7 +14725,9 @@ async function saveAlert(){
   const{data,error}=await sb.from('alerts').insert([payload]).select();
   setLoading('save-alert-btn',false,'Save Alert');
   if(error){toast('Error: '+error.message,true);return;}
-  alerts=[data[0],...alerts];closeModal();toast('Alert saved.');updateBadges();renderAlerts();renderDashboard();
+  alerts=[data[0],...alerts];closeModal();toast('Alert saved.');clearAlertMedia();
+  const linkField=document.getElementById('al-link');if(linkField)linkField.value='';
+  updateBadges();renderAlerts();renderDashboard();
 }
 
 // ─── EDIT MATTER ──────────────────────────────────────────────────
