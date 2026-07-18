@@ -5073,7 +5073,7 @@ function updateUserUI(){
   document.getElementById('sidebar-user-av').textContent=initials(name);
   syncDrawerUser(name,roleLabel(p.role),initials(name));
   // Show/hide admin-only elements
-  const isAdmin=p.role==='admin'||p.role==='head';
+  const isAdmin=p.role==='admin'||p.role==='head'||p.role==='super_admin';
   document.querySelectorAll('.admin-only').forEach(el=>{
     if(!isAdmin){
       el.style.display='none';
@@ -5093,13 +5093,22 @@ function updateUserUI(){
   });
 }
 
-function roleLabel(r){return{admin:'Administrator',head:'Head of Department',senior:'Senior Associate',associate:'Associate'}[r]||r||'—';}
+function roleLabel(r){return{super_admin:'Super Administrator',admin:'Administrator',head:'Head of Department',senior:'Senior Associate',associate:'Associate'}[r]||r||'—';}
 function isPortalAuthEmail(email){return String(email||'').toLowerCase().includes('+portal@');}
 function isStaffProfile(p){
   if(!p)return false;
   if(isPortalAuthEmail(p.email)||isPortalAuthEmail(p.full_name))return false;
   const role=String(p.role||'').toLowerCase();
-  return ['admin','head','senior','associate'].includes(role);
+  return ['admin','head','senior','associate','super_admin'].includes(role);
+}
+// Role hierarchy: lower rank = more authority. Used to decide who can manage/delete whom.
+const ROLE_RANK={super_admin:0,admin:1,head:2,senior:3,associate:4};
+function canManageTeamMember(actorRole,targetRole){
+  const a=ROLE_RANK[actorRole]??99, t=ROLE_RANK[targetRole]??99;
+  if(actorRole==='super_admin')return targetRole!=='super_admin'; // super admin manages everyone but other super admins
+  if(actorRole==='admin')return t>ROLE_RANK.admin; // admins can manage head/senior/associate, never other admins or the super admin
+  if(actorRole==='head')return t>ROLE_RANK.head; // heads can manage senior/associate only
+  return false;
 }
 function staffProfiles(list){return (list||[]).filter(isStaffProfile);}
 function shouldForceStaffPasswordChange(){
@@ -7801,8 +7810,8 @@ function renderClients(){
         <\/div>
         <div class="cl-row-actions">
           ${hasPortal?`<button title="${portalEnabled?'Disable portal':'Enable portal'}" onclick="togglePortal('${c.id}','${esc(c.name)}',${portalEnabled},event)" style="padding:5px 9px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer">${portalEnabled?'🔒':'🔓'}<\/button>`:''}
-          ${(hasPortal&&(currentProfile?.role==='admin'||currentProfile?.role==='head'))?`<button title="Relink portal user" onclick="relinkPortalUser('${c.id}','${jsStr(c.name)}',event)" style="padding:5px 9px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">🔗↺<\/button>`:''}
-          ${(hasPortal&&(currentProfile?.role==='admin'||currentProfile?.role==='head'))?`<button title="Clear forced password change" onclick="clearPortalForcePasswordChange('${c.id}','${jsStr(c.name)}',event)" style="padding:5px 9px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">🔑↺<\/button>`:''}
+          ${(hasPortal&&(currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin'))?`<button title="Relink portal user" onclick="relinkPortalUser('${c.id}','${jsStr(c.name)}',event)" style="padding:5px 9px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">🔗↺<\/button>`:''}
+          ${(hasPortal&&(currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin'))?`<button title="Clear forced password change" onclick="clearPortalForcePasswordChange('${c.id}','${jsStr(c.name)}',event)" style="padding:5px 9px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">🔑↺<\/button>`:''}
           ${hasPortal?`<button title="Reset portal device" onclick="resetPortalDeviceLock('${c.id}','${jsStr(c.name)}',event)" style="padding:5px 9px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">📱↺<\/button>`:''}
           <button title="Edit" onclick="openEditClient('${c.id}');event.stopPropagation()" style="padding:5px 9px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️<\/button>
           <button title="Delete" onclick="deleteClient('${c.id}','${esc(c.name)}',event)" style="padding:5px 9px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer">×<\/button>
@@ -7841,8 +7850,8 @@ function renderClients(){
         <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
           <button class="cc-view-btn" style="flex:1;margin-top:0;min-width:100px" onclick="openClientProfile('${c.id}')">View Profile →<\/button>
           ${hasPortal?`<button title="${portalEnabled?'Disable portal access':'Enable portal access'}" onclick="togglePortal('${c.id}','${esc(c.name)}',${portalEnabled},event)" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='none'">${portalEnabled?'🔒':'🔓'}<\/button>`:''}
-          ${(hasPortal&&(currentProfile?.role==='admin'||currentProfile?.role==='head'))?`<button title="Relink portal user" onclick="relinkPortalUser('${c.id}','${jsStr(c.name)}',event)" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='none'">🔗↺<\/button>`:''}
-          ${(hasPortal&&(currentProfile?.role==='admin'||currentProfile?.role==='head'))?`<button title="Clear forced password change" onclick="clearPortalForcePasswordChange('${c.id}','${jsStr(c.name)}',event)" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='none'">🔑↺<\/button>`:''}
+          ${(hasPortal&&(currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin'))?`<button title="Relink portal user" onclick="relinkPortalUser('${c.id}','${jsStr(c.name)}',event)" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='none'">🔗↺<\/button>`:''}
+          ${(hasPortal&&(currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin'))?`<button title="Clear forced password change" onclick="clearPortalForcePasswordChange('${c.id}','${jsStr(c.name)}',event)" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='none'">🔑↺<\/button>`:''}
           ${hasPortal?`<button title="Reset portal device" onclick="resetPortalDeviceLock('${c.id}','${jsStr(c.name)}',event)" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);background:none;font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='none'">📱↺<\/button>`:''}
           ${sosActive?`<button title="Deactivate SOS" onclick="deactivateSos('${c.id}','${jsStr(c.name)}');event.stopPropagation()" style="padding:6px 10px;border-radius:6px;border:1px solid #f5c6c6;background:none;font-size:12px;cursor:pointer;color:#A30000" onmouseover="this.style.background='#FCEBEB'" onmouseout="this.style.background='none'">🆘×<\/button>`:''}
           <button class="op-del" style="padding:6px 10px;border-radius:6px;border:1px solid var(--brd);color:var(--navy);font-size:12px" title="Edit" onclick="openEditClient('${c.id}');event.stopPropagation()" onmouseover="this.style.background='#E6F1FB'" onmouseout="this.style.background='none'">✏️<\/button>
@@ -8428,10 +8437,10 @@ function renderProfile(){
         <button class="topbar-btn sec" onclick="openEditClient('${c.id}')">✏️ Edit<\/button>
         <button class="topbar-btn sec" onclick="openMatterModalForClient('${c.id}')">+ New Matter<\/button>
         <button class="topbar-btn gold" onclick="openPartyModalForClient('${c.id}')">+ Other Party<\/button>
-        ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="topbar-btn" style="background:#185FA5" onclick="sendClientNewPassword('${c.id}')">🔑 Send Client Password<\/button>`:''}
-        ${(c.user_id&&(currentProfile?.role==='admin'||currentProfile?.role==='head'))?`<button class="topbar-btn sec" onclick="clearPortalForcePasswordChange('${c.id}','${jsStr(c.name)}',event)">🔑↺ Clear Reset<\/button>`:''}
-        ${(c.user_id&&(currentProfile?.role==='admin'||currentProfile?.role==='head'))?`<button class="topbar-btn sec" onclick="relinkPortalUser('${c.id}','${jsStr(c.name)}',event)">🔗↺ Relink Portal<\/button>`:''}
-        ${(c.user_id&&(currentProfile?.role==='admin'||currentProfile?.role==='head'))?`<button class="topbar-btn sec" onclick="resetPortalDeviceLock('${c.id}','${jsStr(c.name)}',event)">📱↺ Reset Device<\/button>`:''}
+        ${(currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin')?`<button class="topbar-btn" style="background:#185FA5" onclick="sendClientNewPassword('${c.id}')">🔑 Send Client Password<\/button>`:''}
+        ${(c.user_id&&(currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin'))?`<button class="topbar-btn sec" onclick="clearPortalForcePasswordChange('${c.id}','${jsStr(c.name)}',event)">🔑↺ Clear Reset<\/button>`:''}
+        ${(c.user_id&&(currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin'))?`<button class="topbar-btn sec" onclick="relinkPortalUser('${c.id}','${jsStr(c.name)}',event)">🔗↺ Relink Portal<\/button>`:''}
+        ${(c.user_id&&(currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin'))?`<button class="topbar-btn sec" onclick="resetPortalDeviceLock('${c.id}','${jsStr(c.name)}',event)">📱↺ Reset Device<\/button>`:''}
         ${c.sos_enabled?`<button class="topbar-btn" style="background:#2D6A4F" onclick="deactivateSos('${c.id}','${jsStr(c.name)}')">🆘 SOS Active — Deactivate<\/button>`:`<button class="topbar-btn" style="background:#A30000" onclick="activateSos('${c.id}','${jsStr(c.name)}')">🆘 Activate SOS<\/button>`}
       <\/div>
     <\/div>`;
@@ -9470,7 +9479,7 @@ using (
 );`;
 
 function isContactsAdmin(){
-  return currentProfile?.role==='admin'||currentProfile?.role==='head';
+  return currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin';
 }
 function isContactOwner(contact){
   return !!contact && !!currentUser?.id && String(contact.owner_user_id||'')===String(currentUser.id);
@@ -12565,7 +12574,8 @@ async function renderTeam(){
   const myEl=document.getElementById('my-profile-panel');
   const isAdmin=p.role==='admin';
   const isHead=p.role==='head';
-  const canManage=isAdmin||isHead;
+  const isSuperAdmin=p.role==='super_admin';
+  const canManage=isAdmin||isHead||isSuperAdmin;
   myEl.innerHTML=`
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
       <div class="profile-av ${avColor(p.full_name||'?')}" style="width:52px;height:52px;font-size:18px">${initials(p.full_name||currentUser.email)}<\/div>
@@ -12590,15 +12600,15 @@ async function renderTeam(){
     teamEl.innerHTML=_sk+_sk+_sk;
   }
   const{data,error}=await sb.from('profiles').select('*').order('role');
-  const staffData=staffProfiles(data||[]);
+  const staffData=staffProfiles(data||[]).filter(m=>m.role!=='super_admin'); // super admin is never listed in Team management, by anyone — including other admins
   if(error||!staffData.length){teamEl.innerHTML=emptyState('No other team members found.');return;}
-  const rolePriority={admin:0,head:1,senior:2,associate:3};
+  const rolePriority={super_admin:-1,admin:0,head:1,senior:2,associate:3};
   const sorted=[...staffData].sort((a,b)=>(rolePriority[a.role]||9)-(rolePriority[b.role]||9));
-  const roleColors={admin:'av-d',head:'av-e',senior:'av-a',associate:'av-c'};
+  const roleColors={super_admin:'av-d',admin:'av-d',head:'av-e',senior:'av-a',associate:'av-c'};
   teamEl.innerHTML=sorted.map(m=>{
     const isSelf=m.id===currentUser.id;
     const isSuspended=m.status==='suspended';
-    const canClick=canManage&&!isSelf;
+    const canClick=canManage&&!isSelf&&canManageTeamMember(p.role,m.role);
     return`
     <div class="client-item" style="${canClick?'cursor:pointer':'cursor:default'}" ${canClick?`onclick="openManageMemberModal('${m.id}')"`:''}">
       <div class="client-av ${isSuspended?'av-b':roleColors[m.role]||'av-b'}" style="${isSuspended?'opacity:0.5;filter:grayscale(1)':''}">${initials(m.full_name||'?')}<\/div>
@@ -12962,6 +12972,7 @@ async function saveMyProfile(){
 
 // ─── MANAGE TEAM MEMBER (Admin/Head) ──────────────────────────────
 let _manageMemberId=null;
+let _manageMemberRole=null;
 let _manageMemberSuspended=false;
 
 function openManageMemberModal(userId){
@@ -12971,9 +12982,12 @@ function openManageMemberModal(userId){
   // Also try last renderTeam data — fetch fresh
   sb.from('profiles').select('*').eq('id',userId).single().then(({data:m})=>{
     if(!m){toast('User not found.',true);return;}
+    if(m.id===currentUser.id){toast('You cannot manage your own account from here.',true);return;}
+    if(!canManageTeamMember(currentProfile?.role,m.role)){toast('You do not have permission to manage this user.',true);return;}
     _manageMemberId=m.id;
+    _manageMemberRole=m.role;
     _manageMemberSuspended=m.status==='suspended';
-    const roleColors={admin:'av-d',head:'av-e',senior:'av-a',associate:'av-c'};
+    const roleColors={super_admin:'av-d',admin:'av-d',head:'av-e',senior:'av-a',associate:'av-c'};
     document.getElementById('mm-av').className='client-av '+(roleColors[m.role]||'av-b');
     document.getElementById('mm-av').style.cssText='width:44px;height:44px;font-size:15px;flex-shrink:0';
     document.getElementById('mm-av').textContent=initials(m.full_name||'?');
@@ -13011,6 +13025,7 @@ function _updateSuspendBtn(){
 function closeManageMemberModal(){
   document.getElementById('managemember-overlay').classList.add('hidden');
   _manageMemberId=null;
+  _manageMemberRole=null;
 }
 
 function toggleMemberSuspend(){
@@ -13022,8 +13037,16 @@ function toggleMemberSuspend(){
 
 async function saveManageMember(){
   if(!_manageMemberId)return;
+  if(!canManageTeamMember(currentProfile?.role,_manageMemberRole)){
+    document.getElementById('mm-error').textContent='You do not have permission to modify this user.';
+    return;
+  }
   const role=document.getElementById('mm-role').value;
   const dept=document.getElementById('mm-dept').value;
+  if((ROLE_RANK[role]??99)<(ROLE_RANK[currentProfile?.role]??99)){
+    document.getElementById('mm-error').textContent='You cannot assign a role more senior than your own.';
+    return;
+  }
   const status=_manageMemberSuspended?'suspended':'active';
   const btn=document.getElementById('mm-save-btn');
   btn.disabled=true;btn.innerHTML='<span class="loading-spinner"><\/span>Saving⬦';
@@ -13054,6 +13077,10 @@ async function saveManageMember(){
 
 async function deleteMember(){
   if(!_manageMemberId)return;
+  if(!canManageTeamMember(currentProfile?.role,_manageMemberRole)){
+    document.getElementById('mm-error').textContent='You do not have permission to delete this user.';
+    return;
+  }
   const nameEl=document.getElementById('mm-name');
   const name=nameEl?nameEl.textContent:'this user';
   if(!confirm(`Permanently delete ${name}?\n\nThis will remove their profile and Supabase Auth account. This cannot be undone. Their matters and time entries will remain in the system.`))return;
@@ -30611,7 +30638,7 @@ function renderUpdateRow(u){
       <div class="group-update-text">${esc(u.content)}<\/div>
       <div class="group-update-time">${timeStr}<\/div>
     <\/div>
-    ${(currentProfile?.role==='admin'||currentProfile?.role==='head')?`<button class="op-del" title="Delete update" onclick="deleteGroupUpdate('${u.id}','${u.group_id}')">&#215;<\/button>`:''}
+    ${(currentProfile?.role==='admin'||currentProfile?.role==='head'||currentProfile?.role==='super_admin')?`<button class="op-del" title="Delete update" onclick="deleteGroupUpdate('${u.id}','${u.group_id}')">&#215;<\/button>`:''}
   <\/div>`;
 }
 
