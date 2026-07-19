@@ -1999,18 +1999,7 @@ setTimeout(function() {
             <span class="card-title">Staff Permissions</span>
             <button class="card-action" onclick="renderPermissionsPage()">↺ Refresh</button>
           </div>
-          <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;font-size:12px" id="permissions-table">
-              <thead>
-                <tr style="border-bottom:1px solid var(--brd)">
-                  <th style="text-align:left;padding:10px 16px;color:var(--txt3);font-weight:500">Staff Member</th>
-                </tr>
-              </thead>
-              <tbody id="permissions-table-body">
-                <tr><td style="padding:16px">Loading…</td></tr>
-              </tbody>
-            </table>
-          </div>
+          <div id="permissions-staff-list"></div>
         </div>
       </div>
       <div id="perm-panel-roles" style="display:none"></div>
@@ -5252,20 +5241,20 @@ const PERMISSION_DEFS_FALLBACK={
   manage_users_add_firmwide:{label:'Add Staff — Firm-Wide',category:'User Management',defaultRoles:['admin','super_admin']},
   manage_users_edit_firmwide:{label:'Edit Staff — Firm-Wide',category:'User Management',defaultRoles:['admin','super_admin']},
   manage_users_delete_firmwide:{label:'Remove Staff — Firm-Wide',category:'User Management',defaultRoles:['admin','super_admin']},
-  manage_users_add_department:{label:'Add Staff — My Department Only',category:'User Management',defaultRoles:['head']},
-  manage_users_edit_department:{label:'Edit Staff — My Department Only',category:'User Management',defaultRoles:['head']},
-  manage_users_delete_department:{label:'Remove Staff — My Department Only',category:'User Management',defaultRoles:['head']},
+  manage_users_add_department:{label:'Add Staff — Department Specific',category:'User Management',defaultRoles:['head']},
+  manage_users_edit_department:{label:'Edit Staff — Department Specific',category:'User Management',defaultRoles:['head']},
+  manage_users_delete_department:{label:'Remove Staff — Department Specific',category:'User Management',defaultRoles:['head']},
   // Client Management — same split.
   manage_clients_add_firmwide:{label:'Add Clients — Firm-Wide',category:'Client Management',defaultRoles:['admin','super_admin']},
   manage_clients_edit_firmwide:{label:'Edit Clients — Firm-Wide',category:'Client Management',defaultRoles:['admin','super_admin']},
   manage_clients_delete_firmwide:{label:'Delete Clients — Firm-Wide',category:'Client Management',defaultRoles:['admin','super_admin']},
-  manage_clients_add_department:{label:'Add Clients — My Department Only',category:'Client Management',defaultRoles:['head']},
-  manage_clients_edit_department:{label:'Edit Clients — My Department Only',category:'Client Management',defaultRoles:['head']},
-  manage_clients_delete_department:{label:'Delete Clients — My Department Only',category:'Client Management',defaultRoles:['head']},
+  manage_clients_add_department:{label:'Add Clients — Department Specific',category:'Client Management',defaultRoles:['head']},
+  manage_clients_edit_department:{label:'Edit Clients — Department Specific',category:'Client Management',defaultRoles:['head']},
+  manage_clients_delete_department:{label:'Delete Clients — Department Specific',category:'Client Management',defaultRoles:['head']},
   // Case Assignment stays a single action (there's no add/edit/delete
   // distinction to "assigning" a case), so it keeps its original two keys.
   assign_cases_firmwide:{label:'Assign Cases to Any Staff Member — Firm-Wide',category:'Case Assignment',defaultRoles:['admin','super_admin']},
-  assign_cases_department:{label:'Assign Cases within My Department Only',category:'Case Assignment',defaultRoles:['head','senior']}
+  assign_cases_department:{label:'Assign Cases — Department Specific',category:'Case Assignment',defaultRoles:['head','senior']}
 };
 
 window._rolesById={};
@@ -5444,9 +5433,12 @@ async function setPermissionOverride(userId,key,mode){
     window._permOverrides[userId][key]=granted;
   }
   updateUserUI();
-  const row=document.getElementById('perm-row-'+userId);
   const member=(window._allProfiles||[]).find(p=>p.id===userId);
-  if(row&&member)row.outerHTML=renderPermissionsRow(member);
+  const listEl=document.getElementById('permissions-staff-list');
+  if(listEl&&member&&window._permissionsActiveTab==='overrides'){
+    const rows=(window._allProfiles||[]).filter(p=>p.role!=='super_admin').slice().sort((a,b)=>(a.full_name||'').localeCompare(b.full_name||''));
+    listEl.innerHTML=rows.map(m=>renderPermissionsStaffRow(m)).join('');
+  }
   toast('Permission updated.');
   return true;
 }
@@ -5535,39 +5527,28 @@ async function renderPermissionsPage(){
     return;
   }
   window._permissionsActiveTab='overrides';
-  const theadRow=document.querySelector('#permissions-table thead tr');
-  const keys=Object.keys(window._permissionDefs);
-  if(theadRow){
-    theadRow.innerHTML='<th style="text-align:left;padding:10px 16px;color:var(--txt3);font-weight:500">Staff Member</th>'+
-      keys.map(k=>`<th style="text-align:left;padding:10px 16px;color:var(--txt3);font-weight:500;min-width:200px">${esc(window._permissionDefs[k].category||'General')}<br><span style="font-weight:400">${esc(window._permissionDefs[k].label)}</span></th>`).join('');
-  }
-  const body=document.getElementById('permissions-table-body');
-  if(!body)return;
+  const listEl=document.getElementById('permissions-staff-list');
+  if(!listEl)return;
   const list=(window._allProfiles||[]).filter(p=>p.role!=='super_admin').slice().sort((a,b)=>(a.full_name||'').localeCompare(b.full_name||''));
-  if(!list.length){body.innerHTML='<tr><td style="padding:16px;color:var(--txt3)">No staff found.</td></tr>';return;}
-  body.innerHTML=list.map(m=>renderPermissionsRow(m)).join('');
+  if(!list.length){listEl.innerHTML='<div class="empty-state" style="padding:16px"><p>No staff found.</p></div>';return;}
+  listEl.innerHTML=list.map(m=>renderPermissionsStaffRow(m)).join('');
 }
 
-function renderPermissionsRow(m){
-  const cells=Object.keys(window._permissionDefs).map(key=>{
-    const override=window._permOverrides?.[m.id]?.[key];
-    const roleDefault=!!(window._rolePermissions?.[m.role]?.has(key));
-    const value=override===undefined?'default':(override?'granted':'revoked');
-    return `<td style="padding:8px 16px">
-      <select onchange="setPermissionOverride('${m.id}','${key}',this.value)" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--brd);background:${override===undefined?'#fff':(override?'#EAF3DE':'#FCEBEB')};font-family:'DM Sans',sans-serif">
-        <option value="default" ${value==='default'?'selected':''}>Default (${roleDefault?'allowed':'not allowed'})</option>
-        <option value="granted" ${value==='granted'?'selected':''}>Granted</option>
-        <option value="revoked" ${value==='revoked'?'selected':''}>Revoked</option>
-      </select>
-    </td>`;
-  }).join('');
-  return `<tr id="perm-row-${m.id}" style="border-bottom:1px solid var(--brd)">
-    <td style="padding:8px 16px;white-space:nowrap">
-      <div style="font-weight:500;color:var(--txt)">${esc(m.full_name||m.email||'Unknown')}</div>
+// One clickable row per staff member — opens the same Manage Member modal
+// used from the Team page, scrolled straight to their Individual
+// Permissions section, instead of a wide table with a column per key.
+function renderPermissionsStaffRow(m){
+  const overrideCount=Object.keys(window._permOverrides?.[m.id]||{}).length;
+  return `<div onclick="openManageMemberModal('${m.id}',true)" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background .12s" onmouseover="this.style.background='var(--bg2,#F7F7F5)'" onmouseout="this.style.background='transparent'">
+    <div>
+      <div style="font-weight:500;color:var(--txt);font-size:13px">${esc(m.full_name||m.email||'Unknown')}</div>
       <div style="font-size:10px;color:var(--txt3)">${roleLabel(m.role)}${m.department?' · '+esc(m.department):''}</div>
-    </td>
-    ${cells}
-  </tr>`;
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      ${overrideCount?`<span style="font-size:10px;color:var(--txt3);background:var(--bg2,#F0F0EC);border-radius:20px;padding:2px 8px">${overrideCount} override${overrideCount===1?'':'s'}</span>`:''}
+      <span style="color:var(--txt3);font-size:14px">›</span>
+    </div>
+  </div>`;
 }
 
 // ── Roles & Permissions tab (Super Admin only): create/edit roles,
@@ -13526,7 +13507,7 @@ let _manageMemberRole=null;
 let _manageMemberDept=null;
 let _manageMemberSuspended=false;
 
-function openManageMemberModal(userId){
+function openManageMemberModal(userId,focusPermissions){
   const{data}=window._cachedProfiles||(window._cachedProfiles={data:[]});
   // Find from cached team data or look up
   const allProfiles=window._allProfiles||[];
@@ -13568,6 +13549,12 @@ function openManageMemberModal(userId){
     // Update suspend button
     _updateSuspendBtn();
     document.getElementById('managemember-overlay').classList.remove('hidden');
+    if(focusPermissions){
+      setTimeout(()=>{
+        const el=document.getElementById('mm-permissions-divider');
+        if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+      },80);
+    }
   });
 }
 
