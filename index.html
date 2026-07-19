@@ -13047,9 +13047,10 @@ function getVisibleAlerts(){
   const dept=currentProfile?.department||null;
   const uid=currentUser?.id||null;
   return alerts.filter(a=>{
-    // Client alerts only shown in client-facing view, not staff alerts view
-    if(a.alert_type==='client') return false;
     const createdBy=a.created_by||null;
+    // Client alerts (reminders/notices tied to a specific client, or all clients)
+    // are informational for the whole firm — visible to every staff member.
+    if(a.alert_type==='client') return true;
     // Creator can always see their own alerts, regardless of targeting
     if(createdBy===uid) return true;
     // Default old alerts (no alert_type) treated as 'all' staff
@@ -13112,7 +13113,11 @@ async function renderAlerts(){
     }));
   }
   const makeAlertItem=(a,dotClass)=>{
-    const scopeTag=a.staff_target==='all'?'<span style="font-size:9px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:4px;font-weight:500;margin-left:6px">Firm-wide<\/span>':
+    const scopeTag=a.alert_type==='client'?(()=>{
+        const cName=a.target_client_id?(clients.find(c=>c.id===a.target_client_id)?.name||'Unknown client'):null;
+        return `<span style="font-size:9px;background:#FDEDEA;color:#A3402E;padding:1px 6px;border-radius:4px;font-weight:500;margin-left:6px">${cName?'Client: '+esc(cName):'All Clients'}<\/span>`;
+      })():
+      a.staff_target==='all'?'<span style="font-size:9px;background:#E6F1FB;color:#185FA5;padding:1px 6px;border-radius:4px;font-weight:500;margin-left:6px">Firm-wide<\/span>':
       a.staff_target==='dept'?`<span style="font-size:9px;background:#EAF3DE;color:#2D6A4F;padding:1px 6px;border-radius:4px;font-weight:500;margin-left:6px">Dept<\/span>`:'';
     const creatorTag=a.created_by_name?`<span style="font-size:9px;color:var(--txt3);margin-left:4px">by ${esc(a.created_by_name)}<\/span>`:'';
     const linkHtml=a.link_url?`<div style="margin-top:6px"><a href="${esc(a.link_url)}" target="_blank" rel="noopener" style="font-size:11px;color:#185FA5;text-decoration:none;display:inline-flex;align-items:center;gap:4px" onclick="event.stopPropagation()">🔗 ${esc(a.link_url.replace(/^https?:\/\//,'').slice(0,60))}<\/a><\/div>`:'';
