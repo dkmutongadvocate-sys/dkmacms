@@ -1908,6 +1908,10 @@ setTimeout(function() {
         </div>
         <button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('alert')">+ Add Alert</button>
       </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="panic-tab-btn active" id="alert-tab-staff-btn" onclick="switchAlertTab('staff')">Staff Alerts <span class="panic-tab-count" id="alert-tab-staff-count">0</span></button>
+        <button class="panic-tab-btn" id="alert-tab-client-btn" onclick="switchAlertTab('client')">Client Alerts <span class="panic-tab-count" id="alert-tab-client-count">0</span></button>
+      </div>
       <div class="two-col">
         <div class="card">
           <div class="card-header"><span class="card-title">Urgent Alerts</span><span id="urgent-count-badge" style="display:none;background:#E2443A;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;margin-left:8px;font-weight:600">0</span></div>
@@ -13085,6 +13089,14 @@ function canManageAlert(a){
   return roleRank(myRole)<roleRank(creatorRole);
 }
 
+let activeAlertTab='staff';
+function switchAlertTab(tab){
+  activeAlertTab=tab;
+  document.getElementById('alert-tab-staff-btn')?.classList.toggle('active',tab==='staff');
+  document.getElementById('alert-tab-client-btn')?.classList.toggle('active',tab==='client');
+  renderAlerts();
+}
+
 async function renderAlerts(){
   // Update scope label
   const role=currentProfile?.role||'associate';
@@ -13093,7 +13105,13 @@ async function renderAlerts(){
     const labels={super_admin:'Showing all firm alerts',admin:'Showing all firm alerts',head:'Showing all alerts in your department',senior:'Showing your alerts and broadcasts',associate:'Showing alerts addressed to you'};
     scopeEl.textContent=labels[role]||'';
   }
-  const visible=getVisibleAlerts();
+  const allVisible=getVisibleAlerts();
+  // Tab counts (independent of which tab is currently active)
+  const staffCountEl=document.getElementById('alert-tab-staff-count');
+  const clientCountEl=document.getElementById('alert-tab-client-count');
+  if(staffCountEl)staffCountEl.textContent=allVisible.filter(a=>a.alert_type!=='client').length;
+  if(clientCountEl)clientCountEl.textContent=allVisible.filter(a=>a.alert_type==='client').length;
+  const visible=allVisible.filter(a=>activeAlertTab==='client'?a.alert_type==='client':a.alert_type!=='client');
   const urgent=visible.filter(a=>a.priority==='critical');
   const other=visible.filter(a=>a.priority!=='critical');
   const uEl=document.getElementById('urgent-alerts-list');
