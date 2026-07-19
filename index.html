@@ -5254,7 +5254,13 @@ const PERMISSION_DEFS_FALLBACK={
   // Case Assignment stays a single action (there's no add/edit/delete
   // distinction to "assigning" a case), so it keeps its original two keys.
   assign_cases_firmwide:{label:'Assign Cases to Any Staff Member — Firm-Wide',category:'Case Assignment',defaultRoles:['admin','super_admin']},
-  assign_cases_department:{label:'Assign Cases — Department Specific',category:'Case Assignment',defaultRoles:['head','senior']}
+  assign_cases_department:{label:'Assign Cases — Department Specific',category:'Case Assignment',defaultRoles:['head','senior']},
+  // Meta-permission: lets someone open Staff Overrides and grant/revoke
+  // OTHER people's permissions, without making them a full Admin. Nobody
+  // gets this by default beyond Admin/Super Admin (who already have it via
+  // their role) — it exists purely to be delegated deliberately.
+  grant_permissions_firmwide:{label:'Grant/Revoke Staff Permissions — Firm-Wide',category:'Permission Delegation',defaultRoles:[]},
+  grant_permissions_department:{label:'Grant/Revoke Staff Permissions — Department Specific',category:'Permission Delegation',defaultRoles:[]}
 };
 
 window._rolesById={};
@@ -5408,16 +5414,51 @@ function canManageClientRecord(actorProfile,clientRecord,action){
 // deliberately simpler than the role-management hierarchy so permission
 // delegation always has a single, predictable source of truth. Editing role
 // defaults and creating roles/permission keys is Super Admin only.
+// A third path: anyone explicitly granted grant_permissions_firmwide/
+// department can also do this, without being made a full Admin.
 function isPermissionsAdmin(profile){
-  return profile?.role==='admin'||profile?.role==='super_admin';
+  return profile?.role==='admin'||profile?.role==='super_admin'||!!permissionScope(profile,'grant_permissions');
 }
 function isRolesAdmin(profile){
   return profile?.role==='super_admin';
 }
 
+// Whether currentProfile can grant/revoke permissions at all, and how far:
+// 'firm' (any staff member), 'department' (only their own department), or
+// null (no access). Admin/Super Admin always get 'firm'.
+function grantPermissionsScope(profile){
+  if(profile?.role==='admin'||profile?.role==='super_admin')return 'firm';
+  return permissionScope(profile,'grant_permissions');
+}
+
+// Classifies a permission key as 'firmwide' or 'department' for the
+// two-tab Roles & Permissions / Individual Permissions UI. Keys that aren't
+// part of a firmwide/department pair (firm_settings_*, publish_mobile_apps)
+// are treated as firm-level; view_department_alerts is department-level.
+function keyScope(key){
+  if(key.endsWith('_firmwide'))return 'firmwide';
+  if(key.endsWith('_department'))return 'department';
+  if(key==='view_department_alerts')return 'department';
+  return 'firmwide';
+}
+// Given one half of a firmwide/department pair, returns the other half's
+// key, or null if this key isn't part of such a pair.
+function siblingScopeKey(key){
+  if(key.endsWith('_firmwide'))return key.slice(0,-'_firmwide'.length)+'_department';
+  if(key.endsWith('_department'))return key.slice(0,-'_department'.length)+'_firmwide';
+  return null;
+}
+
 async function setPermissionOverride(userId,key,mode){
   // mode: 'default' (remove override) | 'granted' | 'revoked'
-  if(!isPermissionsAdmin(currentProfile)){toast('You do not have permission to do that.',true);return false;}
+  const gScope=grantPermissionsScope(currentProfile);
+  if(!gScope){toast('You do not have permission to do that.',true);return false;}
+  if(gScope==='department'){
+    const target=(window._allProfiles||[]).find(p=>p.id===userId);
+    if(!target||!currentProfile?.department||target.department!==currentProfile.department){
+      toast('You can only manage permissions for staff in your own department.',true);return false;
+    }
+  }
   if(!window._permissionDefs[key]){return false;}
   if(mode==='default'){
     const{error}=await sb.from('staff_permission_overrides').delete().eq('user_id',userId).eq('permission_key',key);
@@ -5433,12 +5474,7 @@ async function setPermissionOverride(userId,key,mode){
     window._permOverrides[userId][key]=granted;
   }
   updateUserUI();
-  const member=(window._allProfiles||[]).find(p=>p.id===userId);
-  const listEl=document.getElementById('permissions-staff-list');
-  if(listEl&&member&&window._permissionsActiveTab==='overrides'){
-    const rows=(window._allProfiles||[]).filter(p=>p.role!=='super_admin').slice().sort((a,b)=>(a.full_name||'').localeCompare(b.full_name||''));
-    listEl.innerHTML=rows.map(m=>renderPermissionsStaffRow(m)).join('');
-  }
+  if(window._permissionsActiveTab==='overrides')renderPermissionsPage();
   toast('Permission updated.');
   return true;
 }
@@ -5529,7 +5565,10 @@ async function renderPermissionsPage(){
   window._permissionsActiveTab='overrides';
   const listEl=document.getElementById('permissions-staff-list');
   if(!listEl)return;
-  const list=(window._allProfiles||[]).filter(p=>p.role!=='super_admin').slice().sort((a,b)=>(a.full_name||'').localeCompare(b.full_name||''));
+  const gScope=grantPermissionsScope(currentProfile);
+  let list=(window._allProfiles||[]).filter(p=>p.role!=='super_admin');
+  if(gScope==='department')list=list.filter(p=>p.department===currentProfile?.department);
+  list=list.slice().sort((a,b)=>(a.full_name||'').localeCompare(b.full_name||''));
   if(!list.length){listEl.innerHTML='<div class="empty-state" style="padding:16px"><p>No staff found.</p></div>';return;}
   listEl.innerHTML=list.map(m=>renderPermissionsStaffRow(m)).join('');
 }
@@ -5557,12 +5596,20 @@ function renderPermissionsStaffRow(m){
 function renderRolesPermissionsTab(){
   const wrap=document.getElementById('perm-panel-roles');
   if(!wrap)return;
+  if(!window._rolesPermScopeTab)window._rolesPermScopeTab='firmwide';
+  const activeScope=window._rolesPermScopeTab;
   const cats=permCategories();
   const roles=rolesList().filter(r=>r.id!=='super_admin');
   wrap.innerHTML=`
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
-      <button class="card-action" onclick="openCreatePermissionModal()">+ New Permission</button>
-      <button class="card-action" onclick="openCreateRoleModal()">+ New Role</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px">
+        <button class="card-action ${activeScope==='firmwide'?'active':''}" onclick="switchRolesPermScope('firmwide')" style="padding:6px 14px">Firm-Wide</button>
+        <button class="card-action ${activeScope==='department'?'active':''}" onclick="switchRolesPermScope('department')" style="padding:6px 14px">Department Specific</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="card-action" onclick="openCreatePermissionModal()">+ New Permission</button>
+        <button class="card-action" onclick="openCreateRoleModal()">+ New Role</button>
+      </div>
     </div>
     ${roles.map(role=>`
       <div class="card" style="margin-bottom:14px">
@@ -5571,24 +5618,34 @@ function renderRolesPermissionsTab(){
           ${role.is_system?'':`<button class="card-action" style="color:#B23B3B" onclick="deleteRole('${role.id}').then(()=>renderRolesPermissionsTab())">Delete Role</button>`}
         </div>
         <div style="padding:14px 20px">
-          ${cats.map(cat=>`
+          ${cats.map(cat=>{
+            const keysInScope=Object.keys(window._permissionDefs).filter(k=>(window._permissionDefs[k].category||'General')===cat&&keyScope(k)===activeScope);
+            if(!keysInScope.length)return '';
+            return `
             <div style="margin-bottom:10px">
               <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt3);margin-bottom:6px">${esc(cat)}</div>
               <div style="display:flex;flex-wrap:wrap;gap:14px">
-                ${Object.keys(window._permissionDefs).filter(k=>(window._permissionDefs[k].category||'General')===cat).map(key=>{
+                ${keysInScope.map(key=>{
                   const checked=!!(window._rolePermissions?.[role.id]?.has(key));
-                  return `<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txt2)">
-                    <input type="checkbox" ${checked?'checked':''} onchange="setRolePermission('${role.id}','${key}',this.checked)"/>
-                    ${esc(window._permissionDefs[key].label)}
+                  const sibling=siblingScopeKey(key);
+                  const siblingChecked=sibling&&!!(window._rolePermissions?.[role.id]?.has(sibling));
+                  const disabledByFirmwide=activeScope==='department'&&siblingChecked;
+                  return `<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:${disabledByFirmwide?'var(--txt3)':'var(--txt2)'}">
+                    <input type="checkbox" ${checked?'checked':''} ${disabledByFirmwide?'disabled':''} onchange="setRolePermission('${role.id}','${key}',this.checked)"/>
+                    ${esc(window._permissionDefs[key].label)}${disabledByFirmwide?' <span style="font-size:10px">(covered by Firm-Wide)</span>':''}
                   </label>`;
                 }).join('')}
               </div>
-            </div>
-          `).join('')}
+            </div>`;
+          }).join('')}
         </div>
       </div>
     `).join('')}
   `;
+}
+function switchRolesPermScope(scope){
+  window._rolesPermScopeTab=scope;
+  renderRolesPermissionsTab();
 }
 
 function openCreateRoleModal(){
@@ -13545,6 +13602,7 @@ function openManageMemberModal(userId,focusPermissions){
     if(saveBtn)saveBtn.style.display=canEditMember?'':'none';
     const deleteBtn=document.getElementById('mm-delete-btn');
     if(deleteBtn)deleteBtn.style.display=canDeleteMember?'flex':'none';
+    window._mmPermScopeTab='firmwide';
     renderManageMemberPermissions(m);
     // Update suspend button
     _updateSuspendBtn();
@@ -13562,7 +13620,9 @@ async function renderManageMemberPermissions(m){
   const divider=document.getElementById('mm-permissions-divider');
   const wrap=document.getElementById('mm-permissions-wrap');
   if(!divider||!wrap)return;
-  if(m.role==='super_admin'||!isPermissionsAdmin(currentProfile)){
+  const gScope=grantPermissionsScope(currentProfile);
+  const canGrantThisMember=gScope==='firm'||(gScope==='department'&&!!currentProfile?.department&&currentProfile.department===m.department);
+  if(m.role==='super_admin'||!canGrantThisMember){
     divider.style.display='none';
     wrap.style.display='none';
     wrap.innerHTML='';
@@ -13572,26 +13632,42 @@ async function renderManageMemberPermissions(m){
   if(!window._permOverridesLoaded)await loadPermissionOverrides();
   divider.style.display='';
   wrap.style.display='flex';
-  wrap.innerHTML=permCategories().map(cat=>{
-    const rows=Object.keys(window._permissionDefs).filter(k=>(window._permissionDefs[k].category||'General')===cat).map(key=>{
+  if(!window._mmPermScopeTab)window._mmPermScopeTab='firmwide';
+  const activeScope=window._mmPermScopeTab;
+  const tabsHtml=`<div style="display:flex;gap:6px;margin-bottom:4px;width:100%">
+    <button type="button" class="card-action ${activeScope==='firmwide'?'active':''}" onclick="switchMmPermScope('${m.id}','${m.role}','${m.department||''}','firmwide')" style="padding:4px 12px;font-size:11px">Firm-Wide</button>
+    <button type="button" class="card-action ${activeScope==='department'?'active':''}" onclick="switchMmPermScope('${m.id}','${m.role}','${m.department||''}','department')" style="padding:4px 12px;font-size:11px">Department Specific</button>
+  </div>`;
+  const bodyHtml=permCategories().map(cat=>{
+    const rows=Object.keys(window._permissionDefs).filter(k=>(window._permissionDefs[k].category||'General')===cat&&keyScope(k)===activeScope).map(key=>{
       const def=window._permissionDefs[key];
       const override=window._permOverrides?.[m.id]?.[key];
       const roleDefault=!!(window._rolePermissions?.[m.role]?.has(key));
       const value=override===undefined?'default':(override?'granted':'revoked');
-      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--txt2)">
-        <span style="flex:1">${esc(def.label)}</span>
-        <select onchange="setPermissionOverride('${m.id}','${key}',this.value).then(()=>renderManageMemberPermissions({id:'${m.id}',role:'${m.role}'}))" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--brd);background:${override===undefined?'#fff':(override?'#EAF3DE':'#FCEBEB')};font-family:'DM Sans',sans-serif">
+      const sibling=siblingScopeKey(key);
+      const siblingOverride=sibling?window._permOverrides?.[m.id]?.[sibling]:undefined;
+      const siblingGranted=sibling&&(siblingOverride!==undefined?siblingOverride:!!(window._rolePermissions?.[m.role]?.has(sibling)));
+      const disabledByFirmwide=activeScope==='department'&&!!siblingGranted;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:${disabledByFirmwide?'var(--txt3)':'var(--txt2)'}">
+        <span style="flex:1">${esc(def.label)}${disabledByFirmwide?' <span style="font-size:10px">(covered by Firm-Wide)</span>':''}</span>
+        <select ${disabledByFirmwide?'disabled':''} onchange="setPermissionOverride('${m.id}','${key}',this.value).then(()=>renderManageMemberPermissions({id:'${m.id}',role:'${m.role}',department:'${m.department||''}'}))" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--brd);background:${override===undefined?'#fff':(override?'#EAF3DE':'#FCEBEB')};font-family:'DM Sans',sans-serif">
           <option value="default" ${value==='default'?'selected':''}>Default (${roleDefault?'allowed':'not allowed'})</option>
           <option value="granted" ${value==='granted'?'selected':''}>Granted</option>
           <option value="revoked" ${value==='revoked'?'selected':''}>Revoked</option>
         </select>
       </div>`;
     }).join('');
+    if(!rows)return '';
     return `<div style="width:100%">
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt3);margin-bottom:6px">${esc(cat)}</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">${rows}</div>
     </div>`;
   }).join('');
+  wrap.innerHTML=tabsHtml+bodyHtml;
+}
+function switchMmPermScope(id,role,department,scope){
+  window._mmPermScopeTab=scope;
+  renderManageMemberPermissions({id,role,department});
 }
 
 function _updateSuspendBtn(){
