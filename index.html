@@ -3982,7 +3982,7 @@ setTimeout(function() {
       </div>
       <div class="form-two">
         <div class="form-row"><label>Event Type</label><select id="ev-type"><option value="court">Court</option><option value="client">Client Meeting</option><option value="deadline">Deadline</option><option value="internal">Internal</option><option value="adr">Arbitration / ADR</option></select></div>
-        <div class="form-row"><label>Related Matter</label><select id="ev-matter"><option value="">None</option></select></div>
+        <div class="form-row"><label>Related Matter</label><select id="ev-matter" onchange="onEventMatterChangeForInvite()"><option value="">None</option></select></div>
       </div>
       <div class="form-row"><label>Location / Court</label><input id="ev-location" placeholder="e.g. ELC Nairobi, Room 4"/></div>
       <div class="form-row">
@@ -4031,6 +4031,17 @@ setTimeout(function() {
         <input type="checkbox" id="ev-share-client">
         <span>Share this event with the client portal</span>
       </label>
+      <div class="form-row">
+        <label>Invite Staff <span style="font-size:10px;color:var(--txt3);font-weight:400">(in-app message + email)</span></label>
+        <div id="ev-invite-staff-list" style="display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow:auto;border:1px solid var(--brd);border-radius:6px;padding:8px"></div>
+      </div>
+      <div class="form-row" id="ev-invite-client-wrap" style="display:none">
+        <label class="invoice-vat-toggle" for="ev-invite-client" style="justify-content:flex-start">
+          <input type="checkbox" id="ev-invite-client">
+          <span>Email calendar invite to <b id="ev-invite-client-name"></b> (portal login email)</span>
+        </label>
+        <div style="font-size:10px;color:var(--txt3);margin-top:2px">The client won't see a calendar item in the portal — the invite details are appended to this event's Notes, which are already visible to them when shared, and the client also gets an email.</div>
+      </div>
       <div class="form-row"><label>Notes</label><textarea id="ev-notes" placeholder="Any additional details⬦" style="min-height:60px"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-secondary" id="ev-add-outlook-btn" style="display:none" onclick="downloadEventIcs(window._editingEventId,this)">📅 Add to Outlook</button><button class="btn-primary" id="save-event-btn" onclick="saveEventWithGCal()">Save Event</button></div>
@@ -14272,6 +14283,124 @@ function popEventModal(){
   if(endCountRadio)endCountRadio.checked=true;
   toggleEventRecurrence();
   onRepeatEndModeChange();
+  populateEventInviteStaffList([]);
+  const inviteClientEl=document.getElementById('ev-invite-client');
+  if(inviteClientEl)inviteClientEl.checked=false;
+  const inviteClientWrap=document.getElementById('ev-invite-client-wrap');
+  if(inviteClientWrap)inviteClientWrap.style.display='none';
+  window._currentEventInvitees=[];
+}
+
+// ─── EVENT INVITATIONS ──────────────────────────────────────────
+function populateEventInviteStaffList(selectedIds){
+  const wrap=document.getElementById('ev-invite-staff-list');
+  if(!wrap)return;
+  const list=(window._allProfiles||[]).filter(p=>p.id!==currentUser?.id);
+  const sel=new Set(selectedIds||[]);
+  wrap.innerHTML=list.length?list.map(p=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:400;cursor:pointer;background:#F7F4EC;border-radius:14px;padding:4px 10px 4px 8px">
+      <input type="checkbox" class="ev-invite-staff-cb" value="${p.id}" ${sel.has(p.id)?'checked':''}/> ${esc(p.full_name||p.email||'Staff')}
+    </label>`).join(''):'<div style="font-size:11px;color:var(--txt3)">No other staff found.</div>';
+}
+function getSelectedEventInviteStaffIds(){
+  return Array.from(document.querySelectorAll('.ev-invite-staff-cb:checked')).map(cb=>cb.value);
+}
+function onEventMatterChangeForInvite(){
+  const matterId=document.getElementById('ev-matter')?.value||'';
+  const wrap=document.getElementById('ev-invite-client-wrap');
+  const nameEl=document.getElementById('ev-invite-client-name');
+  if(!wrap||!nameEl)return;
+  const matter=matterId?matters.find(m=>m.id===matterId):null;
+  const client=matter?clients.find(c=>c.id===matter.client_id):null;
+  const portalEmail=client?(client.portal_email||client.email||''):'';
+  if(!client||!portalEmail){wrap.style.display='none';return;}
+  nameEl.textContent=client.name||'the client';
+  wrap.dataset.clientId=client.id;
+  wrap.dataset.portalEmail=portalEmail;
+  wrap.style.display='block';
+}
+// Sends staff + client invitations for a just-saved (or updated) event.
+// staffIds: array of profile ids to invite. inviteClient: bool.
+// alreadyInvitedStaffIds: profile ids to skip (already invited earlier, on edit).
+async function sendEventInvitations(ev,staffIds,inviteClient,alreadyInvitedStaffIds){
+  if(!ev?.id)return;
+  const skip=new Set(alreadyInvitedStaffIds||[]);
+  const newStaffIds=(staffIds||[]).filter(id=>!skip.has(id));
+  const inviterName=currentProfile?.full_name||currentUser?.email||'A colleague';
+  const eventSummary={
+    title:ev.title,
+    date:ev.event_date,
+    time:ev.event_time||'',
+    endTime:ev.event_end_time||'',
+    location:ev.location||'',
+    meetingLink:ev.meeting_link||'',
+    notes:cleanEventNotes(ev.notes||''),
+    matterTitle:(matters.find(m=>m.id===ev.matter_id)||{}).title||''
+  };
+  // Staff invites: in-app message (reuses existing staff inbox) + email
+  for(const profileId of newStaffIds){
+    const p=(window._allProfiles||[]).find(x=>x.id===profileId);
+    if(!p)continue;
+    try{
+      await sb.from('staff_messages').insert({
+        from_user:currentUser?.id||null,to_user:profileId,
+        from_name:inviterName,to_name:p.full_name||p.email||'Staff',
+        body:`📅 You've been invited to "${ev.title}" on ${fmtDate(ev.event_date)}${ev.event_time?' at '+ev.event_time:''}${ev.location?' — '+ev.location:''}.`,
+        read:false
+      });
+    }catch(e){console.warn('[DKMA] invite staff_messages insert failed:',e?.message);}
+    try{
+      await sb.from('event_invitees').insert({
+        event_id:ev.id,invitee_type:'staff',profile_id:profileId,
+        email:p.email||null,name:p.full_name||null,
+        status:'pending',invited_by:currentUser?.id||null
+      });
+    }catch(e){console.warn('[DKMA] event_invitees insert failed:',e?.message);}
+    if(p.email){
+      try{await sendEventInviteEmail({toEmail:p.email,toName:p.full_name||p.email,kind:'staff',event:eventSummary,inviterName});}
+      catch(e){console.warn('[DKMA] staff invite email failed:',e?.message);}
+    }
+  }
+  // Client invite: email + append to notes (portal already surfaces notes when shared)
+  if(inviteClient){
+    const wrap=document.getElementById('ev-invite-client-wrap');
+    const clientId=wrap?.dataset.clientId||null;
+    const portalEmail=wrap?.dataset.portalEmail||'';
+    const client=clientId?clients.find(c=>c.id===clientId):null;
+    if(client&&portalEmail){
+      const inviteLine=`Invited: ${client.name||'Client'} (${portalEmail}) — sent ${formatDateLocal(new Date())}`;
+      const mergedNotes=[cleanEventNotes(ev.notes||''),inviteLine].filter(Boolean).join('\n');
+      try{
+        const{error}=await sb.from('events').update({notes:mergedNotes,share_with_client:true}).eq('id',ev.id);
+        if(!error){
+          ev.notes=mergedNotes;ev.share_with_client=true;
+          const idx=events.findIndex(e=>e.id===ev.id);
+          if(idx>-1)events[idx]=normalizeCalendarEventRow({...events[idx],notes:mergedNotes,share_with_client:true});
+        }
+      }catch(e){console.warn('[DKMA] client invite note append failed:',e?.message);}
+      try{
+        await sb.from('event_invitees').insert({
+          event_id:ev.id,invitee_type:'client',client_id:client.id,
+          email:portalEmail,name:client.name||null,
+          status:'pending',invited_by:currentUser?.id||null
+        });
+      }catch(e){console.warn('[DKMA] event_invitees client insert failed:',e?.message);}
+      try{await sendEventInviteEmail({toEmail:portalEmail,toName:client.name||'Client',kind:'client',event:eventSummary,inviterName});}
+      catch(e){console.warn('[DKMA] client invite email failed:',e?.message);}
+    }
+  }
+  if(newStaffIds.length||inviteClient)toast('Invitations sent.');
+}
+async function sendEventInviteEmail({toEmail,toName,kind,event,inviterName}){
+  const { data:{session} } = await sb.auth.getSession();
+  if(!session?.access_token)return;
+  const res=await fetch(`${SUPABASE_URL_EDGE}/functions/v1/send-event-invite`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
+    body:JSON.stringify({toEmail,toName,kind,event,inviterName})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||data?.error)throw new Error(data?.error||'send-event-invite failed');
+  return data;
 }
 function normalizeTaskRow(task){
   if(!task)return task;
@@ -15408,6 +15537,8 @@ async function saveEvent(){
   const title=document.getElementById('ev-title').value.trim();
   const date=document.getElementById('ev-date').value;
   if(!title||!date){toast('Please enter event title and date.',true);return null;}
+  const _inviteStaffIds=getSelectedEventInviteStaffIds();
+  const _inviteClient=!!document.getElementById('ev-invite-client')?.checked;
   setLoading('save-event-btn',true,'Save Event');
   const endDate=document.getElementById('ev-end-date')?.value||null;
   const repeat=document.getElementById('ev-repeat')?.value||'none';
@@ -15444,6 +15575,11 @@ async function saveEvent(){
   if(error){toast('Error: '+error.message,true);return null;}
   events=[...events,...(data||[]).map(normalizeCalendarEventRow)].sort((a,b)=>new Date(a.event_date)-new Date(b.event_date));
   closeModal();toast((data?.length||1)>1?`${data.length} recurring events saved.`:'Event saved.');updateBadges();renderCalendar();renderDashboard();
+  if(_inviteStaffIds.length||_inviteClient){
+    for(const savedRow of (data||[])){
+      sendEventInvitations(savedRow,_inviteStaffIds,_inviteClient,[]);
+    }
+  }
   return data[0];
 }
 
@@ -20017,7 +20153,7 @@ async function toggleShareWithClient(storageName,displayName,btn){
 
 function openEventModalForMatter(matterId){
   openModal('event');
-  setTimeout(()=>{const sel=document.getElementById('ev-matter');if(sel)sel.value=matterId;},50);
+  setTimeout(()=>{const sel=document.getElementById('ev-matter');if(sel){sel.value=matterId;onEventMatterChangeForInvite();}},50);
 }
 
 // ─── MATTER UPDATES ────────────────────────────────────────────────
@@ -21799,6 +21935,7 @@ function openEventDetail(eventId){
     if(etm)etm.value=getEventEndTime(ev)||'';
     if(ty)ty.value=ev.type||'court';
     if(m)m.value=ev.matter_id||'';
+    onEventMatterChangeForInvite();
     if(l)l.value=ev.location||'';
     const rec=parseRecurrenceMeta(ev.notes||'');
     if(n)n.value=cleanEventNotes(ev.notes||'');
@@ -21819,6 +21956,31 @@ function openEventDetail(eventId){
     if(ml){ml.value=ev.meeting_link||'';if(typeof updateMeetingLinkIcon==='function')updateMeetingLinkIcon(ml.value);}
     const shareEl=document.getElementById('ev-share-client');
     if(shareEl)shareEl.checked=ev.share_with_client===true;
+    window._currentEventInvitees=[];
+    (async()=>{
+      const{data:existingInv}=await sb.from('event_invitees').select('*').eq('event_id',eventId);
+      window._currentEventInvitees=existingInv||[];
+      const invitedStaffIds=(existingInv||[]).filter(i=>i.invitee_type==='staff').map(i=>i.profile_id);
+      populateEventInviteStaffList(invitedStaffIds);
+      // Disable checkboxes for staff already invited so we don't re-send silently
+      invitedStaffIds.forEach(id=>{
+        const cb=document.querySelector(`.ev-invite-staff-cb[value="${id}"]`);
+        if(cb){cb.disabled=true;const lbl=cb.closest('label');if(lbl){lbl.title='Already invited';lbl.style.opacity='0.6';}}
+      });
+      const clientAlreadyInvited=(existingInv||[]).some(i=>i.invitee_type==='client');
+      const inviteClientEl=document.getElementById('ev-invite-client');
+      if(inviteClientEl){
+        inviteClientEl.checked=false;
+        inviteClientEl.disabled=clientAlreadyInvited;
+      }
+      const wrap=document.getElementById('ev-invite-client-wrap');
+      if(wrap&&clientAlreadyInvited){
+        const hint=document.createElement('div');
+        hint.style.cssText='font-size:10px;color:#2D6A4F;margin-top:2px';
+        hint.textContent='✓ Client already invited to this event.';
+        wrap.appendChild(hint);
+      }
+    })();
     // Show who added this event
     let evMeta=document.getElementById('ev-added-by-row');
     if(!evMeta){
@@ -21857,6 +22019,9 @@ function openEventDetail(eventId){
           share_with_client:!!document.getElementById('ev-share-client')?.checked,
         };
         if(!payload.title||!payload.event_date){toast('Title and date are required.',true);return;}
+        const _updInviteStaffIds=getSelectedEventInviteStaffIds();
+        const _updInviteClient=!!document.getElementById('ev-invite-client')?.checked&&!document.getElementById('ev-invite-client')?.disabled;
+        const _alreadyInvitedStaffIds=(window._currentEventInvitees||[]).filter(i=>i.invitee_type==='staff').map(i=>i.profile_id);
         btn.disabled=true;btn.textContent='Saving⬦';
         const{error}=await sb.from('events').update(payload).eq('id',eventId);
         btn.disabled=false;btn.textContent='Update Event';
@@ -21867,6 +22032,9 @@ function openEventDetail(eventId){
         renderCalendar();
         if(typeof renderDashboard==='function')renderDashboard();
         if(typeof updateBadges==='function')updateBadges();
+        if(_updInviteStaffIds.some(id=>!_alreadyInvitedStaffIds.includes(id))||_updInviteClient){
+          sendEventInvitations(ev,_updInviteStaffIds,_updInviteClient,_alreadyInvitedStaffIds);
+        }
       };
     }
   },50);
