@@ -5238,29 +5238,29 @@ const PERMISSION_DEFS_FALLBACK={
   // Add + Edit without Delete. Defaults match the old combined
   // manage_users_firmwide/department keys exactly (admin/super_admin get
   // every firm-wide action, head gets every department-scoped action).
-  manage_users_add_firmwide:{label:'Add Staff — Firm-Wide',category:'User Management',defaultRoles:['admin','super_admin']},
-  manage_users_edit_firmwide:{label:'Edit Staff — Firm-Wide',category:'User Management',defaultRoles:['admin','super_admin']},
-  manage_users_delete_firmwide:{label:'Remove Staff — Firm-Wide',category:'User Management',defaultRoles:['admin','super_admin']},
-  manage_users_add_department:{label:'Add Staff — Department Specific',category:'User Management',defaultRoles:['head']},
-  manage_users_edit_department:{label:'Edit Staff — Department Specific',category:'User Management',defaultRoles:['head']},
-  manage_users_delete_department:{label:'Remove Staff — Department Specific',category:'User Management',defaultRoles:['head']},
+  manage_users_add_firmwide:{label:'Add Staff',category:'User Management',defaultRoles:['admin','super_admin']},
+  manage_users_edit_firmwide:{label:'Edit Staff',category:'User Management',defaultRoles:['admin','super_admin']},
+  manage_users_delete_firmwide:{label:'Remove Staff',category:'User Management',defaultRoles:['admin','super_admin']},
+  manage_users_add_department:{label:'Add Staff',category:'User Management',defaultRoles:['head']},
+  manage_users_edit_department:{label:'Edit Staff',category:'User Management',defaultRoles:['head']},
+  manage_users_delete_department:{label:'Remove Staff',category:'User Management',defaultRoles:['head']},
   // Client Management — same split.
-  manage_clients_add_firmwide:{label:'Add Clients — Firm-Wide',category:'Client Management',defaultRoles:['admin','super_admin']},
-  manage_clients_edit_firmwide:{label:'Edit Clients — Firm-Wide',category:'Client Management',defaultRoles:['admin','super_admin']},
-  manage_clients_delete_firmwide:{label:'Delete Clients — Firm-Wide',category:'Client Management',defaultRoles:['admin','super_admin']},
-  manage_clients_add_department:{label:'Add Clients — Department Specific',category:'Client Management',defaultRoles:['head']},
-  manage_clients_edit_department:{label:'Edit Clients — Department Specific',category:'Client Management',defaultRoles:['head']},
-  manage_clients_delete_department:{label:'Delete Clients — Department Specific',category:'Client Management',defaultRoles:['head']},
+  manage_clients_add_firmwide:{label:'Add Clients',category:'Client Management',defaultRoles:['admin','super_admin']},
+  manage_clients_edit_firmwide:{label:'Edit Clients',category:'Client Management',defaultRoles:['admin','super_admin']},
+  manage_clients_delete_firmwide:{label:'Delete Clients',category:'Client Management',defaultRoles:['admin','super_admin']},
+  manage_clients_add_department:{label:'Add Clients',category:'Client Management',defaultRoles:['head']},
+  manage_clients_edit_department:{label:'Edit Clients',category:'Client Management',defaultRoles:['head']},
+  manage_clients_delete_department:{label:'Delete Clients',category:'Client Management',defaultRoles:['head']},
   // Case Assignment stays a single action (there's no add/edit/delete
   // distinction to "assigning" a case), so it keeps its original two keys.
-  assign_cases_firmwide:{label:'Assign Cases to Any Staff Member — Firm-Wide',category:'Case Assignment',defaultRoles:['admin','super_admin']},
-  assign_cases_department:{label:'Assign Cases — Department Specific',category:'Case Assignment',defaultRoles:['head','senior']},
+  assign_cases_firmwide:{label:'Assign Cases to Any Staff Member',category:'Case Assignment',defaultRoles:['admin','super_admin']},
+  assign_cases_department:{label:'Assign Cases',category:'Case Assignment',defaultRoles:['head','senior']},
   // Meta-permission: lets someone open Staff Overrides and grant/revoke
   // OTHER people's permissions, without making them a full Admin. Nobody
   // gets this by default beyond Admin/Super Admin (who already have it via
   // their role) — it exists purely to be delegated deliberately.
-  grant_permissions_firmwide:{label:'Grant/Revoke Staff Permissions — Firm-Wide',category:'Permission Delegation',defaultRoles:[]},
-  grant_permissions_department:{label:'Grant/Revoke Staff Permissions — Department Specific',category:'Permission Delegation',defaultRoles:[]}
+  grant_permissions_firmwide:{label:'Grant/Revoke Staff Permissions',category:'Permission Delegation',defaultRoles:[]},
+  grant_permissions_department:{label:'Grant/Revoke Staff Permissions',category:'Permission Delegation',defaultRoles:[]}
 };
 
 window._rolesById={};
