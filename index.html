@@ -8183,8 +8183,9 @@ async function deleteTimeEntry(id,e){
 }
 async function deleteAlert(id,e){
   e&&e.stopPropagation();
-  if(!confirm('Delete this alert?'))return;
   const target=alerts.find(a=>a.id===id);
+  if(!canManageAlert(target)){toast("You don't have permission to delete this alert.",true);return;}
+  if(!confirm('Delete this alert?'))return;
   const{error}=await sb.from('alerts').delete().eq('id',id);
   if(error){toast('Error: '+error.message,true);return;}
   if(target?.media_path){
@@ -13048,20 +13049,39 @@ function getVisibleAlerts(){
   return alerts.filter(a=>{
     // Client alerts only shown in client-facing view, not staff alerts view
     if(a.alert_type==='client') return false;
+    const createdBy=a.created_by||null;
+    // Creator can always see their own alerts, regardless of targeting
+    if(createdBy===uid) return true;
     // Default old alerts (no alert_type) treated as 'all' staff
     const target=a.staff_target||'all';
     const alertDept=a.target_department||null;
-    const createdBy=a.created_by||null;
     if(role==='admin'||role==='super_admin') return true; // admin/super admin sees everything
     if(target==='all') return true; // broadcast to all staff
-    if(target==='myself') return createdBy===uid;
+    if(target==='myself') return false; // only visible to its creator, handled above
     if(target==='dept'||target==='my_associates'){
-      if(!dept||!alertDept) return createdBy===uid;
+      if(!dept||!alertDept) return false;
       if(hasPermission(currentProfile,'view_department_alerts')) return alertDept===dept; // grantable/revocable per-user, defaults to head+senior+admin
-      return createdBy===uid;
+      return false;
     }
     return false;
   });
+}
+
+// An alert can be managed (edited/deleted) by:
+//  - whoever created it
+//  - admins/super admins (always)
+//  - anyone ranked strictly above the creator in the role hierarchy (lower rank number = more senior)
+function canManageAlert(a){
+  if(!a) return false;
+  const uid=currentUser?.id||null;
+  if(a.created_by&&a.created_by===uid) return true;
+  const myRole=currentProfile?.role||'associate';
+  if(myRole==='admin'||myRole==='super_admin') return true;
+  if(!a.created_by) return false;
+  const creatorProfile=(window._allProfiles||[]).find(p=>p.id===a.created_by);
+  const creatorRole=creatorProfile?.role;
+  if(!creatorRole) return false;
+  return roleRank(myRole)<roleRank(creatorRole);
 }
 
 async function renderAlerts(){
@@ -13105,7 +13125,10 @@ async function renderAlerts(){
     } else if(a.media_path&&!mediaUrl){
       mediaHtml=`<div style="margin-top:6px;font-size:10px;color:var(--txt3)">📎 Attachment unavailable<\/div>`;
     }
-    return`<div class="alert-item"><div class="alert-dot ${dotClass}"><\/div><div style="flex:1"><div class="alert-text">${esc(a.text)}${scopeTag}<\/div><div class="alert-time">${statusLabel(a.priority)} · ${fmtDate(a.alert_date)}${creatorTag}<\/div>${linkHtml}${mediaHtml}<\/div><button class="op-del" title="Delete" onclick="deleteAlert('${a.id}',event)">×<\/button><\/div>`;
+    const manageable=canManageAlert(a);
+    const editBtn=manageable?`<button class="op-del" title="Edit" style="font-size:12px" onclick="openEditAlert('${a.id}',event)">✎<\/button>`:'';
+    const delBtn=manageable?`<button class="op-del" title="Delete" onclick="deleteAlert('${a.id}',event)">×<\/button>`:'';
+    return`<div class="alert-item"><div class="alert-dot ${dotClass}"><\/div><div style="flex:1"><div class="alert-text">${esc(a.text)}${scopeTag}<\/div><div class="alert-time">${statusLabel(a.priority)} · ${fmtDate(a.alert_date)}${creatorTag}<\/div>${linkHtml}${mediaHtml}<\/div>${editBtn}${delBtn}<\/div>`;
   };
   uEl.innerHTML=urgent.length?urgent.map(a=>makeAlertItem(a,'red')).join(''):emptyState('No urgent alerts visible to you.');
   rEl.innerHTML=other.length?other.map(a=>{const dc={reminder:'gold',info:'navy'}[a.priority]||'navy';return makeAlertItem(a,dc);}).join(''):emptyState('No reminders or notices.');
@@ -13885,6 +13908,11 @@ function closeModal(){
   if(taskTitle)taskTitle.textContent='Add Task';
   const taskBtn=document.getElementById('save-task-btn');
   if(taskBtn){taskBtn.textContent='Save Task';taskBtn.onclick=saveTask;}
+  // Reset alert modal to create mode
+  const alertTitle=document.getElementById('modal-alert')?.querySelector('.modal-title');
+  if(alertTitle)alertTitle.textContent='Add Alert / Reminder';
+  const alertBtn=document.getElementById('save-alert-btn');
+  if(alertBtn){alertBtn.textContent='Save Alert';alertBtn.onclick=saveAlert;}
   const docBtn=document.getElementById('save-doc-btn');
   if(docBtn){docBtn.textContent='Upload';docBtn.disabled=false;docBtn.onclick=uploadDocument;}
   const docCancelBtn=document.getElementById('doc-cancel-btn');
@@ -15333,6 +15361,77 @@ async function uploadAlertMedia(file){
   const{error}=await sb.storage.from(STORAGE_BUCKET).upload(storagePath,file,{upsert:false,contentType:file.type||'application/octet-stream'});
   if(error)throw error;
   return{path:storagePath,type:file.type.startsWith('image/')?'image':'video',mime:file.type};
+}
+
+// ─── EDIT ALERT ───────────────────────────────────────────────────
+function openEditAlert(id,e){
+  e&&e.stopPropagation();
+  const a=alerts.find(x=>x.id===id);
+  if(!a){toast('Alert not found.',true);return;}
+  if(!canManageAlert(a)){toast("You don't have permission to edit this alert.",true);return;}
+  openModal('alert');
+  // Switch modal to edit mode
+  document.getElementById('modal-alert').querySelector('.modal-title').textContent='Edit Alert / Reminder';
+  const btn=document.getElementById('save-alert-btn');
+  btn.textContent='Save Changes';
+  btn.onclick=()=>updateAlert(id);
+  // Pre-fill fields
+  document.getElementById('al-text').value=a.text||'';
+  document.getElementById('al-link').value=a.link_url||'';
+  document.getElementById('al-priority').value=a.priority||'reminder';
+  document.getElementById('al-date').value=a.alert_date||'';
+  const typeEl=document.getElementById('al-type');
+  if(typeEl)typeEl.value=a.alert_type||'staff';
+  toggleAlertTargeting();
+  if((a.alert_type||'staff')==='staff'){
+    const staffTargetEl=document.getElementById('al-staff-target');
+    if(staffTargetEl)staffTargetEl.value=a.staff_target||'all';
+  } else {
+    const clientTargetEl=document.getElementById('al-client-target');
+    if(clientTargetEl)clientTargetEl.value=a.target_client_id||'';
+  }
+  // Existing media, if any, is left as-is unless the user attaches a new file
+}
+
+async function updateAlert(id){
+  const existing=alerts.find(a=>a.id===id);
+  if(!existing||!canManageAlert(existing)){toast("You don't have permission to edit this alert.",true);return;}
+  const text=document.getElementById('al-text').value.trim();
+  if(!text){toast('Please enter alert text.',true);return;}
+  setLoading('save-alert-btn',true,'Save Changes');
+  const alertType=document.getElementById('al-type')?.value||'staff';
+  const staffTarget=document.getElementById('al-staff-target')?.value||'all';
+  const clientTarget=document.getElementById('al-client-target')?.value||null;
+  const linkUrl=normalizeMeetingLink(document.getElementById('al-link')?.value.trim())||null;
+  let mediaPath=existing.media_path||null,mediaType=existing.media_type||null,mediaMime=existing.media_mime||null;
+  if(window._alertMediaFile){
+    try{
+      const up=await uploadAlertMedia(window._alertMediaFile);
+      mediaPath=up.path;mediaType=up.type;mediaMime=up.mime;
+    }catch(e){
+      setLoading('save-alert-btn',false,'Save Changes');
+      toast('Media upload failed: '+e.message,true);return;
+    }
+  }
+  const payload={
+    text,
+    link_url:linkUrl,
+    media_path:mediaPath,
+    media_type:mediaType,
+    media_mime:mediaMime,
+    priority:document.getElementById('al-priority').value,
+    alert_date:document.getElementById('al-date').value||null,
+    alert_type:alertType,
+    staff_target:alertType==='staff'?staffTarget:null,
+    target_client_id:alertType==='client'?clientTarget:null,
+    target_department:alertType==='staff'&&(staffTarget==='dept'||staffTarget==='my_associates')?(existing.target_department||currentProfile?.department):null,
+  };
+  const{data,error}=await sb.from('alerts').update(payload).eq('id',id).select();
+  setLoading('save-alert-btn',false,'Save Changes');
+  if(error){toast('Error: '+error.message,true);return;}
+  alerts=alerts.map(a=>a.id===id?data[0]:a);
+  closeModal();toast('Alert updated.');clearAlertMedia();
+  updateBadges();renderAlerts();renderDashboard();
 }
 
 async function saveAlert(){
