@@ -5135,6 +5135,17 @@ async function loadProfile(){
   if(!error&&data){
     console.log('[loadProfile] ✅ Profile found in DB → role:', data.role);
     currentProfile=data;
+    // Self-heal: profiles.email was historically never written (see addUser /
+    // the old fallback insert below), which silently broke anything that
+    // emails staff by looking up profiles.email. Backfill it opportunistically
+    // from the authenticated session, which we always trust for the current user.
+    if(!data.email&&currentUser.email){
+      sb.from('profiles').update({email:currentUser.email}).eq('id',currentUser.id)
+        .then(({error:healErr})=>{
+          if(!healErr){currentProfile.email=currentUser.email;}
+          else console.warn('[loadProfile] email backfill failed:',healErr.message);
+        });
+    }
   } else {
     if(isPortalAuthEmail(currentUser.email)){
       throw new Error('This is a client portal account, not a CMS staff account. Please sign in with your firm CMS email.');
@@ -5145,7 +5156,8 @@ async function loadProfile(){
       id:currentUser.id,
       full_name:meta.full_name||currentUser.email,
       role:meta.role||'associate',
-      department:meta.department||null
+      department:meta.department||null,
+      email:currentUser.email||null
     };
     console.log('[loadProfile] Inserting new profile:', newProfile);
     const{error:insertErr}=await sb.from('profiles').insert([newProfile]);
@@ -13351,7 +13363,7 @@ async function addUser(){
   // Insert/upsert profile row for the new user
   if(newUserId){
     await sb.from('profiles').upsert([{
-      id:newUserId,full_name:name,role,department:dept||null
+      id:newUserId,full_name:name,role,department:dept||null,email:email||null
     }],{onConflict:'id'});
   }
 
@@ -13639,7 +13651,8 @@ async function saveMyProfile(){
   // Update profile in DB
   const{data,error}=await sb.from('profiles').upsert([{
     id:currentUser.id,full_name:name||currentUser.email,role,department:dept,
-    phone:phone||null,bar_number:bar||null,bio:bio||null,preferred_name:preferredName||null
+    phone:phone||null,bar_number:bar||null,bio:bio||null,preferred_name:preferredName||null,
+    email:currentUser.email||null
   }],{onConflict:'id'}).select().single();
 
   if(error){
