@@ -1376,6 +1376,11 @@ setTimeout(function() {
       <span>Calendar</span>
       <span class="nav-badge" id="events-badge" style="background:#E2443A;color:#fff">0</span>
     </div>
+    <div class="nav-item" onclick="showView('tasks',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M4.5 8l2 2 4-4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Tasks</span>
+      <span class="nav-badge" id="tasks-badge" style="background:#E2443A;color:#fff">0</span>
+    </div>
     <div class="nav-label">Finance</div>
     <div class="nav-item" onclick="showView('finance',this)">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M5 4h4.5a2.5 2.5 0 010 5H5M5 9h5a2.5 2.5 0 010 5H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
@@ -1762,6 +1767,25 @@ setTimeout(function() {
         </div>
         <!-- List -->
         <div id="gazetted-holidays-list"></div>
+      </div>
+    </div>
+
+    <!-- TASKS -->
+    <div class="view" id="view-tasks">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div style="font-size:11px;color:var(--txt3)">Every task in the firm, regardless of matter, client, or due date.</div>
+        <button class="topbar-btn" style="font-size:11px;padding:5px 12px" onclick="openModal('task')">+ New Task</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="panic-tab-btn active" id="task-filter-all-btn" onclick="switchTaskFilter('all')">All <span class="panic-tab-count" id="task-filter-all-count">0</span></button>
+        <button class="panic-tab-btn" id="task-filter-open-btn" onclick="switchTaskFilter('open')">Open <span class="panic-tab-count" id="task-filter-open-count">0</span></button>
+        <button class="panic-tab-btn" id="task-filter-overdue-btn" onclick="switchTaskFilter('overdue')">Overdue <span class="panic-tab-count" id="task-filter-overdue-count">0</span></button>
+        <button class="panic-tab-btn" id="task-filter-mine-btn" onclick="switchTaskFilter('mine')">Assigned To Me <span class="panic-tab-count" id="task-filter-mine-count">0</span></button>
+        <button class="panic-tab-btn" id="task-filter-done-btn" onclick="switchTaskFilter('done')">Done <span class="panic-tab-count" id="task-filter-done-count">0</span></button>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Tasks</span></div>
+        <div id="all-tasks-list"><div class="empty-state"><p>No tasks yet.</p></div></div>
       </div>
     </div>
 
@@ -4430,6 +4454,11 @@ setTimeout(function() {
       Calendar
       <span class="drawer-badge red" id="di-events-badge" style="display:none">0</span>
     </div>
+    <div class="drawer-item" id="di-tasks" onclick="showView('tasks',null,true);closeDrawer()">
+      <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M4.5 8l2 2 4-4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Tasks
+      <span class="drawer-badge red" id="di-tasks-badge" style="display:none">0</span>
+    </div>
     <div class="drawer-label">Finance</div>
     <div class="drawer-item" id="di-finance" onclick="showView('finance',null,true);closeDrawer()">
       <svg viewBox="0 0 16 16" fill="none"><path d="M8 1v14M5 4h4.5a2.5 2.5 0 010 5H5M5 9h5a2.5 2.5 0 010 5H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
@@ -4855,7 +4884,7 @@ function partyTypePill(role){
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────
-const viewTitles={dashboard:'Dashboard',sos:'SOS Alerts',matters:'Matters',clients:'Clients',contacts:'Contacts','client-profile':'Client Profile','group-hub':'Group Hub','parties-main':'Other Parties',calendar:'Calendar',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox','staff-inbox':'Staff Inbox','firm-settings':'Firm Settings','legacy-import':'Legacy Import',permissions:'Permissions'};
+const viewTitles={dashboard:'Dashboard',sos:'SOS Alerts',matters:'Matters',clients:'Clients',contacts:'Contacts','client-profile':'Client Profile','group-hub':'Group Hub','parties-main':'Other Parties',calendar:'Calendar',tasks:'Tasks',finance:'Finance & Billing',timesheet:'Timesheets',alerts:'Alerts & Reminders',team:'Team & Profiles',inbox:'Client Inbox','staff-inbox':'Staff Inbox','firm-settings':'Firm Settings','legacy-import':'Legacy Import',permissions:'Permissions'};
 function showView(id,el,fromMobile){
   if(id==='view-reports' && !window.DG_STANDALONE_MODE){
     id='dashboard';
@@ -4900,6 +4929,7 @@ function showView(id,el,fromMobile){
   if(id==='contacts')refreshContactsView(true);
   if(id==='parties-main')renderPartiesMain();
   if(id==='calendar'){renderCalendar();renderGazettedHolidaysList();}
+  if(id==='tasks'){renderAllTasksView();}
   if(id==='finance')renderFinance();
   if(id==='timesheet')renderTimesheet();
   if(id==='alerts'){renderAlerts();}
@@ -4961,7 +4991,7 @@ function syncDrawerUser(name,role,initials){
 
 // Sync drawer badge counts
 function syncMobileBadges(){
-  const map={'matters':{badge:'matters-badge',dest:'di-matters-badge'},'events':{badge:'events-badge',dest:'di-events-badge'},'inbox':{badge:'inbox-badge',dest:'di-inbox-badge'},'staff-inbox':{badge:'staff-inbox-badge',dest:'di-staff-inbox-badge'},'alerts':{badge:'alerts-badge',dest:'di-alerts-badge'},'sos':{badge:'panic-unack-badge-nav',dest:'di-sos-badge'}};
+  const map={'matters':{badge:'matters-badge',dest:'di-matters-badge'},'events':{badge:'events-badge',dest:'di-events-badge'},'tasks':{badge:'tasks-badge',dest:'di-tasks-badge'},'inbox':{badge:'inbox-badge',dest:'di-inbox-badge'},'staff-inbox':{badge:'staff-inbox-badge',dest:'di-staff-inbox-badge'},'alerts':{badge:'alerts-badge',dest:'di-alerts-badge'},'sos':{badge:'panic-unack-badge-nav',dest:'di-sos-badge'}};
   Object.values(map).forEach(({badge,dest})=>{
     const src=document.getElementById(badge);
     const d=document.getElementById(dest);
@@ -8207,6 +8237,10 @@ function updateBadges(){
   const now=new Date();
   const me=events.filter(e=>{const d=parseDateLocal(e.event_date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
   document.getElementById('events-badge').textContent=me.length;
+  const todayStart0=parseDateLocal(formatDateLocal(now));
+  const overdueTaskCount=tasks.filter(t=>{const n=normalizeTaskRow(t);return taskIsOpen(n)&&n.due_date&&parseDateLocal(n.due_date)<todayStart0;}).length;
+  const tasksBadgeEl=document.getElementById('tasks-badge');
+  if(tasksBadgeEl){tasksBadgeEl.textContent=overdueTaskCount;tasksBadgeEl.style.display=overdueTaskCount>0?'':'none';}
   const ca=alerts.filter(a=>a.priority==='critical');
   const panicUnack=panicAlerts.filter(a=>!a.acknowledged).length;
   const totalAlertBadge=ca.length+panicUnack;
@@ -8265,7 +8299,11 @@ function renderDashboard(){
   // Tasks
   const taskEl=document.getElementById('dash-tasks-list');
   if(taskEl){
-    const visible=(dueTasks.length?dueTasks:openTasks).slice(0,5);
+    // Show due-this-week tasks first, then fill remaining slots with any other
+    // open tasks (including ones with no due date) so nothing you created just vanishes.
+    const dueIds=new Set(dueTasks.map(t=>t.id));
+    const rest=openTasks.filter(t=>!dueIds.has(t.id));
+    const visible=[...dueTasks,...rest].slice(0,5);
     taskEl.innerHTML=visible.length?visible.map(t=>taskCalendarRow(t,true)).join(''):emptyState('No open tasks.');
   }
   // Clients
@@ -12677,6 +12715,11 @@ function renderCalendarRangeList(start,end){
     if(hols.length||evs.length)html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd);border-top:1px solid var(--brd);margin-top:4px">Tasks<\/div>`;
     html+=rangeTasks.map(t=>taskCalendarRow(t)).join('');
   }
+  const undatedTasks=undatedOpenTasks();
+  if(undatedTasks.length){
+    if(hols.length||evs.length||rangeTasks.length)html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd);border-top:1px solid var(--brd);margin-top:4px">Undated Tasks<\/div>`;
+    html+=undatedTasks.map(t=>taskCalendarRow(t)).join('');
+  }
   listEl.innerHTML=html||emptyState('No events or tasks in this view.');
 }
 
@@ -12953,6 +12996,11 @@ function renderCalendar(){
   if(taskList.length){
     if(holidaysThisMonth.length||meList.length) html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd);border-top:1px solid var(--brd);margin-top:4px">Tasks<\/div>`;
     html+=taskList.map(t=>taskCalendarRow(t)).join('');
+  }
+  const undatedTasks=undatedOpenTasks();
+  if(undatedTasks.length){
+    if(holidaysThisMonth.length||meList.length||taskList.length) html+=`<div style="padding:10px 20px 6px;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.5px;font-weight:500;border-bottom:1px solid var(--brd);border-top:1px solid var(--brd);margin-top:4px">Undated Tasks<\/div>`;
+    html+=undatedTasks.map(t=>taskCalendarRow(t)).join('');
   }
   if(!html) html=emptyState('No events, tasks or holidays this month.');
   listEl.innerHTML=html;
@@ -14255,6 +14303,12 @@ function taskTone(task){
 function taskIsOpen(task){
   return !['done','cancelled'].includes(String(task?.status||'todo'));
 }
+function undatedOpenTasks(){
+  return sortTasksForWorklist(tasks.filter(t=>{
+    const n=normalizeTaskRow(t);
+    return taskIsOpen(n)&&!n.due_date&&!n.start_date;
+  }));
+}
 function taskIsPublished(task){
   return task?.publish_update===true;
 }
@@ -14276,6 +14330,43 @@ function sortTasksForWorklist(list){
     const pr={urgent:0,high:1,normal:2,low:3};
     return (pr[a.priority]??2)-(pr[b.priority]??2);
   });
+}
+
+// ─── ALL TASKS VIEW ─────────────────────────────────────────────────
+// A complete, unfiltered-by-role task list — every task in the firm shows
+// up here regardless of who created it, who it's assigned to, whether it
+// has a due date, or whether it's linked to a matter/client.
+let activeTaskFilter='all';
+function switchTaskFilter(filter){
+  activeTaskFilter=filter;
+  ['all','open','overdue','mine','done'].forEach(f=>{
+    document.getElementById(`task-filter-${f}-btn`)?.classList.toggle('active',f===filter);
+  });
+  renderAllTasksView();
+}
+function renderAllTasksView(){
+  const all=sortTasksForWorklist(tasks);
+  const todayStart=parseDateLocal(formatDateLocal(new Date()));
+  const uid=currentUser?.id||null;
+  const isOverdue=t=>t.due_date&&taskIsOpen(t)&&parseDateLocal(t.due_date)<todayStart;
+  const counts={
+    all:all.length,
+    open:all.filter(taskIsOpen).length,
+    overdue:all.filter(isOverdue).length,
+    mine:all.filter(t=>t.assigned_to===uid).length,
+    done:all.filter(t=>!taskIsOpen(t)).length,
+  };
+  ['all','open','overdue','mine','done'].forEach(f=>{
+    const el=document.getElementById(`task-filter-${f}-count`);
+    if(el)el.textContent=counts[f];
+  });
+  let list=all;
+  if(activeTaskFilter==='open')list=all.filter(taskIsOpen);
+  else if(activeTaskFilter==='overdue')list=all.filter(isOverdue);
+  else if(activeTaskFilter==='mine')list=all.filter(t=>t.assigned_to===uid);
+  else if(activeTaskFilter==='done')list=all.filter(t=>!taskIsOpen(t));
+  const listEl=document.getElementById('all-tasks-list');
+  if(listEl)listEl.innerHTML=list.length?list.map(t=>taskCalendarRow(t)).join(''):emptyState('No tasks match this filter.');
 }
 function openTaskModalForMatter(matterId){
   openModal('task');
@@ -14766,6 +14857,8 @@ async function saveTask(){
   closeModal();toast(editingId?'Task updated.':(savedCount>1?`${savedCount} recurring tasks saved.`:'Task saved.'));
   renderCalendar();
   renderDashboard();
+  renderAllTasksView();
+  updateBadges();
   if(activeClientId)renderProfileTab();
   if(activeMatterId)renderMatterDetailTab();
 }
@@ -14775,6 +14868,8 @@ async function updateTaskStatus(taskId,status){
   tasks=tasks.map(t=>t.id===taskId?{...t,status,completed_at:status==='done'?(t.completed_at||new Date().toISOString()):null,updated_at:new Date().toISOString()}:t);
   renderCalendar();
   renderDashboard();
+  renderAllTasksView();
+  updateBadges();
   if(activeClientId)renderProfileTab();
   if(activeMatterId)renderMatterDetailTab();
   const payload={status,updated_at:new Date().toISOString(),completed_at:status==='done'?new Date().toISOString():null};
@@ -14783,6 +14878,8 @@ async function updateTaskStatus(taskId,status){
     tasks=tasks.map(t=>t.id===taskId?{...t,status:prev||'todo'}:t);
     renderCalendar();
     renderDashboard();
+    renderAllTasksView();
+    updateBadges();
     if(activeClientId)renderProfileTab();
     if(activeMatterId)renderMatterDetailTab();
     toast('Could not update task status: '+error.message,true);
@@ -14799,6 +14896,8 @@ async function deleteTask(id,title,e){
   toast('Task deleted.');
   renderCalendar();
   renderDashboard();
+  renderAllTasksView();
+  updateBadges();
   if(activeClientId)renderProfileTab();
   if(activeMatterId)renderMatterDetailTab();
 }
