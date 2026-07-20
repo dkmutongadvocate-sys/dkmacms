@@ -2273,6 +2273,12 @@ setTimeout(function() {
             <div>
               <button class="btn-primary" id="archive-now-btn" onclick="runPanicArchiveNow()">Archive Old Recordings Now</button>
             </div>
+            <div id="archive-now-progress-wrap" style="display:none">
+              <div style="height:8px;border-radius:5px;background:#E7E2D6;overflow:hidden">
+                <div id="archive-now-progress-fill" style="height:100%;width:0%;background:#185FA5;border-radius:5px;transition:width .3s ease"></div>
+              </div>
+              <div id="archive-now-progress-label" style="font-size:11px;color:var(--txt3);margin-top:5px"></div>
+            </div>
             <div id="archive-now-result" style="font-size:12px;color:var(--txt2);white-space:pre-wrap;display:none;background:#F7F4EC;border-radius:7px;padding:12px 14px;border:1px solid var(--brd)"></div>
           </div>
         </div>
@@ -6400,32 +6406,73 @@ async function runPanicArchiveNow(){
   if(currentProfile?.role!=='super_admin'){toast('Only a super admin can run this.',true);return;}
   const btn=document.getElementById('archive-now-btn');
   const out=document.getElementById('archive-now-result');
+  const progWrap=document.getElementById('archive-now-progress-wrap');
+  const progFill=document.getElementById('archive-now-progress-fill');
+  const progLabel=document.getElementById('archive-now-progress-label');
   if(!btn)return;
   btn.disabled=true;btn.textContent='Archiving⬦';
-  if(out){out.style.display='block';out.textContent='Scanning for recordings older than 30 days⬦';}
+  if(out){out.style.display='none';out.textContent='';}
+  if(progWrap){progWrap.style.display='block';}
+  if(progFill)progFill.style.width='0%';
+  if(progLabel)progLabel.textContent='Scanning for recordings older than 30 days⬦';
+
+  const { data:{session} } = await sb.auth.getSession();
+  if(!session?.access_token){
+    toast('No active session.',true);
+    btn.disabled=false;btn.textContent='Archive Old Recordings Now';
+    if(progWrap)progWrap.style.display='none';
+    return;
+  }
+
+  let totalArchived=0,lastSkipped=0,allErrors=[],stalledRuns=0;
+  const MAX_BATCHES=200; // hard safety cap so a persistent error can't loop forever
   try{
-    const { data:{session} } = await sb.auth.getSession();
-    if(!session?.access_token)throw new Error('No active session.');
-    const res=await fetch(`${SUPABASE_URL_EDGE}/functions/v1/archive-panic-recordings`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
-      body:'{}'
-    });
-    const data=await res.json().catch(()=>({}));
-    if(!res.ok)throw new Error(data?.error||`Request failed (${res.status})`);
+    for(let i=0;i<MAX_BATCHES;i++){
+      const res=await fetch(`${SUPABASE_URL_EDGE}/functions/v1/archive-panic-recordings`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
+        body:'{}'
+      });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok)throw new Error(data?.error||`Request failed (${res.status})`);
+
+      totalArchived+=(data.archived||0);
+      lastSkipped=data.skipped||0;
+      if(data.errors?.length)allErrors.push(...data.errors);
+      const remaining=data.remaining||0;
+      const totalEstimate=totalArchived+remaining;
+
+      if(progFill&&totalEstimate>0)progFill.style.width=`${Math.round(totalArchived/totalEstimate*100)}%`;
+      if(progLabel)progLabel.textContent=remaining>0
+        ?`Archived ${totalArchived} so far — ${remaining} more to go⬦`
+        :`Archived ${totalArchived} recording(s). Wrapping up⬦`;
+
+      // Nothing archived and nothing errored this round but still "remaining"
+      // would mean something's stuck (e.g. every file in the batch failed
+      // silently) — stop instead of looping forever.
+      if((data.archived||0)===0&&remaining>0){
+        stalledRuns++;
+        if(stalledRuns>=2)break;
+      } else {
+        stalledRuns=0;
+      }
+
+      if(remaining<=0)break;
+    }
+    if(progFill)progFill.style.width='100%';
     const lines=[
-      `Archived: ${data.archived??0}`,
-      `Already archived (skipped): ${data.skipped??0}`,
-      data.errors?.length?`Errors (${data.errors.length}):\n  ${data.errors.join('\n  ')}`:'Errors: none'
+      `Archived: ${totalArchived}`,
+      `Already archived (skipped): ${lastSkipped}`,
+      allErrors.length?`Errors (${allErrors.length}):\n  ${allErrors.join('\n  ')}`:'Errors: none'
     ];
-    if(data.remaining>0)lines.push(`\n${data.remaining} more still due for archiving (processed in small batches to stay within Supabase's function limits) — click the button again to continue, or let tonight's scheduled run pick up the rest.`);
-    if(out)out.textContent=lines.join('\n');
-    toast(`Archived ${data.archived??0} recording(s).${data.remaining>0?` ${data.remaining} more queued.`:''}`);
+    if(out){out.style.display='block';out.textContent=lines.join('\n');}
+    toast(`Archived ${totalArchived} recording(s) total.`);
   }catch(err){
-    if(out)out.textContent='Failed: '+(err?.message||err);
+    if(out){out.style.display='block';out.textContent='Failed: '+(err?.message||err);}
     toast('Archive run failed: '+(err?.message||err),true);
   }finally{
     btn.disabled=false;btn.textContent='Archive Old Recordings Now';
+    setTimeout(()=>{if(progWrap)progWrap.style.display='none';},1500);
   }
 }
 async function createPanicLiveSignedUrl(path,ttlSeconds){
