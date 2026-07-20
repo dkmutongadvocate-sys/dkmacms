@@ -2070,6 +2070,7 @@ setTimeout(function() {
         <div class="profile-tab" id="fstab-departments" onclick="switchFirmTab('departments')">Departments</div>
         <div class="profile-tab" id="fstab-panicapp" onclick="switchFirmTab('panicapp')">App Updates</div>
         <div class="profile-tab" id="fstab-officedocs" onclick="switchFirmTab('officedocs');loadOfficeDocuments()">🏛 Office Documents</div>
+        <div class="profile-tab" id="fstab-system" onclick="switchFirmTab('system')" style="display:none">🗄 Data &amp; Storage</div>
       </div>
       <div class="profile-panel active" id="fspanel-contact">
         <div class="card" style="max-width:680px">
@@ -2256,6 +2257,23 @@ setTimeout(function() {
           </div>
           <div id="office-docs-list" style="min-height:80px;padding:8px 0">
             <div style="padding:20px;text-align:center;font-size:12px;color:var(--txt3)">Click the tab to load office documents.</div>
+          </div>
+        </div>
+      </div>
+      <div class="profile-panel" id="fspanel-system">
+        <div class="card" style="max-width:640px">
+          <div class="card-header"><span class="card-title">🗄 Panic Recording Archival</span></div>
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:12px;color:var(--txt2);line-height:1.6">
+              A nightly job moves panic-live (SOS) recordings older than 30 days from Supabase Storage to
+              Cloudflare R2 cold storage to free up space, without deleting anything — playback still works
+              the same either way. Use the button below to run that job immediately instead of waiting for
+              the nightly schedule, e.g. right after setup, or if Supabase storage is getting tight now.
+            </div>
+            <div>
+              <button class="btn-primary" id="archive-now-btn" onclick="runPanicArchiveNow()">Archive Old Recordings Now</button>
+            </div>
+            <div id="archive-now-result" style="font-size:12px;color:var(--txt2);white-space:pre-wrap;display:none;background:#F7F4EC;border-radius:7px;padding:12px 14px;border:1px solid var(--brd)"></div>
           </div>
         </div>
       </div>
@@ -6373,6 +6391,40 @@ async function reconcileClientResolvedPanicAlerts(force=false){
   if(changed){
     renderPanicAlerts();
     updatePanicBadge();
+  }
+}
+// Manually triggers the archive-panic-recordings edge function on demand
+// (super_admin only — the button itself is hidden for everyone else, and
+// the edge function independently re-checks the caller's role server-side).
+async function runPanicArchiveNow(){
+  if(currentProfile?.role!=='super_admin'){toast('Only a super admin can run this.',true);return;}
+  const btn=document.getElementById('archive-now-btn');
+  const out=document.getElementById('archive-now-result');
+  if(!btn)return;
+  btn.disabled=true;btn.textContent='Archiving⬦';
+  if(out){out.style.display='block';out.textContent='Scanning for recordings older than 30 days⬦';}
+  try{
+    const { data:{session} } = await sb.auth.getSession();
+    if(!session?.access_token)throw new Error('No active session.');
+    const res=await fetch(`${SUPABASE_URL_EDGE}/functions/v1/archive-panic-recordings`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
+      body:'{}'
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok)throw new Error(data?.error||`Request failed (${res.status})`);
+    const lines=[
+      `Archived: ${data.archived??0}`,
+      `Already archived (skipped): ${data.skipped??0}`,
+      data.errors?.length?`Errors (${data.errors.length}):\n  ${data.errors.join('\n  ')}`:'Errors: none'
+    ];
+    if(out)out.textContent=lines.join('\n');
+    toast(`Archived ${data.archived??0} recording(s).`);
+  }catch(err){
+    if(out)out.textContent='Failed: '+(err?.message||err);
+    toast('Archive run failed: '+(err?.message||err),true);
+  }finally{
+    btn.disabled=false;btn.textContent='Archive Old Recordings Now';
   }
 }
 async function createPanicLiveSignedUrl(path,ttlSeconds){
@@ -22683,9 +22735,15 @@ function applyFirmSettingsTabVisibility(){
     // itself is hidden in this case, but guard anyway.
     showView('dashboard');
   }
+  // "Data & Storage" (panic recording archival) is deliberately NOT part of
+  // the delegable FS_TAB_PERMISSIONS system above — it triggers billable
+  // cloud-storage operations, so it's hard-restricted to super_admin only,
+  // not something an admin/head can be granted access to.
+  const sysTabEl=document.getElementById('fstab-system');
+  if(sysTabEl)sysTabEl.style.display=(p?.role==='super_admin')?'':'none';
 }
 function switchFirmTab(tab){
-  ['contact','mattertypes','departments','panicapp','officedocs'].forEach(t=>{
+  ['contact','mattertypes','departments','panicapp','officedocs','system'].forEach(t=>{
     const tabEl = document.getElementById('fstab-'+t);
     const panelEl = document.getElementById('fspanel-'+t);
     if (tabEl) tabEl.classList.toggle('active',t===tab);
