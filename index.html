@@ -6424,7 +6424,7 @@ async function runPanicArchiveNow(){
     return;
   }
 
-  let totalArchived=0,lastSkipped=0,allErrors=[],stalledRuns=0;
+  let totalArchived=0,lastSkipped=0,allErrors=[],stalledRuns=0,totalBytesDownloaded=0;
   const MAX_BATCHES=200; // hard safety cap so a persistent error can't loop forever
   try{
     for(let i=0;i<MAX_BATCHES;i++){
@@ -6438,14 +6438,16 @@ async function runPanicArchiveNow(){
 
       totalArchived+=(data.archived||0);
       lastSkipped=data.skipped||0;
+      totalBytesDownloaded+=(data.bytesDownloaded||0);
       if(data.errors?.length)allErrors.push(...data.errors);
       const remaining=data.remaining||0;
       const totalEstimate=totalArchived+remaining;
 
       if(progFill&&totalEstimate>0)progFill.style.width=`${Math.round(totalArchived/totalEstimate*100)}%`;
+      const mbSoFar=(totalBytesDownloaded/1024/1024).toFixed(1);
       if(progLabel)progLabel.textContent=remaining>0
-        ?`Archived ${totalArchived} so far — ${remaining} more to go⬦`
-        :`Archived ${totalArchived} recording(s). Wrapping up⬦`;
+        ?`Archived ${totalArchived} so far (${mbSoFar} MB egress) — ${remaining} more to go⬦`
+        :`Archived ${totalArchived} recording(s), ${mbSoFar} MB egress. Wrapping up⬦`;
 
       // Nothing archived and nothing errored this round but still "remaining"
       // would mean something's stuck (e.g. every file in the batch failed
@@ -6460,9 +6462,11 @@ async function runPanicArchiveNow(){
       if(remaining<=0)break;
     }
     if(progFill)progFill.style.width='100%';
+    const mbDownloaded=(totalBytesDownloaded/1024/1024);
     const lines=[
       `Archived: ${totalArchived}`,
       `Already archived (skipped): ${lastSkipped}`,
+      `Egress used this run: ${mbDownloaded>=1024?(mbDownloaded/1024).toFixed(2)+' GB':mbDownloaded.toFixed(1)+' MB'} (of your 5 GB/month allowance)`,
       allErrors.length?`Errors (${allErrors.length}):\n  ${allErrors.join('\n  ')}`:'Errors: none'
     ];
     if(out){out.style.display='block';out.textContent=lines.join('\n');}
