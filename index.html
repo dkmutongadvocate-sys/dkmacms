@@ -6418,8 +6418,9 @@ async function runPanicArchiveNow(){
       `Already archived (skipped): ${data.skipped??0}`,
       data.errors?.length?`Errors (${data.errors.length}):\n  ${data.errors.join('\n  ')}`:'Errors: none'
     ];
+    if(data.remaining>0)lines.push(`\n${data.remaining} more still due for archiving (processed in small batches to stay within Supabase's function limits) — click the button again to continue, or let tonight's scheduled run pick up the rest.`);
     if(out)out.textContent=lines.join('\n');
-    toast(`Archived ${data.archived??0} recording(s).`);
+    toast(`Archived ${data.archived??0} recording(s).${data.remaining>0?` ${data.remaining} more queued.`:''}`);
   }catch(err){
     if(out)out.textContent='Failed: '+(err?.message||err);
     toast('Archive run failed: '+(err?.message||err),true);
