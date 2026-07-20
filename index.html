@@ -14335,6 +14335,7 @@ function buildEventEmailSummary(ev){
   return{
     title:ev.title,
     date:ev.event_date,
+    endDate:ev.event_end_date||'',
     time:ev.event_time||'',
     endTime:ev.event_end_time||'',
     location:ev.location||'',
