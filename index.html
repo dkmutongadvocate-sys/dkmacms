@@ -14331,15 +14331,8 @@ function onEventMatterChangeForInvite(){
   wrap.dataset.portalEmail=portalEmail;
   wrap.style.display='block';
 }
-// Sends staff + client invitations for a just-saved (or updated) event.
-// staffIds: array of profile ids to invite. inviteClient: bool.
-// alreadyInvitedStaffIds: profile ids to skip (already invited earlier, on edit).
-async function sendEventInvitations(ev,staffIds,inviteClient,alreadyInvitedStaffIds){
-  if(!ev?.id)return;
-  const skip=new Set(alreadyInvitedStaffIds||[]);
-  const newStaffIds=(staffIds||[]).filter(id=>!skip.has(id));
-  const inviterName=currentProfile?.full_name||currentUser?.email||'A colleague';
-  const eventSummary={
+function buildEventEmailSummary(ev){
+  return{
     title:ev.title,
     date:ev.event_date,
     time:ev.event_time||'',
@@ -14349,6 +14342,16 @@ async function sendEventInvitations(ev,staffIds,inviteClient,alreadyInvitedStaff
     notes:cleanEventNotes(ev.notes||''),
     matterTitle:(matters.find(m=>m.id===ev.matter_id)||{}).title||''
   };
+}
+// Sends staff + client invitations for a just-saved (or updated) event.
+// staffIds: array of profile ids to invite. inviteClient: bool.
+// alreadyInvitedStaffIds: profile ids to skip (already invited earlier, on edit).
+async function sendEventInvitations(ev,staffIds,inviteClient,alreadyInvitedStaffIds){
+  if(!ev?.id)return;
+  const skip=new Set(alreadyInvitedStaffIds||[]);
+  const newStaffIds=(staffIds||[]).filter(id=>!skip.has(id));
+  const inviterName=currentProfile?.full_name||currentUser?.email||'A colleague';
+  const eventSummary=buildEventEmailSummary(ev);
   // Staff invites: in-app message (reuses existing staff inbox) + email
   for(const profileId of newStaffIds){
     const p=(window._allProfiles||[]).find(x=>x.id===profileId);
@@ -14414,6 +14417,22 @@ async function sendEventInviteEmail({toEmail,toName,kind,event,inviterName}){
   const data=await res.json().catch(()=>({}));
   if(!res.ok||data?.error)throw new Error(data?.error||'send-event-invite failed');
   return data;
+}
+// Emails the person who created/edited the event a confirmation of what
+// was saved — mirrors the "organizer also gets the invite" behaviour you
+// get in Gmail/Google Calendar when you create an event.
+async function sendOrganizerConfirmationEmail(ev){
+  const toEmail=currentProfile?.email||currentUser?.email;
+  if(!ev?.id||!toEmail)return;
+  try{
+    await sendEventInviteEmail({
+      toEmail,
+      toName:currentProfile?.full_name||'there',
+      kind:'organizer',
+      event:buildEventEmailSummary(ev),
+      inviterName:currentProfile?.full_name||currentUser?.email||'You'
+    });
+  }catch(e){console.warn('[DKMA] organizer confirmation email failed:',e?.message);}
 }
 function normalizeTaskRow(task){
   if(!task)return task;
@@ -15593,6 +15612,7 @@ async function saveEvent(){
       sendEventInvitations(savedRow,_inviteStaffIds,_inviteClient,[]);
     }
   }
+  if(data&&data[0])sendOrganizerConfirmationEmail(data[0]);
   return data[0];
 }
 
