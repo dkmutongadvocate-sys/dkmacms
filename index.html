@@ -6379,10 +6379,24 @@ async function createPanicLiveSignedUrl(path,ttlSeconds){
   if(!path)return '';
   try{
     const {data,error}=await sb.storage.from(STORAGE_BUCKET).createSignedUrl(path,ttlSeconds||300);
-    if(error)throw error;
-    return data?.signedUrl||'';
+    if(!error&&data?.signedUrl)return data.signedUrl;
   }catch(err){
-    console.warn('[DKMA] panic live signed url failed:',err?.message||err);
+    console.warn('[DKMA] panic live signed url failed, checking archive:',err?.message||err);
+  }
+  // Not found in primary storage — it may have been moved to cold
+  // storage by the nightly archival job. Ask the resolver function.
+  try{
+    const { data:{session} } = await sb.auth.getSession();
+    if(!session?.access_token)return '';
+    const res=await fetch(`${SUPABASE_URL_EDGE}/functions/v1/get-archived-media-url`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
+      body:JSON.stringify({path,ttlSeconds:ttlSeconds||300})
+    });
+    const archived=await res.json().catch(()=>({}));
+    return archived?.url||'';
+  }catch(err){
+    console.warn('[DKMA] archived media lookup failed:',err?.message||err);
     return '';
   }
 }
