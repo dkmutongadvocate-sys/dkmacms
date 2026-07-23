@@ -2282,6 +2282,42 @@ setTimeout(function() {
             <div id="archive-now-result" style="font-size:12px;color:var(--txt2);white-space:pre-wrap;display:none;background:#F7F4EC;border-radius:7px;padding:12px 14px;border:1px solid var(--brd)"></div>
           </div>
         </div>
+        <div class="card" style="max-width:640px;margin-top:16px">
+          <div class="card-header"><span class="card-title">🗑 Storage Cleanup (Permanent Delete)</span></div>
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:12px;color:var(--txt2);line-height:1.6">
+              This is <strong>not</strong> the archive job above — files deleted here are gone for good, with
+              no copy kept in R2 and no <code>archived_media</code> record. Only use this for disposable
+              scratch space (build artifacts, temp uploads), never for recordings or client documents.
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input id="cleanup-prefix-input" type="text" value="mobile-release-temp/"
+                     style="flex:1;min-width:220px;padding:8px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px" />
+              <button class="btn-primary" id="cleanup-now-btn" onclick="runStorageCleanupNow()" style="background:#B3261E">Permanently Delete Files Under This Prefix</button>
+            </div>
+            <div id="cleanup-now-result" style="font-size:12px;color:var(--txt2);white-space:pre-wrap;display:none;background:#F7F4EC;border-radius:7px;padding:12px 14px;border:1px solid var(--brd);max-height:220px;overflow:auto"></div>
+          </div>
+        </div>
+        <div class="card" style="max-width:640px;margin-top:16px">
+          <div class="card-header"><span class="card-title">📁 Archive Closed Matter Documents</span></div>
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:12px;color:var(--txt2);line-height:1.6">
+              Moves documents from matters that are <strong>closed</strong> and have been for
+              <strong>3+ years</strong> (based on closed date, not open date) to cold storage on R2 — same
+              safe move-then-verify-then-delete pattern as the recordings archive above. Nothing is
+              permanently deleted; moves are recorded and reversible. <code>client-general/</code> documents
+              are never touched by this, since they aren't tied to a single matter's status.
+            </div>
+            <button class="btn-primary" id="matter-archive-now-btn" onclick="runMatterArchiveNow()">Check &amp; Archive Eligible Matter Documents</button>
+            <div id="matter-archive-now-progress-wrap" style="display:none">
+              <div style="height:8px;background:#EDE7D9;border-radius:5px;overflow:hidden">
+                <div id="matter-archive-now-progress-fill" style="height:100%;width:0%;background:#185FA5;border-radius:5px;transition:width .3s ease"></div>
+              </div>
+              <div id="matter-archive-now-progress-label" style="font-size:11px;color:var(--txt3);margin-top:5px"></div>
+            </div>
+            <div id="matter-archive-now-result" style="font-size:12px;color:var(--txt2);white-space:pre-wrap;display:none;background:#F7F4EC;border-radius:7px;padding:12px 14px;border:1px solid var(--brd)"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -6476,6 +6512,132 @@ async function runPanicArchiveNow(){
     toast('Archive run failed: '+(err?.message||err),true);
   }finally{
     btn.disabled=false;btn.textContent='Archive Old Recordings Now';
+    setTimeout(()=>{if(progWrap)progWrap.style.display='none';},1500);
+  }
+}
+async function runStorageCleanupNow(){
+  if(currentProfile?.role!=='super_admin'){toast('Only a super admin can run this.',true);return;}
+  const btn=document.getElementById('cleanup-now-btn');
+  const input=document.getElementById('cleanup-prefix-input');
+  const out=document.getElementById('cleanup-now-result');
+  if(!btn||!input)return;
+  const prefix=(input.value||'').trim();
+  if(!prefix){toast('Enter a prefix first.',true);return;}
+  if(prefix==='/'||prefix.replace(/\/+/g,'')===''){
+    toast('That prefix would match the entire bucket — refusing.',true);
+    return;
+  }
+
+  // Destructive and irreversible (no R2 copy, no archived_media record),
+  // so require two explicit confirmations rather than one click.
+  if(!confirm(`This will PERMANENTLY delete every file under:\n\n${prefix}\n\nThere is no R2 backup and no undo. Continue?`))return;
+  if(!confirm(`Last check — type OK to permanently delete everything under "${prefix}" right now.`))return;
+
+  btn.disabled=true;btn.textContent='Deleting⬦';
+  if(out){out.style.display='none';out.textContent='';}
+
+  const { data:{session} } = await sb.auth.getSession();
+  if(!session?.access_token){
+    toast('No active session.',true);
+    btn.disabled=false;btn.textContent='Permanently Delete Files Under This Prefix';
+    return;
+  }
+
+  try{
+    const res=await fetch(`${SUPABASE_URL_EDGE}/functions/v1/cleanup-storage-prefix`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
+      body:JSON.stringify({prefix})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok)throw new Error(data?.error||`Request failed (${res.status})`);
+
+    const deleted=data.deleted||0;
+    const lines=[`Deleted: ${deleted} file(s) under "${data.prefix||prefix}"`];
+    if(data.paths?.length)lines.push('',...data.paths.map(p=>`  - ${p}`));
+    if(deleted===0)lines.push('Nothing found under that prefix.');
+    if(out){out.style.display='block';out.textContent=lines.join('\n');}
+    toast(`Deleted ${deleted} file(s).`);
+  }catch(err){
+    if(out){out.style.display='block';out.textContent='Failed: '+(err?.message||err);}
+    toast('Cleanup failed: '+(err?.message||err),true);
+  }finally{
+    btn.disabled=false;btn.textContent='Permanently Delete Files Under This Prefix';
+  }
+}
+async function runMatterArchiveNow(){
+  if(currentProfile?.role!=='super_admin'){toast('Only a super admin can run this.',true);return;}
+  const btn=document.getElementById('matter-archive-now-btn');
+  const progWrap=document.getElementById('matter-archive-now-progress-wrap');
+  const progFill=document.getElementById('matter-archive-now-progress-fill');
+  const progLabel=document.getElementById('matter-archive-now-progress-label');
+  const out=document.getElementById('matter-archive-now-result');
+  if(!btn)return;
+
+  if(!confirm('This moves documents from closed matters (3+ years since closure) to cold storage on R2. Files are recoverable (recorded in archived_media) but will no longer show in normal Storage browsing. Continue?'))return;
+
+  btn.disabled=true;btn.textContent='Checking⬦';
+  if(progWrap)progWrap.style.display='block';
+  if(out){out.style.display='none';out.textContent='';}
+
+  const { data:{session} } = await sb.auth.getSession();
+  if(!session?.access_token){
+    toast('No active session.',true);
+    btn.disabled=false;btn.textContent='Check & Archive Eligible Matter Documents';
+    if(progWrap)progWrap.style.display='none';
+    return;
+  }
+
+  let totalArchived=0,lastSkipped=0,allErrors=[],stalledRuns=0,totalBytesDownloaded=0,mattersTouched=new Set();
+  try{
+    for(let i=0;i<200;i++){
+      const res=await fetch(`${SUPABASE_URL_EDGE}/functions/v1/archive-closed-matter-documents`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
+        body:JSON.stringify({})
+      });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok)throw new Error(data?.error||`Request failed (${res.status})`);
+
+      totalArchived+=(data.archived||0);
+      lastSkipped=data.skipped||0;
+      totalBytesDownloaded+=(data.bytesDownloaded||0);
+      if(data.errors?.length)allErrors.push(...data.errors);
+      if(data.mattersTouched?.length)data.mattersTouched.forEach(m=>mattersTouched.add(m));
+
+      const remaining=data.remaining||0;
+      const madeProgress=(data.archived||0)>0;
+      if(!madeProgress&&remaining>0){
+        stalledRuns++;
+        if(stalledRuns>=2)break;
+      }else{
+        stalledRuns=0;
+      }
+
+      const mbSoFar=(totalBytesDownloaded/1024/1024).toFixed(1);
+      if(progLabel)progLabel.textContent=remaining>0
+        ?`Archived ${totalArchived} document(s) so far (${mbSoFar} MB egress) — ${remaining} more to go⬦`
+        :`Archived ${totalArchived} document(s), ${mbSoFar} MB egress. Wrapping up⬦`;
+      if(progFill)progFill.style.width=remaining>0?'60%':'100%';
+
+      if(remaining<=0)break;
+    }
+    if(progFill)progFill.style.width='100%';
+    const mbDownloaded=(totalBytesDownloaded/1024/1024);
+    const lines=[
+      `Archived: ${totalArchived}`,
+      `Already archived (skipped): ${lastSkipped}`,
+      `Matters touched: ${mattersTouched.size?[...mattersTouched].join(', '):'none'}`,
+      `Egress used this run: ${mbDownloaded>=1024?(mbDownloaded/1024).toFixed(2)+' GB':mbDownloaded.toFixed(1)+' MB'}`,
+      allErrors.length?`Errors (${allErrors.length}):\n  ${allErrors.join('\n  ')}`:'Errors: none'
+    ];
+    if(out){out.style.display='block';out.textContent=lines.join('\n');}
+    toast(totalArchived>0?`Archived ${totalArchived} document(s) total.`:'Nothing eligible right now.');
+  }catch(err){
+    if(out){out.style.display='block';out.textContent='Failed: '+(err?.message||err);}
+    toast('Archive run failed: '+(err?.message||err),true);
+  }finally{
+    btn.disabled=false;btn.textContent='Check & Archive Eligible Matter Documents';
     setTimeout(()=>{if(progWrap)progWrap.style.display='none';},1500);
   }
 }
