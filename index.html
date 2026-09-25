@@ -32399,9 +32399,7 @@ CREATE POLICY "auth_all" ON group_documents FOR ALL USING (auth.role()='authenti
 // ─── RECEIPT PDF GENERATOR ───────────────────────────────────────
 function getDkmaLetterheadTemplateUrl(){
   if(window.__dkmaLetterheadTemplateUrl)return window.__dkmaLetterheadTemplateUrl;
-  const scripts=Array.from(document.scripts||[]).map(s=>s.textContent||'').join('\n');
-  const m=scripts.match(/const\s+_letterheadUrl\s*=\s*'((?:data:image\/png;base64,)[^']+)'/);
-  window.__dkmaLetterheadTemplateUrl=m?m[1]:'';
+  window.__dkmaLetterheadTemplateUrl=new URL('NEWLgfn.png',window.location.href).href;
   return window.__dkmaLetterheadTemplateUrl;
 }
 async function downloadReceiptPdf(invId,paymentId=null,e){
@@ -32807,7 +32805,7 @@ async function downloadInvoiceDocx(invId,e){
   *{box-sizing:border-box;}
   html,body{width:993px;min-height:1404px;margin:0;background:#fff;color:#171717;font-family:Georgia,'Times New Roman',serif;font-size:14px;line-height:1.45;}
   body{position:relative;}
-  .fee-page{width:993px;min-height:1404px;background:#fff url("${esc(_letterheadUrl)}") center top / 993px 1404px no-repeat;position:relative;overflow:hidden;}
+  .fee-page{width:993px;min-height:1404px;background:#fff url("${esc(getDkmaLetterheadTemplateUrl())}") center top / 993px 1404px no-repeat;position:relative;overflow:hidden;}
   .fee-body{position:relative;z-index:1;padding:342px 76px 238px 78px;min-height:1404px;}
   .date-line{font-family:Arial,sans-serif;font-size:13px;margin-bottom:26px;color:#222;}
   p{margin:0 0 13px;}
